@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package com.krushikranti.auth;
+
+option java_multiple_files = true;
+option java_package = "com.krushikranti.auth.grpc";
+option java_outer_classname = "AuthProto";
+
+// Token Validation Service
+service AuthService {
+  // Validate JWT token
+  rpc ValidateToken (TokenValidationRequest) returns (TokenValidationResponse);
+  
+  // Get user info from token
+  rpc GetUserInfo (TokenValidationRequest) returns (UserInfoResponse);
+  
+  // Get user info by user ID (for other microservices)
+  rpc GetUserById (GetUserByIdRequest) returns (UserInfoResponse);
+}
+
+message TokenValidationRequest {
+  string token = 1;
+}
+
+message TokenValidationResponse {
+  bool valid = 1;
+  string user_id = 2;
+  repeated string roles = 3;
+  string error_message = 4;
+}
+
+message GetUserByIdRequest {
+  string user_id = 1;
+}
+
+message UserInfoResponse {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  string phone_number = 4;
+  repeated string roles = 5;
+  bool active = 6;
+}
+

@@ -1,0 +1,417 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # Infrastructure Services
+  # ============================================
+
+  # PostgreSQL Databases (Schema-per-Service)
+  auth-db:
+    image: postgres:16-alpine
+    container_name: auth-db
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ....
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  farmer-db:
+    image: postgres:16-alpine
+    container_name: farmer-db
+    environment:
+      POSTGRES_DB: farmer_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ....
+    ports:
+      - "5450:5432"
+    volumes:
+      - farmer-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  funding-db:
+    image: postgres:16-alpine
+    container_name: funding-db
+    environment:
+      POSTGRES_DB: funding_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - funding-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  inventory-db:
+    image: postgres:16-alpine
+    container_name: inventory-db
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - inventory-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  procurement-db:
+    image: postgres:16-alpine
+    container_name: procurement-db
+    environment:
+      POSTGRES_DB: procurement_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5436:5432"
+    volumes:
+      - procurement-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  payment-db:
+    image: postgres:16-alpine
+    container_name: payment-db
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5437:5432"
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  profile-db:
+    image: postgres:16-alpine
+    container_name: profile-db
+    environment:
+      POSTGRES_DB: profile_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5438:5432"
+    volumes:
+      - profile-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  chat-db:
+    image: postgres:16-alpine
+    container_name: chat-db
+    environment:
+      POSTGRES_DB: chat_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5439:5432"
+    volumes:
+      - chat-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  advisory-db:
+    image: postgres:16-alpine
+    container_name: advisory-db
+    environment:
+      POSTGRES_DB: advisory_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5440:5432"
+    volumes:
+      - advisory-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  notification-db:
+    image: postgres:16-alpine
+    container_name: notification-db
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5441:5432"
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  analytics-db:
+    image: postgres:16-alpine
+    container_name: analytics-db
+    environment:
+      POSTGRES_DB: analytics_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5442:5432"
+    volumes:
+      - analytics-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  subscription-db:
+    image: postgres:16-alpine
+    container_name: subscription-db
+    environment:
+      POSTGRES_DB: subscription_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5451:5432"
+    volumes:
+      - subscription-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  # Zookeeper (for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Microservices (to be added as they are built)
+  # ============================================
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./java-spring-microservices
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "4004:4004"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    networks:
+      - krushi-kranti-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4004/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./java-spring-microservices
+      dockerfile: auth-service/Dockerfile
+    container_name: auth-service
+    ports:
+      - "4005:4005"
+      - "9090:9090"  # gRPC port
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - krushi-kranti-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4005/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Farmer Service
+  farmer-service:
+    build:
+      context: ./java-spring-microservices
+      dockerfile: farmer-service/Dockerfile
+    container_name: farmer-service
+    ports:
+      - "4000:4000"
+    depends_on:
+      farmer-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - krushi-kranti-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Subscription Service
+  subscription-service:
+    build:
+      context: ./java-spring-microservices
+      dockerfile: subscription-service/Dockerfile
+    container_name: subscription-service
+    ports:
+      - "4013:4013"
+      - "9093:9093"  # gRPC port
+    depends_on:
+      subscription-db:
+        condition: service_healthy
+      farmer-service:
+        condition: service_healthy
+    networks:
+      - krushi-kranti-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4013/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  krushi-kranti-network:
+    driver: bridge
+    name: krushi-kranti-network
+
+volumes:
+  auth-db-data:
+  farmer-db-data:
+  funding-db-data:
+  inventory-db-data:
+  procurement-db-data:
+  payment-db-data:
+  profile-db-data:
+  chat-db-data:
+  advisory-db-data:
+  notification-db-data:
+  analytics-db-data:
+  subscription-db-data:
+  redis-data:
+  kafka-data:
+

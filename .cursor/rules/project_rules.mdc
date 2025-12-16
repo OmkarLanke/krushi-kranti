@@ -1,0 +1,361 @@
+---
+alwaysApply: false
+---
+IMPORTANT — Guideline-Based Project Rules (Not Strict / Flexible)
+
+These Project Rules describe the current architectural design for the KrushiKranti backend.
+Cursor should:
+
+Use these rules as a reference,
+
+Follow them by default for consistency,
+
+BUT remain flexible and
+
+Adjust the architecture, structure, or patterns if future requirements change,
+
+Suggest improvements when appropriate,
+
+Never block development due to rule rigidity.
+
+These rules are meant to guide, not restrict.
+Cursor is allowed to evolve the architecture when needed.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+KrushiKranti – Backend Project Rules (Farmer App)
+
+These rules define how all backend code must be generated, structured, and integrated in this repository.
+Follow these conventions strictly.
+
+1. Microservices in This Project (as per Architecture Diagram)
+
+All development must respect the following microservices:
+
+Core Services
+
+Auth & Identity Service
+
+Farmer Service (Core domain)
+
+Funding / Loan Service
+
+Inventory Service
+
+Inventory & Procurement Service
+
+Payment & Payout Service
+
+User Profile Service
+
+File / Media Service
+
+Notification Service
+
+Tadnya Chat Service
+
+Smart Farming / Advisory Service
+
+Support/Ticketing Service
+
+Analytics Service (Kafka consumer–only)
+
+External Clients
+
+Farmer App (Flutter)
+
+VCP Operator App
+
+Admin Portal
+
+Infrastructure
+
+API Gateway
+
+Kafka Broker
+
+PostgreSQL (schema-per-service)
+
+Redis
+
+S3
+
+Payment Gateway / Bank API
+
+SMS provider
+
+FCM (Push Notifications)
+
+Weather API
+
+2. Communication Rules
+2.1 REST APIs
+
+REST endpoints are only used for client-facing communication (Farmer App, VCP App, Admin Portal).
+
+All REST traffic must pass through the API Gateway.
+
+REST follows JSON request/response.
+
+2.2 gRPC (Internal Microservice Communication)
+
+All synchronous service-to-service calls MUST use gRPC, including:
+
+Auth → token introspection (if required)
+
+Farmer Service → Funding, Inventory, Payment
+
+Inventory → Farmer (contract & farmer validation)
+
+Payment → Funding / Inventory (ledger lookups)
+
+Smart Advisory → Weather API proxy service
+
+Every microservice should expose gRPC server methods for read-only or validation calls.
+
+Every microservice should use gRPC clients for internal lookups.
+
+2.3 Kafka (Asynchronous Communication)
+
+All domain events must be published to Kafka topics.
+
+Mandatory Topics
+
+FARMER_EVENTS
+
+FUNDING_EVENTS
+
+PROCUREMENT_EVENTS
+
+PAYMENT_EVENTS
+
+TADNYA_EVENTS
+
+NOTIFICATION_EVENTS
+
+Producer Rules
+
+Farmer Service → FARMER_EVENTS
+
+Funding Service → FUNDING_EVENTS
+
+Inventory & Procurement Service → PROCUREMENT_EVENTS
+
+Payment & Payout Service → PAYMENT_EVENTS
+
+Chat / Tadnya → TADNYA_EVENTS
+
+Any service requesting notifications → NOTIFICATION_EVENTS
+
+Consumer Rules
+
+Notification Service consumes all event topics.
+
+Analytics Service consumes every topic.
+
+Payment Service consumes:
+
+PROCUREMENT events
+
+FUNDING events
+
+Inventory consumes ORDER events (future extension).
+
+Smart Advisory consumes Weather API events (if any).
+
+Event-Driven Rules
+
+Use transactional outbox pattern for any DB write → Kafka publish.
+
+Do not publish events directly from inside service logic without an outbox.
+
+3. Database & Storage Rules
+Schema-per-Service Architecture
+
+Each microservice has its own independent Postgres schema:
+
+auth_db
+
+farmer_db
+
+funding_db
+
+inventory_db
+
+procurement_db
+
+payment_db
+
+profile_db
+
+chat_db
+
+advisory_db
+
+notification_db (optional)
+
+analytics_db (read-only)
+
+No service is allowed to access another service's database directly.
+
+File Storage
+
+All file uploads (KYC, images, documents) must be stored in S3.
+
+File/Media Service issues signed URLs and stores only metadata.
+
+Redis
+
+Used for:
+
+OTP storage (Auth service)
+
+Caching for frequently-read profile + farmer info
+
+4. API Gateway Rules
+
+JWT tokens validated locally using JWKS public key.
+
+API Gateway injects headers:
+
+X-User-Id
+
+X-User-Roles
+
+No microservice performs full JWT parsing.
+
+API Gateway routes:
+
+/auth/**
+
+/farmer/**
+
+/funding/**
+
+/inventory/**
+
+/procurement/**
+
+/payment/**
+
+/profile/**
+
+/file/**
+
+/notification/**
+
+/chat/**
+
+/advisory/**
+
+/support/**
+
+5. Coding Conventions
+Spring Boot Standards
+
+Java 21
+
+Package structure:
+
+controller/
+service/
+repository/
+model/
+dto/
+grpc/
+events/producer/
+events/consumer/
+config/
+
+Required libraries
+
+Spring Web
+
+Spring Validation
+
+Spring Data JPA
+
+Spring Kafka
+
+gRPC (Java)
+
+MapStruct
+
+Lombok
+
+Flyway
+
+Testcontainers
+
+Security
+
+No service decrypts Aadhar/bank details except authorized ones.
+
+Sensitive data must use AES-256 encryption and stored securely.
+
+Error Handling
+
+Every service MUST implement:
+
+GlobalExceptionHandler
+
+ApiError response model
+
+6. Deployment Rules
+
+All services run in the same Docker Network / Kubernetes Cluster.
+
+Deployments follow:
+
+GitHub Actions → Docker Build → ECR → ECS/EKS
+
+Config stored in:
+
+.env
+
+Kubernetes Secrets
+
+AWS Secrets Manager
+
+Scalable services must use horizontal pod autoscaling (HPA).
+
+7. Logging & Monitoring
+
+Distributed tracing using:
+
+OpenTelemetry
+
+Jaeger or AWS X-Ray
+
+Metrics via:
+
+Prometheus + Grafana
+
+Central logging using:
+
+ELK or CloudWatch logs
+
+8. Rules for Code Generation in Cursor
+
+Code must follow the microservice boundaries defined in the architecture.
+
+Code generation must use:
+
+Correct DTO naming
+
+Correct Kafka topic naming
+
+Correct gRPC method naming
+
+Never generate:
+
+Monolithic designs
+
+Shared DB models
+
+Cross-service database access
+
+
+
+
+

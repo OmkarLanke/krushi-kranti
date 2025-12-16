@@ -1,0 +1,71 @@
+server:
+  port: 4004
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+      httpclient:
+        connect-timeout: 10000
+        response-timeout: 30s
+
+gateway:
+  jwt:
+    enabled: true
+    skip-paths:
+      - /auth/login
+      - /auth/register
+      - /auth/verify-otp
+      - /auth/request-login-otp
+      - /auth/get-otp
+      - /auth/resend-otp
+      - /.well-known
+      - /actuator/health
+    jwks-uri: http://auth-service:4005/.well-known/jwks.json
+  
+  # Service URLs for Docker environment (using Docker service names)
+  services:
+    auth-service: http://auth-service:4005
+    farmer-service: http://farmer-service:4000
+    funding-service: http://funding-service:4001
+    inventory-service: http://inventory-service:4002
+    procurement-service: http://procurement-service:4003
+    payment-service: http://payment-service:4006
+    profile-service: http://profile-service:4007
+    file-service: http://file-service:4008
+    notification-service: http://notification-service:4009
+    chat-service: http://chat-service:4010
+    advisory-service: http://advisory-service:4011
+    support-service: http://support-service:4012
+    subscription-service: http://subscription-service:4013
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    com.krushikranti.gateway: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
