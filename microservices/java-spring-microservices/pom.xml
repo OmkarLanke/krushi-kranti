@@ -43,6 +43,7 @@
     </properties>
 
     <modules>
+        <module>i18n-common</module>
         <module>api-gateway</module>
         <module>auth-service</module>
         <module>farmer-service</module>
