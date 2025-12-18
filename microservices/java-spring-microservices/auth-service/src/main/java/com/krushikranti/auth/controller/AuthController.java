@@ -3,6 +3,9 @@ package com.krushikranti.auth.controller;
 import com.krushikranti.auth.dto.*;
 import com.krushikranti.auth.model.User;
 import com.krushikranti.auth.service.AuthService;
+import com.krushikranti.i18n.constants.MessageKeys;
+import com.krushikranti.i18n.service.MessageService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,15 +22,16 @@ import java.util.Optional;
 public class AuthController {
 
     private final AuthService authService;
+    private final MessageService messageService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         try {
             // Send OTP for registration (user is NOT saved yet)
             authService.sendRegistrationOtp(request);
             
             return ResponseEntity.ok(new ApiResponse<>(
-                    "OTP sent to mobile number. Please verify OTP to complete registration.", 
+                    messageService.getMessage(MessageKeys.AUTH_REGISTRATION_OTP_SENT, httpRequest), 
                     null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
@@ -36,37 +40,37 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         // Validate that exactly one login method is provided
         boolean isEmailLogin = request.isEmailLogin();
         boolean isPhoneLogin = request.isPhoneLogin();
         
         if (!isEmailLogin && !isPhoneLogin) {
             return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>("Please provide either email/password or phone/OTP for login", null));
+                    .body(new ApiResponse<>(messageService.getMessage(MessageKeys.AUTH_LOGIN_PROVIDE_CREDENTIALS, httpRequest), null));
         }
         
         if (isEmailLogin && isPhoneLogin) {
             return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>("Please provide only one login method (email/password OR phone/OTP)", null));
+                    .body(new ApiResponse<>(messageService.getMessage(MessageKeys.AUTH_LOGIN_PROVIDE_CREDENTIALS, httpRequest), null));
         }
 
         Optional<User> userOpt;
-        String errorMessage;
+        String errorMessageKey;
 
         if (isEmailLogin) {
             // Email/Password login
             userOpt = authService.authenticate(request.getEmail(), request.getPassword());
-            errorMessage = "Invalid email or password";
+            errorMessageKey = MessageKeys.AUTH_LOGIN_INVALID_EMAIL_PASSWORD;
         } else {
             // Phone/OTP login
             userOpt = authService.authenticateWithOtp(request.getPhoneNumber(), request.getOtp());
-            errorMessage = "Invalid phone number or OTP";
+            errorMessageKey = MessageKeys.AUTH_LOGIN_INVALID_PHONE_OTP;
         }
 
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(errorMessage, null));
+                    .body(new ApiResponse<>(messageService.getMessage(errorMessageKey, httpRequest), null));
         }
 
         User user = userOpt.get();
@@ -92,11 +96,11 @@ public class AuthController {
     }
 
     @PostMapping("/request-login-otp")
-    public ResponseEntity<?> requestLoginOtp(@Valid @RequestBody ResendOtpRequest request) {
+    public ResponseEntity<?> requestLoginOtp(@Valid @RequestBody ResendOtpRequest request, HttpServletRequest httpRequest) {
         try {
             authService.sendLoginOtp(request.getPhoneNumber());
             return ResponseEntity.ok(new ApiResponse<>(
-                    "OTP sent to mobile number for login. Please use the OTP to login.", 
+                    messageService.getMessage(MessageKeys.AUTH_LOGIN_OTP_SENT, httpRequest), 
                     null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
@@ -105,7 +109,7 @@ public class AuthController {
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest request, HttpServletRequest httpRequest) {
         try {
             // Verify OTP and complete registration (user is saved to database with is_verified=true)
             User user = authService.verifyOtpAndRegister(request.getPhoneNumber(), request.getOtp());
@@ -120,7 +124,7 @@ public class AuthController {
                     .build();
 
             return ResponseEntity.ok(new ApiResponse<>(
-                    "OTP verified and registration completed successfully", 
+                    messageService.getMessage(MessageKeys.AUTH_REGISTRATION_COMPLETED, httpRequest), 
                     userInfo));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
@@ -190,7 +194,8 @@ public class AuthController {
     public ResponseEntity<?> getCurrentUser(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-User-Roles", required = false) String roles,
-            @RequestHeader(value = "X-Username", required = false) String username) {
+            @RequestHeader(value = "X-Username", required = false) String username,
+            HttpServletRequest httpRequest) {
         
         if (userId == null || userId.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -217,7 +222,7 @@ public class AuthController {
                     .build();
 
             return ResponseEntity.ok(new ApiResponse<>(
-                    "User retrieved successfully via validated token",
+                    messageService.getMessage(MessageKeys.AUTH_USER_RETRIEVED, httpRequest),
                     userInfo));
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest()
