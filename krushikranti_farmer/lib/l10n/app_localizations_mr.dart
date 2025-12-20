@@ -42,6 +42,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get cropDetail => 'पिकांचा तपशील';
 
   @override
+  String get cropDetails => 'पिकांचा तपशील';
+
+  @override
   String get dailySale => 'दैनंदिन विक्री नोंद';
 
   @override
@@ -66,13 +69,13 @@ class AppLocalizationsMr extends AppLocalizations {
   String get profile => 'प्रोफाइल';
 
   @override
-  String get myDetails => 'माझा तपशील';
+  String get myDetails => 'माझी माहिती';
 
   @override
-  String get farmDetails => 'शेताचा तपशील';
+  String get farmDetails => 'शेतीचा तपशील';
 
   @override
-  String get finance => 'अर्थसहाय्य';
+  String get finance => 'अर्थकारण';
 
   @override
   String get subscription => 'सबस्क्रिप्शन';
@@ -97,6 +100,12 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get noCropsAdded => 'अद्याप पिके जोडलेली नाहीत';
+
+  @override
+  String get noCropsYet => 'अद्याप पिके जोडलेली नाहीत';
+
+  @override
+  String get addFirstCrop => 'सुरू करण्यासाठी तुमचे पहिले पीक जोडा';
 
   @override
   String get addCropsSubtitle =>
@@ -136,6 +145,67 @@ class AppLocalizationsMr extends AppLocalizations {
   String get cropAddedSuccess => 'यशस्वी! पीक जोडले गेले.';
 
   @override
+  String get sowingDate => 'पेरणीची तारीख';
+
+  @override
+  String get selectSowingDate => 'पेरणीची तारीख निवडा';
+
+  @override
+  String get harvestingDate => 'अपेक्षित कापणीची तारीख';
+
+  @override
+  String get selectHarvestingDate => 'अपेक्षित कापणीची तारीख निवडा';
+
+  @override
+  String get cropStatus => 'पिकाची स्थिती';
+
+  @override
+  String get selectCropStatus => 'पिकाची स्थिती निवडा';
+
+  @override
+  String get selectFarm => 'शेत निवडा';
+
+  @override
+  String get farmLabel => 'शेत';
+
+  @override
+  String get noFarmsFound => 'शेत सापडले नाही. कृपया प्रथम शेत जोडा.';
+
+  @override
+  String get pleaseSelectFarm => 'कृपया एक शेत निवडा';
+
+  @override
+  String get validAcres => 'कृपया एकरमध्ये वैध क्षेत्र प्रविष्ट करा';
+
+  @override
+  String get profileRequired => 'प्रोफाइल आवश्यक';
+
+  @override
+  String get completeProfileFirst =>
+      'पिके जोडण्यापूर्वी कृपया आधी तुमची प्रोफाइल पूर्ण करा.';
+
+  @override
+  String get cancel => 'रद्द करा';
+
+  @override
+  String get completeProfile => 'प्रोफाइल पूर्ण करा';
+
+  @override
+  String get statusPlanned => 'नियोजित';
+
+  @override
+  String get statusSown => 'पेरले';
+
+  @override
+  String get statusGrowing => 'वाढत आहे';
+
+  @override
+  String get statusHarvested => 'कापणी झाली';
+
+  @override
+  String get statusFailed => 'अयशस्वी';
+
+  @override
   String get catVeg => 'भाजीपाला';
 
   @override
@@ -143,6 +213,30 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get catGrain => 'धान्य';
+
+  @override
+  String get catGrainsCereals => 'धान्य आणि तृणधान्ये';
+
+  @override
+  String get catPulsesLegumes => 'कडधान्ये आणि डाळी';
+
+  @override
+  String get catSpices => 'मसाले';
+
+  @override
+  String get catOilseeds => 'तेलबिया';
+
+  @override
+  String get catCashCrops => 'नगदी पिके';
+
+  @override
+  String get catDairyMilk => 'दुग्धजन्य पदार्थ';
+
+  @override
+  String get catFlowers => 'फुले';
+
+  @override
+  String get catMedicinalHerbs => 'औषधी आणि वनस्पती';
 
   @override
   String get cropTomato => 'टोमॅटो';
@@ -245,6 +339,42 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get phoneLabel => 'नोंदणीकृत मोबाईल';
+
+  @override
+  String get email => 'ईमेल';
+
+  @override
+  String get phoneNumber => 'फोन नंबर';
+
+  @override
+  String get alternatePhone => 'पर्यायी फोन';
+
+  @override
+  String get notProvided => 'उपलब्ध नाही';
+
+  @override
+  String get addressDetails => 'पत्त्याचा तपशील';
+
+  @override
+  String get pincode => 'पिनकोड';
+
+  @override
+  String get village => 'गाव';
+
+  @override
+  String get taluka => 'तालुका';
+
+  @override
+  String get district => 'जिल्हा';
+
+  @override
+  String get state => 'राज्य';
+
+  @override
+  String get profileIncomplete => 'प्रोफाइल अपूर्ण आहे';
+
+  @override
+  String get completeProfileDetails => 'कृपया तुमचा प्रोफाइल तपशील पूर्ण करा.';
 
   @override
   String get emailLoginLink => 'ईमेल आणि पासवर्डने लॉग इन करा';
@@ -420,4 +550,456 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get bankAccount => 'बँक खाते';
+
+  @override
+  String get failedToLoadProfile => 'प्रोफाइल लोड करण्यात अयशस्वी';
+
+  @override
+  String get failedToLoadData => 'डेटा लोड करण्यात अयशस्वी';
+
+  @override
+  String get failedToLoadCrops => 'पिके लोड करण्यात अयशस्वी';
+
+  @override
+  String get failedToLoadCropNames => 'पिकांचे नावे लोड करण्यात अयशस्वी';
+
+  @override
+  String get addFarm => 'शेत जोडा';
+
+  @override
+  String get farmName => 'शेताचे नाव';
+
+  @override
+  String get enterFarmName => 'शेताचे नाव प्रविष्ट करा';
+
+  @override
+  String get farmNameRequired => 'शेताचे नाव आवश्यक आहे';
+
+  @override
+  String get farmType => 'शेताचा प्रकार';
+
+  @override
+  String get selectFarmType => 'शेताचा प्रकार निवडा';
+
+  @override
+  String get totalAreaAcres => 'एकूण क्षेत्र (एकर)';
+
+  @override
+  String get enterAreaAcres => 'एकरमध्ये क्षेत्र प्रविष्ट करा';
+
+  @override
+  String get areaRequired => 'एकूण क्षेत्र आवश्यक आहे';
+
+  @override
+  String get validArea => 'वैध क्षेत्र प्रविष्ट करा';
+
+  @override
+  String get enter6DigitPincode => '6-अंकी पिनकोड प्रविष्ट करा';
+
+  @override
+  String get pincodeRequired => 'पिनकोड आवश्यक आहे';
+
+  @override
+  String get pincodeMust6Digits => 'पिनकोड 6 अंकांचा असणे आवश्यक आहे';
+
+  @override
+  String get validPincode => 'कृपया वैध 6-अंकी पिनकोड प्रविष्ट करा';
+
+  @override
+  String get lookup => 'शोधा';
+
+  @override
+  String get selectVillage => 'गाव निवडा';
+
+  @override
+  String get enterPincodeToLoadVillages =>
+      'गावे लोड करण्यासाठी पिनकोड प्रविष्ट करा';
+
+  @override
+  String get pleaseSelectVillage => 'कृपया एक गाव निवडा';
+
+  @override
+  String get soilType => 'मातीचा प्रकार';
+
+  @override
+  String get selectSoilType => 'मातीचा प्रकार निवडा';
+
+  @override
+  String get irrigationType => 'सिंचनाचा प्रकार';
+
+  @override
+  String get selectIrrigationType => 'सिंचनाचा प्रकार निवडा';
+
+  @override
+  String get landOwnership => 'जमीन मालकी';
+
+  @override
+  String get selectLandOwnership => 'जमीन मालकी निवडा';
+
+  @override
+  String get pleaseSelectOwnership => 'कृपया जमीन मालकी निवडा';
+
+  @override
+  String get collateralInfo => 'तारण माहिती (पर्यायी)';
+
+  @override
+  String get surveyNumber => 'सर्व्हे नंबर';
+
+  @override
+  String get enterSurveyNumber => 'सर्व्हे नंबर प्रविष्ट करा';
+
+  @override
+  String get landRegNumber => 'जमीन नोंदणी क्रमांक';
+
+  @override
+  String get enterLandRegNumber => 'जमीन नोंदणी क्रमांक प्रविष्ट करा';
+
+  @override
+  String get pattaNumber => 'पट्टा क्रमांक';
+
+  @override
+  String get enterPattaNumber => 'पट्टा क्रमांक प्रविष्ट करा';
+
+  @override
+  String get estimatedLandValue => 'अंदाजे जमीन मूल्य (रुपये)';
+
+  @override
+  String get enterEstimatedValue => 'अंदाजे मूल्य प्रविष्ट करा';
+
+  @override
+  String get encumbranceStatus => 'भार स्थिती';
+
+  @override
+  String get selectEncumbranceStatus => 'भार स्थिती निवडा';
+
+  @override
+  String get encumbranceRemarks => 'भार टिप्पणी';
+
+  @override
+  String get enterRemarks => 'टिप्पणी प्रविष्ट करा (असल्यास)';
+
+  @override
+  String get saveFarm => 'शेत जतन करा';
+
+  @override
+  String get farmAddedSuccess => 'शेत यशस्वीरित्या जोडले गेले';
+
+  @override
+  String get noFarmsAdded => 'अद्याप शेत जोडलेले नाही';
+
+  @override
+  String get addYourFirstFarm => 'सुरू करण्यासाठी तुमचे पहिले शेत जोडा';
+
+  @override
+  String get main => 'मुख्य';
+
+  @override
+  String get landDetailsSection => 'जमीन तपशील';
+
+  @override
+  String get collateralSection => 'तारण माहिती';
+
+  @override
+  String get verified => 'सत्यापित';
+
+  @override
+  String get retry => 'पुन्हा प्रयत्न करा';
+
+  @override
+  String get completeProfileBeforeFarms =>
+      'शेत जोडण्यापूर्वी कृपया आधी तुमची प्रोफाइल पूर्ण करा.';
+
+  @override
+  String get farmTypeOrganic => 'सेंद्रिय';
+
+  @override
+  String get farmTypeConventional => 'पारंपारिक';
+
+  @override
+  String get farmTypeMixed => 'मिश्र';
+
+  @override
+  String get farmTypeVermiCompost => 'गांडूळ कंपोस्ट';
+
+  @override
+  String get soilBlack => 'काळी माती';
+
+  @override
+  String get soilRed => 'लाल माती';
+
+  @override
+  String get soilSandy => 'वाळूमिश्रित';
+
+  @override
+  String get soilLoamy => 'चिकणमाती';
+
+  @override
+  String get soilClay => 'चिकट माती';
+
+  @override
+  String get soilMixed => 'मिश्र';
+
+  @override
+  String get irrigDrip => 'ठिबक';
+
+  @override
+  String get irrigSprinkler => 'तुषार';
+
+  @override
+  String get irrigRainfed => 'पावसावर आधारित';
+
+  @override
+  String get irrigCanal => 'कालवा';
+
+  @override
+  String get irrigBoreWell => 'बोअरवेल';
+
+  @override
+  String get irrigOpenWell => 'विहीर';
+
+  @override
+  String get irrigMixed => 'मिश्र';
+
+  @override
+  String get ownershipOwned => 'स्वमालकी';
+
+  @override
+  String get ownershipLeased => 'भाडेपट्टा';
+
+  @override
+  String get ownershipShared => 'वाटप';
+
+  @override
+  String get ownershipGovtAllotted => 'शासकीय वाटप';
+
+  @override
+  String get encumNotVerified => 'सत्यापित नाही';
+
+  @override
+  String get encumFree => 'मुक्त';
+
+  @override
+  String get encumEncumbered => 'भारित';
+
+  @override
+  String get encumPartially => 'अंशतः भारित';
+
+  @override
+  String get surveyNo => 'सर्व्हे नंबर';
+
+  @override
+  String get landRegNo => 'जमीन नोंदणी नंबर';
+
+  @override
+  String get pattaNo => 'पट्टा नंबर';
+
+  @override
+  String get estimatedValue => 'अंदाजे मूल्य';
+
+  @override
+  String get encumbrance => 'भार';
+
+  @override
+  String get remarks => 'टिप्पणी';
+
+  @override
+  String get ownership => 'मालकी';
+
+  @override
+  String get acres => 'एकर';
+
+  @override
+  String get noAddressFound => 'या पिनकोडसाठी पत्ता सापडला नाही';
+
+  @override
+  String get subscriptionRequired => 'सदस्यता आवश्यक';
+
+  @override
+  String toAccessFeature(String feature) {
+    return '$feature मध्ये प्रवेश करण्यासाठी, कृपया कृषी क्रांतीची सदस्यता घ्या.';
+  }
+
+  @override
+  String get only999Year => 'फक्त ₹999/वर्ष';
+
+  @override
+  String get subscribeNow => 'आताच सदस्यता घ्या';
+
+  @override
+  String get benefitsInclude => 'लाभांमध्ये समाविष्ट:';
+
+  @override
+  String get weatherUpdates => 'हवामान अहवाल';
+
+  @override
+  String get expertAdvice => 'तज्ञ सल्ला';
+
+  @override
+  String get marketAccess => 'बाजार प्रवेश';
+
+  @override
+  String get zeroPercentLoan => '0% कर्ज';
+
+  @override
+  String get later => 'नंतर';
+
+  @override
+  String get annualSubscription => 'वार्षिक सदस्यता:';
+
+  @override
+  String get thisFeature => 'ही वैशिष्ट्य';
+
+  @override
+  String get skip => 'वगळा';
+
+  @override
+  String get imageNotFound => 'प्रतिमा सापडली नाही';
+
+  @override
+  String get welcomePage1Title => 'सर्व पिकांचे व्यवस्थापन व\nमोफत मार्गदर्शन';
+
+  @override
+  String get welcomePage1Subtitle =>
+      'कृषी क्रांतीत सामील व्हा, तुमचे स्वप्न पूर्ण करा!';
+
+  @override
+  String get welcomePage1Feature1 => 'हवामान अहवाल';
+
+  @override
+  String get welcomePage1Feature2 => 'पीक सल्ला';
+
+  @override
+  String get welcomePage1Feature3 => 'वैयक्तिक तज्ञ';
+
+  @override
+  String get welcomePage2Title =>
+      'कृषीक्रांती किसान मार्केट\nअंतर्गत प्रीमियम मार्केट मध्ये\nखरेदी व विक्री';
+
+  @override
+  String get welcomePage2Subtitle => 'योग्य वेळी, योग्य माहिती';
+
+  @override
+  String get welcomePage2Feature1 => 'शून्य % व्याज';
+
+  @override
+  String get welcomePage2Feature2 => 'उच्च माहिती';
+
+  @override
+  String get welcomePage2Feature3 => 'जलद गुंतवणूक';
+
+  @override
+  String get welcomePage3Title =>
+      'जमीन-बीज निवड आणि\nपेरणीची योग्य व्यवस्थापन.';
+
+  @override
+  String get welcomePage3Subtitle => 'पीक व्यवस्थापनाच्या मूलभूत पायऱ्या:';
+
+  @override
+  String get welcomePage3Feature1 => 'पीक आरोग्य';
+
+  @override
+  String get welcomePage3Feature2 => 'कीटकनाशक व खत\nमाहिती';
+
+  @override
+  String get welcomePage3Feature3 => 'व्यक्तिगत सल्ला';
+
+  @override
+  String get welcomePage3Footer => 'जमीन निवड, जमीन मशागत';
+
+  @override
+  String get welcomePage4Title =>
+      'मध्यस्थ नाही, थेट नफा\nतुमचा फायदा, तुमच्या हातात';
+
+  @override
+  String get welcomePage4Subtitle => 'उत्पादनाचे थेट आणि योग्य दर';
+
+  @override
+  String get welcomePage4Feature1 => 'आधुनिक तंत्रज्ञान\nआणि पद्धती';
+
+  @override
+  String get welcomePage4Feature2 => 'चांगला भाव';
+
+  @override
+  String get welcomePage4Feature3 => 'जास्त किंमत';
+
+  @override
+  String get welcomePage4Footer =>
+      'किसान क्रेडिट कार्ड नोंदणी फक्त ₹999/वर्षात';
+
+  @override
+  String get welcomePage5Title =>
+      'आर्थिक चिंता संपवा! फक्त ₹999\nमध्ये वर्षभर फायद्याची शेती करा!';
+
+  @override
+  String get welcomePage5Subtitle => '';
+
+  @override
+  String get welcomePage5Benefit1 => 'शून्य टक्के व्याज कर्ज मिळवा:';
+
+  @override
+  String get welcomePage5Benefit2 => 'वेळेवर हवामान आणि पीक सल्ला';
+
+  @override
+  String get welcomePage5Benefit3 => 'उत्पादनाचे थेट आणि योग्य दर';
+
+  @override
+  String get welcomePage5Benefit4 => 'हवामान अहवाल';
+
+  @override
+  String get welcomePage5KycText =>
+      'आर्थिक सहाय्य आणि सर्व लाभांसाठी\nआपली (KYC) त्वरित पूर्ण करा!';
+
+  @override
+  String get next => 'पुढे';
+
+  @override
+  String get subscribeNowWelcome => 'आताच सदस्यता घ्या';
+
+  @override
+  String get notSubscribed => 'सदस्यता नाही';
+
+  @override
+  String get activeSubscription => 'सक्रिय सदस्यता';
+
+  @override
+  String get subscribeToAccessAll =>
+      'सर्व वैशिष्ट्यांमध्ये प्रवेश करण्यासाठी सदस्यता घ्या';
+
+  @override
+  String daysRemaining(int count) {
+    return '$count दिवस शिल्लक';
+  }
+
+  @override
+  String get startDate => 'सुरुवातीची तारीख';
+
+  @override
+  String get expiresOn => 'समाप्ती तारीख';
+
+  @override
+  String get subscriptionId => 'सदस्यता आयडी';
+
+  @override
+  String get dashboard => 'डॅशबोर्ड';
+
+  @override
+  String get subscriptionBenefits => 'सदस्यता लाभ';
+
+  @override
+  String get benefitZeroInterest => 'शून्य टक्के व्याज कर्ज मिळवा';
+
+  @override
+  String get benefitTimelyWeather => 'वेळेवर हवामान आणि पीक सल्ला';
+
+  @override
+  String get benefitDirectRates => 'उत्पादनाचे थेट आणि योग्य दर';
+
+  @override
+  String get benefitWeatherUpdates => 'हवामान अद्यतने';
+
+  @override
+  String get benefitPremiumMarket => 'प्रीमियम मार्केट एक्सेस';
+
+  @override
+  String get benefitExpertAdvice => 'तज्ञांचा सल्ला';
 }

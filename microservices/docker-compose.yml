@@ -234,6 +234,25 @@ services:
       timeout: 5s
       retries: 5
 
+  kyc-db:
+    image: postgres:16-alpine
+    container_name: kyc-db
+    environment:
+      POSTGRES_DB: kyc_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5452:5432"
+    volumes:
+      - kyc-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Redis
   redis:
     image: redis:7-alpine
@@ -394,6 +413,33 @@ services:
       retries: 3
       start_period: 40s
 
+  # KYC Service
+  kyc-service:
+    build:
+      context: ./java-spring-microservices
+      dockerfile: kyc-service/Dockerfile
+    container_name: kyc-service
+    ports:
+      - "4014:4014"
+      - "9094:9094"  # gRPC port
+    depends_on:
+      kyc-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - krushi-kranti-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - QUICKEKYC_API_KEY=${QUICKEKYC_API_KEY}
+      - QUICKEKYC_BASE_URL=${QUICKEKYC_BASE_URL:-https://api.quickekyc.com}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4014/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 networks:
   krushi-kranti-network:
     driver: bridge
@@ -412,6 +458,7 @@ volumes:
   notification-db-data:
   analytics-db-data:
   subscription-db-data:
+  kyc-db-data:
   redis-data:
   kafka-data:
 

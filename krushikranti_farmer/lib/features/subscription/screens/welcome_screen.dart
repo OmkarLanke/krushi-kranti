@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../services/subscription_service.dart';
 
 /// Welcome/Onboarding screens for unsubscribed users.
@@ -18,6 +19,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _isCheckingSubscription = true;
+  List<WelcomePage>? _pages;
 
   @override
   void initState() {
@@ -53,68 +55,70 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }
   }
 
-  final List<WelcomePage> _pages = [
-    WelcomePage(
-      title: "सर्व पिकांचे व्यवस्थापन व\nमोफत मार्गदर्शन",
-      subtitle: "कृषी क्रांतीत सामील व्हा, तुमचे स्वप्न पूर्ण करा!",
-      image: "assets/images/welcome_1.png",
-      features: [
-        FeatureItem(icon: Icons.cloud_outlined, label: "हवामान अहवाल"),
-        FeatureItem(icon: Icons.grass_outlined, label: "पीक सल्ला"),
-        FeatureItem(icon: Icons.person_outline, label: "वैयक्तिक तज्ञ"),
-      ],
-      backgroundColor: const Color(0xFF32CD32), // Green gradient approx
-    ),
-    WelcomePage(
-      title: "कृषीक्रांती किसान मार्केट\nअंतर्गत प्रीमियम मार्केट मध्ये\nखरेदी व विक्री",
-      subtitle: "योग्य वेळी, योग्य माहिती",
-      image: "assets/images/welcome_2.png",
-      features: [
-        FeatureItem(icon: Icons.percent, label: "शून्य % व्याज"),
-        FeatureItem(icon: Icons.check_circle_outline, label: "उच्च माहिती"),
-        FeatureItem(icon: Icons.eco_outlined, label: "जलद गुंतवणूक"),
-      ],
-      backgroundColor: const Color(0xFF32CD32),
-    ),
-    WelcomePage(
-      title: "जमीन-बीज निवड आणि\nपेरणीची योग्य व्यवस्थापन.",
-      subtitle: "पीक व्यवस्थापनाच्या मूलभूत पायऱ्या:",
-      image: "assets/images/welcome_3.png",
-      features: [
-        FeatureItem(icon: Icons.favorite_border, label: "Crop Health"),
-        FeatureItem(icon: Icons.bug_report_outlined, label: "कीटकनाशक व खत\nमाहिती"),
-        FeatureItem(icon: Icons.person_search_outlined, label: "व्यक्तिगत सल्ला"),
-      ],
-      footerText: "जमीन निवड, जमीन मशागत",
-      backgroundColor: const Color(0xFF32CD32),
-    ),
-    WelcomePage(
-      title: "मध्यस्थ नाही, थेट नफा\nतुमचा फायदा, तुमच्या हातात",
-      subtitle: "उत्पादनाचे थेट आणि योग्य दर",
-      image: "assets/images/welcome_4.png",
-      features: [
-        FeatureItem(icon: Icons.verified_user_outlined, label: "आधुनिक तंत्रज्ञान\nआणि पद्धती"),
-        FeatureItem(icon: Icons.thumb_up_alt_outlined, label: "चांगला भाव"),
-        FeatureItem(icon: Icons.currency_rupee, label: "जास्त किंमत"),
-      ],
-      footerText: "किसान क्रेडिट कार्ड नोंदणी फक्त ₹999/वर्षात",
-      backgroundColor: const Color(0xFF32CD32),
-    ),
-    WelcomePage(
-      title: "आर्थिक चिंता संपवा! फक्त ₹999\nमध्ये वर्षभर फायद्याची शेती करा!",
-      subtitle: "",
-      image: "assets/images/welcome_5.png",
-      features: [],
-      backgroundColor: const Color(0xFF32CD32),
-      isLastPage: true,
-      benefits: [
-        "शून्य टक्के व्याज कर्ज मिळवा:",
-        "वेळेवर हवामान आणि पीक सल्ला",
-        "उत्पादनाचे थेट आणि योग्य दर",
-        "हवामान अहवाल",
-      ],
-    ),
-  ];
+  List<WelcomePage> _getPages(AppLocalizations l10n) {
+    return [
+      WelcomePage(
+        title: l10n.welcomePage1Title,
+        subtitle: l10n.welcomePage1Subtitle,
+        image: "assets/images/welcome_1.png",
+        features: [
+          FeatureItem(icon: Icons.cloud_outlined, label: l10n.welcomePage1Feature1),
+          FeatureItem(icon: Icons.grass_outlined, label: l10n.welcomePage1Feature2),
+          FeatureItem(icon: Icons.person_outline, label: l10n.welcomePage1Feature3),
+        ],
+        backgroundColor: const Color(0xFF32CD32), // Green gradient approx
+      ),
+      WelcomePage(
+        title: l10n.welcomePage2Title,
+        subtitle: l10n.welcomePage2Subtitle,
+        image: "assets/images/welcome_2.png",
+        features: [
+          FeatureItem(icon: Icons.percent, label: l10n.welcomePage2Feature1),
+          FeatureItem(icon: Icons.check_circle_outline, label: l10n.welcomePage2Feature2),
+          FeatureItem(icon: Icons.eco_outlined, label: l10n.welcomePage2Feature3),
+        ],
+        backgroundColor: const Color(0xFF32CD32),
+      ),
+      WelcomePage(
+        title: l10n.welcomePage3Title,
+        subtitle: l10n.welcomePage3Subtitle,
+        image: "assets/images/welcome_3.png",
+        features: [
+          FeatureItem(icon: Icons.favorite_border, label: l10n.welcomePage3Feature1),
+          FeatureItem(icon: Icons.bug_report_outlined, label: l10n.welcomePage3Feature2),
+          FeatureItem(icon: Icons.person_search_outlined, label: l10n.welcomePage3Feature3),
+        ],
+        footerText: l10n.welcomePage3Footer,
+        backgroundColor: const Color(0xFF32CD32),
+      ),
+      WelcomePage(
+        title: l10n.welcomePage4Title,
+        subtitle: l10n.welcomePage4Subtitle,
+        image: "assets/images/welcome_4.png",
+        features: [
+          FeatureItem(icon: Icons.verified_user_outlined, label: l10n.welcomePage4Feature1),
+          FeatureItem(icon: Icons.thumb_up_alt_outlined, label: l10n.welcomePage4Feature2),
+          FeatureItem(icon: Icons.currency_rupee, label: l10n.welcomePage4Feature3),
+        ],
+        footerText: l10n.welcomePage4Footer,
+        backgroundColor: const Color(0xFF32CD32),
+      ),
+      WelcomePage(
+        title: l10n.welcomePage5Title,
+        subtitle: l10n.welcomePage5Subtitle,
+        image: "assets/images/welcome_5.png",
+        features: [],
+        backgroundColor: const Color(0xFF32CD32),
+        isLastPage: true,
+        benefits: [
+          l10n.welcomePage5Benefit1,
+          l10n.welcomePage5Benefit2,
+          l10n.welcomePage5Benefit3,
+          l10n.welcomePage5Benefit4,
+        ],
+      ),
+    ];
+  }
 
   @override
   void dispose() {
@@ -123,7 +127,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   void _goToNextPage() {
-    if (_currentPage < _pages.length - 1) {
+    if (_pages != null && _currentPage < _pages!.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -142,6 +146,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final pages = _getPages(l10n);
+    _pages = pages; // Store pages for use in other methods
+    
     // Show loading while checking subscription
     if (_isCheckingSubscription) {
       return Scaffold(
@@ -160,9 +168,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          "कृषी क्रांती",
-          style: TextStyle(
+        title: Text(
+          l10n.krushiKranti,
+          style: const TextStyle(
             color: Color(0xFF1B5E20), // Dark Green
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -171,9 +179,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         actions: [
           TextButton(
             onPressed: _goToSubscribe,
-            child: const Text(
-              "Skip",
-              style: TextStyle(
+            child: Text(
+              l10n.skip,
+              style: const TextStyle(
                 color: Color(0xFF2E7D32), // Dark Green
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -192,15 +200,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   _currentPage = index;
                 });
               },
-              itemCount: _pages.length,
+              itemCount: pages.length,
               itemBuilder: (context, index) {
-                return _buildPage(_pages[index]);
+                return _buildPage(pages[index], l10n);
               },
             ),
           ),
           
           // Page indicator dots
-          _buildPageIndicator(),
+          _buildPageIndicator(pages.length),
           
           const SizedBox(height: 8),
         ],
@@ -208,7 +216,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildPage(WelcomePage page) {
+  Widget _buildPage(WelcomePage page, AppLocalizations l10n) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       decoration: BoxDecoration(
@@ -294,7 +302,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 elevation: 4,
               ),
               child: Text(
-                page.isLastPage ? "आताच सदस्यता घ्या" : "पुढेजा",
+                page.isLastPage ? l10n.subscribeNowWelcome : l10n.next,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -308,13 +316,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildPageIndicator() {
+  Widget _buildPageIndicator(int pageCount) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(
-          _pages.length,
+          pageCount,
           (index) => Container(
             margin: const EdgeInsets.symmetric(horizontal: 4),
             width: _currentPage == index ? 24 : 8,
@@ -357,12 +365,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   size: 48,
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Image not found',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 12,
-                  ),
+                Builder(
+                  builder: (context) {
+                    final l10n = AppLocalizations.of(context)!;
+                    return Text(
+                      l10n.imageNotFound,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 12,
+                      ),
+                    );
+                  },
                 ),
                 if (kIsWeb)
                   Padding(
@@ -426,47 +439,52 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildLastPageContent(WelcomePage page) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1B5E20), // Dark green box
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Text(
-            "आर्थिक सहाय्य आणि सर्व लाभांसाठी\nआपली (KYC) त्वरित पूर्ण करा!",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+    return Builder(
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1B5E20), // Dark green box
+            borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(height: 16),
-          ...page.benefits.map((benefit) => Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    benefit,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                l10n.welcomePage5KycText,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
-              ],
-            ),
-          )),
-        ],
-      ),
+              ),
+              const SizedBox(height: 16),
+              ...page.benefits.map((benefit) => Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        benefit,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+            ],
+          ),
+        );
+      },
     );
   }
 }

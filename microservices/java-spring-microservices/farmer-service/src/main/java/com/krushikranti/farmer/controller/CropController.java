@@ -27,15 +27,18 @@ public class CropController {
 
     /**
      * Get all crops for the logged-in farmer (across all farms).
+     * Supports language translation via Accept-Language header (en, hi, mr).
      */
     @GetMapping
     public ResponseEntity<ApiResponse<List<CropResponse>>> getAllCrops(
-            @RequestHeader("X-User-Id") String userIdHeader) {
+            @RequestHeader("X-User-Id") String userIdHeader,
+            @RequestHeader(value = "Accept-Language", required = false, defaultValue = "en") String acceptLanguage) {
         
         Long userId = Long.parseLong(userIdHeader);
-        log.debug("Getting all crops for userId: {}", userId);
+        String language = extractLanguage(acceptLanguage);
+        log.debug("Getting all crops for userId: {} with language: {}", userId, language);
         
-        List<CropResponse> crops = cropService.getAllCropsByUserId(userId);
+        List<CropResponse> crops = cropService.getAllCropsByUserId(userId, language);
         
         return ResponseEntity.ok(new ApiResponse<>(
                 "Crops retrieved successfully",
@@ -44,16 +47,19 @@ public class CropController {
 
     /**
      * Get all crops for a specific farm.
+     * Supports language translation via Accept-Language header (en, hi, mr).
      */
     @GetMapping("/farm/{farmId}")
     public ResponseEntity<ApiResponse<List<CropResponse>>> getCropsByFarm(
             @RequestHeader("X-User-Id") String userIdHeader,
-            @PathVariable Long farmId) {
+            @PathVariable Long farmId,
+            @RequestHeader(value = "Accept-Language", required = false, defaultValue = "en") String acceptLanguage) {
         
         Long userId = Long.parseLong(userIdHeader);
-        log.debug("Getting crops for farmId: {} userId: {}", farmId, userId);
+        String language = extractLanguage(acceptLanguage);
+        log.debug("Getting crops for farmId: {} userId: {} with language: {}", farmId, userId, language);
         
-        List<CropResponse> crops = cropService.getCropsByFarmId(userId, farmId);
+        List<CropResponse> crops = cropService.getCropsByFarmId(userId, farmId, language);
         
         return ResponseEntity.ok(new ApiResponse<>(
                 "Crops retrieved successfully",
@@ -62,16 +68,19 @@ public class CropController {
 
     /**
      * Get a specific crop by ID.
+     * Supports language translation via Accept-Language header (en, hi, mr).
      */
     @GetMapping("/{cropId}")
     public ResponseEntity<ApiResponse<CropResponse>> getCropById(
             @RequestHeader("X-User-Id") String userIdHeader,
-            @PathVariable Long cropId) {
+            @PathVariable Long cropId,
+            @RequestHeader(value = "Accept-Language", required = false, defaultValue = "en") String acceptLanguage) {
         
         Long userId = Long.parseLong(userIdHeader);
-        log.debug("Getting crop {} for userId: {}", cropId, userId);
+        String language = extractLanguage(acceptLanguage);
+        log.debug("Getting crop {} for userId: {} with language: {}", cropId, userId, language);
         
-        CropResponse crop = cropService.getCropById(userId, cropId);
+        CropResponse crop = cropService.getCropById(userId, cropId, language);
         
         return ResponseEntity.ok(new ApiResponse<>(
                 "Crop retrieved successfully",
@@ -154,20 +163,45 @@ public class CropController {
 
     /**
      * Get crops by crop type for the farmer.
+     * Supports language translation via Accept-Language header (en, hi, mr).
      */
     @GetMapping("/type/{cropTypeId}")
     public ResponseEntity<ApiResponse<List<CropResponse>>> getCropsByType(
             @RequestHeader("X-User-Id") String userIdHeader,
-            @PathVariable Long cropTypeId) {
+            @PathVariable Long cropTypeId,
+            @RequestHeader(value = "Accept-Language", required = false, defaultValue = "en") String acceptLanguage) {
         
         Long userId = Long.parseLong(userIdHeader);
-        log.debug("Getting crops by typeId: {} for userId: {}", cropTypeId, userId);
+        String language = extractLanguage(acceptLanguage);
+        log.debug("Getting crops by typeId: {} for userId: {} with language: {}", cropTypeId, userId, language);
         
-        List<CropResponse> crops = cropService.getCropsByType(userId, cropTypeId);
+        List<CropResponse> crops = cropService.getCropsByType(userId, cropTypeId, language);
         
         return ResponseEntity.ok(new ApiResponse<>(
                 "Crops retrieved successfully",
                 crops));
+    }
+
+    /**
+     * Extract language code from Accept-Language header.
+     * Supports formats like "hi", "hi-IN", "en-US", etc.
+     * Returns "en", "hi", or "mr" (defaults to "en").
+     */
+    private String extractLanguage(String acceptLanguage) {
+        if (acceptLanguage == null || acceptLanguage.trim().isEmpty()) {
+            return "en";
+        }
+        
+        String lang = acceptLanguage.trim().toLowerCase();
+        
+        // Handle formats like "hi", "hi-IN", "hi,en;q=0.9"
+        if (lang.startsWith("hi")) {
+            return "hi";
+        } else if (lang.startsWith("mr")) {
+            return "mr";
+        } else {
+            return "en"; // Default to English
+        }
     }
 }
 

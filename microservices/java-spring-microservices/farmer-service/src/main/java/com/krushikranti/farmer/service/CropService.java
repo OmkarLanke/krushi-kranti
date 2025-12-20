@@ -38,12 +38,23 @@ public class CropService {
      */
     @Transactional(readOnly = true)
     public List<CropResponse> getCropsByFarmId(Long userId, Long farmId) {
+        return getCropsByFarmId(userId, farmId, "en");
+    }
+
+    /**
+     * Get all crops for a specific farm with language support.
+     */
+    @Transactional(readOnly = true)
+    public List<CropResponse> getCropsByFarmId(Long userId, Long farmId, String language) {
         Farm farm = getFarmByUserIdAndFarmId(userId, farmId);
         List<Crop> crops = cropRepository.findByFarmIdAndIsActiveTrue(farm.getId());
         
-        log.debug("Found {} active crops for farmId: {}", crops.size(), farmId);
+        // Normalize language code
+        final String finalLanguage = normalizeLanguage(language);
+        
+        log.debug("Found {} active crops for farmId: {} with language: {}", crops.size(), farmId, finalLanguage);
         return crops.stream()
-                .map(this::mapToResponse)
+                .map(crop -> mapToResponse(crop, finalLanguage))
                 .collect(Collectors.toList());
     }
 
@@ -52,14 +63,25 @@ public class CropService {
      */
     @Transactional(readOnly = true)
     public List<CropResponse> getAllCropsByUserId(Long userId) {
+        return getAllCropsByUserId(userId, "en");
+    }
+
+    /**
+     * Get all crops for a farmer (across all farms) with language support.
+     */
+    @Transactional(readOnly = true)
+    public List<CropResponse> getAllCropsByUserId(Long userId, String language) {
         // Verify farmer exists
         getFarmerByUserId(userId);
         
+        // Normalize language code
+        final String finalLanguage = normalizeLanguage(language);
+        
         List<Crop> crops = cropRepository.findByFarmerUserIdWithDetails(userId);
-        log.debug("Found {} active crops for userId: {}", crops.size(), userId);
+        log.debug("Found {} active crops for userId: {} with language: {}", crops.size(), userId, finalLanguage);
         
         return crops.stream()
-                .map(this::mapToResponse)
+                .map(crop -> mapToResponse(crop, finalLanguage))
                 .collect(Collectors.toList());
     }
 
@@ -68,8 +90,16 @@ public class CropService {
      */
     @Transactional(readOnly = true)
     public CropResponse getCropById(Long userId, Long cropId) {
+        return getCropById(userId, cropId, "en");
+    }
+
+    /**
+     * Get a specific crop by ID with language support.
+     */
+    @Transactional(readOnly = true)
+    public CropResponse getCropById(Long userId, Long cropId, String language) {
         Crop crop = getCropByUserIdAndCropId(userId, cropId);
-        return mapToResponse(crop);
+        return mapToResponse(crop, normalizeLanguage(language));
     }
 
     /**
@@ -106,7 +136,7 @@ public class CropService {
         Crop savedCrop = cropRepository.save(crop);
         log.info("Created crop {} on farmId: {} for userId: {}", cropName.getDisplayName(), farm.getId(), userId);
         
-        return mapToResponse(savedCrop);
+        return mapToResponse(savedCrop, "en");
     }
 
     /**
@@ -148,7 +178,7 @@ public class CropService {
         Crop updatedCrop = cropRepository.save(crop);
         log.info("Updated crop {} for userId: {}", cropId, userId);
         
-        return mapToResponse(updatedCrop);
+        return mapToResponse(updatedCrop, "en");
     }
 
     /**
@@ -177,11 +207,22 @@ public class CropService {
      */
     @Transactional(readOnly = true)
     public List<CropResponse> getCropsByType(Long userId, Long cropTypeId) {
+        return getCropsByType(userId, cropTypeId, "en");
+    }
+
+    /**
+     * Get crops by crop type for a farmer with language support.
+     */
+    @Transactional(readOnly = true)
+    public List<CropResponse> getCropsByType(Long userId, Long cropTypeId, String language) {
         getFarmerByUserId(userId);
+        
+        // Normalize language code
+        final String finalLanguage = normalizeLanguage(language);
         
         List<Crop> crops = cropRepository.findByFarmerUserIdAndCropTypeId(userId, cropTypeId);
         return crops.stream()
-                .map(this::mapToResponse)
+                .map(crop -> mapToResponse(crop, finalLanguage))
                 .collect(Collectors.toList());
     }
 
@@ -227,8 +268,18 @@ public class CropService {
     }
 
     private CropResponse mapToResponse(Crop crop) {
+        return mapToResponse(crop, "en");
+    }
+
+    private CropResponse mapToResponse(Crop crop, String language) {
         CropName cropName = crop.getCropName();
         Farm farm = crop.getFarm();
+        
+        // Determine display name based on language
+        String cropDisplayNameToUse = cropName.getDisplayName(); // Default to English
+        if (("hi".equals(language) || "mr".equals(language)) && cropName.getLocalName() != null && !cropName.getLocalName().trim().isEmpty()) {
+            cropDisplayNameToUse = cropName.getLocalName();
+        }
         
         return CropResponse.builder()
                 .id(crop.getId())
@@ -239,7 +290,7 @@ public class CropService {
                 .cropTypeDisplayName(cropName.getCropType().getDisplayName())
                 .cropNameId(cropName.getId())
                 .cropName(cropName.getName())
-                .cropDisplayName(cropName.getDisplayName())
+                .cropDisplayName(cropDisplayNameToUse) // Use translated name
                 .cropLocalName(cropName.getLocalName())
                 .areaAcres(crop.getAreaAcres())
                 .sowingDate(crop.getSowingDate())
@@ -249,6 +300,20 @@ public class CropService {
                 .createdAt(crop.getCreatedAt())
                 .updatedAt(crop.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Normalize language code to "en", "hi", or "mr".
+     */
+    private String normalizeLanguage(String language) {
+        if (language == null || language.trim().isEmpty()) {
+            return "en";
+        }
+        String lang = language.toLowerCase().trim();
+        if (lang.equals("hi") || lang.equals("mr")) {
+            return lang;
+        }
+        return "en"; // Default to English
     }
 }
 

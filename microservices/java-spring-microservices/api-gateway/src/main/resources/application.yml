@@ -53,6 +53,7 @@ gateway:
     advisory-service: http://127.0.0.1:4011
     support-service: http://127.0.0.1:4012
     subscription-service: http://127.0.0.1:4013
+    kyc-service: http://127.0.0.1:4014
 
 management:
   endpoints:

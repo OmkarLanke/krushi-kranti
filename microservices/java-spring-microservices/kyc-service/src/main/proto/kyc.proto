@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package com.krushikranti.kyc;
+
+option java_multiple_files = true;
+option java_package = "com.krushikranti.kyc.grpc";
+option java_outer_classname = "KycProto";
+
+// KYC Service for inter-service communication
+service KycService {
+  // Check if user's KYC is complete
+  rpc CheckKyc (CheckKycRequest) returns (CheckKycResponse);
+  
+  // Get detailed KYC status
+  rpc GetKycStatus (GetKycStatusRequest) returns (KycStatusResponse);
+}
+
+message CheckKycRequest {
+  string user_id = 1;
+}
+
+message CheckKycResponse {
+  bool is_complete = 1;
+  bool aadhaar_verified = 2;
+  bool pan_verified = 3;
+  bool bank_verified = 4;
+  string kyc_status = 5;  // PENDING, PARTIAL, VERIFIED, REJECTED
+}
+
+message GetKycStatusRequest {
+  string user_id = 1;
+}
+
+message KycStatusResponse {
+  string user_id = 1;
+  string kyc_status = 2;
+  
+  // Aadhaar details
+  bool aadhaar_verified = 3;
+  string aadhaar_name = 4;
+  string aadhaar_number_masked = 5;
+  
+  // PAN details
+  bool pan_verified = 6;
+  string pan_name = 7;
+  string pan_number_masked = 8;
+  
+  // Bank details
+  bool bank_verified = 9;
+  string bank_account_holder_name = 10;
+  string bank_account_masked = 11;
+  string bank_ifsc = 12;
+  string bank_name = 13;
+}
+

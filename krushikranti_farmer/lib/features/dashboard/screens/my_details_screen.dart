@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/http_service.dart';
 
@@ -85,8 +86,8 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
     }
   }
 
-  String _formatDate(String? dateStr) {
-    if (dateStr == null || dateStr.isEmpty) return "Not provided";
+  String _formatDate(String? dateStr, AppLocalizations l10n) {
+    if (dateStr == null || dateStr.isEmpty) return l10n.notProvided;
     try {
       // Handle YYYY-MM-DD format from backend
       final parts = dateStr.split("-");
@@ -99,13 +100,24 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
     }
   }
 
-  String _formatGender(String? gender) {
-    if (gender == null || gender.isEmpty) return "Not provided";
-    return gender.toUpperCase();
+  String _formatGender(String? gender, AppLocalizations l10n) {
+    if (gender == null || gender.isEmpty) return l10n.notProvided;
+    switch (gender.toUpperCase()) {
+      case 'MALE':
+        return l10n.male;
+      case 'FEMALE':
+        return l10n.female;
+      case 'OTHER':
+        return l10n.other;
+      default:
+        return gender.toUpperCase();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -116,7 +128,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "My Details",
+          l10n.myDetails,
           style: GoogleFonts.poppins(
             color: Colors.black,
             fontSize: 20,
@@ -161,7 +173,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Profile Incomplete",
+                                  l10n.profileIncomplete,
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -170,7 +182,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "Please complete your profile details.",
+                                  l10n.completeProfileDetails,
                                   style: GoogleFonts.poppins(
                                     fontSize: 13,
                                     color: Colors.grey.shade700,
@@ -197,7 +209,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                               ),
                             ),
                             child: Text(
-                              "Complete Profile",
+                              l10n.completeProfile,
                               style: GoogleFonts.poppins(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -210,41 +222,41 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                   ],
 
                   // Personal Details Section
-                  _buildSectionTitle("Personal Details"),
+                  _buildSectionTitle(l10n.personalDetails),
                   const SizedBox(height: 16),
-                  _buildDetailField("First Name", _profileData['firstName'] ?? "Not provided"),
+                  _buildDetailField(l10n.firstName, _profileData['firstName'] ?? l10n.notProvided),
                   const SizedBox(height: 16),
-                  _buildDetailField("Last Name", _profileData['lastName'] ?? "Not provided"),
+                  _buildDetailField(l10n.lastName, _profileData['lastName'] ?? l10n.notProvided),
                   const SizedBox(height: 16),
-                  _buildDetailField("Date of Birth", _formatDate(_profileData['dateOfBirth']?.toString())),
+                  _buildDetailField(l10n.dob, _formatDate(_profileData['dateOfBirth']?.toString(), l10n)),
                   const SizedBox(height: 16),
-                  _buildDetailField("Gender", _formatGender(_profileData['gender']?.toString())),
+                  _buildDetailField(l10n.gender, _formatGender(_profileData['gender']?.toString(), l10n)),
                   
                   const SizedBox(height: 32),
                   
                   // Contact Details Section
-                  _buildSectionTitle("Contact Details"),
+                  _buildSectionTitle(l10n.contactDetails),
                   const SizedBox(height: 16),
-                  _buildDetailField("Email", _profileData['email'] ?? "Not provided", icon: Icons.email),
+                  _buildDetailField(l10n.email, _profileData['email'] ?? l10n.notProvided, icon: Icons.email),
                   const SizedBox(height: 16),
-                  _buildDetailField("Phone Number", _profileData['phoneNumber'] ?? "Not provided", icon: Icons.phone),
+                  _buildDetailField(l10n.phoneNumber, _profileData['phoneNumber'] ?? l10n.notProvided, icon: Icons.phone),
                   const SizedBox(height: 16),
-                  _buildDetailField("Alternate Phone", _profileData['alternatePhone'] ?? "Not provided", icon: Icons.phone_android),
+                  _buildDetailField(l10n.alternatePhone, _profileData['alternatePhone'] ?? l10n.notProvided, icon: Icons.phone_android),
                   
                   const SizedBox(height: 32),
                   
                   // Address Details Section
-                  _buildSectionTitle("Address Details"),
+                  _buildSectionTitle(l10n.addressDetails),
                   const SizedBox(height: 16),
-                  _buildDetailField("Pincode", _profileData['pincode'] ?? "Not provided", icon: Icons.pin),
+                  _buildDetailField(l10n.pincode, _profileData['pincode'] ?? l10n.notProvided, icon: Icons.pin),
                   const SizedBox(height: 16),
-                  _buildDetailField("Village", _profileData['village'] ?? "Not provided", icon: Icons.location_on),
+                  _buildDetailField(l10n.village, _profileData['village'] ?? l10n.notProvided, icon: Icons.location_on),
                   const SizedBox(height: 16),
-                  _buildDetailField("Taluka", _profileData['taluka'] ?? "Not provided", icon: Icons.location_city),
+                  _buildDetailField(l10n.taluka, _profileData['taluka'] ?? l10n.notProvided, icon: Icons.location_city),
                   const SizedBox(height: 16),
-                  _buildDetailField("District", _profileData['district'] ?? "Not provided", icon: Icons.map),
+                  _buildDetailField(l10n.district, _profileData['district'] ?? l10n.notProvided, icon: Icons.map),
                   const SizedBox(height: 16),
-                  _buildDetailField("State", _profileData['state'] ?? "Not provided", icon: Icons.public),
+                  _buildDetailField(l10n.state, _profileData['state'] ?? l10n.notProvided, icon: Icons.public),
                   
                   const SizedBox(height: 40),
                 ],

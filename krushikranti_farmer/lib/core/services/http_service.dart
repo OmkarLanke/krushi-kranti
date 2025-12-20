@@ -22,20 +22,28 @@ class HttpService {
     }
   } 
 
+  // ✅ Get saved language for Accept-Language header
+  static Future<String> _getLanguageHeader() async {
+    String? savedLang = await StorageService.getLanguage();
+    return savedLang ?? 'en'; // Default to English
+  }
+
   // --- GET REQUEST ---
   static Future<dynamic> get(String endpoint) async {
     final uri = endpoint.startsWith('http')
         ? Uri.parse(endpoint)
         : Uri.parse('$baseUrl/$endpoint');
     
-    // ✅ ACTION: Fetch Token from Storage
-    String? token = await StorageService.getToken(); 
+    // ✅ ACTION: Fetch Token and Language from Storage
+    String? token = await StorageService.getToken();
+    String language = await _getLanguageHeader();
     
     try {
       final response = await http.get(
         uri,
         headers: {
           "Content-Type": "application/json",
+          "Accept-Language": language, // ✅ Send language preference
           // ✅ ACTION: Attach Token if it exists
           if (token != null) "Authorization": "Bearer $token",
         },
@@ -52,8 +60,9 @@ class HttpService {
         ? Uri.parse(endpoint)
         : Uri.parse('$baseUrl/$endpoint');
     
-    // ✅ ACTION: Fetch Token from Storage
+    // ✅ ACTION: Fetch Token and Language from Storage
     String? token = await StorageService.getToken();
+    String language = await _getLanguageHeader();
 
     try {
       final response = await http.post(
@@ -61,6 +70,7 @@ class HttpService {
         body: jsonEncode(data),
         headers: {
           "Content-Type": "application/json",
+          "Accept-Language": language, // ✅ Send language preference
           // ✅ ACTION: Attach Token if it exists
           if (token != null) "Authorization": "Bearer $token",
         },
@@ -77,8 +87,9 @@ class HttpService {
         ? Uri.parse(endpoint)
         : Uri.parse('$baseUrl/$endpoint');
     
-    // ✅ ACTION: Fetch Token from Storage
+    // ✅ ACTION: Fetch Token and Language from Storage
     String? token = await StorageService.getToken();
+    String language = await _getLanguageHeader();
 
     try {
       final response = await http.put(
@@ -86,6 +97,7 @@ class HttpService {
         body: jsonEncode(data),
         headers: {
           "Content-Type": "application/json",
+          "Accept-Language": language, // ✅ Send language preference
           // ✅ ACTION: Attach Token if it exists
           if (token != null) "Authorization": "Bearer $token",
         },

@@ -70,13 +70,18 @@ class _AddCropScreenState extends State<AddCropScreen> {
           if (farms.isNotEmpty) {
             selectedFarmId = farms[0]['id'] as int;
           } else {
-            // Show error if no farms
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("No farms found. Please add a farm first."),
-                backgroundColor: Colors.red,
-              ),
-            );
+            // Show error if no farms - use delayed localization
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                final l10n = AppLocalizations.of(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n?.noFarmsFound ?? "No farms found. Please add a farm first."),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            });
           }
           
           _isLoading = false;
@@ -96,19 +101,20 @@ class _AddCropScreenState extends State<AddCropScreen> {
           displayMsg = "Please complete your profile first before adding crops.";
           
           // Show dialog with option to go to profile
+          final l10n = AppLocalizations.of(context)!;
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text("Profile Required"),
-              content: const Text("Please complete your profile first before adding crops."),
+            builder: (dialogContext) => AlertDialog(
+              title: Text(l10n.profileRequired),
+              content: Text(l10n.completeProfileFirst),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(l10n.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(dialogContext); // Close dialog
                     Navigator.pop(context); // Close add crop screen
                     Navigator.pushNamed(context, AppRoutes.onboardingPersonal);
                   },
@@ -116,7 +122,7 @@ class _AddCropScreenState extends State<AddCropScreen> {
                     backgroundColor: AppColors.brandGreen,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text("Complete Profile"),
+                  child: Text(l10n.completeProfile),
                 ),
               ],
             ),
@@ -186,10 +192,10 @@ class _AddCropScreenState extends State<AddCropScreen> {
           children: [
                   // Farm Selection (if multiple farms)
                   if (farms.length > 1) ...[
-                    Text("Select Farm", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(l10n.selectFarm, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<int>(
-                      decoration: _inputDecoration("Farm"),
+                      decoration: _inputDecoration(l10n.farmLabel),
                       value: selectedFarmId,
                       items: farms.map((farm) => DropdownMenuItem(
                         value: farm['id'] as int,
@@ -269,14 +275,14 @@ class _AddCropScreenState extends State<AddCropScreen> {
             const SizedBox(height: 20),
 
             // 4. SOWING DATE
-            Text("Sowing Date", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(l10n.sowingDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
             GestureDetector(
-              onTap: () => _selectDate(context, sowingDateController, "Sowing Date"),
+              onTap: () => _selectDate(context, sowingDateController, l10n.sowingDate),
               child: AbsorbPointer(
                 child: TextFormField(
                   controller: sowingDateController,
-                  decoration: _inputDecoration("Select sowing date").copyWith(
+                  decoration: _inputDecoration(l10n.selectSowingDate).copyWith(
                     suffixIcon: const Icon(Icons.calendar_today, color: AppColors.brandGreen),
                   ),
                 ),
@@ -285,14 +291,14 @@ class _AddCropScreenState extends State<AddCropScreen> {
             const SizedBox(height: 20),
 
             // 5. EXPECTED HARVESTING DATE
-            Text("Expected Harvesting Date", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(l10n.harvestingDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
             GestureDetector(
-              onTap: () => _selectDate(context, harvestingDateController, "Expected Harvesting Date"),
+              onTap: () => _selectDate(context, harvestingDateController, l10n.harvestingDate),
               child: AbsorbPointer(
                 child: TextFormField(
                   controller: harvestingDateController,
-                  decoration: _inputDecoration("Select expected harvesting date").copyWith(
+                  decoration: _inputDecoration(l10n.selectHarvestingDate).copyWith(
                     suffixIcon: const Icon(Icons.calendar_today, color: AppColors.brandGreen),
                   ),
                 ),
@@ -301,15 +307,15 @@ class _AddCropScreenState extends State<AddCropScreen> {
             const SizedBox(height: 20),
 
             // 6. CROP STATUS
-            Text("Crop Status", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(l10n.cropStatus, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              decoration: _inputDecoration("Select crop status"),
+              decoration: _inputDecoration(l10n.selectCropStatus),
               value: selectedCropStatus,
               items: cropStatuses.map((status) {
                 return DropdownMenuItem(
                   value: status,
-                  child: Text(status.replaceAll('_', ' ')),
+                  child: Text(_getLocalizedStatus(status, l10n)),
                 );
               }).toList(),
               onChanged: (val) {
@@ -396,11 +402,29 @@ class _AddCropScreenState extends State<AddCropScreen> {
     );
   }
 
+  // Helper to get localized crop status
+  String _getLocalizedStatus(String status, AppLocalizations l10n) {
+    switch (status.toUpperCase()) {
+      case 'PLANNED':
+        return l10n.statusPlanned;
+      case 'SOWN':
+        return l10n.statusSown;
+      case 'GROWING':
+        return l10n.statusGrowing;
+      case 'HARVESTED':
+        return l10n.statusHarvested;
+      case 'FAILED':
+        return l10n.statusFailed;
+      default:
+        return status.replaceAll('_', ' ');
+    }
+  }
+
   Future<void> _saveCrop(AppLocalizations l10n) async {
     if (selectedFarmId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select a farm"),
+        SnackBar(
+          content: Text(l10n.pleaseSelectFarm),
           backgroundColor: Colors.red,
         ),
       );
@@ -420,8 +444,8 @@ class _AddCropScreenState extends State<AddCropScreen> {
     final acres = double.tryParse(acresController.text);
     if (acres == null || acres <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter a valid area in acres"),
+        SnackBar(
+          content: Text(l10n.validAcres),
           backgroundColor: Colors.red,
         ),
       );

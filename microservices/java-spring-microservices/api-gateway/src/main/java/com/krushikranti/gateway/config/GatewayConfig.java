@@ -26,6 +26,7 @@ public class GatewayConfig {
         log.info("  Auth Service: {}", serviceUrls.getAuthService());
         log.info("  Farmer Service: {}", serviceUrls.getFarmerService());
         log.info("  Subscription Service: {}", serviceUrls.getSubscriptionService());
+        log.info("  KYC Service: {}", serviceUrls.getKycService());
     }
 
     @Bean
@@ -100,6 +101,11 @@ public class GatewayConfig {
                 .route("subscription-service", r -> r
                         .path("/subscription/**")
                         .uri(serviceUrls.getSubscriptionService()))
+                
+                // KYC Service Routes
+                .route("kyc-service", r -> r
+                        .path("/kyc/**")
+                        .uri(serviceUrls.getKycService()))
                 
                 .build();
     }

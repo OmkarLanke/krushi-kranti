@@ -64,18 +64,43 @@ public class FarmerController {
     /**
      * Lookup address details by pincode.
      * Returns district, taluka, state, and list of villages.
+     * Supports language translation via Accept-Language header (en, hi, mr).
      */
     @GetMapping("/profile/address/lookup")
     public ResponseEntity<ApiResponse<AddressLookupResponse>> lookupAddress(
-            @RequestParam("pincode") String pincode) {
+            @RequestParam("pincode") String pincode,
+            @RequestHeader(value = "Accept-Language", required = false, defaultValue = "en") String acceptLanguage) {
         
-        log.debug("Looking up address for pincode: {}", pincode);
+        String language = extractLanguage(acceptLanguage);
+        log.debug("Looking up address for pincode: {} with language: {}", pincode, language);
         
-        AddressLookupResponse response = pincodeService.getAddressByPincode(pincode);
+        AddressLookupResponse response = pincodeService.getAddressByPincode(pincode, language);
         
         return ResponseEntity.ok(new ApiResponse<>(
                 "Address lookup successful",
                 response));
+    }
+
+    /**
+     * Extract language code from Accept-Language header.
+     * Supports formats like "hi", "hi-IN", "en-US", etc.
+     * Returns "en", "hi", or "mr" (defaults to "en").
+     */
+    private String extractLanguage(String acceptLanguage) {
+        if (acceptLanguage == null || acceptLanguage.trim().isEmpty()) {
+            return "en";
+        }
+        
+        String lang = acceptLanguage.trim().toLowerCase();
+        
+        // Handle formats like "hi", "hi-IN", "hi,en;q=0.9"
+        if (lang.startsWith("hi")) {
+            return "hi";
+        } else if (lang.startsWith("mr")) {
+            return "mr";
+        } else {
+            return "en"; // Default to English
+        }
     }
 
     /**

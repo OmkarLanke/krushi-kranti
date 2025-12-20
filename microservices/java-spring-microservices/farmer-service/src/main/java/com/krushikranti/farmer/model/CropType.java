@@ -33,6 +33,12 @@ public class CropType {
     @Column(name = "display_name", nullable = false, length = 100)
     private String displayName;
 
+    @Column(name = "display_name_hi", length = 100)
+    private String displayNameHi;
+
+    @Column(name = "display_name_mr", length = 100)
+    private String displayNameMr;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 

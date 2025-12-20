@@ -48,6 +48,7 @@
         <module>auth-service</module>
         <module>farmer-service</module>
         <module>subscription-service</module>
+        <module>kyc-service</module>
     </modules>
 
     <dependencyManagement>
