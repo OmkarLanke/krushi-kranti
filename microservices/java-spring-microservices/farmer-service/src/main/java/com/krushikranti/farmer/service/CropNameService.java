@@ -31,6 +31,18 @@ public class CropNameService {
      */
     @Transactional(readOnly = true)
     public List<CropNameResponse> getActiveCropNamesByTypeId(Long cropTypeId) {
+        return getActiveCropNamesByTypeId(cropTypeId, "en");
+    }
+
+    /**
+     * Get active crop names by crop type ID with language support (for farmer app dropdown).
+     * 
+     * @param cropTypeId The crop type ID
+     * @param language Language code: "en", "hi", or "mr" (defaults to "en" if invalid)
+     * @return List of crop names in the requested language
+     */
+    @Transactional(readOnly = true)
+    public List<CropNameResponse> getActiveCropNamesByTypeId(Long cropTypeId, String language) {
         // Validate crop type exists and is active
         CropType cropType = cropTypeRepository.findById(cropTypeId)
                 .orElseThrow(() -> new IllegalArgumentException("Crop type not found with ID: " + cropTypeId));
@@ -39,9 +51,19 @@ public class CropNameService {
             throw new IllegalArgumentException("Crop type is not active");
         }
 
+        // Normalize language code
+        String normalizedLanguage = "en"; // Default
+        if (language != null && !language.trim().isEmpty()) {
+            String lang = language.toLowerCase().trim();
+            if (lang.equals("hi") || lang.equals("mr")) {
+                normalizedLanguage = lang;
+            }
+        }
+
+        final String finalLanguage = normalizedLanguage;
         List<CropName> cropNames = cropNameRepository.findByCropTypeIdAndIsActiveTrueOrderByDisplayOrderAsc(cropTypeId);
         return cropNames.stream()
-                .map(this::mapToResponse)
+                .map(cropName -> mapToResponse(cropName, finalLanguage))
                 .collect(Collectors.toList());
     }
 
@@ -82,9 +104,31 @@ public class CropNameService {
      */
     @Transactional(readOnly = true)
     public List<CropNameResponse> searchCropNames(String searchTerm) {
+        return searchCropNames(searchTerm, "en");
+    }
+
+    /**
+     * Search crop names by term with language support.
+     * 
+     * @param searchTerm The search term
+     * @param language Language code: "en", "hi", or "mr" (defaults to "en" if invalid)
+     * @return List of matching crop names in the requested language
+     */
+    @Transactional(readOnly = true)
+    public List<CropNameResponse> searchCropNames(String searchTerm, String language) {
+        // Normalize language code
+        String normalizedLanguage = "en"; // Default
+        if (language != null && !language.trim().isEmpty()) {
+            String lang = language.toLowerCase().trim();
+            if (lang.equals("hi") || lang.equals("mr")) {
+                normalizedLanguage = lang;
+            }
+        }
+
+        final String finalLanguage = normalizedLanguage;
         List<CropName> cropNames = cropNameRepository.searchByNameContaining(searchTerm);
         return cropNames.stream()
-                .map(this::mapToResponse)
+                .map(cropName -> mapToResponse(cropName, finalLanguage))
                 .collect(Collectors.toList());
     }
 
@@ -185,13 +229,23 @@ public class CropNameService {
     }
 
     private CropNameResponse mapToResponse(CropName cropName) {
+        return mapToResponse(cropName, "en");
+    }
+
+    private CropNameResponse mapToResponse(CropName cropName, String language) {
+        // Determine display name based on language
+        String displayNameToUse = cropName.getDisplayName(); // Default to English
+        if (("hi".equals(language) || "mr".equals(language)) && cropName.getLocalName() != null && !cropName.getLocalName().trim().isEmpty()) {
+            displayNameToUse = cropName.getLocalName();
+        }
+
         return CropNameResponse.builder()
                 .id(cropName.getId())
                 .cropTypeId(cropName.getCropType().getId())
                 .cropTypeName(cropName.getCropType().getTypeName())
                 .cropTypeDisplayName(cropName.getCropType().getDisplayName())
                 .name(cropName.getName())
-                .displayName(cropName.getDisplayName())
+                .displayName(displayNameToUse) // Use translated name
                 .localName(cropName.getLocalName())
                 .description(cropName.getDescription())
                 .iconUrl(cropName.getIconUrl())

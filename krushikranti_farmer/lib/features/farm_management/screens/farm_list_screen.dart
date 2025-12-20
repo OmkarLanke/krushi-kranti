@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/http_service.dart';
@@ -51,8 +52,65 @@ class _FarmListScreenState extends State<FarmListScreen> {
     }
   }
 
+  String _getLocalizedFarmType(String type, AppLocalizations l10n) {
+    switch (type) {
+      case 'ORGANIC': return l10n.farmTypeOrganic;
+      case 'CONVENTIONAL': return l10n.farmTypeConventional;
+      case 'MIXED': return l10n.farmTypeMixed;
+      case 'VERMI_COMPOST': return l10n.farmTypeVermiCompost;
+      default: return type.replaceAll('_', ' ');
+    }
+  }
+
+  String _getLocalizedSoilType(String type, AppLocalizations l10n) {
+    switch (type) {
+      case 'BLACK': return l10n.soilBlack;
+      case 'RED': return l10n.soilRed;
+      case 'SANDY': return l10n.soilSandy;
+      case 'LOAMY': return l10n.soilLoamy;
+      case 'CLAY': return l10n.soilClay;
+      case 'MIXED': return l10n.soilMixed;
+      default: return type.replaceAll('_', ' ');
+    }
+  }
+
+  String _getLocalizedIrrigationType(String type, AppLocalizations l10n) {
+    switch (type) {
+      case 'DRIP': return l10n.irrigDrip;
+      case 'SPRINKLER': return l10n.irrigSprinkler;
+      case 'RAINFED': return l10n.irrigRainfed;
+      case 'CANAL': return l10n.irrigCanal;
+      case 'BORE_WELL': return l10n.irrigBoreWell;
+      case 'OPEN_WELL': return l10n.irrigOpenWell;
+      case 'MIXED': return l10n.irrigMixed;
+      default: return type.replaceAll('_', ' ');
+    }
+  }
+
+  String _getLocalizedOwnership(String type, AppLocalizations l10n) {
+    switch (type) {
+      case 'OWNED': return l10n.ownershipOwned;
+      case 'LEASED': return l10n.ownershipLeased;
+      case 'SHARED': return l10n.ownershipShared;
+      case 'GOVERNMENT_ALLOTTED': return l10n.ownershipGovtAllotted;
+      default: return type.replaceAll('_', ' ');
+    }
+  }
+
+  String _getLocalizedEncumbrance(String status, AppLocalizations l10n) {
+    switch (status) {
+      case 'NOT_VERIFIED': return l10n.encumNotVerified;
+      case 'FREE': return l10n.encumFree;
+      case 'ENCUMBERED': return l10n.encumEncumbered;
+      case 'PARTIALLY_ENCUMBERED': return l10n.encumPartially;
+      default: return status.replaceAll('_', ' ');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -63,7 +121,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Farm Details",
+          l10n.farmDetails,
           style: GoogleFonts.poppins(
             color: Colors.black,
             fontSize: 20,
@@ -86,7 +144,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? _buildErrorOrProfileRequired()
+              ? _buildErrorOrProfileRequired(l10n)
               : _farms.isEmpty
                   ? Center(
                       child: Padding(
@@ -97,7 +155,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
                             Icon(Icons.agriculture_outlined, size: 64, color: Colors.grey.shade400),
                             const SizedBox(height: 16),
                             Text(
-                              "No farms added yet",
+                              l10n.noFarmsAdded,
                               style: GoogleFonts.poppins(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
@@ -106,7 +164,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              "Add your first farm to get started",
+                              l10n.addYourFirstFarm,
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 color: Colors.grey.shade500,
@@ -124,7 +182,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
                                 backgroundColor: AppColors.brandGreen,
                                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                               ),
-                              child: const Text("Add Farm", style: TextStyle(color: Colors.white)),
+                              child: Text(l10n.addFarm, style: const TextStyle(color: Colors.white)),
                             ),
                           ],
                         ),
@@ -137,14 +195,14 @@ class _FarmListScreenState extends State<FarmListScreen> {
                         itemCount: _farms.length,
                         itemBuilder: (context, index) {
                           final farm = _farms[index];
-                          return _buildFarmCard(farm);
+                          return _buildFarmCard(farm, l10n);
                         },
                       ),
                     ),
     );
   }
 
-  Widget _buildFarmCard(Farm farm) {
+  Widget _buildFarmCard(Farm farm, AppLocalizations l10n) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -180,7 +238,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
                         Icon(Icons.verified, size: 14, color: AppColors.brandGreen),
                         const SizedBox(width: 4),
                         Text(
-                          "Verified",
+                          l10n.verified,
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: AppColors.brandGreen,
@@ -205,7 +263,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Main",
+                    l10n.main,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -215,14 +273,14 @@ class _FarmListScreenState extends State<FarmListScreen> {
                   const SizedBox(height: 12),
                   _buildInfoRow(Icons.location_on, "${farm.village}${farm.district != null ? ', ${farm.district}' : ''}", Colors.grey.shade700),
                   const SizedBox(height: 8),
-                  _buildInfoRow(Icons.square_foot, "${farm.totalAreaAcres} acres", Colors.grey.shade700),
+                  _buildInfoRow(Icons.square_foot, "${farm.totalAreaAcres} ${l10n.acres}", Colors.grey.shade700),
                   if (farm.farmType != null) ...[
                     const SizedBox(height: 8),
-                    _buildInfoRow(Icons.eco, farm.farmType!.replaceAll('_', ' '), Colors.grey.shade700),
+                    _buildInfoRow(Icons.eco, _getLocalizedFarmType(farm.farmType!, l10n), Colors.grey.shade700),
                   ],
                   if (farm.landOwnership.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    _buildInfoRow(Icons.home, "Ownership: ${farm.landOwnership.replaceAll('_', ' ')}", Colors.grey.shade700),
+                    _buildInfoRow(Icons.home, "${l10n.ownership}: ${_getLocalizedOwnership(farm.landOwnership, l10n)}", Colors.grey.shade700),
                   ],
                 ],
               ),
@@ -232,7 +290,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
             if (farm.soilType != null || farm.irrigationType != null || farm.pincode.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text(
-                "Land Details",
+                l10n.landDetailsSection,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -241,22 +299,22 @@ class _FarmListScreenState extends State<FarmListScreen> {
               ),
               const SizedBox(height: 8),
               if (farm.pincode.isNotEmpty)
-                _buildInfoRow(Icons.pin, "Pincode: ${farm.pincode}", Colors.grey.shade600),
+                _buildInfoRow(Icons.pin, "${l10n.pincode}: ${farm.pincode}", Colors.grey.shade600),
               if (farm.taluka != null && farm.taluka!.isNotEmpty) ...[
                 const SizedBox(height: 6),
-                _buildInfoRow(Icons.location_city, "Taluka: ${farm.taluka}", Colors.grey.shade600),
+                _buildInfoRow(Icons.location_city, "${l10n.taluka}: ${farm.taluka}", Colors.grey.shade600),
               ],
               if (farm.state != null && farm.state!.isNotEmpty) ...[
                 const SizedBox(height: 6),
-                _buildInfoRow(Icons.public, "State: ${farm.state}", Colors.grey.shade600),
+                _buildInfoRow(Icons.public, "${l10n.state}: ${farm.state}", Colors.grey.shade600),
               ],
               if (farm.soilType != null) ...[
                 const SizedBox(height: 6),
-                _buildInfoRow(Icons.terrain, "Soil Type: ${farm.soilType!.replaceAll('_', ' ')}", Colors.grey.shade600),
+                _buildInfoRow(Icons.terrain, "${l10n.soilType}: ${_getLocalizedSoilType(farm.soilType!, l10n)}", Colors.grey.shade600),
               ],
               if (farm.irrigationType != null) ...[
                 const SizedBox(height: 6),
-                _buildInfoRow(Icons.water_drop, "Irrigation: ${farm.irrigationType!.replaceAll('_', ' ')}", Colors.grey.shade600),
+                _buildInfoRow(Icons.water_drop, "${l10n.irrigationType}: ${_getLocalizedIrrigationType(farm.irrigationType!, l10n)}", Colors.grey.shade600),
               ],
             ],
             
@@ -268,7 +326,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
                 farm.encumbranceStatus != null) ...[
               const SizedBox(height: 16),
               Text(
-                "Collateral Information",
+                l10n.collateralSection,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -277,27 +335,27 @@ class _FarmListScreenState extends State<FarmListScreen> {
               ),
               const SizedBox(height: 8),
               if (farm.surveyNumber != null && farm.surveyNumber!.isNotEmpty) ...[
-                _buildInfoRow(Icons.description, "Survey No: ${farm.surveyNumber}", Colors.grey.shade600),
+                _buildInfoRow(Icons.description, "${l10n.surveyNo}: ${farm.surveyNumber}", Colors.grey.shade600),
                 const SizedBox(height: 6),
               ],
               if (farm.landRegistrationNumber != null && farm.landRegistrationNumber!.isNotEmpty) ...[
-                _buildInfoRow(Icons.assignment, "Land Reg No: ${farm.landRegistrationNumber}", Colors.grey.shade600),
+                _buildInfoRow(Icons.assignment, "${l10n.landRegNo}: ${farm.landRegistrationNumber}", Colors.grey.shade600),
                 const SizedBox(height: 6),
               ],
               if (farm.pattaNumber != null && farm.pattaNumber!.isNotEmpty) ...[
-                _buildInfoRow(Icons.receipt, "Patta No: ${farm.pattaNumber}", Colors.grey.shade600),
+                _buildInfoRow(Icons.receipt, "${l10n.pattaNo}: ${farm.pattaNumber}", Colors.grey.shade600),
                 const SizedBox(height: 6),
               ],
               if (farm.estimatedLandValue != null) ...[
-                _buildInfoRow(Icons.currency_rupee, "Estimated Value: ₹${farm.estimatedLandValue!.toStringAsFixed(2)}", Colors.grey.shade600),
+                _buildInfoRow(Icons.currency_rupee, "${l10n.estimatedValue}: ₹${farm.estimatedLandValue!.toStringAsFixed(2)}", Colors.grey.shade600),
                 const SizedBox(height: 6),
               ],
               if (farm.encumbranceStatus != null) ...[
-                _buildInfoRow(Icons.info_outline, "Encumbrance: ${farm.encumbranceStatus!.replaceAll('_', ' ')}", Colors.grey.shade600),
+                _buildInfoRow(Icons.info_outline, "${l10n.encumbrance}: ${_getLocalizedEncumbrance(farm.encumbranceStatus!, l10n)}", Colors.grey.shade600),
               ],
               if (farm.encumbranceRemarks != null && farm.encumbranceRemarks!.isNotEmpty) ...[
                 const SizedBox(height: 6),
-                _buildInfoRow(Icons.note, "Remarks: ${farm.encumbranceRemarks}", Colors.grey.shade600),
+                _buildInfoRow(Icons.note, "${l10n.remarks}: ${farm.encumbranceRemarks}", Colors.grey.shade600),
               ],
             ],
           ],
@@ -323,14 +381,14 @@ class _FarmListScreenState extends State<FarmListScreen> {
 
   /// Show either generic error UI or a "Profile Required" state when
   /// backend indicates that farmer profile is not yet created.
-  Widget _buildErrorOrProfileRequired() {
+  Widget _buildErrorOrProfileRequired(AppLocalizations l10n) {
     final message = _errorMessage ?? '';
 
     final isProfileMissing = message.contains("Farmer profile not found") ||
         message.toLowerCase().contains("complete your profile");
 
     if (isProfileMissing) {
-      return _buildProfileRequiredState();
+      return _buildProfileRequiredState(l10n);
     }
 
     return Center(
@@ -352,7 +410,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.brandGreen,
               ),
-              child: const Text("Retry", style: TextStyle(color: Colors.white)),
+              child: Text(l10n.retry, style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -361,7 +419,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
   }
 
   /// Same style as Crop Details when My Details are not completed.
-  Widget _buildProfileRequiredState() {
+  Widget _buildProfileRequiredState(AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -382,7 +440,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              "Profile Required",
+              l10n.profileRequired,
               style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -391,7 +449,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              "Please complete your profile first before adding farms.",
+              l10n.completeProfileBeforeFarms,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: Colors.grey,
@@ -412,7 +470,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
                 ),
               ),
               child: Text(
-                "Complete Profile",
+                l10n.completeProfile,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

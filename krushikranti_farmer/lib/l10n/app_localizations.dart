@@ -166,6 +166,12 @@ abstract class AppLocalizations {
   /// **'Crop Detail'**
   String get cropDetail;
 
+  /// No description provided for @cropDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop Details'**
+  String get cropDetails;
+
   /// No description provided for @dailySale.
   ///
   /// In en, this message translates to:
@@ -280,6 +286,18 @@ abstract class AppLocalizations {
   /// **'No crops added yet'**
   String get noCropsAdded;
 
+  /// No description provided for @noCropsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No crops added yet'**
+  String get noCropsYet;
+
+  /// No description provided for @addFirstCrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first crop to get started'**
+  String get addFirstCrop;
+
   /// No description provided for @addCropsSubtitle.
   ///
   /// In en, this message translates to:
@@ -352,6 +370,126 @@ abstract class AppLocalizations {
   /// **'Success! Crop Added.'**
   String get cropAddedSuccess;
 
+  /// No description provided for @sowingDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Sowing Date'**
+  String get sowingDate;
+
+  /// No description provided for @selectSowingDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select sowing date'**
+  String get selectSowingDate;
+
+  /// No description provided for @harvestingDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected Harvesting Date'**
+  String get harvestingDate;
+
+  /// No description provided for @selectHarvestingDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select expected harvesting date'**
+  String get selectHarvestingDate;
+
+  /// No description provided for @cropStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop Status'**
+  String get cropStatus;
+
+  /// No description provided for @selectCropStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Select crop status'**
+  String get selectCropStatus;
+
+  /// No description provided for @selectFarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Farm'**
+  String get selectFarm;
+
+  /// No description provided for @farmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm'**
+  String get farmLabel;
+
+  /// No description provided for @noFarmsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No farms found. Please add a farm first.'**
+  String get noFarmsFound;
+
+  /// No description provided for @pleaseSelectFarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a farm'**
+  String get pleaseSelectFarm;
+
+  /// No description provided for @validAcres.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid area in acres'**
+  String get validAcres;
+
+  /// No description provided for @profileRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Required'**
+  String get profileRequired;
+
+  /// No description provided for @completeProfileFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete your profile first before adding crops.'**
+  String get completeProfileFirst;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @completeProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Profile'**
+  String get completeProfile;
+
+  /// No description provided for @statusPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get statusPlanned;
+
+  /// No description provided for @statusSown.
+  ///
+  /// In en, this message translates to:
+  /// **'Sown'**
+  String get statusSown;
+
+  /// No description provided for @statusGrowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Growing'**
+  String get statusGrowing;
+
+  /// No description provided for @statusHarvested.
+  ///
+  /// In en, this message translates to:
+  /// **'Harvested'**
+  String get statusHarvested;
+
+  /// No description provided for @statusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get statusFailed;
+
   /// No description provided for @catVeg.
   ///
   /// In en, this message translates to:
@@ -369,6 +507,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Grains'**
   String get catGrain;
+
+  /// No description provided for @catGrainsCereals.
+  ///
+  /// In en, this message translates to:
+  /// **'Grains & Cereals'**
+  String get catGrainsCereals;
+
+  /// No description provided for @catPulsesLegumes.
+  ///
+  /// In en, this message translates to:
+  /// **'Pulses & Legumes'**
+  String get catPulsesLegumes;
+
+  /// No description provided for @catSpices.
+  ///
+  /// In en, this message translates to:
+  /// **'Spices'**
+  String get catSpices;
+
+  /// No description provided for @catOilseeds.
+  ///
+  /// In en, this message translates to:
+  /// **'Oilseeds'**
+  String get catOilseeds;
+
+  /// No description provided for @catCashCrops.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash Crops'**
+  String get catCashCrops;
+
+  /// No description provided for @catDairyMilk.
+  ///
+  /// In en, this message translates to:
+  /// **'Dairy & Milk Products'**
+  String get catDairyMilk;
+
+  /// No description provided for @catFlowers.
+  ///
+  /// In en, this message translates to:
+  /// **'Flowers'**
+  String get catFlowers;
+
+  /// No description provided for @catMedicinalHerbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicinal & Herbs'**
+  String get catMedicinalHerbs;
 
   /// No description provided for @cropTomato.
   ///
@@ -573,6 +759,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Registered Mobile'**
   String get phoneLabel;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @phoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get phoneNumber;
+
+  /// No description provided for @alternatePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Alternate Phone'**
+  String get alternatePhone;
+
+  /// No description provided for @notProvided.
+  ///
+  /// In en, this message translates to:
+  /// **'Not provided'**
+  String get notProvided;
+
+  /// No description provided for @addressDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Address Details'**
+  String get addressDetails;
+
+  /// No description provided for @pincode.
+  ///
+  /// In en, this message translates to:
+  /// **'Pincode'**
+  String get pincode;
+
+  /// No description provided for @village.
+  ///
+  /// In en, this message translates to:
+  /// **'Village'**
+  String get village;
+
+  /// No description provided for @taluka.
+  ///
+  /// In en, this message translates to:
+  /// **'Taluka'**
+  String get taluka;
+
+  /// No description provided for @district.
+  ///
+  /// In en, this message translates to:
+  /// **'District'**
+  String get district;
+
+  /// No description provided for @state.
+  ///
+  /// In en, this message translates to:
+  /// **'State'**
+  String get state;
+
+  /// No description provided for @profileIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Incomplete'**
+  String get profileIncomplete;
+
+  /// No description provided for @completeProfileDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete your profile details.'**
+  String get completeProfileDetails;
 
   /// No description provided for @emailLoginLink.
   ///
@@ -921,6 +1179,882 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bank Account'**
   String get bankAccount;
+
+  /// No description provided for @failedToLoadProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load profile'**
+  String get failedToLoadProfile;
+
+  /// No description provided for @failedToLoadData.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load data'**
+  String get failedToLoadData;
+
+  /// No description provided for @failedToLoadCrops.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load crops'**
+  String get failedToLoadCrops;
+
+  /// No description provided for @failedToLoadCropNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load crop names'**
+  String get failedToLoadCropNames;
+
+  /// No description provided for @addFarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Farm'**
+  String get addFarm;
+
+  /// No description provided for @farmName.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm Name'**
+  String get farmName;
+
+  /// No description provided for @enterFarmName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter farm name'**
+  String get enterFarmName;
+
+  /// No description provided for @farmNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm name is required'**
+  String get farmNameRequired;
+
+  /// No description provided for @farmType.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm Type'**
+  String get farmType;
+
+  /// No description provided for @selectFarmType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select farm type'**
+  String get selectFarmType;
+
+  /// No description provided for @totalAreaAcres.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Area (Acres)'**
+  String get totalAreaAcres;
+
+  /// No description provided for @enterAreaAcres.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter area in acres'**
+  String get enterAreaAcres;
+
+  /// No description provided for @areaRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Total area is required'**
+  String get areaRequired;
+
+  /// No description provided for @validArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid area'**
+  String get validArea;
+
+  /// No description provided for @enter6DigitPincode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 6-digit pincode'**
+  String get enter6DigitPincode;
+
+  /// No description provided for @pincodeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pincode is required'**
+  String get pincodeRequired;
+
+  /// No description provided for @pincodeMust6Digits.
+  ///
+  /// In en, this message translates to:
+  /// **'Pincode must be 6 digits'**
+  String get pincodeMust6Digits;
+
+  /// No description provided for @validPincode.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid 6-digit pincode'**
+  String get validPincode;
+
+  /// No description provided for @lookup.
+  ///
+  /// In en, this message translates to:
+  /// **'Lookup'**
+  String get lookup;
+
+  /// No description provided for @selectVillage.
+  ///
+  /// In en, this message translates to:
+  /// **'Select village'**
+  String get selectVillage;
+
+  /// No description provided for @enterPincodeToLoadVillages.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter pincode to load villages'**
+  String get enterPincodeToLoadVillages;
+
+  /// No description provided for @pleaseSelectVillage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a village'**
+  String get pleaseSelectVillage;
+
+  /// No description provided for @soilType.
+  ///
+  /// In en, this message translates to:
+  /// **'Soil Type'**
+  String get soilType;
+
+  /// No description provided for @selectSoilType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select soil type'**
+  String get selectSoilType;
+
+  /// No description provided for @irrigationType.
+  ///
+  /// In en, this message translates to:
+  /// **'Irrigation Type'**
+  String get irrigationType;
+
+  /// No description provided for @selectIrrigationType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select irrigation type'**
+  String get selectIrrigationType;
+
+  /// No description provided for @landOwnership.
+  ///
+  /// In en, this message translates to:
+  /// **'Land Ownership'**
+  String get landOwnership;
+
+  /// No description provided for @selectLandOwnership.
+  ///
+  /// In en, this message translates to:
+  /// **'Select land ownership'**
+  String get selectLandOwnership;
+
+  /// No description provided for @pleaseSelectOwnership.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select land ownership'**
+  String get pleaseSelectOwnership;
+
+  /// No description provided for @collateralInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Collateral Information (Optional)'**
+  String get collateralInfo;
+
+  /// No description provided for @surveyNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Survey Number'**
+  String get surveyNumber;
+
+  /// No description provided for @enterSurveyNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter survey number'**
+  String get enterSurveyNumber;
+
+  /// No description provided for @landRegNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Land Registration Number'**
+  String get landRegNumber;
+
+  /// No description provided for @enterLandRegNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter land registration number'**
+  String get enterLandRegNumber;
+
+  /// No description provided for @pattaNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Patta Number'**
+  String get pattaNumber;
+
+  /// No description provided for @enterPattaNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter patta number'**
+  String get enterPattaNumber;
+
+  /// No description provided for @estimatedLandValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated Land Value (INR)'**
+  String get estimatedLandValue;
+
+  /// No description provided for @enterEstimatedValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter estimated value'**
+  String get enterEstimatedValue;
+
+  /// No description provided for @encumbranceStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Encumbrance Status'**
+  String get encumbranceStatus;
+
+  /// No description provided for @selectEncumbranceStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Select encumbrance status'**
+  String get selectEncumbranceStatus;
+
+  /// No description provided for @encumbranceRemarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Encumbrance Remarks'**
+  String get encumbranceRemarks;
+
+  /// No description provided for @enterRemarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter remarks (if any)'**
+  String get enterRemarks;
+
+  /// No description provided for @saveFarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Farm'**
+  String get saveFarm;
+
+  /// No description provided for @farmAddedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm added successfully'**
+  String get farmAddedSuccess;
+
+  /// No description provided for @noFarmsAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'No farms added yet'**
+  String get noFarmsAdded;
+
+  /// No description provided for @addYourFirstFarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first farm to get started'**
+  String get addYourFirstFarm;
+
+  /// No description provided for @main.
+  ///
+  /// In en, this message translates to:
+  /// **'Main'**
+  String get main;
+
+  /// No description provided for @landDetailsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Land Details'**
+  String get landDetailsSection;
+
+  /// No description provided for @collateralSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Collateral Information'**
+  String get collateralSection;
+
+  /// No description provided for @verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get verified;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @completeProfileBeforeFarms.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete your profile first before adding farms.'**
+  String get completeProfileBeforeFarms;
+
+  /// No description provided for @farmTypeOrganic.
+  ///
+  /// In en, this message translates to:
+  /// **'Organic'**
+  String get farmTypeOrganic;
+
+  /// No description provided for @farmTypeConventional.
+  ///
+  /// In en, this message translates to:
+  /// **'Conventional'**
+  String get farmTypeConventional;
+
+  /// No description provided for @farmTypeMixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed'**
+  String get farmTypeMixed;
+
+  /// No description provided for @farmTypeVermiCompost.
+  ///
+  /// In en, this message translates to:
+  /// **'Vermi Compost'**
+  String get farmTypeVermiCompost;
+
+  /// No description provided for @soilBlack.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get soilBlack;
+
+  /// No description provided for @soilRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get soilRed;
+
+  /// No description provided for @soilSandy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sandy'**
+  String get soilSandy;
+
+  /// No description provided for @soilLoamy.
+  ///
+  /// In en, this message translates to:
+  /// **'Loamy'**
+  String get soilLoamy;
+
+  /// No description provided for @soilClay.
+  ///
+  /// In en, this message translates to:
+  /// **'Clay'**
+  String get soilClay;
+
+  /// No description provided for @soilMixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed'**
+  String get soilMixed;
+
+  /// No description provided for @irrigDrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Drip'**
+  String get irrigDrip;
+
+  /// No description provided for @irrigSprinkler.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprinkler'**
+  String get irrigSprinkler;
+
+  /// No description provided for @irrigRainfed.
+  ///
+  /// In en, this message translates to:
+  /// **'Rainfed'**
+  String get irrigRainfed;
+
+  /// No description provided for @irrigCanal.
+  ///
+  /// In en, this message translates to:
+  /// **'Canal'**
+  String get irrigCanal;
+
+  /// No description provided for @irrigBoreWell.
+  ///
+  /// In en, this message translates to:
+  /// **'Bore Well'**
+  String get irrigBoreWell;
+
+  /// No description provided for @irrigOpenWell.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Well'**
+  String get irrigOpenWell;
+
+  /// No description provided for @irrigMixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed'**
+  String get irrigMixed;
+
+  /// No description provided for @ownershipOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Owned'**
+  String get ownershipOwned;
+
+  /// No description provided for @ownershipLeased.
+  ///
+  /// In en, this message translates to:
+  /// **'Leased'**
+  String get ownershipLeased;
+
+  /// No description provided for @ownershipShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared'**
+  String get ownershipShared;
+
+  /// No description provided for @ownershipGovtAllotted.
+  ///
+  /// In en, this message translates to:
+  /// **'Government Allotted'**
+  String get ownershipGovtAllotted;
+
+  /// No description provided for @encumNotVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Verified'**
+  String get encumNotVerified;
+
+  /// No description provided for @encumFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get encumFree;
+
+  /// No description provided for @encumEncumbered.
+  ///
+  /// In en, this message translates to:
+  /// **'Encumbered'**
+  String get encumEncumbered;
+
+  /// No description provided for @encumPartially.
+  ///
+  /// In en, this message translates to:
+  /// **'Partially Encumbered'**
+  String get encumPartially;
+
+  /// No description provided for @surveyNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Survey No'**
+  String get surveyNo;
+
+  /// No description provided for @landRegNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Land Reg No'**
+  String get landRegNo;
+
+  /// No description provided for @pattaNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Patta No'**
+  String get pattaNo;
+
+  /// No description provided for @estimatedValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated Value'**
+  String get estimatedValue;
+
+  /// No description provided for @encumbrance.
+  ///
+  /// In en, this message translates to:
+  /// **'Encumbrance'**
+  String get encumbrance;
+
+  /// No description provided for @remarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Remarks'**
+  String get remarks;
+
+  /// No description provided for @ownership.
+  ///
+  /// In en, this message translates to:
+  /// **'Ownership'**
+  String get ownership;
+
+  /// No description provided for @acres.
+  ///
+  /// In en, this message translates to:
+  /// **'acres'**
+  String get acres;
+
+  /// No description provided for @noAddressFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No address found for this pincode'**
+  String get noAddressFound;
+
+  /// No description provided for @subscriptionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription Required'**
+  String get subscriptionRequired;
+
+  /// No description provided for @toAccessFeature.
+  ///
+  /// In en, this message translates to:
+  /// **'To access {feature}, please subscribe to Krushi Kranti.'**
+  String toAccessFeature(String feature);
+
+  /// No description provided for @only999Year.
+  ///
+  /// In en, this message translates to:
+  /// **'Only ₹999/year'**
+  String get only999Year;
+
+  /// No description provided for @subscribeNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe Now'**
+  String get subscribeNow;
+
+  /// No description provided for @benefitsInclude.
+  ///
+  /// In en, this message translates to:
+  /// **'Benefits include:'**
+  String get benefitsInclude;
+
+  /// No description provided for @weatherUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather Updates'**
+  String get weatherUpdates;
+
+  /// No description provided for @expertAdvice.
+  ///
+  /// In en, this message translates to:
+  /// **'Expert Advice'**
+  String get expertAdvice;
+
+  /// No description provided for @marketAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Market Access'**
+  String get marketAccess;
+
+  /// No description provided for @zeroPercentLoan.
+  ///
+  /// In en, this message translates to:
+  /// **'0% Loan'**
+  String get zeroPercentLoan;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @annualSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual subscription:'**
+  String get annualSubscription;
+
+  /// No description provided for @thisFeature.
+  ///
+  /// In en, this message translates to:
+  /// **'this feature'**
+  String get thisFeature;
+
+  /// No description provided for @skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skip;
+
+  /// No description provided for @imageNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Image not found'**
+  String get imageNotFound;
+
+  /// No description provided for @welcomePage1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage all crops and\nfree guidance'**
+  String get welcomePage1Title;
+
+  /// No description provided for @welcomePage1Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join Krushi Kranti, fulfill your dreams!'**
+  String get welcomePage1Subtitle;
+
+  /// No description provided for @welcomePage1Feature1.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather Reports'**
+  String get welcomePage1Feature1;
+
+  /// No description provided for @welcomePage1Feature2.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop Advice'**
+  String get welcomePage1Feature2;
+
+  /// No description provided for @welcomePage1Feature3.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Expert'**
+  String get welcomePage1Feature3;
+
+  /// No description provided for @welcomePage2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy and sell in premium\nmarket under Krushi Kranti\nFarmer Market'**
+  String get welcomePage2Title;
+
+  /// No description provided for @welcomePage2Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Right time, right information'**
+  String get welcomePage2Subtitle;
+
+  /// No description provided for @welcomePage2Feature1.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero % Interest'**
+  String get welcomePage2Feature1;
+
+  /// No description provided for @welcomePage2Feature2.
+  ///
+  /// In en, this message translates to:
+  /// **'High Information'**
+  String get welcomePage2Feature2;
+
+  /// No description provided for @welcomePage2Feature3.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Investment'**
+  String get welcomePage2Feature3;
+
+  /// No description provided for @welcomePage3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Land-seed selection and\nproper sowing management.'**
+  String get welcomePage3Title;
+
+  /// No description provided for @welcomePage3Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic steps of crop management:'**
+  String get welcomePage3Subtitle;
+
+  /// No description provided for @welcomePage3Feature1.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop Health'**
+  String get welcomePage3Feature1;
+
+  /// No description provided for @welcomePage3Feature2.
+  ///
+  /// In en, this message translates to:
+  /// **'Pesticide and Fertilizer\nInformation'**
+  String get welcomePage3Feature2;
+
+  /// No description provided for @welcomePage3Feature3.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Advice'**
+  String get welcomePage3Feature3;
+
+  /// No description provided for @welcomePage3Footer.
+  ///
+  /// In en, this message translates to:
+  /// **'Land selection, land cultivation'**
+  String get welcomePage3Footer;
+
+  /// No description provided for @welcomePage4Title.
+  ///
+  /// In en, this message translates to:
+  /// **'No middleman, direct profit\nYour benefit, in your hands'**
+  String get welcomePage4Title;
+
+  /// No description provided for @welcomePage4Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct and right rates for produce'**
+  String get welcomePage4Subtitle;
+
+  /// No description provided for @welcomePage4Feature1.
+  ///
+  /// In en, this message translates to:
+  /// **'Modern Technology\nand Methods'**
+  String get welcomePage4Feature1;
+
+  /// No description provided for @welcomePage4Feature2.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Price'**
+  String get welcomePage4Feature2;
+
+  /// No description provided for @welcomePage4Feature3.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher Price'**
+  String get welcomePage4Feature3;
+
+  /// No description provided for @welcomePage4Footer.
+  ///
+  /// In en, this message translates to:
+  /// **'Kisan Credit Card registration only ₹999/year'**
+  String get welcomePage4Footer;
+
+  /// No description provided for @welcomePage5Title.
+  ///
+  /// In en, this message translates to:
+  /// **'End financial worries! Farm\nprofitably for just ₹999\na year!'**
+  String get welcomePage5Title;
+
+  /// No description provided for @welcomePage5Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **''**
+  String get welcomePage5Subtitle;
+
+  /// No description provided for @welcomePage5Benefit1.
+  ///
+  /// In en, this message translates to:
+  /// **'Get zero percent interest loan:'**
+  String get welcomePage5Benefit1;
+
+  /// No description provided for @welcomePage5Benefit2.
+  ///
+  /// In en, this message translates to:
+  /// **'Timely weather and crop advice'**
+  String get welcomePage5Benefit2;
+
+  /// No description provided for @welcomePage5Benefit3.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct and right rates for produce'**
+  String get welcomePage5Benefit3;
+
+  /// No description provided for @welcomePage5Benefit4.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather Reports'**
+  String get welcomePage5Benefit4;
+
+  /// No description provided for @welcomePage5KycText.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your (KYC) immediately for\nfinancial assistance and all benefits!'**
+  String get welcomePage5KycText;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// No description provided for @subscribeNowWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe Now'**
+  String get subscribeNowWelcome;
+
+  /// No description provided for @notSubscribed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Subscribed'**
+  String get notSubscribed;
+
+  /// No description provided for @activeSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Subscription'**
+  String get activeSubscription;
+
+  /// No description provided for @subscribeToAccessAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to access all features'**
+  String get subscribeToAccessAll;
+
+  /// No description provided for @daysRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days remaining'**
+  String daysRemaining(int count);
+
+  /// No description provided for @startDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Date'**
+  String get startDate;
+
+  /// No description provided for @expiresOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires On'**
+  String get expiresOn;
+
+  /// No description provided for @subscriptionId.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription ID'**
+  String get subscriptionId;
+
+  /// No description provided for @dashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get dashboard;
+
+  /// No description provided for @subscriptionBenefits.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription Benefits'**
+  String get subscriptionBenefits;
+
+  /// No description provided for @benefitZeroInterest.
+  ///
+  /// In en, this message translates to:
+  /// **'Get zero percent interest loan'**
+  String get benefitZeroInterest;
+
+  /// No description provided for @benefitTimelyWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Timely weather and crop advice'**
+  String get benefitTimelyWeather;
+
+  /// No description provided for @benefitDirectRates.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct and fair prices for produce'**
+  String get benefitDirectRates;
+
+  /// No description provided for @benefitWeatherUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather updates'**
+  String get benefitWeatherUpdates;
+
+  /// No description provided for @benefitPremiumMarket.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Market Access'**
+  String get benefitPremiumMarket;
+
+  /// No description provided for @benefitExpertAdvice.
+  ///
+  /// In en, this message translates to:
+  /// **'Expert advice'**
+  String get benefitExpertAdvice;
 }
 
 class _AppLocalizationsDelegate

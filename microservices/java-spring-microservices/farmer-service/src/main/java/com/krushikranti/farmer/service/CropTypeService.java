@@ -30,9 +30,30 @@ public class CropTypeService {
      */
     @Transactional(readOnly = true)
     public List<CropTypeResponse> getActiveCropTypes() {
+        return getActiveCropTypes("en");
+    }
+
+    /**
+     * Get all active crop types with language support (for farmer app dropdown).
+     * 
+     * @param language Language code: "en", "hi", or "mr" (defaults to "en" if invalid)
+     * @return List of crop types in the requested language
+     */
+    @Transactional(readOnly = true)
+    public List<CropTypeResponse> getActiveCropTypes(String language) {
+        // Normalize language code
+        String normalizedLanguage = "en"; // Default
+        if (language != null && !language.trim().isEmpty()) {
+            String lang = language.toLowerCase().trim();
+            if (lang.equals("hi") || lang.equals("mr")) {
+                normalizedLanguage = lang;
+            }
+        }
+
+        final String finalLanguage = normalizedLanguage;
         List<CropType> cropTypes = cropTypeRepository.findByIsActiveTrueOrderByDisplayOrderAsc();
         return cropTypes.stream()
-                .map(this::mapToResponse)
+                .map(cropType -> mapToResponse(cropType, finalLanguage))
                 .collect(Collectors.toList());
     }
 
@@ -141,12 +162,24 @@ public class CropTypeService {
     }
 
     private CropTypeResponse mapToResponse(CropType cropType) {
+        return mapToResponse(cropType, "en");
+    }
+
+    private CropTypeResponse mapToResponse(CropType cropType, String language) {
         long cropNameCount = cropNameRepository.countByCropTypeIdAndIsActiveTrue(cropType.getId());
+        
+        // Select display name based on language
+        String displayNameToUse = cropType.getDisplayName(); // Default to English
+        if ("hi".equals(language) && cropType.getDisplayNameHi() != null && !cropType.getDisplayNameHi().trim().isEmpty()) {
+            displayNameToUse = cropType.getDisplayNameHi();
+        } else if ("mr".equals(language) && cropType.getDisplayNameMr() != null && !cropType.getDisplayNameMr().trim().isEmpty()) {
+            displayNameToUse = cropType.getDisplayNameMr();
+        }
         
         return CropTypeResponse.builder()
                 .id(cropType.getId())
                 .typeName(cropType.getTypeName())
-                .displayName(cropType.getDisplayName())
+                .displayName(displayNameToUse)
                 .description(cropType.getDescription())
                 .iconUrl(cropType.getIconUrl())
                 .displayOrder(cropType.getDisplayOrder())

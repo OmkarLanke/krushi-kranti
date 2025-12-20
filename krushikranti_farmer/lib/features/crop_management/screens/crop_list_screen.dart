@@ -52,7 +52,7 @@ class _CropListScreenState extends State<CropListScreen> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          "Crop Details",
+          l10n.cropDetails,
           style: GoogleFonts.poppins(
             color: Colors.black,
             fontSize: 20,
@@ -177,7 +177,7 @@ class _CropListScreenState extends State<CropListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Main",
+                    l10n.cropDetail,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -185,24 +185,24 @@ class _CropListScreenState extends State<CropListScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildInfoRow(Icons.category, "Type: ${_getCategoryDisplay(crop, l10n)}", Colors.grey.shade700),
+                  _buildInfoRow(Icons.category, "${l10n.cropTypeLabel}: ${_getCategoryDisplay(crop, l10n)}", Colors.grey.shade700),
                   const SizedBox(height: 8),
-                  _buildInfoRow(Icons.square_foot, "Area: ${crop.acres.toStringAsFixed(2)} acres", Colors.grey.shade700),
+                  _buildInfoRow(Icons.square_foot, "${l10n.landArea}: ${crop.acres.toStringAsFixed(2)} ${l10n.acresSuffix}", Colors.grey.shade700),
                   if (crop.farmName != null) ...[
                     const SizedBox(height: 8),
-                    _buildInfoRow(Icons.agriculture, "Farm: ${crop.farmName}", Colors.grey.shade700),
+                    _buildInfoRow(Icons.agriculture, "${l10n.farmLabel}: ${crop.farmName}", Colors.grey.shade700),
                   ],
                   if (crop.plantingDate != null) ...[
                     const SizedBox(height: 8),
-                    _buildInfoRow(Icons.calendar_today, "Sowing Date: ${_formatDate(crop.plantingDate!)}", Colors.grey.shade700),
+                    _buildInfoRow(Icons.calendar_today, "${l10n.sowingDate}: ${_formatDate(crop.plantingDate!)}", Colors.grey.shade700),
                   ],
                   if (crop.harvestingDate != null) ...[
                     const SizedBox(height: 8),
-                    _buildInfoRow(Icons.event, "Harvesting Date: ${_formatDate(crop.harvestingDate!)}", Colors.grey.shade700),
+                    _buildInfoRow(Icons.event, "${l10n.harvestingDate}: ${_formatDate(crop.harvestingDate!)}", Colors.grey.shade700),
                   ],
                   if (crop.cropStatus != null) ...[
                     const SizedBox(height: 8),
-                    _buildInfoRow(Icons.info_outline, "Status: ${crop.cropStatus!.replaceAll('_', ' ')}", Colors.grey.shade700),
+                    _buildInfoRow(Icons.info_outline, "${l10n.cropStatus}: ${_getLocalizedStatus(crop.cropStatus!, l10n)}", Colors.grey.shade700),
                   ],
                 ],
               ),
@@ -238,6 +238,24 @@ class _CropListScreenState extends State<CropListScreen> {
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
   }
 
+  // Helper to get localized crop status
+  String _getLocalizedStatus(String status, AppLocalizations l10n) {
+    switch (status.toUpperCase()) {
+      case 'PLANNED':
+        return l10n.statusPlanned;
+      case 'SOWN':
+        return l10n.statusSown;
+      case 'GROWING':
+        return l10n.statusGrowing;
+      case 'HARVESTED':
+        return l10n.statusHarvested;
+      case 'FAILED':
+        return l10n.statusFailed;
+      default:
+        return status.replaceAll('_', ' ');
+    }
+  }
+
   Widget _buildInfoRow(IconData icon, String text, Color color) {
     return Row(
       children: [
@@ -263,7 +281,7 @@ class _CropListScreenState extends State<CropListScreen> {
             Icon(Icons.grass, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
-              "No crops added yet",
+              l10n.noCropsYet,
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
@@ -272,7 +290,7 @@ class _CropListScreenState extends State<CropListScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Add your first crop to get started",
+              l10n.addFirstCrop,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: Colors.grey.shade500,
@@ -289,7 +307,7 @@ class _CropListScreenState extends State<CropListScreen> {
                 backgroundColor: AppColors.brandGreen,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
-              child: const Text("Add Crop", style: TextStyle(color: Colors.white)),
+              child: Text(l10n.addCropBtn, style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -314,7 +332,7 @@ class _CropListScreenState extends State<CropListScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              "Profile Required",
+              l10n.profileRequired,
               style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -323,7 +341,7 @@ class _CropListScreenState extends State<CropListScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              "Please complete your profile first before adding crops.",
+              l10n.completeProfileFirst,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: Colors.grey,
@@ -344,7 +362,7 @@ class _CropListScreenState extends State<CropListScreen> {
                 ),
               ),
               child: Text(
-                "Complete Profile",
+                l10n.completeProfile,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

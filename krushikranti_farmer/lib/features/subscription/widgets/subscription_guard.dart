@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../services/subscription_service.dart';
 
 /// A widget that shows subscription required warning if user is not subscribed.
@@ -64,6 +65,9 @@ class SubscriptionGuard extends StatelessWidget {
   }
 
   Widget _buildSubscriptionRequired(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final localizedFeatureName = featureName == "this feature" ? l10n.thisFeature : featureName;
+    
     return Center(
       child: Container(
         margin: const EdgeInsets.all(32),
@@ -99,9 +103,9 @@ class SubscriptionGuard extends StatelessWidget {
             const SizedBox(height: 24),
             
             // Title
-            const Text(
-              "Subscription Required",
-              style: TextStyle(
+            Text(
+              l10n.subscriptionRequired,
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
@@ -113,7 +117,7 @@ class SubscriptionGuard extends StatelessWidget {
             
             // Description
             Text(
-              "To access $featureName, please subscribe to Krushi Kranti.",
+              l10n.toAccessFeature(localizedFeatureName),
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade600,
@@ -130,9 +134,9 @@ class SubscriptionGuard extends StatelessWidget {
                 color: AppColors.brandGreen.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                "Only ₹999/year",
-                style: TextStyle(
+              child: Text(
+                l10n.only999Year,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.brandGreen,
@@ -157,9 +161,9 @@ class SubscriptionGuard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  "Subscribe Now",
-                  style: TextStyle(
+                child: Text(
+                  l10n.subscribeNow,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -170,9 +174,9 @@ class SubscriptionGuard extends StatelessWidget {
             const SizedBox(height: 12),
             
             // Benefits Preview
-            const Text(
-              "Benefits include:",
-              style: TextStyle(
+            Text(
+              l10n.benefitsInclude,
+              style: const TextStyle(
                 fontSize: 12,
                 color: Colors.grey,
               ),
@@ -183,10 +187,10 @@ class SubscriptionGuard extends StatelessWidget {
               runSpacing: 4,
               alignment: WrapAlignment.center,
               children: [
-                _buildBenefitChip("Weather Updates"),
-                _buildBenefitChip("Expert Advice"),
-                _buildBenefitChip("Market Access"),
-                _buildBenefitChip("0% Loan"),
+                _buildBenefitChip(l10n.weatherUpdates),
+                _buildBenefitChip(l10n.expertAdvice),
+                _buildBenefitChip(l10n.marketAccess),
+                _buildBenefitChip(l10n.zeroPercentLoan),
               ],
             ),
           ],
@@ -238,6 +242,9 @@ class SubscriptionGuard extends StatelessWidget {
 Future<void> showSubscriptionRequiredDialog(BuildContext context, {
   String featureName = "this feature",
 }) async {
+  final l10n = AppLocalizations.of(context)!;
+  final localizedFeatureName = featureName == "this feature" ? l10n.thisFeature : featureName;
+  
   // Check subscription status before showing dialog
   bool isSubscribed = false;
   try {
@@ -265,14 +272,14 @@ Future<void> showSubscriptionRequiredDialog(BuildContext context, {
         children: [
           Icon(Icons.lock_outline, color: Colors.orange.shade600),
           const SizedBox(width: 12),
-          const Text("Subscription Required"),
+          Text(l10n.subscriptionRequired),
         ],
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("To access $featureName, please subscribe to Krushi Kranti."),
+          Text(l10n.toAccessFeature(localizedFeatureName)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),
@@ -280,11 +287,11 @@ Future<void> showSubscriptionRequiredDialog(BuildContext context, {
               color: AppColors.brandGreen.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Annual subscription: ", style: TextStyle(fontSize: 14)),
-                Text(
+                Text("${l10n.annualSubscription} ", style: const TextStyle(fontSize: 14)),
+                const Text(
                   "₹999",
                   style: TextStyle(
                     fontSize: 18,
@@ -300,7 +307,7 @@ Future<void> showSubscriptionRequiredDialog(BuildContext context, {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Later"),
+          child: Text(l10n.later),
         ),
         ElevatedButton(
           onPressed: () {
@@ -311,7 +318,7 @@ Future<void> showSubscriptionRequiredDialog(BuildContext context, {
             backgroundColor: AppColors.brandGreen,
             foregroundColor: Colors.white,
           ),
-          child: const Text("Subscribe Now"),
+          child: Text(l10n.subscribeNow),
         ),
       ],
     ),

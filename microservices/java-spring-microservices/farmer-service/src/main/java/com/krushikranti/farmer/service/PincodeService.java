@@ -26,15 +26,54 @@ public class PincodeService {
      * @throws IllegalArgumentException if pincode not found
      */
     public AddressLookupResponse getAddressByPincode(String pincode) {
+        return getAddressByPincode(pincode, "en");
+    }
+
+    /**
+     * Get address details (district, taluka, state, villages) by pincode with language support.
+     * 
+     * @param pincode The pincode to lookup
+     * @param language Language code: "en", "hi", or "mr" (defaults to "en" if invalid)
+     * @return AddressLookupResponse with address details in the requested language
+     * @throws IllegalArgumentException if pincode not found
+     */
+    public AddressLookupResponse getAddressByPincode(String pincode, String language) {
         if (pincode == null || pincode.trim().isEmpty()) {
             throw new IllegalArgumentException("Pincode cannot be empty");
         }
 
-        // Get distinct district, taluka, state (may have multiple, take first)
-        List<String> districts = pincodeMasterRepository.findDistrictsByPincode(pincode);
-        List<String> talukas = pincodeMasterRepository.findTalukasByPincode(pincode);
-        List<String> states = pincodeMasterRepository.findStatesByPincode(pincode);
-        List<String> villages = pincodeMasterRepository.findVillagesByPincode(pincode);
+        // Normalize language code
+        if (language == null || language.trim().isEmpty()) {
+            language = "en";
+        }
+        language = language.toLowerCase().trim();
+        if (!language.equals("hi") && !language.equals("mr")) {
+            language = "en"; // Default to English
+        }
+
+        // Get distinct district, taluka, state, villages based on language
+        List<String> districts;
+        List<String> talukas;
+        List<String> states;
+        List<String> villages;
+
+        if ("hi".equals(language)) {
+            districts = pincodeMasterRepository.findDistrictsByPincodeHi(pincode);
+            talukas = pincodeMasterRepository.findTalukasByPincodeHi(pincode);
+            states = pincodeMasterRepository.findStatesByPincodeHi(pincode);
+            villages = pincodeMasterRepository.findVillagesByPincodeHi(pincode);
+        } else if ("mr".equals(language)) {
+            districts = pincodeMasterRepository.findDistrictsByPincodeMr(pincode);
+            talukas = pincodeMasterRepository.findTalukasByPincodeMr(pincode);
+            states = pincodeMasterRepository.findStatesByPincodeMr(pincode);
+            villages = pincodeMasterRepository.findVillagesByPincodeMr(pincode);
+        } else {
+            // English (default)
+            districts = pincodeMasterRepository.findDistrictsByPincode(pincode);
+            talukas = pincodeMasterRepository.findTalukasByPincode(pincode);
+            states = pincodeMasterRepository.findStatesByPincode(pincode);
+            villages = pincodeMasterRepository.findVillagesByPincode(pincode);
+        }
 
         if (districts.isEmpty() || talukas.isEmpty() || states.isEmpty()) {
             log.warn("Pincode not found: {}", pincode);
@@ -57,7 +96,7 @@ public class PincodeService {
             log.warn("Pincode {} has multiple states: {}. Using first: {}", pincode, states, state);
         }
 
-        log.debug("Found address for pincode {}: {} villages", pincode, villages.size());
+        log.debug("Found address for pincode {} (language: {}): {} villages", pincode, language, villages.size());
         
         return AddressLookupResponse.builder()
                 .pincode(pincode)

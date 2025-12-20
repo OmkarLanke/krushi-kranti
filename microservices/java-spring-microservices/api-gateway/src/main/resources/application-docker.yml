@@ -53,6 +53,7 @@ gateway:
     advisory-service: http://advisory-service:4011
     support-service: http://support-service:4012
     subscription-service: http://subscription-service:4013
+    kyc-service: http://kyc-service:4014
 
 management:
   endpoints:

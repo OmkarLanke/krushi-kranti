@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../services/subscription_service.dart';
 
 /// Subscription screen where user can subscribe and make payment.
@@ -395,10 +396,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final isSubscribed = _subscriptionStatus?['isSubscribed'] == true || 
                          _subscriptionStatus?['subscriptionStatus'] == 'ACTIVE';
     
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Subscription'),
+        title: Text(l10n.subscription),
         backgroundColor: AppColors.brandGreen,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: !isSubscribed, // Show back button if not subscribed
@@ -413,9 +416,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           if (!isSubscribed)
             TextButton(
               onPressed: _skipForNow,
-              child: const Text(
-                'Skip',
-                style: TextStyle(color: Colors.white70),
+              child: Text(
+                l10n.skip,
+                style: const TextStyle(color: Colors.white70),
               ),
             ),
           // For subscribed users, show a button to go to dashboard
@@ -428,9 +431,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   (route) => false,
                 );
               },
-              child: const Text(
-                'Dashboard',
-                style: TextStyle(color: Colors.white70),
+              child: Text(
+                l10n.dashboard,
+                style: const TextStyle(color: Colors.white70),
               ),
             ),
         ],
@@ -468,6 +471,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildStatusCard() {
+    final l10n = AppLocalizations.of(context)!;
     final isSubscribed = _subscriptionStatus?['isSubscribed'] ?? false;
     final status = _subscriptionStatus?['subscriptionStatus'] ?? 'NONE';
     final daysRemaining = _subscriptionStatus?['daysRemaining'] ?? _calculateDaysRemainingSync();
@@ -508,7 +512,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             
             // Status Title
             Text(
-              isSubscribed ? 'Active Subscription' : 'Not Subscribed',
+              isSubscribed ? l10n.activeSubscription : l10n.notSubscribed,
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -520,7 +524,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             const SizedBox(height: 8),
             if (isSubscribed)
               Text(
-                '$daysRemaining days remaining',
+                l10n.daysRemaining(daysRemaining),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -528,9 +532,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 ),
               )
             else
-              const Text(
-                'Subscribe to access all features',
-                style: TextStyle(fontSize: 16, color: Colors.white70),
+              Text(
+                l10n.subscribeToAccessAll,
+                style: const TextStyle(fontSize: 16, color: Colors.white70),
               ),
             
             // Subscription Details (only if subscribed)
@@ -547,7 +551,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     if (subscriptionStartDate != null)
                       _buildDetailRow(
                         Icons.calendar_today,
-                        'Start Date',
+                        l10n.startDate,
                         _formatDate(subscriptionStartDate),
                       ),
                     if (subscriptionStartDate != null && subscriptionEndDate != null)
@@ -555,7 +559,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     if (subscriptionEndDate != null)
                       _buildDetailRow(
                         Icons.event,
-                        'Expires On',
+                        l10n.expiresOn,
                         _formatDate(subscriptionEndDate),
                       ),
                     if (_subscriptionStatus?['subscriptionId'] != null) ...[
@@ -563,7 +567,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         const SizedBox(height: 12),
                       _buildDetailRow(
                         Icons.receipt,
-                        'Subscription ID',
+                        l10n.subscriptionId,
                         _subscriptionStatus!['subscriptionId'].toString(),
                       ),
                     ],
@@ -687,13 +691,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildBenefitsCard() {
+    final l10n = AppLocalizations.of(context)!;
     final benefits = [
-      {'icon': Icons.money_off, 'text': 'शून्य टक्के व्याज कर्ज मिळवा'},
-      {'icon': Icons.cloud, 'text': 'वेळेवर हवामान आणि पीक सल्ला'},
-      {'icon': Icons.trending_up, 'text': 'उत्पादनाचे थेट आणि योग्य दर'},
-      {'icon': Icons.wb_sunny, 'text': 'हवामान अद्यतने'},
-      {'icon': Icons.shopping_cart, 'text': 'प्रीमियम मार्केट एक्सेस'},
-      {'icon': Icons.support_agent, 'text': 'तज्ञांचा सल्ला'},
+      {'icon': Icons.money_off, 'text': l10n.benefitZeroInterest},
+      {'icon': Icons.cloud, 'text': l10n.benefitTimelyWeather},
+      {'icon': Icons.trending_up, 'text': l10n.benefitDirectRates},
+      {'icon': Icons.wb_sunny, 'text': l10n.benefitWeatherUpdates},
+      {'icon': Icons.shopping_cart, 'text': l10n.benefitPremiumMarket},
+      {'icon': Icons.support_agent, 'text': l10n.benefitExpertAdvice},
     ];
 
     return Card(
@@ -704,13 +709,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.star, color: Colors.amber),
-                SizedBox(width: 8),
+                const Icon(Icons.star, color: Colors.amber),
+                const SizedBox(width: 8),
                 Text(
-                  'Subscription Benefits',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  l10n.subscriptionBenefits,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -737,17 +742,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 color: AppColors.brandGreen.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Only ',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  Text(
-                    '₹999/year',
-                    style: TextStyle(
-                      fontSize: 20,
+                    l10n.only999Year,
+                    style: const TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppColors.brandGreen,
                     ),
@@ -855,9 +856,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : const Text(
-                'Subscribe Now - ₹999/year',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            : Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Text(
+                    '${l10n.subscribeNow} - ${l10n.only999Year}',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  );
+                },
               ),
       ),
     );

@@ -1,0 +1,73 @@
+server:
+  port: 4014
+
+spring:
+  application:
+    name: kyc-service
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5452/kyc_db?options=-c%20TimeZone=UTC
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# Quick eKYC API Configuration
+quickekyc:
+  api:
+
+
+  # ### for production 
+    
+  #   base-url: ${QUICKEKYC_BASE_URL:https://api.quickekyc.com}
+  #   # API Key - Use environment variable in production
+  #   key: ${QUICKEKYC_API_KEY:5682be91-07f3-4208-bc07-f0477e3a038b}
+
+
+####for testing sandbox
+     # Use sandbox for development, production for live
+    base-url: ${QUICKEKYC_BASE_URL:https://sandbox.quickekyc.com}
+    # API Key - Use environment variable in production
+    key: ${QUICKEKYC_API_KEY:d8551d2e-1a31-45d1-be02-b797207ac494}
+
+
+
+    # Timeout settings
+    connect-timeout: 10000
+    read-timeout: 30000
+
+# gRPC Configuration
+grpc:
+  server:
+    port: 9094
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    com.krushikranti.kyc: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+

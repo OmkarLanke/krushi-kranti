@@ -28,14 +28,38 @@ public class PincodeMaster {
     @Column(name = "village", nullable = false, length = 200)
     private String village;
 
+    @Column(name = "village_hi", length = 200)
+    private String villageHi;
+
+    @Column(name = "village_mr", length = 200)
+    private String villageMr;
+
     @Column(name = "taluka", nullable = false, length = 100)
     private String taluka;
+
+    @Column(name = "taluka_hi", length = 100)
+    private String talukaHi;
+
+    @Column(name = "taluka_mr", length = 100)
+    private String talukaMr;
 
     @Column(name = "district", nullable = false, length = 100)
     private String district;
 
+    @Column(name = "district_hi", length = 100)
+    private String districtHi;
+
+    @Column(name = "district_mr", length = 100)
+    private String districtMr;
+
     @Column(name = "state", nullable = false, length = 100)
     private String state;
+
+    @Column(name = "state_hi", length = 100)
+    private String stateHi;
+
+    @Column(name = "state_mr", length = 100)
+    private String stateMr;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

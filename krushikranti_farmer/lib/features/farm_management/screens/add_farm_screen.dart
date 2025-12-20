@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/http_service.dart';
 
@@ -61,12 +62,13 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
   }
 
   Future<void> _lookupAddress() async {
+    final l10n = AppLocalizations.of(context)!;
     final pincode = _pincodeController.text.trim();
     
     if (pincode.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter a valid 6-digit pincode"),
+        SnackBar(
+          content: Text(l10n.validPincode),
           backgroundColor: Colors.red,
         ),
       );
@@ -91,7 +93,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
           _isLookingUp = false;
         });
       } else {
-        throw Exception("No address found for this pincode");
+        throw Exception(l10n.noAddressFound);
       }
     } catch (e) {
       if (mounted) {
@@ -110,14 +112,16 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
   }
 
   Future<void> _saveFarm() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     if (_selectedVillage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select a village"),
+        SnackBar(
+          content: Text(l10n.pleaseSelectVillage),
           backgroundColor: Colors.red,
         ),
       );
@@ -126,8 +130,8 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
 
     if (_selectedLandOwnership == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select land ownership"),
+        SnackBar(
+          content: Text(l10n.pleaseSelectOwnership),
           backgroundColor: Colors.red,
         ),
       );
@@ -160,8 +164,8 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Farm added successfully"),
+          SnackBar(
+            content: Text(l10n.farmAddedSuccess),
             backgroundColor: Colors.green,
           ),
         );
@@ -183,8 +187,65 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
     }
   }
 
+  String _getLocalizedFarmType(String type, AppLocalizations l10n) {
+    switch (type) {
+      case 'ORGANIC': return l10n.farmTypeOrganic;
+      case 'CONVENTIONAL': return l10n.farmTypeConventional;
+      case 'MIXED': return l10n.farmTypeMixed;
+      case 'VERMI_COMPOST': return l10n.farmTypeVermiCompost;
+      default: return type.replaceAll('_', ' ');
+    }
+  }
+
+  String _getLocalizedSoilType(String type, AppLocalizations l10n) {
+    switch (type) {
+      case 'BLACK': return l10n.soilBlack;
+      case 'RED': return l10n.soilRed;
+      case 'SANDY': return l10n.soilSandy;
+      case 'LOAMY': return l10n.soilLoamy;
+      case 'CLAY': return l10n.soilClay;
+      case 'MIXED': return l10n.soilMixed;
+      default: return type.replaceAll('_', ' ');
+    }
+  }
+
+  String _getLocalizedIrrigationType(String type, AppLocalizations l10n) {
+    switch (type) {
+      case 'DRIP': return l10n.irrigDrip;
+      case 'SPRINKLER': return l10n.irrigSprinkler;
+      case 'RAINFED': return l10n.irrigRainfed;
+      case 'CANAL': return l10n.irrigCanal;
+      case 'BORE_WELL': return l10n.irrigBoreWell;
+      case 'OPEN_WELL': return l10n.irrigOpenWell;
+      case 'MIXED': return l10n.irrigMixed;
+      default: return type.replaceAll('_', ' ');
+    }
+  }
+
+  String _getLocalizedOwnership(String type, AppLocalizations l10n) {
+    switch (type) {
+      case 'OWNED': return l10n.ownershipOwned;
+      case 'LEASED': return l10n.ownershipLeased;
+      case 'SHARED': return l10n.ownershipShared;
+      case 'GOVERNMENT_ALLOTTED': return l10n.ownershipGovtAllotted;
+      default: return type.replaceAll('_', ' ');
+    }
+  }
+
+  String _getLocalizedEncumbrance(String status, AppLocalizations l10n) {
+    switch (status) {
+      case 'NOT_VERIFIED': return l10n.encumNotVerified;
+      case 'FREE': return l10n.encumFree;
+      case 'ENCUMBERED': return l10n.encumEncumbered;
+      case 'PARTIALLY_ENCUMBERED': return l10n.encumPartially;
+      default: return status.replaceAll('_', ' ');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -195,7 +256,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Add Farm",
+          l10n.addFarm,
           style: GoogleFonts.poppins(
             color: Colors.black,
             fontSize: 20,
@@ -212,48 +273,48 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Farm Name
-              _buildLabel("Farm Name *"),
+              _buildLabel("${l10n.farmName} *"),
               const SizedBox(height: 8),
-              _buildTextField(_farmNameController, "Enter farm name", validator: (v) {
-                if (v == null || v.trim().isEmpty) return "Farm name is required";
+              _buildTextField(_farmNameController, l10n.enterFarmName, validator: (v) {
+                if (v == null || v.trim().isEmpty) return l10n.farmNameRequired;
                 return null;
               }),
               const SizedBox(height: 20),
 
               // Farm Type
-              _buildLabel("Farm Type"),
+              _buildLabel(l10n.farmType),
               const SizedBox(height: 8),
-              _buildDropdown(_farmTypes, _selectedFarmType, (value) {
+              _buildLocalizedDropdown(_farmTypes, _selectedFarmType, (value) {
                 setState(() => _selectedFarmType = value);
-              }, "Select farm type"),
+              }, l10n.selectFarmType, (t) => _getLocalizedFarmType(t, l10n)),
               const SizedBox(height: 20),
 
               // Total Area
-              _buildLabel("Total Area (Acres) *"),
+              _buildLabel("${l10n.totalAreaAcres} *"),
               const SizedBox(height: 8),
-              _buildTextField(_totalAreaController, "Enter area in acres", 
+              _buildTextField(_totalAreaController, l10n.enterAreaAcres, 
                 keyboardType: TextInputType.number,
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return "Total area is required";
+                  if (v == null || v.trim().isEmpty) return l10n.areaRequired;
                   if (double.tryParse(v.trim()) == null || double.parse(v.trim()) <= 0) {
-                    return "Enter a valid area";
+                    return l10n.validArea;
                   }
                   return null;
                 }),
               const SizedBox(height: 20),
 
               // Pincode
-              _buildLabel("Pincode *"),
+              _buildLabel("${l10n.pincode} *"),
               const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
-                    child: _buildTextField(_pincodeController, "Enter 6-digit pincode",
+                    child: _buildTextField(_pincodeController, l10n.enter6DigitPincode,
                       keyboardType: TextInputType.number,
                       maxLength: 6,
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return "Pincode is required";
-                        if (v.trim().length != 6) return "Pincode must be 6 digits";
+                        if (v == null || v.trim().isEmpty) return l10n.pincodeRequired;
+                        if (v.trim().length != 6) return l10n.pincodeMust6Digits;
                         return null;
                       },
                       onChanged: (value) {
@@ -277,61 +338,61 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: const Text("Lookup"),
+                          child: Text(l10n.lookup),
                         ),
                 ],
               ),
               const SizedBox(height: 20),
 
               // Village
-              _buildLabel("Village *"),
+              _buildLabel("${l10n.village} *"),
               const SizedBox(height: 8),
-              _buildVillageDropdown(),
+              _buildVillageDropdown(l10n),
               const SizedBox(height: 20),
 
               // Taluka, District, State (read-only)
-              _buildLabel("Taluka"),
+              _buildLabel(l10n.taluka),
               const SizedBox(height: 8),
               _buildTextField(_talukaController, "", enabled: false),
               const SizedBox(height: 20),
 
-              _buildLabel("District"),
+              _buildLabel(l10n.district),
               const SizedBox(height: 8),
               _buildTextField(_districtController, "", enabled: false),
               const SizedBox(height: 20),
 
-              _buildLabel("State"),
+              _buildLabel(l10n.state),
               const SizedBox(height: 8),
               _buildTextField(_stateController, "", enabled: false),
               const SizedBox(height: 20),
 
               // Soil Type
-              _buildLabel("Soil Type"),
+              _buildLabel(l10n.soilType),
               const SizedBox(height: 8),
-              _buildDropdown(_soilTypes, _selectedSoilType, (value) {
+              _buildLocalizedDropdown(_soilTypes, _selectedSoilType, (value) {
                 setState(() => _selectedSoilType = value);
-              }, "Select soil type"),
+              }, l10n.selectSoilType, (t) => _getLocalizedSoilType(t, l10n)),
               const SizedBox(height: 20),
 
               // Irrigation Type
-              _buildLabel("Irrigation Type"),
+              _buildLabel(l10n.irrigationType),
               const SizedBox(height: 8),
-              _buildDropdown(_irrigationTypes, _selectedIrrigationType, (value) {
+              _buildLocalizedDropdown(_irrigationTypes, _selectedIrrigationType, (value) {
                 setState(() => _selectedIrrigationType = value);
-              }, "Select irrigation type"),
+              }, l10n.selectIrrigationType, (t) => _getLocalizedIrrigationType(t, l10n)),
               const SizedBox(height: 20),
 
               // Land Ownership
-              _buildLabel("Land Ownership *"),
+              _buildLabel("${l10n.landOwnership} *"),
               const SizedBox(height: 8),
-              _buildDropdown(_landOwnershipTypes, _selectedLandOwnership, (value) {
+              _buildLocalizedDropdown(_landOwnershipTypes, _selectedLandOwnership, (value) {
                 setState(() => _selectedLandOwnership = value);
-              }, "Select land ownership"),
+              }, l10n.selectLandOwnership, (t) => _getLocalizedOwnership(t, l10n)),
               const SizedBox(height: 20),
 
               // Collateral Information Section
               Text(
-                "Collateral Information (Optional)",
+                l10n.collateralInfo,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -341,42 +402,42 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
               const SizedBox(height: 16),
 
               // Survey Number
-              _buildLabel("Survey Number"),
+              _buildLabel(l10n.surveyNumber),
               const SizedBox(height: 8),
-              _buildTextField(_surveyNumberController, "Enter survey number"),
+              _buildTextField(_surveyNumberController, l10n.enterSurveyNumber),
               const SizedBox(height: 20),
 
               // Land Registration Number
-              _buildLabel("Land Registration Number"),
+              _buildLabel(l10n.landRegNumber),
               const SizedBox(height: 8),
-              _buildTextField(_landRegController, "Enter land registration number"),
+              _buildTextField(_landRegController, l10n.enterLandRegNumber),
               const SizedBox(height: 20),
 
               // Patta Number
-              _buildLabel("Patta Number"),
+              _buildLabel(l10n.pattaNumber),
               const SizedBox(height: 8),
-              _buildTextField(_pattaNumberController, "Enter patta number"),
+              _buildTextField(_pattaNumberController, l10n.enterPattaNumber),
               const SizedBox(height: 20),
 
               // Estimated Land Value
-              _buildLabel("Estimated Land Value (INR)"),
+              _buildLabel(l10n.estimatedLandValue),
               const SizedBox(height: 8),
-              _buildTextField(_estimatedValueController, "Enter estimated value",
+              _buildTextField(_estimatedValueController, l10n.enterEstimatedValue,
                 keyboardType: TextInputType.number),
               const SizedBox(height: 20),
 
               // Encumbrance Status
-              _buildLabel("Encumbrance Status"),
+              _buildLabel(l10n.encumbranceStatus),
               const SizedBox(height: 8),
-              _buildDropdown(_encumbranceStatuses, _selectedEncumbranceStatus, (value) {
+              _buildLocalizedDropdown(_encumbranceStatuses, _selectedEncumbranceStatus, (value) {
                 setState(() => _selectedEncumbranceStatus = value);
-              }, "Select encumbrance status"),
+              }, l10n.selectEncumbranceStatus, (t) => _getLocalizedEncumbrance(t, l10n)),
               const SizedBox(height: 20),
 
               // Encumbrance Remarks
-              _buildLabel("Encumbrance Remarks"),
+              _buildLabel(l10n.encumbranceRemarks),
               const SizedBox(height: 8),
-              _buildTextField(_encumbranceRemarksController, "Enter remarks (if any)",
+              _buildTextField(_encumbranceRemarksController, l10n.enterRemarks,
                 maxLines: 3),
               const SizedBox(height: 30),
 
@@ -400,7 +461,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                           ),
                         )
                       : Text(
-                          "Save Farm",
+                          l10n.saveFarm,
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 16,
@@ -494,7 +555,37 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
     );
   }
 
-  Widget _buildVillageDropdown() {
+  Widget _buildLocalizedDropdown(
+    List<String> items,
+    String? value,
+    void Function(String?) onChanged,
+    String hint,
+    String Function(String) getLocalizedText,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.brandGreen, width: 1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          hint: Text(hint, style: TextStyle(color: Colors.grey.shade600)),
+          isExpanded: true,
+          items: items.map((item) {
+            return DropdownMenuItem(
+              value: item,
+              child: Text(getLocalizedText(item)),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVillageDropdown(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -508,7 +599,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           hint: Text(
-            _villageList.isEmpty ? "Enter pincode to load villages" : "Select village",
+            _villageList.isEmpty ? l10n.enterPincodeToLoadVillages : l10n.selectVillage,
             style: TextStyle(color: Colors.grey.shade600),
           ),
           value: _selectedVillage,

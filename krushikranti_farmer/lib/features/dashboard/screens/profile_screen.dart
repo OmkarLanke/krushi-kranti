@@ -158,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildDivider(),
 
             // 3. Crop Details
-            _buildMenuItem(Icons.grass, "Crop Details", onTap: () {
+            _buildMenuItem(Icons.grass, l10n.cropDetails, onTap: () {
               Navigator.pushNamed(context, AppRoutes.cropList);
             }),
             _buildDivider(),
@@ -289,6 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSubscriptionMenuItem() {
+    final l10n = AppLocalizations.of(context)!;
     return ListTile(
       onTap: () {
         Navigator.pushNamed(context, AppRoutes.subscription);
@@ -307,7 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
       title: Text(
-        "Subscription",
+        l10n.subscription,
         style: GoogleFonts.poppins(
           fontSize: 16,
           fontWeight: FontWeight.w500,
@@ -315,7 +316,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
       subtitle: Text(
-        _isSubscribed ? "Active" : "Subscribe Now - ₹999/year",
+        _isSubscribed ? l10n.active : "${l10n.subscribeNow} - ${l10n.only999Year}",
         style: GoogleFonts.poppins(
           fontSize: 12,
           color: _isSubscribed ? Colors.green : Colors.orange,
@@ -330,7 +331,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                "Subscribe",
+                l10n.subscribeNow,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   color: Colors.white,
