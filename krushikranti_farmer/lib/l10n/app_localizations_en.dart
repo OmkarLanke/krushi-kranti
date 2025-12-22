@@ -999,4 +999,256 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get benefitExpertAdvice => 'Expert advice';
+
+  @override
+  String get kycVerification => 'KYC Verification';
+
+  @override
+  String get kycStatus => 'KYC Status';
+
+  @override
+  String get kycPending => 'KYC Pending';
+
+  @override
+  String get kycComplete => 'KYC Complete';
+
+  @override
+  String get kycCompleteMessage => 'Your KYC verification is complete!';
+
+  @override
+  String get kycInProgress => 'KYC In Progress';
+
+  @override
+  String get verificationSteps => 'Verification Steps';
+
+  @override
+  String get of3StepsCompleted => 'of 3 steps completed';
+
+  @override
+  String get startVerification => 'Start Verification';
+
+  @override
+  String get continueVerification => 'Continue Verification';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get aadhaarVerification => 'Aadhaar Verification';
+
+  @override
+  String get verifyYourAadhaar => 'Verify Your Aadhaar';
+
+  @override
+  String get aadhaarOtpDescription =>
+      'Enter your 12-digit Aadhaar number. OTP will be sent to registered mobile.';
+
+  @override
+  String get aadhaarNumber => 'Aadhaar Number';
+
+  @override
+  String get enterAadhaarNumber => 'Enter 12-digit Aadhaar number';
+
+  @override
+  String get pleaseEnterAadhaar => 'Please enter Aadhaar number';
+
+  @override
+  String get aadhaarMustBe12Digits => 'Aadhaar number must be 12 digits';
+
+  @override
+  String get sendOtp => 'Send OTP';
+
+  @override
+  String get verifyOtp => 'Verify OTP';
+
+  @override
+  String get otpSentToMobile =>
+      'OTP sent to your Aadhaar registered mobile number';
+
+  @override
+  String get enter6DigitOtp => 'Enter 6-digit OTP';
+
+  @override
+  String get didntReceiveOtp => 'Didn\'t receive OTP?';
+
+  @override
+  String get resendIn => 'Resend in';
+
+  @override
+  String get resendOtp => 'Resend OTP';
+
+  @override
+  String get changeAadhaarNumber => 'Change Aadhaar Number';
+
+  @override
+  String get aadhaarVerified => 'Aadhaar Verified!';
+
+  @override
+  String get continueToPan => 'Continue to PAN';
+
+  @override
+  String get verifyAadhaarDesc => 'Verify with Aadhaar OTP';
+
+  @override
+  String get panVerification => 'PAN Verification';
+
+  @override
+  String get verifyYourPan => 'Verify Your PAN';
+
+  @override
+  String get panVerificationDesc =>
+      'Enter your 10-character PAN number for verification';
+
+  @override
+  String get panNumber => 'PAN Number';
+
+  @override
+  String get enterPanNumber => 'Enter PAN number (e.g., ABCDE1234F)';
+
+  @override
+  String get pleaseEnterPan => 'Please enter PAN number';
+
+  @override
+  String get invalidPanFormat => 'Invalid PAN format. Use XXXXX1234X';
+
+  @override
+  String get panFormatHint =>
+      'PAN Format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)';
+
+  @override
+  String get verifyPan => 'Verify PAN';
+
+  @override
+  String get panVerified => 'PAN Verified!';
+
+  @override
+  String get continueToBank => 'Continue to Bank';
+
+  @override
+  String get verifyPanDesc => 'Verify your PAN card';
+
+  @override
+  String get step => 'Step';
+
+  @override
+  String get of3 => 'of 3';
+
+  @override
+  String get bankVerification => 'Bank Verification';
+
+  @override
+  String get verifyYourBank => 'Verify Your Bank Account';
+
+  @override
+  String get bankVerificationDesc =>
+      'Enter your bank account details for verification';
+
+  @override
+  String get accountNumber => 'Account Number';
+
+  @override
+  String get enterAccountNumber => 'Enter account number';
+
+  @override
+  String get pleaseEnterAccountNumber => 'Please enter account number';
+
+  @override
+  String get accountNumberLength => 'Account number must be 9-18 digits';
+
+  @override
+  String get confirmAccountNumber => 'Confirm Account Number';
+
+  @override
+  String get reEnterAccountNumber => 'Re-enter account number';
+
+  @override
+  String get pleaseConfirmAccountNumber => 'Please confirm account number';
+
+  @override
+  String get accountNumbersDoNotMatch => 'Account numbers do not match';
+
+  @override
+  String get ifscCode => 'IFSC Code';
+
+  @override
+  String get enterIfscCode => 'Enter IFSC code';
+
+  @override
+  String get pleaseEnterIfsc => 'Please enter IFSC code';
+
+  @override
+  String get invalidIfscFormat => 'Invalid IFSC format. Use XXXX0XXXXXX';
+
+  @override
+  String get ifscFormatHint =>
+      'IFSC Format: 4 letters + 0 + 6 alphanumeric (e.g., SBIN0001234)';
+
+  @override
+  String get verifyBank => 'Verify Bank Account';
+
+  @override
+  String get bankVerified => 'Bank Account Verified!';
+
+  @override
+  String get verifyBankDesc => 'Verify your bank account';
+
+  @override
+  String get finalStep => 'Final Step';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get yourKycDetails => 'Your KYC Details';
+
+  @override
+  String get aadhaarDetails => 'Aadhaar Details';
+
+  @override
+  String get panDetails => 'PAN Details';
+
+  @override
+  String get bankDetails => 'Bank Details';
+
+  @override
+  String get nameLabel => 'Name';
+
+  @override
+  String get aadhaarMasked => 'Aadhaar (masked)';
+
+  @override
+  String get panMasked => 'PAN (masked)';
+
+  @override
+  String get accountMasked => 'Account (masked)';
+
+  @override
+  String get accountHolder => 'Account Holder';
+
+  @override
+  String get bankNameLabel => 'Bank';
+
+  @override
+  String get verifiedOn => 'Verified on';
+
+  @override
+  String get aadhaarAlreadyVerified => 'Aadhaar already verified';
+
+  @override
+  String get aadhaarAlreadyVerifiedMessage =>
+      'Your Aadhaar is already verified. You cannot verify it again.';
+
+  @override
+  String get panAlreadyVerified => 'PAN already verified';
+
+  @override
+  String get panAlreadyVerifiedMessage =>
+      'Your PAN is already verified. You cannot verify it again.';
+
+  @override
+  String get bankAlreadyVerified => 'Bank already verified';
+
+  @override
+  String get bankAlreadyVerifiedMessage =>
+      'Your bank account is already verified. You cannot verify it again.';
 }
