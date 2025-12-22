@@ -31,7 +31,7 @@ quickekyc:
     # Use production URL in Docker/production environment
     base-url: ${QUICKEKYC_BASE_URL:https://api.quickekyc.com}
     # API Key from environment
-    key: ${QUICKEKYC_API_KEY}
+    key: ${QUICKEKYC_API_KEY:5682be91-07f3-4208-bc07-f0477e3a038b}
     connect-timeout: 10000
     read-timeout: 30000
 

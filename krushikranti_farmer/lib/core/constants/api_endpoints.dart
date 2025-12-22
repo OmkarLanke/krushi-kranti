@@ -3,7 +3,7 @@ import '../services/http_service.dart';
 class ApiEndpoints {
   // Base URL now uses platform detection from HttpService
   // - Web/Desktop: uses 'http://localhost:4004'
-  // - Android/iOS: uses your local IP address (192.168.1.39)
+  // - Android/iOS: uses your local IP address (192.168.1.45)
   static String get baseUrl => HttpService.baseUrl;
 
   // Auth Endpoints

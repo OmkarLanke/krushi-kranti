@@ -30,19 +30,19 @@ quickekyc:
   api:
 
 
-  # ### for production 
+  ### for production 
     
-  #   base-url: ${QUICKEKYC_BASE_URL:https://api.quickekyc.com}
-  #   # API Key - Use environment variable in production
-  #   key: ${QUICKEKYC_API_KEY:5682be91-07f3-4208-bc07-f0477e3a038b}
-
-
-####for testing sandbox
-     # Use sandbox for development, production for live
-    base-url: ${QUICKEKYC_BASE_URL:https://sandbox.quickekyc.com}
+    base-url: ${QUICKEKYC_BASE_URL:https://api.quickekyc.com}
     # API Key - Use environment variable in production
-    key: ${QUICKEKYC_API_KEY:d8551d2e-1a31-45d1-be02-b797207ac494}
+    key: ${QUICKEKYC_API_KEY:5682be91-07f3-4208-bc07-f0477e3a038b}
 
+
+# ####for testing sandbox
+#      # Use sandbox for development, production for live
+#     base-url: ${QUICKEKYC_BASE_URL:https://sandbox.quickekyc.com}
+#     # API Key - Use environment variable in production
+#     key: ${QUICKEKYC_API_KEY:d8551d2e-1a31-45d1-be02-b797207ac494}
+    
 
 
     # Timeout settings
