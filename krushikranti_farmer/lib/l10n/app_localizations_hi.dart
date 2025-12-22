@@ -1000,4 +1000,255 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get benefitExpertAdvice => 'विशेषज्ञ सलाह';
+
+  @override
+  String get kycVerification => 'KYC सत्यापन';
+
+  @override
+  String get kycStatus => 'KYC स्थिति';
+
+  @override
+  String get kycPending => 'KYC लंबित';
+
+  @override
+  String get kycComplete => 'KYC पूर्ण';
+
+  @override
+  String get kycCompleteMessage => 'आपका KYC सत्यापन पूर्ण हो गया है!';
+
+  @override
+  String get kycInProgress => 'KYC प्रगति में';
+
+  @override
+  String get verificationSteps => 'सत्यापन चरण';
+
+  @override
+  String get of3StepsCompleted => 'में से 3 चरण पूर्ण';
+
+  @override
+  String get startVerification => 'सत्यापन शुरू करें';
+
+  @override
+  String get continueVerification => 'सत्यापन जारी रखें';
+
+  @override
+  String get ok => 'ठीक है';
+
+  @override
+  String get aadhaarVerification => 'आधार सत्यापन';
+
+  @override
+  String get verifyYourAadhaar => 'अपना आधार सत्यापित करें';
+
+  @override
+  String get aadhaarOtpDescription =>
+      'अपना 12 अंकों का आधार नंबर दर्ज करें। OTP पंजीकृत मोबाइल पर भेजा जाएगा।';
+
+  @override
+  String get aadhaarNumber => 'आधार नंबर';
+
+  @override
+  String get enterAadhaarNumber => '12 अंकों का आधार नंबर दर्ज करें';
+
+  @override
+  String get pleaseEnterAadhaar => 'कृपया आधार नंबर दर्ज करें';
+
+  @override
+  String get aadhaarMustBe12Digits => 'आधार नंबर 12 अंकों का होना चाहिए';
+
+  @override
+  String get sendOtp => 'OTP भेजें';
+
+  @override
+  String get verifyOtp => 'OTP सत्यापित करें';
+
+  @override
+  String get otpSentToMobile => 'आपके आधार पंजीकृत मोबाइल नंबर पर OTP भेजा गया';
+
+  @override
+  String get enter6DigitOtp => '6 अंकों का OTP दर्ज करें';
+
+  @override
+  String get didntReceiveOtp => 'OTP नहीं मिला?';
+
+  @override
+  String get resendIn => 'पुनः भेजें';
+
+  @override
+  String get resendOtp => 'OTP पुनः भेजें';
+
+  @override
+  String get changeAadhaarNumber => 'आधार नंबर बदलें';
+
+  @override
+  String get aadhaarVerified => 'आधार सत्यापित!';
+
+  @override
+  String get continueToPan => 'PAN पर जारी रखें';
+
+  @override
+  String get verifyAadhaarDesc => 'आधार OTP से सत्यापित करें';
+
+  @override
+  String get panVerification => 'PAN सत्यापन';
+
+  @override
+  String get verifyYourPan => 'अपना PAN सत्यापित करें';
+
+  @override
+  String get panVerificationDesc =>
+      'सत्यापन के लिए अपना 10 अक्षर का PAN नंबर दर्ज करें';
+
+  @override
+  String get panNumber => 'PAN नंबर';
+
+  @override
+  String get enterPanNumber => 'PAN नंबर दर्ज करें (जैसे, ABCDE1234F)';
+
+  @override
+  String get pleaseEnterPan => 'कृपया PAN नंबर दर्ज करें';
+
+  @override
+  String get invalidPanFormat => 'अमान्य PAN प्रारूप। XXXXX1234X उपयोग करें';
+
+  @override
+  String get panFormatHint =>
+      'PAN प्रारूप: 5 अक्षर + 4 अंक + 1 अक्षर (जैसे, ABCDE1234F)';
+
+  @override
+  String get verifyPan => 'PAN सत्यापित करें';
+
+  @override
+  String get panVerified => 'PAN सत्यापित!';
+
+  @override
+  String get continueToBank => 'बैंक पर जारी रखें';
+
+  @override
+  String get verifyPanDesc => 'अपना PAN कार्ड सत्यापित करें';
+
+  @override
+  String get step => 'चरण';
+
+  @override
+  String get of3 => '3 में से';
+
+  @override
+  String get bankVerification => 'बैंक सत्यापन';
+
+  @override
+  String get verifyYourBank => 'अपना बैंक खाता सत्यापित करें';
+
+  @override
+  String get bankVerificationDesc =>
+      'सत्यापन के लिए अपने बैंक खाते का विवरण दर्ज करें';
+
+  @override
+  String get accountNumber => 'खाता नंबर';
+
+  @override
+  String get enterAccountNumber => 'खाता नंबर दर्ज करें';
+
+  @override
+  String get pleaseEnterAccountNumber => 'कृपया खाता नंबर दर्ज करें';
+
+  @override
+  String get accountNumberLength => 'खाता नंबर 9-18 अंकों का होना चाहिए';
+
+  @override
+  String get confirmAccountNumber => 'खाता नंबर की पुष्टि करें';
+
+  @override
+  String get reEnterAccountNumber => 'खाता नंबर पुनः दर्ज करें';
+
+  @override
+  String get pleaseConfirmAccountNumber => 'कृपया खाता नंबर की पुष्टि करें';
+
+  @override
+  String get accountNumbersDoNotMatch => 'खाता नंबर मेल नहीं खाते';
+
+  @override
+  String get ifscCode => 'IFSC कोड';
+
+  @override
+  String get enterIfscCode => 'IFSC कोड दर्ज करें';
+
+  @override
+  String get pleaseEnterIfsc => 'कृपया IFSC कोड दर्ज करें';
+
+  @override
+  String get invalidIfscFormat => 'अमान्य IFSC प्रारूप। XXXX0XXXXXX उपयोग करें';
+
+  @override
+  String get ifscFormatHint =>
+      'IFSC प्रारूप: 4 अक्षर + 0 + 6 अल्फ़ान्यूमेरिक (जैसे, SBIN0001234)';
+
+  @override
+  String get verifyBank => 'बैंक खाता सत्यापित करें';
+
+  @override
+  String get bankVerified => 'बैंक खाता सत्यापित!';
+
+  @override
+  String get verifyBankDesc => 'अपना बैंक खाता सत्यापित करें';
+
+  @override
+  String get finalStep => 'अंतिम चरण';
+
+  @override
+  String get done => 'हो गया';
+
+  @override
+  String get yourKycDetails => 'आपके KYC विवरण';
+
+  @override
+  String get aadhaarDetails => 'आधार विवरण';
+
+  @override
+  String get panDetails => 'PAN विवरण';
+
+  @override
+  String get bankDetails => 'बैंक विवरण';
+
+  @override
+  String get nameLabel => 'नाम';
+
+  @override
+  String get aadhaarMasked => 'आधार (छिपाया हुआ)';
+
+  @override
+  String get panMasked => 'PAN (छिपाया हुआ)';
+
+  @override
+  String get accountMasked => 'खाता (छिपाया हुआ)';
+
+  @override
+  String get accountHolder => 'खाता धारक';
+
+  @override
+  String get bankNameLabel => 'बैंक';
+
+  @override
+  String get verifiedOn => 'सत्यापित दिनांक';
+
+  @override
+  String get aadhaarAlreadyVerified => 'आधार पहले से सत्यापित';
+
+  @override
+  String get aadhaarAlreadyVerifiedMessage =>
+      'आपका आधार पहले से सत्यापित है। आप इसे दोबारा सत्यापित नहीं कर सकते।';
+
+  @override
+  String get panAlreadyVerified => 'PAN पहले से सत्यापित';
+
+  @override
+  String get panAlreadyVerifiedMessage =>
+      'आपका PAN पहले से सत्यापित है। आप इसे दोबारा सत्यापित नहीं कर सकते।';
+
+  @override
+  String get bankAlreadyVerified => 'बैंक खाता पहले से सत्यापित';
+
+  @override
+  String get bankAlreadyVerifiedMessage =>
+      'आपका बैंक खाता पहले से सत्यापित है। आप इसे दोबारा सत्यापित नहीं कर सकते।';
 }

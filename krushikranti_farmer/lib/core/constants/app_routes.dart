@@ -29,6 +29,12 @@ import '../../features/sell/screens/sell_screen.dart';
 import '../../features/subscription/screens/welcome_screen.dart';
 import '../../features/subscription/screens/subscription_screen.dart';
 
+// KYC Screens
+import '../../features/kyc/screens/kyc_status_screen.dart';
+import '../../features/kyc/screens/aadhaar_verification_screen.dart';
+import '../../features/kyc/screens/pan_verification_screen.dart';
+import '../../features/kyc/screens/bank_verification_screen.dart';
+
 // Import
 // Though this is mostly used in MainLayout
 import '../../features/orders/screens/order_detail_screen.dart';
@@ -63,6 +69,12 @@ class AppRoutes {
   // Subscription routes
   static const String welcome = '/welcome';
   static const String subscription = '/subscription';
+  
+  // KYC routes
+  static const String kycStatus = '/kyc-status';
+  static const String aadhaarVerification = '/aadhaar-verification';
+  static const String panVerification = '/pan-verification';
+  static const String kycBankVerification = '/kyc-bank-verification';
 
   // --- Route Map ---
   static Map<String, WidgetBuilder> get routes => {
@@ -93,5 +105,11 @@ class AppRoutes {
     // Subscription routes
     welcome: (context) => const WelcomeScreen(),
     subscription: (context) => const SubscriptionScreen(),
+    
+    // KYC routes
+    kycStatus: (context) => const KycStatusScreen(),
+    aadhaarVerification: (context) => const AadhaarVerificationScreen(),
+    panVerification: (context) => const PanVerificationScreen(),
+    kycBankVerification: (context) => const BankVerificationScreen(),
   };
 }

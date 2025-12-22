@@ -2055,6 +2055,492 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Expert advice'**
   String get benefitExpertAdvice;
+
+  /// No description provided for @kycVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'KYC Verification'**
+  String get kycVerification;
+
+  /// No description provided for @kycStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'KYC Status'**
+  String get kycStatus;
+
+  /// No description provided for @kycPending.
+  ///
+  /// In en, this message translates to:
+  /// **'KYC Pending'**
+  String get kycPending;
+
+  /// No description provided for @kycComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'KYC Complete'**
+  String get kycComplete;
+
+  /// No description provided for @kycCompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your KYC verification is complete!'**
+  String get kycCompleteMessage;
+
+  /// No description provided for @kycInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'KYC In Progress'**
+  String get kycInProgress;
+
+  /// No description provided for @verificationSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification Steps'**
+  String get verificationSteps;
+
+  /// No description provided for @of3StepsCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'of 3 steps completed'**
+  String get of3StepsCompleted;
+
+  /// No description provided for @startVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Verification'**
+  String get startVerification;
+
+  /// No description provided for @continueVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Verification'**
+  String get continueVerification;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @aadhaarVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Verification'**
+  String get aadhaarVerification;
+
+  /// No description provided for @verifyYourAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Your Aadhaar'**
+  String get verifyYourAadhaar;
+
+  /// No description provided for @aadhaarOtpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your 12-digit Aadhaar number. OTP will be sent to registered mobile.'**
+  String get aadhaarOtpDescription;
+
+  /// No description provided for @aadhaarNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Number'**
+  String get aadhaarNumber;
+
+  /// No description provided for @enterAadhaarNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 12-digit Aadhaar number'**
+  String get enterAadhaarNumber;
+
+  /// No description provided for @pleaseEnterAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter Aadhaar number'**
+  String get pleaseEnterAadhaar;
+
+  /// No description provided for @aadhaarMustBe12Digits.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar number must be 12 digits'**
+  String get aadhaarMustBe12Digits;
+
+  /// No description provided for @sendOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Send OTP'**
+  String get sendOtp;
+
+  /// No description provided for @verifyOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify OTP'**
+  String get verifyOtp;
+
+  /// No description provided for @otpSentToMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP sent to your Aadhaar registered mobile number'**
+  String get otpSentToMobile;
+
+  /// No description provided for @enter6DigitOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 6-digit OTP'**
+  String get enter6DigitOtp;
+
+  /// No description provided for @didntReceiveOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn\'t receive OTP?'**
+  String get didntReceiveOtp;
+
+  /// No description provided for @resendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in'**
+  String get resendIn;
+
+  /// No description provided for @resendOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend OTP'**
+  String get resendOtp;
+
+  /// No description provided for @changeAadhaarNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Aadhaar Number'**
+  String get changeAadhaarNumber;
+
+  /// No description provided for @aadhaarVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Verified!'**
+  String get aadhaarVerified;
+
+  /// No description provided for @continueToPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to PAN'**
+  String get continueToPan;
+
+  /// No description provided for @verifyAadhaarDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify with Aadhaar OTP'**
+  String get verifyAadhaarDesc;
+
+  /// No description provided for @panVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Verification'**
+  String get panVerification;
+
+  /// No description provided for @verifyYourPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Your PAN'**
+  String get verifyYourPan;
+
+  /// No description provided for @panVerificationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your 10-character PAN number for verification'**
+  String get panVerificationDesc;
+
+  /// No description provided for @panNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Number'**
+  String get panNumber;
+
+  /// No description provided for @enterPanNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PAN number (e.g., ABCDE1234F)'**
+  String get enterPanNumber;
+
+  /// No description provided for @pleaseEnterPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter PAN number'**
+  String get pleaseEnterPan;
+
+  /// No description provided for @invalidPanFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid PAN format. Use XXXXX1234X'**
+  String get invalidPanFormat;
+
+  /// No description provided for @panFormatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)'**
+  String get panFormatHint;
+
+  /// No description provided for @verifyPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify PAN'**
+  String get verifyPan;
+
+  /// No description provided for @panVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Verified!'**
+  String get panVerified;
+
+  /// No description provided for @continueToBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to Bank'**
+  String get continueToBank;
+
+  /// No description provided for @verifyPanDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your PAN card'**
+  String get verifyPanDesc;
+
+  /// No description provided for @step.
+  ///
+  /// In en, this message translates to:
+  /// **'Step'**
+  String get step;
+
+  /// No description provided for @of3.
+  ///
+  /// In en, this message translates to:
+  /// **'of 3'**
+  String get of3;
+
+  /// No description provided for @bankVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Verification'**
+  String get bankVerification;
+
+  /// No description provided for @verifyYourBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Your Bank Account'**
+  String get verifyYourBank;
+
+  /// No description provided for @bankVerificationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your bank account details for verification'**
+  String get bankVerificationDesc;
+
+  /// No description provided for @accountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Number'**
+  String get accountNumber;
+
+  /// No description provided for @enterAccountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter account number'**
+  String get enterAccountNumber;
+
+  /// No description provided for @pleaseEnterAccountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter account number'**
+  String get pleaseEnterAccountNumber;
+
+  /// No description provided for @accountNumberLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Account number must be 9-18 digits'**
+  String get accountNumberLength;
+
+  /// No description provided for @confirmAccountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Account Number'**
+  String get confirmAccountNumber;
+
+  /// No description provided for @reEnterAccountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enter account number'**
+  String get reEnterAccountNumber;
+
+  /// No description provided for @pleaseConfirmAccountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm account number'**
+  String get pleaseConfirmAccountNumber;
+
+  /// No description provided for @accountNumbersDoNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Account numbers do not match'**
+  String get accountNumbersDoNotMatch;
+
+  /// No description provided for @ifscCode.
+  ///
+  /// In en, this message translates to:
+  /// **'IFSC Code'**
+  String get ifscCode;
+
+  /// No description provided for @enterIfscCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter IFSC code'**
+  String get enterIfscCode;
+
+  /// No description provided for @pleaseEnterIfsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter IFSC code'**
+  String get pleaseEnterIfsc;
+
+  /// No description provided for @invalidIfscFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid IFSC format. Use XXXX0XXXXXX'**
+  String get invalidIfscFormat;
+
+  /// No description provided for @ifscFormatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'IFSC Format: 4 letters + 0 + 6 alphanumeric (e.g., SBIN0001234)'**
+  String get ifscFormatHint;
+
+  /// No description provided for @verifyBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Bank Account'**
+  String get verifyBank;
+
+  /// No description provided for @bankVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Account Verified!'**
+  String get bankVerified;
+
+  /// No description provided for @verifyBankDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your bank account'**
+  String get verifyBankDesc;
+
+  /// No description provided for @finalStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Final Step'**
+  String get finalStep;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @yourKycDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Your KYC Details'**
+  String get yourKycDetails;
+
+  /// No description provided for @aadhaarDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar Details'**
+  String get aadhaarDetails;
+
+  /// No description provided for @panDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN Details'**
+  String get panDetails;
+
+  /// No description provided for @bankDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank Details'**
+  String get bankDetails;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get nameLabel;
+
+  /// No description provided for @aadhaarMasked.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar (masked)'**
+  String get aadhaarMasked;
+
+  /// No description provided for @panMasked.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN (masked)'**
+  String get panMasked;
+
+  /// No description provided for @accountMasked.
+  ///
+  /// In en, this message translates to:
+  /// **'Account (masked)'**
+  String get accountMasked;
+
+  /// No description provided for @accountHolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Holder'**
+  String get accountHolder;
+
+  /// No description provided for @bankNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank'**
+  String get bankNameLabel;
+
+  /// No description provided for @verifiedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified on'**
+  String get verifiedOn;
+
+  /// No description provided for @aadhaarAlreadyVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar already verified'**
+  String get aadhaarAlreadyVerified;
+
+  /// No description provided for @aadhaarAlreadyVerifiedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Aadhaar is already verified. You cannot verify it again.'**
+  String get aadhaarAlreadyVerifiedMessage;
+
+  /// No description provided for @panAlreadyVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'PAN already verified'**
+  String get panAlreadyVerified;
+
+  /// No description provided for @panAlreadyVerifiedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your PAN is already verified. You cannot verify it again.'**
+  String get panAlreadyVerifiedMessage;
+
+  /// No description provided for @bankAlreadyVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank already verified'**
+  String get bankAlreadyVerified;
+
+  /// No description provided for @bankAlreadyVerifiedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your bank account is already verified. You cannot verify it again.'**
+  String get bankAlreadyVerifiedMessage;
 }
 
 class _AppLocalizationsDelegate

@@ -1002,4 +1002,255 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get benefitExpertAdvice => 'तज्ञांचा सल्ला';
+
+  @override
+  String get kycVerification => 'KYC पडताळणी';
+
+  @override
+  String get kycStatus => 'KYC स्थिती';
+
+  @override
+  String get kycPending => 'KYC प्रलंबित';
+
+  @override
+  String get kycComplete => 'KYC पूर्ण';
+
+  @override
+  String get kycCompleteMessage => 'तुमची KYC पडताळणी पूर्ण झाली!';
+
+  @override
+  String get kycInProgress => 'KYC प्रगतीत';
+
+  @override
+  String get verificationSteps => 'पडताळणी टप्पे';
+
+  @override
+  String get of3StepsCompleted => 'पैकी ३ टप्पे पूर्ण';
+
+  @override
+  String get startVerification => 'पडताळणी सुरू करा';
+
+  @override
+  String get continueVerification => 'पडताळणी सुरू ठेवा';
+
+  @override
+  String get ok => 'ठीक आहे';
+
+  @override
+  String get aadhaarVerification => 'आधार पडताळणी';
+
+  @override
+  String get verifyYourAadhaar => 'तुमचे आधार पडताळा';
+
+  @override
+  String get aadhaarOtpDescription =>
+      'तुमचा १२ अंकी आधार क्रमांक टाका. नोंदणीकृत मोबाइलवर OTP पाठवला जाईल.';
+
+  @override
+  String get aadhaarNumber => 'आधार क्रमांक';
+
+  @override
+  String get enterAadhaarNumber => '१२ अंकी आधार क्रमांक टाका';
+
+  @override
+  String get pleaseEnterAadhaar => 'कृपया आधार क्रमांक टाका';
+
+  @override
+  String get aadhaarMustBe12Digits => 'आधार क्रमांक १२ अंकी असावा';
+
+  @override
+  String get sendOtp => 'OTP पाठवा';
+
+  @override
+  String get verifyOtp => 'OTP पडताळा';
+
+  @override
+  String get otpSentToMobile => 'तुमच्या आधार नोंदणीकृत मोबाइलवर OTP पाठवला';
+
+  @override
+  String get enter6DigitOtp => '६ अंकी OTP टाका';
+
+  @override
+  String get didntReceiveOtp => 'OTP मिळाला नाही?';
+
+  @override
+  String get resendIn => 'पुन्हा पाठवा';
+
+  @override
+  String get resendOtp => 'OTP पुन्हा पाठवा';
+
+  @override
+  String get changeAadhaarNumber => 'आधार क्रमांक बदला';
+
+  @override
+  String get aadhaarVerified => 'आधार पडताळणी झाली!';
+
+  @override
+  String get continueToPan => 'PAN कडे जा';
+
+  @override
+  String get verifyAadhaarDesc => 'आधार OTP ने पडताळा';
+
+  @override
+  String get panVerification => 'PAN पडताळणी';
+
+  @override
+  String get verifyYourPan => 'तुमचे PAN पडताळा';
+
+  @override
+  String get panVerificationDesc =>
+      'पडताळणीसाठी तुमचा १० अक्षरी PAN क्रमांक टाका';
+
+  @override
+  String get panNumber => 'PAN क्रमांक';
+
+  @override
+  String get enterPanNumber => 'PAN क्रमांक टाका (उदा., ABCDE1234F)';
+
+  @override
+  String get pleaseEnterPan => 'कृपया PAN क्रमांक टाका';
+
+  @override
+  String get invalidPanFormat => 'अवैध PAN स्वरूप. XXXXX1234X वापरा';
+
+  @override
+  String get panFormatHint =>
+      'PAN स्वरूप: ५ अक्षरे + ४ अंक + १ अक्षर (उदा., ABCDE1234F)';
+
+  @override
+  String get verifyPan => 'PAN पडताळा';
+
+  @override
+  String get panVerified => 'PAN पडताळणी झाली!';
+
+  @override
+  String get continueToBank => 'बँकेकडे जा';
+
+  @override
+  String get verifyPanDesc => 'तुमचे PAN कार्ड पडताळा';
+
+  @override
+  String get step => 'टप्पा';
+
+  @override
+  String get of3 => '३ पैकी';
+
+  @override
+  String get bankVerification => 'बँक पडताळणी';
+
+  @override
+  String get verifyYourBank => 'तुमचे बँक खाते पडताळा';
+
+  @override
+  String get bankVerificationDesc =>
+      'पडताळणीसाठी तुमच्या बँक खात्याची माहिती टाका';
+
+  @override
+  String get accountNumber => 'खाते क्रमांक';
+
+  @override
+  String get enterAccountNumber => 'खाते क्रमांक टाका';
+
+  @override
+  String get pleaseEnterAccountNumber => 'कृपया खाते क्रमांक टाका';
+
+  @override
+  String get accountNumberLength => 'खाते क्रमांक ९-१८ अंकी असावा';
+
+  @override
+  String get confirmAccountNumber => 'खाते क्रमांकाची पुष्टी करा';
+
+  @override
+  String get reEnterAccountNumber => 'खाते क्रमांक पुन्हा टाका';
+
+  @override
+  String get pleaseConfirmAccountNumber => 'कृपया खाते क्रमांकाची पुष्टी करा';
+
+  @override
+  String get accountNumbersDoNotMatch => 'खाते क्रमांक जुळत नाहीत';
+
+  @override
+  String get ifscCode => 'IFSC कोड';
+
+  @override
+  String get enterIfscCode => 'IFSC कोड टाका';
+
+  @override
+  String get pleaseEnterIfsc => 'कृपया IFSC कोड टाका';
+
+  @override
+  String get invalidIfscFormat => 'अवैध IFSC स्वरूप. XXXX0XXXXXX वापरा';
+
+  @override
+  String get ifscFormatHint =>
+      'IFSC स्वरूप: ४ अक्षरे + 0 + ६ अल्फान्यूमेरिक (उदा., SBIN0001234)';
+
+  @override
+  String get verifyBank => 'बँक खाते पडताळा';
+
+  @override
+  String get bankVerified => 'बँक खाते पडताळणी झाली!';
+
+  @override
+  String get verifyBankDesc => 'तुमचे बँक खाते पडताळा';
+
+  @override
+  String get finalStep => 'अंतिम टप्पा';
+
+  @override
+  String get done => 'झाले';
+
+  @override
+  String get yourKycDetails => 'तुमचे KYC तपशील';
+
+  @override
+  String get aadhaarDetails => 'आधार तपशील';
+
+  @override
+  String get panDetails => 'PAN तपशील';
+
+  @override
+  String get bankDetails => 'बँक तपशील';
+
+  @override
+  String get nameLabel => 'नाव';
+
+  @override
+  String get aadhaarMasked => 'आधार (लपवलेला)';
+
+  @override
+  String get panMasked => 'PAN (लपवलेला)';
+
+  @override
+  String get accountMasked => 'खाते (लपवलेले)';
+
+  @override
+  String get accountHolder => 'खातेधारक';
+
+  @override
+  String get bankNameLabel => 'बँक';
+
+  @override
+  String get verifiedOn => 'पडताळणी तारीख';
+
+  @override
+  String get aadhaarAlreadyVerified => 'आधार आधीच पडताळलेला आहे';
+
+  @override
+  String get aadhaarAlreadyVerifiedMessage =>
+      'तुमचा आधार आधीच पडताळलेला आहे. तुम्ही तो पुन्हा पडताळू शकत नाही.';
+
+  @override
+  String get panAlreadyVerified => 'PAN आधीच पडताळलेला आहे';
+
+  @override
+  String get panAlreadyVerifiedMessage =>
+      'तुमचा PAN आधीच पडताळलेला आहे. तुम्ही तो पुन्हा पडताळू शकत नाही.';
+
+  @override
+  String get bankAlreadyVerified => 'बँक खाते आधीच पडताळलेले आहे';
+
+  @override
+  String get bankAlreadyVerifiedMessage =>
+      'तुमचे बँक खाते आधीच पडताळलेले आहे. तुम्ही ते पुन्हा पडताळू शकत नाही.';
 }

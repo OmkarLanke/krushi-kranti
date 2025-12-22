@@ -6,6 +6,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/http_service.dart';
+import '../../kyc/services/kyc_service.dart';
+import '../../kyc/models/kyc_models.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,12 +22,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String userPicPath = "";
   bool _isLoading = true;
   bool _isSubscribed = false;
+  KycStatusResponse? _kycStatus;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _checkSubscriptionStatus();
+    _loadKycStatus();
+  }
+
+  Future<void> _loadKycStatus() async {
+    try {
+      final status = await KycService.getKycStatus();
+      if (mounted) {
+        setState(() {
+          _kycStatus = status;
+        });
+      }
+    } catch (e) {
+      // Silently fail - KYC status will be null
+      if (mounted) {
+        setState(() {
+          _kycStatus = KycStatusResponse(); // Empty status
+        });
+      }
+    }
   }
 
   Future<void> _checkSubscriptionStatus() async {
@@ -168,7 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildDivider(),
 
             // 5. KYC
-            _buildMenuItem(Icons.verified_user_outlined, l10n.kyc, onTap: () {}),
+            _buildKycMenuItem(),
             _buildDivider(),
             
             // ✅ CHANGED: Used standard Bank Icon instead of Bag
@@ -334,6 +356,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 l10n.subscribeNow,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildKycMenuItem() {
+    final l10n = AppLocalizations.of(context)!;
+    final isComplete = _kycStatus?.isComplete ?? false;
+    final completedSteps = _kycStatus?.completedSteps ?? 0;
+    
+    return ListTile(
+      onTap: () {
+        Navigator.pushNamed(context, AppRoutes.kycStatus).then((_) => _loadKycStatus());
+      },
+      contentPadding: const EdgeInsets.symmetric(vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: isComplete ? Colors.green.shade50 : Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          isComplete ? Icons.verified : Icons.verified_user_outlined,
+          color: isComplete ? Colors.green : Colors.orange,
+          size: 24,
+        ),
+      ),
+      title: Text(
+        l10n.kyc,
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+        ),
+      ),
+      subtitle: Text(
+        isComplete 
+            ? l10n.kycComplete 
+            : (completedSteps > 0 
+                ? '$completedSteps ${l10n.of3StepsCompleted}' 
+                : l10n.kycPending),
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          color: isComplete ? Colors.green : Colors.orange,
+        ),
+      ),
+      trailing: isComplete 
+          ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                l10n.startVerification,
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
                   color: Colors.white,
                   fontWeight: FontWeight.w500,
                 ),
