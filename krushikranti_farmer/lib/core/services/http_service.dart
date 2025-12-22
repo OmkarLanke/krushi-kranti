@@ -8,14 +8,14 @@ class HttpService {
   // Base URL - API Gateway with platform detection
   // ⚠️ IMPORTANT: 
   // - Web/Desktop: uses 'http://localhost:4004'
-  // - Android/iOS: uses your local IP address (192.168.1.39)
+  // - Android/iOS: uses your local IP address (192.168.1.45)
   static String get baseUrl {
     if (kIsWeb) {
       // Web platform (Chrome browser, etc.)
       return "http://localhost:4004";
     } else if (Platform.isAndroid || Platform.isIOS) {
       // Mobile platforms (Android/iOS) - use your computer's local IP
-      return "http://192.168.1.39:4004"; // ✅ Your Wi-Fi IP address
+      return "http://192.168.1.45:4004"; // ✅ Your Wi-Fi IP address
     } else {
       // Desktop platforms (Windows, Mac, Linux)
       return "http://localhost:4004";

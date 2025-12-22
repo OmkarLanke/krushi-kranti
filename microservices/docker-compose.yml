@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ============================================
   # Infrastructure Services
@@ -431,7 +429,6 @@ services:
       - krushi-kranti-network
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - QUICKEKYC_API_KEY=${QUICKEKYC_API_KEY}
       - QUICKEKYC_BASE_URL=${QUICKEKYC_BASE_URL:-https://api.quickekyc.com}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4014/actuator/health"]
