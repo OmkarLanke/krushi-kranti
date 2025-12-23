@@ -86,5 +86,20 @@ public interface FarmRepository extends JpaRepository<Farm, Long> {
            "AND f.landOwnership IN ('OWNED', 'GOVERNMENT_ALLOTTED') " +
            "AND f.isActive = true")
     List<Farm> findValidCollateralFarms(@Param("farmerId") Long farmerId);
+    
+    /**
+     * Count farms by farmer ID
+     */
+    long countByFarmerId(Long farmerId);
+    
+    /**
+     * Count verified farms by farmer ID
+     */
+    long countByFarmerIdAndIsVerifiedTrue(Long farmerId);
+    
+    /**
+     * Count all verified farms
+     */
+    long countByIsVerifiedTrue();
 }
 

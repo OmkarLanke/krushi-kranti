@@ -182,6 +182,37 @@ public class AuthController {
     }
 
     /**
+     * Internal endpoint for other services to fetch user details by ID.
+     * Used by admin service to get user info (username, email, phone).
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getUserById(@PathVariable Long userId) {
+        try {
+            Optional<User> userOpt = authService.findById(userId);
+            
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>("User not found", null));
+            }
+
+            User user = userOpt.get();
+            UserInfo userInfo = UserInfo.builder()
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .phoneNumber(user.getPhoneNumber())
+                    .role(user.getRole().name())
+                    .isVerified(user.getIsVerified())
+                    .build();
+
+            return ResponseEntity.ok(userInfo);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        }
+    }
+
+    /**
      * Protected endpoint for testing JWT validation through API Gateway.
      * This endpoint requires a valid JWT token.
      * 

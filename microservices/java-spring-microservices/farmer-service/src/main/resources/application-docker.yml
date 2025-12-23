@@ -41,6 +41,15 @@ management:
     health:
       show-details: always
 
+# Service URLs for inter-service communication (Docker)
+services:
+  kyc-service:
+    url: http://kyc-service:4014
+  subscription-service:
+    url: http://subscription-service:4013
+  auth-service:
+    url: http://auth-service:4005
+
 logging:
   level:
     root: INFO

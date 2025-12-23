@@ -107,6 +107,21 @@ public class GatewayConfig {
                         .path("/kyc/**")
                         .uri(serviceUrls.getKycService()))
                 
+                // Admin Routes - Farmer Management (routed to farmer-service)
+                .route("admin-farmer-service", r -> r
+                        .path("/admin/farmers/**")
+                        .uri(serviceUrls.getFarmerService()))
+                
+                // Admin Routes - KYC Management (routed to kyc-service)
+                .route("admin-kyc-service", r -> r
+                        .path("/admin/kyc/**")
+                        .uri(serviceUrls.getKycService()))
+                
+                // Admin Routes - Subscription Management (routed to subscription-service)
+                .route("admin-subscription-service", r -> r
+                        .path("/admin/subscriptions/**")
+                        .uri(serviceUrls.getSubscriptionService()))
+                
                 .build();
     }
 }
