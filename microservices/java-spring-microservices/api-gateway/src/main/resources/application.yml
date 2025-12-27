@@ -54,6 +54,7 @@ gateway:
     support-service: http://127.0.0.1:4012
     subscription-service: http://127.0.0.1:4013
     kyc-service: http://127.0.0.1:4014
+    field-officer-service: http://127.0.0.1:4015
 
 management:
   endpoints:

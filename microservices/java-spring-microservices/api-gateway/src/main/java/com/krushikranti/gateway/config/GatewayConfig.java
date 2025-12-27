@@ -25,6 +25,7 @@ public class GatewayConfig {
         log.info("Gateway configured with service URLs:");
         log.info("  Auth Service: {}", serviceUrls.getAuthService());
         log.info("  Farmer Service: {}", serviceUrls.getFarmerService());
+        log.info("  Field Officer Service: {}", serviceUrls.getFieldOfficerService());
         log.info("  Subscription Service: {}", serviceUrls.getSubscriptionService());
         log.info("  KYC Service: {}", serviceUrls.getKycService());
     }
@@ -121,6 +122,16 @@ public class GatewayConfig {
                 .route("admin-subscription-service", r -> r
                         .path("/admin/subscriptions/**")
                         .uri(serviceUrls.getSubscriptionService()))
+                
+                // Field Officer Service Routes
+                .route("field-officer-service", r -> r
+                        .path("/field-officer/**")
+                        .uri(serviceUrls.getFieldOfficerService()))
+                
+                // Admin Routes - Field Officer Management (routed to field-officer-service)
+                .route("admin-field-officer-service", r -> r
+                        .path("/admin/field-officers/**")
+                        .uri(serviceUrls.getFieldOfficerService()))
                 
                 .build();
     }

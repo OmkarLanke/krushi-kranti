@@ -196,6 +196,14 @@ class _OtpScreenState extends State<OtpScreen> {
           phone: userInfo['phoneNumber'] ?? phoneNumber,
         );
 
+        // Save user role and ID
+        final userRole = userInfo['role'] ?? 'FARMER';
+        final userId = userInfo['id']?.toString() ?? '';
+        await StorageService.saveRole(userRole);
+        if (userId.isNotEmpty) {
+          await StorageService.saveUserId(userId);
+        }
+
         // Check subscription status
         bool isSubscribed = false;
         try {
@@ -222,19 +230,37 @@ class _OtpScreenState extends State<OtpScreen> {
 
         if (!mounted) return;
 
-        // Navigate based on subscription status
-        if (isSubscribed) {
+        // Navigate based on user role
+        if (userRole == 'FIELD_OFFICER') {
+          // Field Officer -> Navigate to Field Officer Dashboard
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.fieldOfficerDashboard,
+            (route) => false,
+          );
+        } else if (userRole == 'ADMIN') {
+          // Admin -> Navigate to Admin Dashboard (if implemented in this app)
+          // For now, redirect to farmer dashboard or show error
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.dashboard,
             (route) => false,
           );
         } else {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.welcome,
-            (route) => false,
-          );
+          // Farmer -> Navigate based on subscription status
+          if (isSubscribed) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.dashboard,
+              (route) => false,
+            );
+          } else {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.welcome,
+              (route) => false,
+            );
+          }
         }
       } else {
         // CASE B: User is Signing Up -> Call /auth/verify-otp, then login to get token
@@ -302,6 +328,14 @@ class _OtpScreenState extends State<OtpScreen> {
           email: userInfo['email'] ?? data['email'] ?? '',
           phone: userInfo['phoneNumber'] ?? phoneNumber,
         );
+
+        // Save user role and ID
+        final userRole = userInfo['role'] ?? 'FARMER';
+        final userId = userInfo['id']?.toString() ?? '';
+        await StorageService.saveRole(userRole);
+        if (userId.isNotEmpty) {
+          await StorageService.saveUserId(userId);
+        }
 
         // New users are unsubscribed by default
         await StorageService.saveSubscriptionStatus(false);

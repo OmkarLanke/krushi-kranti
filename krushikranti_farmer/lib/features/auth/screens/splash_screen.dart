@@ -37,7 +37,24 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    // Token exists → user is logged in. Check subscription to decide entry screen.
+    // Token exists → user is logged in. Check role to decide entry screen.
+    final userRole = await StorageService.getRole();
+
+    if (!mounted) return;
+
+    // Navigate based on user role
+    if (userRole == 'FIELD_OFFICER') {
+      // Field Officer → go directly to Field Officer Dashboard
+      Navigator.pushReplacementNamed(context, AppRoutes.fieldOfficerDashboard);
+      return;
+    } else if (userRole == 'ADMIN') {
+      // Admin → go to Admin Dashboard (if implemented in this app)
+      // For now, redirect to farmer dashboard
+      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      return;
+    }
+
+    // For FARMER role, check subscription to decide entry screen
     // Fetch fresh subscription status from API to ensure accuracy
     bool isSubscribed = false;
     try {

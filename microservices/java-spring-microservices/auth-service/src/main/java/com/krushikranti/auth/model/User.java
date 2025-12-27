@@ -67,7 +67,8 @@ public class User {
         FARMER,
         CUSTOMER,
         VCP_OPERATOR,
-        ADMIN
+        ADMIN,
+        FIELD_OFFICER
     }
 }
 

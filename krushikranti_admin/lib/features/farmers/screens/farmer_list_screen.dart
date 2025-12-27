@@ -377,6 +377,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               fontSize: 13,
             ),
             columns: const [
+              DataColumn(label: Text('User ID')),
               DataColumn(label: Text('Full Name')),
               DataColumn(label: Text('Username')),
               DataColumn(label: Text('Phone No')),
@@ -396,6 +397,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   DataRow _buildFarmerRow(FarmerSummary farmer) {
     return DataRow(
       cells: [
+        DataCell(Text(farmer.userId.toString())),
         DataCell(
           Row(
             children: [

@@ -261,5 +261,37 @@ public class AuthService {
         log.info("User authenticated successfully with OTP: {}", phoneNumber);
         return Optional.of(user);
     }
+
+    /**
+     * Admin method to create users directly without OTP verification.
+     * Used by admin services to create field officers, etc.
+     */
+    @Transactional
+    public User registerUserDirectly(String username, String email, String phoneNumber, String password, User.UserRole role) {
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+        if (userRepository.existsByPhoneNumber(phoneNumber)) {
+            throw new IllegalArgumentException("Phone number already exists");
+        }
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+
+        User user = User.builder()
+                .username(username)
+                .email(email)
+                .phoneNumber(phoneNumber)
+                .passwordHash(passwordEncoder.encode(password))
+                .role(role != null ? role : User.UserRole.FARMER)
+                .isActive(true)
+                .isVerified(true) // Admin-created users are automatically verified
+                .build();
+
+        User savedUser = userRepository.save(user);
+        log.info("User created directly by admin: {} (Role: {})", savedUser.getEmail(), savedUser.getRole());
+        
+        return savedUser;
+    }
 }
 

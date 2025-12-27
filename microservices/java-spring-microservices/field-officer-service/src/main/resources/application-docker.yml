@@ -1,0 +1,59 @@
+server:
+  port: 4015
+
+spring:
+  application:
+    name: field-officer-service
+  
+  datasource:
+    url: jdbc:postgresql://postgres:5432/field_officer_db
+    username: postgres
+    password: ${POSTGRES_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# gRPC Client Configuration (to call Auth Service)
+grpc:
+  client:
+    auth-service:
+      address: static://auth-service:9090
+      negotiationType: plaintext
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+# Service URLs for inter-service communication
+services:
+  auth-service:
+    url: http://auth-service:4005
+  farmer-service:
+    url: http://farmer-service:4000
+  file-service:
+    url: http://file-service:4008
+
+logging:
+  level:
+    root: INFO
+    com.krushikranti.fieldofficer: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+

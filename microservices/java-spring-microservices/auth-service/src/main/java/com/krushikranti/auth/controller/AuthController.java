@@ -1,6 +1,7 @@
 package com.krushikranti.auth.controller;
 
 import com.krushikranti.auth.dto.*;
+import com.krushikranti.auth.dto.AdminCreateUserRequest;
 import com.krushikranti.auth.model.User;
 import com.krushikranti.auth.service.AuthService;
 import com.krushikranti.i18n.constants.MessageKeys;
@@ -207,6 +208,45 @@ public class AuthController {
 
             return ResponseEntity.ok(userInfo);
         } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Admin endpoint to create users directly (bypassing OTP verification).
+     * Used by admin services to create field officers, etc.
+     */
+    @PostMapping("/admin/create-user")
+    public ResponseEntity<?> adminCreateUser(@Valid @RequestBody AdminCreateUserRequest request) {
+        try {
+            User.UserRole role;
+            try {
+                role = User.UserRole.valueOf(request.getRole());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>("Invalid role: " + request.getRole(), null));
+            }
+
+            User user = authService.registerUserDirectly(
+                    request.getUsername(),
+                    request.getEmail(),
+                    request.getPhoneNumber(),
+                    request.getPassword(),
+                    role
+            );
+
+            UserInfo userInfo = UserInfo.builder()
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .phoneNumber(user.getPhoneNumber())
+                    .role(user.getRole().name())
+                    .isVerified(user.getIsVerified())
+                    .build();
+
+            return ResponseEntity.ok(userInfo);
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(e.getMessage(), null));
         }

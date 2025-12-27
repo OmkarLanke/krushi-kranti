@@ -251,6 +251,25 @@ services:
       timeout: 5s
       retries: 5
 
+  field-officer-db:
+    image: postgres:16-alpine
+    container_name: field-officer-db
+    environment:
+      POSTGRES_DB: field_officer_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5453:5432"
+    volumes:
+      - field-officer-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Redis
   redis:
     image: redis:7-alpine
@@ -386,6 +405,30 @@ services:
       retries: 3
       start_period: 40s
 
+  # Field Officer Service
+  field-officer-service:
+    build:
+      context: ./java-spring-microservices
+      dockerfile: field-officer-service/Dockerfile
+    container_name: field-officer-service
+    ports:
+      - "4015:4015"
+    depends_on:
+      field-officer-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - krushi-kranti-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4015/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   # Subscription Service
   subscription-service:
     build:
@@ -456,6 +499,7 @@ volumes:
   analytics-db-data:
   subscription-db-data:
   kyc-db-data:
+  field-officer-db-data:
   redis-data:
   kafka-data:
 

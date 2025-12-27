@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../widgets/sidebar.dart';
 import '../../farmers/screens/farmer_list_screen.dart';
+import '../../field_officers/screens/field_officer_list_screen.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/screens/login_screen.dart';
 
@@ -22,6 +23,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return const _DashboardOverview();
       case 'farmers':
         return const FarmerListScreen();
+      case 'field-officers':
+        return const FieldOfficerListScreen();
       case 'products':
       case 'inventory':
       case 'orders':

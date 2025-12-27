@@ -27,6 +27,7 @@ class Sidebar extends StatelessWidget {
   static final List<SidebarItem> items = [
     SidebarItem(title: 'Dashboard', icon: Icons.dashboard, routeName: 'dashboard'),
     SidebarItem(title: 'Farmer', icon: Icons.people, routeName: 'farmers'),
+    SidebarItem(title: 'Field Officer', icon: Icons.badge, routeName: 'field-officers'),
     SidebarItem(title: 'Product & Pricing', icon: Icons.inventory_2, routeName: 'products'),
     SidebarItem(title: 'Inventory', icon: Icons.warehouse, routeName: 'inventory'),
     SidebarItem(title: 'Order & Logistics', icon: Icons.local_shipping, routeName: 'orders'),

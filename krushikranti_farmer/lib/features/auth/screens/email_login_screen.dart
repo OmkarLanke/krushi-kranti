@@ -59,6 +59,14 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
         phone: userInfo['phoneNumber'] ?? "",
       );
 
+      // Save user role and ID
+      final userRole = userInfo['role'] ?? 'FARMER';
+      final userId = userInfo['id']?.toString() ?? '';
+      await StorageService.saveRole(userRole);
+      if (userId.isNotEmpty) {
+        await StorageService.saveUserId(userId);
+      }
+
       // Check subscription status
       bool isSubscribed = false;
       try {
@@ -85,20 +93,38 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
 
       if (!mounted) return;
 
-      // Navigate based on subscription status
-      if (isSubscribed) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.dashboard,
-        (route) => false,
-      );
-      } else {
-        // Not subscribed - show welcome pages
+      // Navigate based on user role
+      if (userRole == 'FIELD_OFFICER') {
+        // Field Officer -> Navigate to Field Officer Dashboard
         Navigator.pushNamedAndRemoveUntil(
           context,
-          AppRoutes.welcome,
+          AppRoutes.fieldOfficerDashboard,
           (route) => false,
         );
+      } else if (userRole == 'ADMIN') {
+        // Admin -> Navigate to Admin Dashboard (if implemented in this app)
+        // For now, redirect to farmer dashboard or show error
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.dashboard,
+          (route) => false,
+        );
+      } else {
+        // Farmer -> Navigate based on subscription status
+        if (isSubscribed) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.dashboard,
+            (route) => false,
+          );
+        } else {
+          // Not subscribed - show welcome pages
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.welcome,
+            (route) => false,
+          );
+        }
       }
     } catch (e) {
       if (!mounted) return;

@@ -35,6 +35,9 @@ import '../../features/kyc/screens/aadhaar_verification_screen.dart';
 import '../../features/kyc/screens/pan_verification_screen.dart';
 import '../../features/kyc/screens/bank_verification_screen.dart';
 
+// Field Officer Screens
+import '../../features/field_officer/screens/field_officer_dashboard_screen.dart';
+
 // Import
 // Though this is mostly used in MainLayout
 import '../../features/orders/screens/order_detail_screen.dart';
@@ -76,6 +79,9 @@ class AppRoutes {
   static const String panVerification = '/pan-verification';
   static const String kycBankVerification = '/kyc-bank-verification';
 
+  // Field Officer routes
+  static const String fieldOfficerDashboard = '/field-officer-dashboard';
+
   // --- Route Map ---
   static Map<String, WidgetBuilder> get routes => {
     splash: (context) => const SplashScreen(),
@@ -111,5 +117,8 @@ class AppRoutes {
     aadhaarVerification: (context) => const AadhaarVerificationScreen(),
     panVerification: (context) => const PanVerificationScreen(),
     kycBankVerification: (context) => const BankVerificationScreen(),
+
+    // Field Officer routes
+    fieldOfficerDashboard: (context) => const FieldOfficerDashboardScreen(),
   };
 }

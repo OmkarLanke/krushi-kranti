@@ -19,7 +19,11 @@ class StorageService {
   
   // --- SUBSCRIPTION KEYS ---
   static const String _subscriptionStatusKey = 'subscription_status';
-  static const String _subscriptionEndDateKey = 'subscription_end_date'; 
+  static const String _subscriptionEndDateKey = 'subscription_end_date';
+  
+  // --- USER ROLE KEY ---
+  static const String _userRoleKey = 'user_role';
+  static const String _userIdKey = 'user_id'; 
 
   // ===========================================================================
   // 1. SAVE AUTH DATA (From Signup Screen)
@@ -105,6 +109,8 @@ class StorageService {
     await prefs.remove(_altPhoneKey); // ✅ Remove Alt Phone on logout
     await prefs.remove(_subscriptionStatusKey); // ✅ Remove subscription status on logout
     await prefs.remove(_subscriptionEndDateKey);
+    await prefs.remove(_userRoleKey); // ✅ Remove user role on logout
+    await prefs.remove(_userIdKey); // ✅ Remove user ID on logout
   }
 
   // ===========================================================================
@@ -145,5 +151,38 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_subscriptionStatusKey);
     await prefs.remove(_subscriptionEndDateKey);
+  }
+
+  // ===========================================================================
+  // 8. USER ROLE MANAGEMENT
+  // ===========================================================================
+  static Future<void> saveRole(String role) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userRoleKey, role);
+  }
+
+  static Future<String?> getRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userRoleKey);
+  }
+
+  static Future<void> saveUserId(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userIdKey, userId);
+  }
+
+  static Future<String?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userIdKey);
+  }
+
+  static Future<bool> isFieldOfficer() async {
+    final role = await getRole();
+    return role == 'FIELD_OFFICER';
+  }
+
+  static Future<bool> isFarmer() async {
+    final role = await getRole();
+    return role == 'FARMER';
   }
 }
