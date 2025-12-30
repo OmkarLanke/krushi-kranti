@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/http_service.dart';
 import '../services/field_officer_service.dart';
+import 'farm_verification_screen.dart';
 
 class FieldOfficerHomeScreen extends StatefulWidget {
   const FieldOfficerHomeScreen({super.key});
@@ -34,12 +35,44 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> {
         }
       });
 
-      // TODO: Load assigned farms from field-officer-service
-      // For now, show placeholder
-      setState(() {
-        _assignedFarms = [];
-        _isLoading = false;
-      });
+      // Load assigned farms from field-officer-service
+      try {
+        final assignments = await FieldOfficerService.getAssignedFarms();
+        print('DEBUG: Received ${assignments.length} assignments');
+        print('DEBUG: Assignments data: $assignments');
+        
+        // Flatten assignments to get all farms
+        List<dynamic> allFarms = [];
+        for (var assignment in assignments) {
+          if (assignment is Map<String, dynamic>) {
+            print('DEBUG: Processing assignment: ${assignment['assignmentId']}');
+            final farms = assignment['farms'] as List?;
+            print('DEBUG: Farms in assignment: ${farms?.length ?? 0}');
+            if (farms != null && farms.isNotEmpty) {
+              print('DEBUG: Adding ${farms.length} farms to list');
+              allFarms.addAll(farms);
+            } else {
+              print('DEBUG: No farms found in assignment ${assignment['assignmentId']}');
+            }
+          } else {
+            print('DEBUG: Assignment is not a Map: ${assignment.runtimeType}');
+          }
+        }
+        
+        print('DEBUG: Total farms collected: ${allFarms.length}');
+        
+        setState(() {
+          _assignedFarms = allFarms;
+          _isLoading = false;
+        });
+      } catch (e) {
+        print('Error loading assigned farms: $e');
+        print('Error stack trace: ${StackTrace.current}');
+        setState(() {
+          _assignedFarms = [];
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -222,11 +255,22 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                // TODO: Navigate to farm verification screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Farm verification feature coming soon')),
+              onPressed: () async {
+                // Navigate to farm verification screen
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FarmVerificationScreen(
+                      farm: farm,
+                      assignmentId: farm['assignmentId'] ?? 0,
+                    ),
+                  ),
                 );
+                
+                // Reload data if verification was successful
+                if (result == true) {
+                  _loadData();
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.brandGreen,

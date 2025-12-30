@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -28,5 +29,10 @@ public interface FieldOfficerRepository extends JpaRepository<FieldOfficer, Long
     Page<FieldOfficer> searchFieldOfficers(@Param("search") String search, Pageable pageable);
     
     Page<FieldOfficer> findByIsActive(Boolean isActive, Pageable pageable);
+    
+    /**
+     * Find field officers by pincode list and active status
+     */
+    List<FieldOfficer> findByPincodeInAndIsActiveTrue(List<String> pincodes);
 }
 

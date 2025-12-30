@@ -5,6 +5,7 @@ import '../../dashboard/widgets/stat_card.dart';
 import '../models/farmer_models.dart';
 import '../services/farmer_service.dart';
 import 'farmer_detail_screen.dart';
+import 'assign_field_officer_dialog.dart';
 
 class FarmerListScreen extends StatefulWidget {
   const FarmerListScreen({super.key});
@@ -109,6 +110,22 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       barrierDismissible: false,
       builder: (context) => FarmerDetailDialog(farmerId: farmer.farmerId),
     );
+  }
+
+  void _assignFieldOfficer(FarmerSummary farmer) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AssignFieldOfficerDialog(
+        farmerUserId: farmer.userId,
+        farmerId: farmer.farmerId,
+      ),
+    ).then((success) {
+      if (success == true) {
+        // Refresh the list if assignment was successful
+        _loadFarmers();
+      }
+    });
   }
 
   @override
@@ -385,6 +402,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               DataColumn(label: Text('KYC Status')),
               DataColumn(label: Text('Subscription')),
               DataColumn(label: Text('Farms')),
+              DataColumn(label: Text('Field Officer')),
               DataColumn(label: Text('Actions')),
             ],
             rows: _farmers.map((farmer) => _buildFarmerRow(farmer)).toList(),
@@ -424,10 +442,26 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         DataCell(_buildStatusChip(farmer.subscriptionStatus, _getSubStatusColor(farmer.subscriptionStatus))),
         DataCell(Text('${farmer.verifiedFarmCount}/${farmer.farmCount}')),
         DataCell(
-          IconButton(
-            icon: const Icon(Icons.visibility, color: AppColors.brandGreen),
-            onPressed: () => _viewFarmerDetail(farmer),
-            tooltip: 'View Details',
+          TextButton.icon(
+            onPressed: () => _assignFieldOfficer(farmer),
+            icon: const Icon(Icons.person_add, size: 16),
+            label: const Text('Assign'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.brandGreen,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            ),
+          ),
+        ),
+        DataCell(
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.visibility, color: AppColors.brandGreen),
+                onPressed: () => _viewFarmerDetail(farmer),
+                tooltip: 'View Details',
+              ),
+            ],
           ),
         ),
       ],
