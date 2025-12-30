@@ -6,10 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 /**
- * Request DTO for verifying a farm
+ * Request DTO for farm verification
  */
 @Data
 @Builder
@@ -21,16 +19,13 @@ public class VerifyFarmRequest {
     private Long farmId;
     
     @NotNull(message = "Verification status is required")
-    private String verificationStatus; // VERIFIED, REJECTED
+    private String status; // VERIFIED, REJECTED
     
-    private String feedback; // General feedback
+    private String feedback; // Notes/feedback for verification or rejection
     
-    private String rejectionReason; // Required if status is REJECTED
+    private String rejectionReason; // Specific reason if rejected
     
-    private Double latitude; // GPS coordinates
+    private Double latitude; // GPS latitude (optional)
     
-    private Double longitude;
-    
-    private List<String> photoUrls; // URLs of uploaded photos (from File Service)
+    private Double longitude; // GPS longitude (optional)
 }
-
