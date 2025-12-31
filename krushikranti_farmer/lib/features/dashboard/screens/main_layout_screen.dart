@@ -10,8 +10,8 @@ import '../../subscription/services/subscription_service.dart';
 // --- IMPORT YOUR TABS ---
 import 'home_screen.dart';
 import 'profile_screen.dart';
-import '../../sell/screens/sell_screen.dart'; 
-import '../../orders/screens/orders_screen.dart'; // ✅ Imported Orders
+import '../../sell/screens/sell_screen.dart';
+// import '../../finance/screens/finance_screen.dart'; // Finance placeholder for now
 // import '../../crop_management/screens/crop_list_screen.dart'; // Keep commented until Crop List is built
 
 class MainLayoutScreen extends StatefulWidget {
@@ -26,19 +26,19 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
 
   final List<String> _featureNames = const [
     "Home",
-    "Crops",
+    "Task",
     "Sell",
-    "Orders",
-    "Profile",
+    "Finance",
+    "Account",
   ];
 
   // --- LIST OF SCREENS ---
   // The order must match the BottomNavigationBar items below
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Center(child: Text("Crops Screen Coming Soon")), // Placeholder for Crops
+    const Center(child: Text("Task Screen Coming Soon")), // Placeholder for Task
     const SellScreen(), 
-    const OrdersScreen(), // ✅ REPLACED Placeholder with Real Screen
+    const Center(child: Text("Finance Screen Coming Soon")), // Placeholder for Finance
     const ProfileScreen(),
   ];
 
@@ -88,11 +88,11 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         }
 
         final isSubscribed = snapshot.data ?? false;
-        final isProfileTab = _currentIndex == 4;
+        final isAccountTab = _currentIndex == 4;
         Widget body = _screens[_currentIndex];
 
-        // If not subscribed and not on Profile tab, show subscription guard overlay
-        if (!isSubscribed && !isProfileTab) {
+        // If not subscribed and not on Account tab, show subscription guard overlay
+        if (!isSubscribed && !isAccountTab) {
           body = SubscriptionGuard(
             child: body,
             featureName: _featureNames[_currentIndex],
@@ -102,7 +102,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         // NOTE: We removed the automatic redirect to welcome.
         // Unsubscribed users can still access dashboard but will see 
         // subscription guard overlays on protected tabs.
-        // Profile tab remains accessible for subscription navigation.
+        // Account tab remains accessible for subscription navigation.
 
         return Scaffold(
           body: body,
@@ -121,11 +121,11 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 activeIcon: const Icon(Icons.home),
                 label: l10n.home, 
               ),
-              // 2. Crops
+              // 2. Task
               BottomNavigationBarItem(
-                icon: const Icon(Icons.grass_outlined),
-                activeIcon: const Icon(Icons.grass),
-                label: l10n.crops, 
+                icon: const Icon(Icons.assignment_outlined),
+                activeIcon: const Icon(Icons.assignment),
+                label: "Task", 
               ),
               // 3. Sell (Center Highlighted)
               BottomNavigationBarItem(
@@ -139,17 +139,17 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 ),
                 label: l10n.sell,
               ),
-              // 4. Orders
+              // 4. Finance
               BottomNavigationBarItem(
-                icon: const Icon(Icons.shopping_bag_outlined),
-                activeIcon: const Icon(Icons.shopping_bag),
-                label: l10n.orders, 
+                icon: const Icon(Icons.account_balance_wallet_outlined),
+                activeIcon: const Icon(Icons.account_balance_wallet),
+                label: l10n.finance, 
               ),
-              // 5. Profile
+              // 5. Account
               BottomNavigationBarItem(
                 icon: const Icon(Icons.person_outline),
                 activeIcon: const Icon(Icons.person),
-                label: l10n.profile, 
+                label: "Account", 
               ),
             ],
           ),

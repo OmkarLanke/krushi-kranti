@@ -6,14 +6,14 @@ import '../../../core/constants/app_routes.dart';
 import '../../orders/models/sales_order_model.dart';
 import '../../orders/services/order_service.dart';
 
-class SellScreen extends StatefulWidget {
-  const SellScreen({super.key});
+class FinanceScreen extends StatefulWidget {
+  const FinanceScreen({super.key});
 
   @override
-  State<SellScreen> createState() => _SellScreenState();
+  State<FinanceScreen> createState() => _FinanceScreenState();
 }
 
-class _SellScreenState extends State<SellScreen> {
+class _FinanceScreenState extends State<FinanceScreen> {
   late Future<List<SalesOrderModel>> _ordersFuture;
 
   @override
@@ -70,16 +70,6 @@ class _SellScreenState extends State<SellScreen> {
             },
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          // Navigate to add order screen
-          await Navigator.pushNamed(context, AppRoutes.addOrder);
-          // Reload orders after returning from add order screen
-          _loadOrders();
-        },
-        backgroundColor: AppColors.brandGreen,
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -168,3 +158,4 @@ class _SellScreenState extends State<SellScreen> {
     );
   }
 }
+
