@@ -73,5 +73,35 @@ class FieldOfficerAssignmentService {
       throw Exception('Failed to get assignments: ${e.toString()}');
     }
   }
+
+  /// Get all assignments for a field officer (with farmer and farm details)
+  static Future<List<AssignmentResponse>> getAssignmentsForFieldOfficer(
+      int fieldOfficerId) async {
+    try {
+      final response = await HttpService.get(
+        '$_basePath/assignments?fieldOfficerId=$fieldOfficerId&page=0&size=1000',
+      );
+
+      if (response is Map && response.containsKey('data')) {
+        final data = response['data'] as Map<String, dynamic>;
+        if (data.containsKey('assignments')) {
+          final assignments = data['assignments'] as List;
+          return assignments
+              .map((e) => AssignmentResponse.fromJson(e as Map<String, dynamic>))
+              .toList();
+        }
+        // Fallback: if data is directly a list
+        if (data is List) {
+          return (data as List)
+              .map((e) => AssignmentResponse.fromJson(e as Map<String, dynamic>))
+              .toList();
+        }
+      }
+
+      throw Exception('Invalid response format');
+    } catch (e) {
+      throw Exception('Failed to get assignments for field officer: ${e.toString()}');
+    }
+  }
 }
 

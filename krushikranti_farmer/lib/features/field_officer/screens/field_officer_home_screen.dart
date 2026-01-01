@@ -15,7 +15,7 @@ class FieldOfficerHomeScreen extends StatefulWidget {
 
 class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> {
   bool _isLoading = true;
-  List<dynamic> _assignedFarms = [];
+  List<dynamic> _assignments = []; // Changed to assignments instead of flattened farms
   String _userName = 'Field Officer';
 
   @override
@@ -35,41 +35,21 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> {
         }
       });
 
-      // Load assigned farms from field-officer-service
+      // Load assignments from field-officer-service
       try {
         final assignments = await FieldOfficerService.getAssignedFarms();
         print('DEBUG: Received ${assignments.length} assignments');
         print('DEBUG: Assignments data: $assignments');
         
-        // Flatten assignments to get all farms
-        List<dynamic> allFarms = [];
-        for (var assignment in assignments) {
-          if (assignment is Map<String, dynamic>) {
-            print('DEBUG: Processing assignment: ${assignment['assignmentId']}');
-            final farms = assignment['farms'] as List?;
-            print('DEBUG: Farms in assignment: ${farms?.length ?? 0}');
-            if (farms != null && farms.isNotEmpty) {
-              print('DEBUG: Adding ${farms.length} farms to list');
-              allFarms.addAll(farms);
-            } else {
-              print('DEBUG: No farms found in assignment ${assignment['assignmentId']}');
-            }
-          } else {
-            print('DEBUG: Assignment is not a Map: ${assignment.runtimeType}');
-          }
-        }
-        
-        print('DEBUG: Total farms collected: ${allFarms.length}');
-        
         setState(() {
-          _assignedFarms = allFarms;
+          _assignments = assignments;
           _isLoading = false;
         });
       } catch (e) {
-        print('Error loading assigned farms: $e');
+        print('Error loading assignments: $e');
         print('Error stack trace: ${StackTrace.current}');
         setState(() {
-          _assignedFarms = [];
+          _assignments = [];
           _isLoading = false;
         });
       }
@@ -132,7 +112,7 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Assigned Farms for Verification',
+                    'Assigned Farmers',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       color: AppColors.textSecondary,
@@ -140,11 +120,11 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Assigned Farms List
-                  if (_assignedFarms.isEmpty)
+                  // Assigned Farmers List
+                  if (_assignments.isEmpty)
                     _buildEmptyState()
                   else
-                    ..._assignedFarms.map((farm) => _buildFarmCard(farm)).toList(),
+                    ..._assignments.map((assignment) => _buildFarmerCard(assignment)).toList(),
                 ],
               ),
             ),
@@ -177,7 +157,7 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No Farms Assigned',
+              'No Farmers Assigned',
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -186,7 +166,7 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'You will see assigned farms here once the admin assigns them to you.',
+              'You will see assigned farmers here once the admin assigns them to you.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
@@ -199,12 +179,56 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> {
     );
   }
 
-  Widget _buildFarmCard(dynamic farm) {
+  Widget _buildFarmerCard(dynamic assignment) {
+    if (assignment is! Map<String, dynamic>) {
+      return const SizedBox.shrink();
+    }
+
+    // Create a copy of the assignment to ensure we're using fresh data
+    final assignmentCopy = Map<String, dynamic>.from(assignment);
+    
+    final farmerName = assignmentCopy['farmerName'] ?? 'Unknown Farmer';
+    final farmerPhone = assignmentCopy['farmerPhoneNumber'] ?? '';
+    final assignedAt = assignmentCopy['assignedAt'];
+    final farms = assignmentCopy['farms'] as List? ?? [];
+    
+    // Format assigned date
+    String assignedDateStr = 'Date not available';
+    if (assignedAt != null) {
+      try {
+        final date = DateTime.parse(assignedAt);
+        assignedDateStr = 'Assigned On ${_formatDate(date)}';
+      } catch (e) {
+        print('Error parsing date: $e');
+      }
+    }
+
+    // Get first farm's location for display (or combine all farms)
+    String locationStr = 'Location not available';
+    if (farms.isNotEmpty) {
+      final firstFarm = farms[0] as Map<String, dynamic>?;
+      if (firstFarm != null) {
+        final village = firstFarm['village'] ?? '';
+        final district = firstFarm['district'] ?? '';
+        if (village.isNotEmpty || district.isNotEmpty) {
+          locationStr = '$village, $district';
+        }
+      }
+    }
+
+    // Get initials for avatar
+    String initials = farmerName.isNotEmpty ? farmerName[0].toUpperCase() : '?';
+    if (farmerName.contains(' ')) {
+      final parts = farmerName.split(' ');
+      if (parts.length >= 2) {
+        initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      }
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF5F5DC), // Beige background like reference
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -214,84 +238,129 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  farm['farmName'] ?? 'Farm',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            // Navigate to farm verification screen with all farms from assignment
+            // Find the latest assignment data from the list to ensure fresh data
+            final latestAssignment = _assignments.firstWhere(
+              (a) => a is Map<String, dynamic> && 
+                     (a['assignmentId'] ?? a['id']) == (assignment['assignmentId'] ?? assignment['id']),
+              orElse: () => assignment,
+            );
+            
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FarmVerificationScreen(
+                  assignment: latestAssignment,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(farm['status']).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  farm['status'] ?? 'PENDING',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _getStatusColor(farm['status']),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildInfoRow(Icons.location_on, farm['location'] ?? 'Location not available'),
-          const SizedBox(height: 8),
-          _buildInfoRow(Icons.person, 'Farmer: ${farm['farmerName'] ?? 'N/A'}'),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () async {
-                // Navigate to farm verification screen
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FarmVerificationScreen(
-                      farm: farm,
-                      assignmentId: farm['assignmentId'] ?? 0,
+            ).then((result) {
+              // Always reload data when returning from verification screen
+              // to get updated verification status from database
+              _loadData();
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Profile Picture (Circular Avatar)
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: AppColors.brandGreen.withOpacity(0.1),
+                  child: Text(
+                    initials,
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.brandGreen,
                     ),
                   ),
-                );
-                
-                // Reload data if verification was successful
-                if (result == true) {
-                  _loadData();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandGreen,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
                 ),
-              ),
-              child: Text(
-                'Verify Farm',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(width: 16),
+                // Farmer Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Farmer Name
+                      Text(
+                        farmerName,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // Location
+                      Text(
+                        locationStr,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // Assigned Date
+                      Text(
+                        assignedDateStr,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      // Farm Details (if multiple farms, show count)
+                      if (farms.length > 1) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${farms.length} farms assigned',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.brandGreen,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ] else if (farms.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          (farms[0] is Map<String, dynamic>)
+                              ? ((farms[0] as Map<String, dynamic>)['farmName'] ?? 'Farm')
+                              : 'Farm',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
+                // Arrow Icon
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')} ${date.year}';
   }
 
   Widget _buildInfoRow(IconData icon, String text) {

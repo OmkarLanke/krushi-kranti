@@ -59,6 +59,10 @@ class AssignmentResponse {
   final String fieldOfficerName;
   final String fieldOfficerPhone;
   final String? fieldOfficerPincode;
+  final String? farmerName;
+  final String? farmerPhone;
+  final String? farmName;
+  final String? farmLocation;
   final String status;
   final int? assignedByUserId;
   final DateTime? assignedAt;
@@ -73,6 +77,10 @@ class AssignmentResponse {
     required this.fieldOfficerName,
     required this.fieldOfficerPhone,
     this.fieldOfficerPincode,
+    this.farmerName,
+    this.farmerPhone,
+    this.farmName,
+    this.farmLocation,
     required this.status,
     this.assignedByUserId,
     this.assignedAt,
@@ -89,6 +97,10 @@ class AssignmentResponse {
       fieldOfficerName: json['fieldOfficerName'] ?? '',
       fieldOfficerPhone: json['fieldOfficerPhone'] ?? '',
       fieldOfficerPincode: json['fieldOfficerPincode'],
+      farmerName: json['farmerName'],
+      farmerPhone: json['farmerPhone'],
+      farmName: json['farmName'],
+      farmLocation: json['farmLocation'],
       status: json['status'] ?? 'ASSIGNED',
       assignedByUserId: json['assignedByUserId'],
       assignedAt: json['assignedAt'] != null

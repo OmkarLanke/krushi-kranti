@@ -144,6 +144,23 @@ public class KycController {
         }
     }
 
+    // ==================== Test Endpoint ====================
+
+    /**
+     * Test endpoint to bypass KYC verification (for testing purposes only).
+     * Marks all three verifications (Aadhaar, PAN, Bank) as verified.
+     * 
+     * POST /kyc/test/verify-all
+     */
+    @PostMapping("/test/verify-all")
+    public ResponseEntity<ApiResponse<KycStatusResponse>> testVerifyAll(
+            @RequestHeader("X-User-Id") Long userId) {
+        log.info("POST /kyc/test/verify-all - userId: {} (TEST MODE - Bypassing actual verification)", userId);
+        
+        KycStatusResponse response = kycService.testVerifyAll(userId);
+        return ResponseEntity.ok(new ApiResponse<>("All KYC verifications completed (TEST MODE)", response));
+    }
+
     // ==================== Health Check ====================
 
     @GetMapping("/health")
