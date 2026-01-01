@@ -24,6 +24,8 @@ import '../../features/crop_management/screens/crop_list_screen.dart';
 import '../../features/crop_management/screens/add_crop_screen.dart';
 import '../../features/funds/screens/request_funds_screen.dart';
 import '../../features/sell/screens/sell_screen.dart';
+import '../../features/sell/screens/add_order_screen.dart';
+import '../../features/finance/screens/finance_screen.dart';
 
 // Subscription Screens
 import '../../features/subscription/screens/welcome_screen.dart';
@@ -67,6 +69,8 @@ class AppRoutes {
   static const String addCrop = '/add_crop';
   static const String requestFunds = '/request_funds';
   static const String sell = '/sell';
+  static const String addOrder = '/add_order';
+  static const String finance = '/finance';
   static const String orderDetail = '/order_detail';
   
   // Subscription routes
@@ -106,6 +110,8 @@ class AppRoutes {
     addCrop: (context) => const AddCropScreen(),
     requestFunds: (context) => const RequestFundsScreen(),
     sell: (context) => const SellScreen(),
+    addOrder: (context) => const AddOrderScreen(),
+    finance: (context) => const FinanceScreen(),
     orderDetail: (context) => const OrderDetailScreen(),
     
     // Subscription routes

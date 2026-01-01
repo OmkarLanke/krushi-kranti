@@ -6,14 +6,14 @@ import '../../../core/constants/app_routes.dart';
 import '../../orders/models/sales_order_model.dart';
 import '../../orders/services/order_service.dart';
 
-class SellScreen extends StatefulWidget {
-  const SellScreen({super.key});
+class FinanceScreen extends StatefulWidget {
+  const FinanceScreen({super.key});
 
   @override
-  State<SellScreen> createState() => _SellScreenState();
+  State<FinanceScreen> createState() => _FinanceScreenState();
 }
 
-class _SellScreenState extends State<SellScreen> {
+class _FinanceScreenState extends State<FinanceScreen> {
   late Future<List<SalesOrderModel>> _ordersFuture;
 
   @override
@@ -23,10 +23,10 @@ class _SellScreenState extends State<SellScreen> {
   }
 
   void _loadOrders() {
-      setState(() {
+    setState(() {
       _ordersFuture = OrderService.getOrders();
-      });
-    }
+    });
+  }
 
   // ✅ HELPER: Convert "English Backend Status" to "Localized UI Status"
   String _getLocalStatus(String backendStatus, AppLocalizations l10n) {
@@ -71,16 +71,6 @@ class _SellScreenState extends State<SellScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          // Navigate to add order screen
-          await Navigator.pushNamed(context, AppRoutes.addOrder);
-          // Reload orders after returning from add order screen
-          _loadOrders();
-        },
-        backgroundColor: AppColors.brandGreen,
-        child: const Icon(Icons.add, color: Colors.white),
-                    ),
     );
   }
 
@@ -114,13 +104,13 @@ class _SellScreenState extends State<SellScreen> {
                 border: Border.all(color: AppColors.brandGreen.withValues(alpha: 0.3)),
               ),
               child: const Icon(Icons.inventory_2_outlined, color: AppColors.brandGreen),
-              ),
+            ),
             const SizedBox(width: 16),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+            
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
                     "${l10n.orderId} ${order.id}",
                     style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
@@ -131,7 +121,7 @@ class _SellScreenState extends State<SellScreen> {
                   ),
                   const SizedBox(height: 8),
                   Row(
-                      children: [
+                    children: [
                       _buildMiniTag("${l10n.items}: ${order.items.toString().padLeft(2, '0')}"),
                       const SizedBox(width: 8),
                       _buildMiniTag("${l10n.weight}: ${order.weight}"),
@@ -155,7 +145,7 @@ class _SellScreenState extends State<SellScreen> {
             ),
             
             const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-            ],
+          ],
         ),
       ),
     );
@@ -163,8 +153,9 @@ class _SellScreenState extends State<SellScreen> {
 
   Widget _buildMiniTag(String text) {
     return Text(
-        text,
+      text,
       style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black87),
     );
   }
 }
+
