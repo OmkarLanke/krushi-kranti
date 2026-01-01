@@ -50,6 +50,9 @@ public class AdminFarmerService {
     @Value("${services.auth-service.url:http://localhost:4005}")
     private String authServiceUrl;
 
+    @Value("${services.field-officer-service.url:http://localhost:4015}")
+    private String fieldOfficerServiceUrl;
+
     /**
      * Get paginated list of all farmers with summary info
      */
@@ -77,6 +80,9 @@ public class AdminFarmerService {
         // Fetch user details (username, email, phone) from auth service
         Map<Long, Map<String, Object>> userMap = fetchUserDetailsBatch(userIds);
 
+        // Fetch assignment summaries for all farmers
+        Map<Long, AssignmentSummary> assignmentMap = fetchAssignmentSummariesBatch(userIds);
+
         List<AdminFarmerSummaryDto> summaries = new ArrayList<>();
         
         for (Farmer farmer : farmerPage.getContent()) {
@@ -99,6 +105,15 @@ public class AdminFarmerService {
             long farmCount = farmRepository.countByFarmerId(farmer.getId());
             long verifiedFarmCount = farmRepository.countByFarmerIdAndIsVerifiedTrue(farmer.getId());
             
+            // Get assignment summary
+            AssignmentSummary assignmentSummary = assignmentMap.getOrDefault(farmer.getUserId(), 
+                    AssignmentSummary.empty((int) farmCount));
+            
+            // Use farmCount from repository if assignment summary doesn't have it
+            int totalFarmsForAssignment = assignmentSummary.totalFarmsCount > 0 
+                    ? assignmentSummary.totalFarmsCount 
+                    : (int) farmCount;
+            
             AdminFarmerSummaryDto summary = AdminFarmerSummaryDto.builder()
                     .farmerId(farmer.getId())
                     .userId(farmer.getUserId())
@@ -114,6 +129,10 @@ public class AdminFarmerService {
                     .subscriptionStatus(currentSubStatus)
                     .farmCount((int) farmCount)
                     .verifiedFarmCount((int) verifiedFarmCount)
+                    .assignedFarmsCount(assignmentSummary.assignedFarmsCount)
+                    .totalFarmsCount(totalFarmsForAssignment)
+                    .hasAllFarmsAssigned(assignmentSummary.hasAllFarmsAssigned)
+                    .hasPartialAssignment(assignmentSummary.hasPartialAssignment)
                     .registeredAt(farmer.getCreatedAt())
                     .lastUpdatedAt(farmer.getUpdatedAt())
                     .build();
@@ -415,6 +434,109 @@ public class AdminFarmerService {
                         this::fetchUserDetails,
                         (a, b) -> a
                 ));
+    }
+
+    /**
+     * Fetch assignment summaries for multiple farmers from field-officer-service
+     */
+    private Map<Long, AssignmentSummary> fetchAssignmentSummariesBatch(List<Long> userIds) {
+        return userIds.stream()
+                .collect(Collectors.toMap(
+                        userId -> userId,
+                        this::fetchAssignmentSummary,
+                        (a, b) -> a
+                ));
+    }
+
+    /**
+     * Fetch assignment summary for a single farmer
+     */
+    private AssignmentSummary fetchAssignmentSummary(Long farmerUserId) {
+        try {
+            String url = fieldOfficerServiceUrl + "/admin/field-officers/assignments?farmerUserId=" + farmerUserId;
+            log.debug("Fetching assignments for farmer userId: {} from {}", farmerUserId, url);
+            
+            Map<String, Object> response = webClientBuilder.build()
+                    .get()
+                    .uri(url)
+                    .header("X-User-Id", "1") // System admin user ID for inter-service calls
+                    .header("X-User-Roles", "ADMIN")
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+            
+            if (response == null) {
+                log.warn("No response from field-officer-service for farmer userId: {}", farmerUserId);
+                return AssignmentSummary.empty(0);
+            }
+            
+            Object data = response.get("data");
+            if (data == null) {
+                log.warn("No data in response from field-officer-service for farmer userId: {}", farmerUserId);
+                return AssignmentSummary.empty(0);
+            }
+            
+            List<Map<String, Object>> assignments;
+            if (data instanceof List) {
+                assignments = (List<Map<String, Object>>) data;
+            } else {
+                log.warn("Unexpected data type in assignment response for farmer userId: {}", farmerUserId);
+                return AssignmentSummary.empty(0);
+            }
+            
+            // Count assigned farms (assignments with farmId and status != CANCELLED)
+            long assignedFarmsCount = assignments.stream()
+                    .filter(assignment -> {
+                        Object farmId = assignment.get("farmId");
+                        Object status = assignment.get("status");
+                        return farmId != null && 
+                               !"CANCELLED".equalsIgnoreCase(String.valueOf(status));
+                    })
+                    .count();
+            
+            // Get total farms count from farm repository
+            Optional<Farmer> farmerOpt = farmerRepository.findByUserId(farmerUserId);
+            int totalFarmsCount = 0;
+            if (farmerOpt.isPresent()) {
+                totalFarmsCount = (int) farmRepository.countByFarmerId(farmerOpt.get().getId());
+            }
+            
+            boolean hasAllFarmsAssigned = totalFarmsCount > 0 && assignedFarmsCount == totalFarmsCount;
+            boolean hasPartialAssignment = assignedFarmsCount > 0 && assignedFarmsCount < totalFarmsCount;
+            
+            return new AssignmentSummary(
+                    (int) assignedFarmsCount,
+                    totalFarmsCount,
+                    hasAllFarmsAssigned,
+                    hasPartialAssignment
+            );
+            
+        } catch (Exception e) {
+            log.warn("Failed to fetch assignment summary for farmer userId {}: {}", farmerUserId, e.getMessage());
+            return AssignmentSummary.empty(0);
+        }
+    }
+
+    /**
+     * Helper class to hold assignment summary data
+     */
+    private static class AssignmentSummary {
+        final int assignedFarmsCount;
+        final int totalFarmsCount;
+        final boolean hasAllFarmsAssigned;
+        final boolean hasPartialAssignment;
+
+        AssignmentSummary(int assignedFarmsCount, int totalFarmsCount, 
+                          boolean hasAllFarmsAssigned, boolean hasPartialAssignment) {
+            this.assignedFarmsCount = assignedFarmsCount;
+            this.totalFarmsCount = totalFarmsCount;
+            this.hasAllFarmsAssigned = hasAllFarmsAssigned;
+            this.hasPartialAssignment = hasPartialAssignment;
+        }
+
+        static AssignmentSummary empty(int totalFarmsCount) {
+            return new AssignmentSummary(0, totalFarmsCount, false, false);
+        }
     }
 
     /**

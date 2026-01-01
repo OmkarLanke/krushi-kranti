@@ -37,6 +37,12 @@ public class AdminFarmerSummaryDto {
     private Integer farmCount;
     private Integer verifiedFarmCount;
     
+    // Assignment Summary
+    private Integer assignedFarmsCount;  // Number of farms that have assignments
+    private Integer totalFarmsCount;     // Total farms (same as farmCount, but explicit for clarity)
+    private Boolean hasAllFarmsAssigned; // True if all farms are assigned
+    private Boolean hasPartialAssignment; // True if some but not all farms are assigned
+    
     // Timestamps
     private LocalDateTime registeredAt;
     private LocalDateTime lastUpdatedAt;

@@ -407,6 +407,72 @@ public class KycService {
                 .orElse(false);
     }
 
+    /**
+     * Test method to bypass all KYC verifications (for testing purposes only).
+     * Marks Aadhaar, PAN, and Bank as verified with test data.
+     */
+    @Transactional
+    public KycStatusResponse testVerifyAll(Long userId) {
+        log.warn("TEST MODE: Bypassing KYC verification for userId: {}", userId);
+        
+        // Get or create KYC record
+        KycVerification kyc = getOrCreateKycVerification(userId);
+        
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Mark Aadhaar as verified (if not already verified)
+        if (!Boolean.TRUE.equals(kyc.getAadhaarVerified())) {
+            kyc.setAadhaarVerified(true);
+            kyc.setAadhaarNumberMasked("XXXX XXXX 1234");
+            kyc.setAadhaarName("Test User");
+            kyc.setAadhaarVerifiedAt(now);
+            log.info("TEST: Marked Aadhaar as verified for userId: {}", userId);
+        }
+        
+        // Mark PAN as verified (if not already verified)
+        if (!Boolean.TRUE.equals(kyc.getPanVerified())) {
+            kyc.setPanVerified(true);
+            kyc.setPanNumberMasked("ABCDE****F");
+            kyc.setPanName("Test User");
+            kyc.setPanVerifiedAt(now);
+            log.info("TEST: Marked PAN as verified for userId: {}", userId);
+        }
+        
+        // Mark Bank as verified (if not already verified)
+        if (!Boolean.TRUE.equals(kyc.getBankVerified())) {
+            kyc.setBankVerified(true);
+            kyc.setBankAccountMasked("XXXXXXX1234");
+            kyc.setBankIfsc("SBIN0001234");
+            kyc.setBankAccountHolderName("Test User");
+            kyc.setBankName("State Bank of India");
+            kyc.setBankVerifiedAt(now);
+            log.info("TEST: Marked Bank as verified for userId: {}", userId);
+        }
+        
+        // Update overall KYC status
+        if (Boolean.TRUE.equals(kyc.getAadhaarVerified()) &&
+            Boolean.TRUE.equals(kyc.getPanVerified()) &&
+            Boolean.TRUE.equals(kyc.getBankVerified())) {
+            kyc.setKycStatus(KycStatus.VERIFIED);
+        }
+        
+        kycVerificationRepository.save(kyc);
+        
+        // Log the test verification
+        logVerificationAttempt(userId, VerificationType.AADHAAR, "TEST-MODE", 
+                LogStatus.SUCCESS, null, "TEST: Bypassed Aadhaar verification", 
+                "TEST: All verifications bypassed", "127.0.0.1");
+        logVerificationAttempt(userId, VerificationType.PAN, "TEST-MODE", 
+                LogStatus.SUCCESS, null, "TEST: Bypassed PAN verification", 
+                "TEST: All verifications bypassed", "127.0.0.1");
+        logVerificationAttempt(userId, VerificationType.BANK, "TEST-MODE", 
+                LogStatus.SUCCESS, null, "TEST: Bypassed Bank verification", 
+                "TEST: All verifications bypassed", "127.0.0.1");
+        
+        // Return updated status
+        return getKycStatus(userId);
+    }
+
     // ==================== Helper Methods ====================
 
     private KycVerification getOrCreateKycVerification(Long userId) {

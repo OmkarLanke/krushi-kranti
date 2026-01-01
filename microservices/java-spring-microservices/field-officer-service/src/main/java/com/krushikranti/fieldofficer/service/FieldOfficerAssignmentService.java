@@ -7,8 +7,10 @@ import com.krushikranti.fieldofficer.dto.FieldOfficerSummaryDto;
 import com.krushikranti.fieldofficer.dto.SuggestedFieldOfficerDto;
 import com.krushikranti.fieldofficer.model.FieldOfficer;
 import com.krushikranti.fieldofficer.model.FieldOfficerAssignment;
+import com.krushikranti.fieldofficer.model.FarmVerification;
 import com.krushikranti.fieldofficer.repository.FieldOfficerAssignmentRepository;
 import com.krushikranti.fieldofficer.repository.FieldOfficerRepository;
+import com.krushikranti.fieldofficer.repository.FarmVerificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +36,7 @@ public class FieldOfficerAssignmentService {
 
     private final FieldOfficerRepository fieldOfficerRepository;
     private final FieldOfficerAssignmentRepository assignmentRepository;
+    private final FarmVerificationRepository verificationRepository;
     private final WebClient.Builder webClientBuilder;
 
     @Value("${services.farmer-service.url:http://localhost:4000}")
@@ -659,7 +662,7 @@ public class FieldOfficerAssignmentService {
                     
                     if (fieldOfficer == null) {
                         log.warn("Field officer not found for assignment ID: {}", assignment.getId());
-                        return AssignmentResponseDto.fromEntity(assignment, "Unknown", "", "");
+                        return AssignmentResponseDto.fromEntity(assignment, "Unknown", "", "", null, null, null, null);
                     }
                     
                     Map<String, Object> userDetails = fetchUserDetails(fieldOfficer.getUserId());
@@ -668,38 +671,91 @@ public class FieldOfficerAssignmentService {
                             assignment,
                             buildFullName(fieldOfficer.getFirstName(), fieldOfficer.getLastName()),
                             (String) userDetails.getOrDefault("phoneNumber", ""),
-                            fieldOfficer.getPincode()
+                            fieldOfficer.getPincode(),
+                            null, // farmerName - not needed for farmer view
+                            null, // farmerPhone - not needed for farmer view
+                            null, // farmName - not needed for farmer view
+                            null  // farmLocation - not needed for farmer view
                     );
                 })
                 .collect(Collectors.toList());
     }
 
     /**
-     * Get all assignments for a field officer.
+     * Get all assignments for a field officer with farmer and farm details (for admin view).
      */
     public Page<AssignmentResponseDto> getAssignmentsForFieldOfficer(Long fieldOfficerId, Pageable pageable) {
-        log.info("Getting assignments for field officer ID: {}", fieldOfficerId);
+        log.info("Getting assignments for field officer ID: {} (with farmer and farm details)", fieldOfficerId);
         
         Page<FieldOfficerAssignment> assignments = assignmentRepository.findByFieldOfficerId(fieldOfficerId, pageable);
         
         return assignments.map(assignment -> {
-            // For field officer view, we might want to fetch farmer details too
-            // For now, just return basic assignment info
+            // Get field officer details
             FieldOfficer fieldOfficer = fieldOfficerRepository.findById(assignment.getFieldOfficerId())
                     .orElse(null);
             
             if (fieldOfficer == null) {
-                return AssignmentResponseDto.fromEntity(assignment, "Unknown", "", "");
+                return AssignmentResponseDto.fromEntity(assignment, "Unknown", "", "", null, null, null, null);
             }
             
             Map<String, Object> userDetails = fetchUserDetails(fieldOfficer.getUserId());
             
-            return AssignmentResponseDto.fromEntity(
+            // Fetch farmer details
+            Map<String, Object> farmerUserDetails = fetchUserDetails(assignment.getFarmerUserId());
+            String farmerName = buildFullName(
+                    (String) farmerUserDetails.getOrDefault("firstName", ""),
+                    (String) farmerUserDetails.getOrDefault("lastName", ""));
+            if (farmerName.trim().isEmpty()) {
+                farmerName = (String) farmerUserDetails.getOrDefault("username", "Unknown Farmer");
+            }
+            String farmerPhone = (String) farmerUserDetails.getOrDefault("phoneNumber", "");
+            
+            // Fetch farm details if farmId is specified
+            String farmName = null;
+            String farmLocation = null;
+            if (assignment.getFarmId() != null) {
+                try {
+                    List<Map<String, Object>> farms = fetchFarmerFarms(assignment.getFarmerUserId());
+                    Optional<Map<String, Object>> farmOpt = farms.stream()
+                            .filter(farm -> {
+                                Object farmIdObj = farm.get("farmId");
+                                if (farmIdObj == null) {
+                                    farmIdObj = farm.get("id");
+                                }
+                                if (farmIdObj instanceof Number) {
+                                    return ((Number) farmIdObj).longValue() == assignment.getFarmId();
+                                }
+                                return String.valueOf(farmIdObj).equals(String.valueOf(assignment.getFarmId()));
+                            })
+                            .findFirst();
+                    
+                    if (farmOpt.isPresent()) {
+                        Map<String, Object> farm = farmOpt.get();
+                        farmName = (String) farm.getOrDefault("farmName", "Unknown Farm");
+                        String village = (String) farm.getOrDefault("village", "");
+                        String district = (String) farm.getOrDefault("district", "");
+                        String state = (String) farm.getOrDefault("state", "");
+                        farmLocation = String.format("%s, %s, %s", village, district, state).trim();
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to fetch farm details for farmId {}: {}", assignment.getFarmId(), e.getMessage());
+                }
+            }
+            
+            AssignmentResponseDto dto = AssignmentResponseDto.fromEntity(
                     assignment,
                     buildFullName(fieldOfficer.getFirstName(), fieldOfficer.getLastName()),
                     (String) userDetails.getOrDefault("phoneNumber", ""),
                     fieldOfficer.getPincode()
             );
+            
+            // Set farmer and farm details
+            dto.setFarmerName(farmerName);
+            dto.setFarmerPhone(farmerPhone);
+            dto.setFarmName(farmName);
+            dto.setFarmLocation(farmLocation);
+            
+            return dto;
         });
     }
 
@@ -746,13 +802,34 @@ public class FieldOfficerAssignmentService {
                             log.info("Fetched {} farms for farmer userId: {} (assignment {})", 
                                     farms.size(), assignment.getFarmerUserId(), assignment.getId());
                             
+                            // Filter farms by assignment.farmId if specified
+                            if (assignment.getFarmId() != null) {
+                                log.info("Assignment {} has specific farmId: {}. Filtering farms to show only this farm.", 
+                                        assignment.getId(), assignment.getFarmId());
+                                farms = farms.stream()
+                                        .filter(farm -> {
+                                            Object farmIdObj = farm.get("farmId");
+                                            if (farmIdObj == null) {
+                                                farmIdObj = farm.get("id");
+                                            }
+                                            if (farmIdObj instanceof Number) {
+                                                return ((Number) farmIdObj).longValue() == assignment.getFarmId();
+                                            }
+                                            return String.valueOf(farmIdObj).equals(String.valueOf(assignment.getFarmId()));
+                                        })
+                                        .collect(Collectors.toList());
+                                log.info("After filtering by farmId {}, {} farms remain", assignment.getFarmId(), farms.size());
+                            } else {
+                                log.info("Assignment {} has no specific farmId (null). Showing all farms for farmer.", assignment.getId());
+                            }
+                            
                             if (farms.isEmpty()) {
                                 log.warn("WARNING: No farms returned for farmer userId: {} (assignment {}). " +
                                         "This could mean: 1) Farmer has no farms in database, 2) API call failed silently, " +
-                                        "3) Response structure mismatch. Check detailed logs above.", 
+                                        "3) Response structure mismatch, 4) FarmId filter removed all farms. Check detailed logs above.", 
                                         assignment.getFarmerUserId(), assignment.getId());
                             } else {
-                                log.info("SUCCESS: Found {} farms for farmer userId: {}", 
+                                log.info("SUCCESS: Found {} farms for farmer userId: {} (after filtering)", 
                                         farms.size(), assignment.getFarmerUserId());
                             }
                         } catch (Exception e) {
@@ -762,6 +839,8 @@ public class FieldOfficerAssignmentService {
                         }
                         
                         // Build location string for each farm and add assignment info
+                        // Also check verification status from farm_verifications table
+                        final Long fieldOfficerId = fieldOfficer.getId(); // Make final for lambda
                         List<Map<String, Object>> farmsWithLocation = farms.stream()
                                 .map(farm -> {
                                     try {
@@ -773,8 +852,54 @@ public class FieldOfficerAssignmentService {
                                                 farm.getOrDefault("pincode", ""));
                                         farmWithLocation.put("location", location.trim());
                                         farmWithLocation.put("farmerName", farmerName);
-                                        // Add assignment status (default to PENDING for verification)
-                                        farmWithLocation.put("status", "PENDING");
+                                        
+                                        // Get farm ID for verification lookup
+                                        Object farmIdObj = farmWithLocation.get("farmId");
+                                        if (farmIdObj == null) {
+                                            farmIdObj = farmWithLocation.get("id");
+                                        }
+                                        
+                                        // Check verification status from farm_verifications table
+                                        boolean isVerified = false;
+                                        String verificationStatus = "PENDING";
+                                        
+                                        if (farmIdObj != null) {
+                                            Long farmId;
+                                            if (farmIdObj instanceof Number) {
+                                                farmId = ((Number) farmIdObj).longValue();
+                                            } else {
+                                                try {
+                                                    farmId = Long.parseLong(farmIdObj.toString());
+                                                } catch (NumberFormatException e) {
+                                                    farmId = null;
+                                                }
+                                            }
+                                            
+                                            if (farmId != null) {
+                                                Optional<FarmVerification> verificationOpt = 
+                                                        verificationRepository.findByFarmIdAndFieldOfficerId(farmId, fieldOfficerId);
+                                                
+                                                if (verificationOpt.isPresent()) {
+                                                    FarmVerification verification = verificationOpt.get();
+                                                    FarmVerification.VerificationStatus status = verification.getVerificationStatus();
+                                                    verificationStatus = status.name();
+                                                    
+                                                    if (status == FarmVerification.VerificationStatus.VERIFIED || 
+                                                        status == FarmVerification.VerificationStatus.REJECTED) {
+                                                        isVerified = true;
+                                                    }
+                                                    
+                                                    log.debug("Found verification for farm {}: status={}, isVerified={}", 
+                                                            farmId, verificationStatus, isVerified);
+                                                } else {
+                                                    log.debug("No verification found for farm {} by field officer {}", 
+                                                            farmId, fieldOfficerId);
+                                                }
+                                            }
+                                        }
+                                        
+                                        farmWithLocation.put("status", verificationStatus);
+                                        farmWithLocation.put("isVerified", isVerified);
                                         // Add assignment ID for reference
                                         farmWithLocation.put("assignmentId", assignment.getId());
                                         // Ensure farmName field exists (handle both farmName and farm_name)

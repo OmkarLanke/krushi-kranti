@@ -13,6 +13,10 @@ class FarmerSummary {
   final String subscriptionStatus;
   final int farmCount;
   final int verifiedFarmCount;
+  final int? assignedFarmsCount;
+  final int? totalFarmsCount;
+  final bool? hasAllFarmsAssigned;
+  final bool? hasPartialAssignment;
   final DateTime? registeredAt;
   final DateTime? lastUpdatedAt;
 
@@ -31,6 +35,10 @@ class FarmerSummary {
     required this.subscriptionStatus,
     required this.farmCount,
     required this.verifiedFarmCount,
+    this.assignedFarmsCount,
+    this.totalFarmsCount,
+    this.hasAllFarmsAssigned,
+    this.hasPartialAssignment,
     this.registeredAt,
     this.lastUpdatedAt,
   });
@@ -51,6 +59,10 @@ class FarmerSummary {
       subscriptionStatus: json['subscriptionStatus'] ?? 'PENDING',
       farmCount: json['farmCount'] ?? 0,
       verifiedFarmCount: json['verifiedFarmCount'] ?? 0,
+      assignedFarmsCount: json['assignedFarmsCount'],
+      totalFarmsCount: json['totalFarmsCount'],
+      hasAllFarmsAssigned: json['hasAllFarmsAssigned'],
+      hasPartialAssignment: json['hasPartialAssignment'],
       registeredAt: json['registeredAt'] != null
           ? DateTime.tryParse(json['registeredAt'])
           : null,

@@ -46,7 +46,7 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
           BottomNavigationBarItem(
             icon: const Icon(Icons.home_outlined),
             activeIcon: const Icon(Icons.home),
-            label: 'Assigned Farms',
+            label: 'Assigned Farmers',
           ),
           // 2. Profile
           BottomNavigationBarItem(

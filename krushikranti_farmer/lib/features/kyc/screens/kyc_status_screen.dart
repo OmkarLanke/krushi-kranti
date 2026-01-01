@@ -52,6 +52,44 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
     }
   }
 
+  Future<void> _testVerifyAll() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final status = await KycService.testVerifyAll();
+      if (mounted) {
+        setState(() {
+          _kycStatus = status;
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('All KYC verifications completed (TEST MODE)'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   void _navigateToNextStep() {
     if (_kycStatus == null) return;
 
@@ -211,8 +249,46 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                     // KYC Details Section (read-only, fetched from backend)
                     _buildDetailsSection(l10n),
                     
+                    // Test Button (for testing purposes)
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: _isLoading ? null : _testVerifyAll,
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.orange.shade400, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.bug_report, color: Colors.orange.shade700, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Test: Verify All KYC',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.orange.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    
                     // Continue Button
-                    if (!(_kycStatus?.isComplete ?? false))
+                    if (!(_kycStatus?.isComplete ?? false)) ...[
+                      const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
                         height: 56,
@@ -237,6 +313,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                           ),
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),

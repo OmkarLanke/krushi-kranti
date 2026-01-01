@@ -27,6 +27,12 @@ public class AssignmentResponseDto {
     private String fieldOfficerPhone;
     private String fieldOfficerPincode;
     
+    // Farmer Info (for admin view)
+    private String farmerName;
+    private String farmerPhone;
+    private String farmName;
+    private String farmLocation; // Village, District, State
+    
     // Assignment Info
     private String status;
     private Long assignedByUserId;
@@ -38,6 +44,17 @@ public class AssignmentResponseDto {
                                                    String fieldOfficerName, 
                                                    String fieldOfficerPhone,
                                                    String fieldOfficerPincode) {
+        return fromEntity(assignment, fieldOfficerName, fieldOfficerPhone, fieldOfficerPincode, null, null, null, null);
+    }
+    
+    public static AssignmentResponseDto fromEntity(FieldOfficerAssignment assignment, 
+                                                   String fieldOfficerName, 
+                                                   String fieldOfficerPhone,
+                                                   String fieldOfficerPincode,
+                                                   String farmerName,
+                                                   String farmerPhone,
+                                                   String farmName,
+                                                   String farmLocation) {
         return AssignmentResponseDto.builder()
                 .assignmentId(assignment.getId())
                 .fieldOfficerId(assignment.getFieldOfficerId())
@@ -46,6 +63,10 @@ public class AssignmentResponseDto {
                 .fieldOfficerName(fieldOfficerName)
                 .fieldOfficerPhone(fieldOfficerPhone)
                 .fieldOfficerPincode(fieldOfficerPincode)
+                .farmerName(farmerName)
+                .farmerPhone(farmerPhone)
+                .farmName(farmName)
+                .farmLocation(farmLocation)
                 .status(assignment.getStatus() != null ? assignment.getStatus().name() : null)
                 .assignedByUserId(assignment.getAssignedByUserId())
                 .assignedAt(assignment.getAssignedAt())
