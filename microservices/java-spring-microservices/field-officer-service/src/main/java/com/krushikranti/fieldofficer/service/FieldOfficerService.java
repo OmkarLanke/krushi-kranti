@@ -99,6 +99,10 @@ public class FieldOfficerService {
                     return buildSummaryDto(fo, userDetails);
                 })
                 .collect(Collectors.toList());
+        
+        log.info("Total field officers in response: {}, First officer pincode: {}", 
+                summaries.size(), 
+                summaries.isEmpty() ? "N/A" : (summaries.get(0).getPincode() != null ? summaries.get(0).getPincode() : "NULL"));
 
         Map<String, Object> response = new HashMap<>();
         response.put("fieldOfficers", summaries);
@@ -203,13 +207,19 @@ public class FieldOfficerService {
     private FieldOfficerSummaryDto buildSummaryDto(FieldOfficer fieldOfficer, Map<String, Object> userDetails) {
         String fullName = buildFullName(fieldOfficer.getFirstName(), fieldOfficer.getLastName());
         
-        return FieldOfficerSummaryDto.builder()
+        // Log pincode retrieval to verify it's being fetched from database
+        String pincode = fieldOfficer.getPincode();
+        log.info("Building DTO for field officer ID: {}, pincode from DB: {}", 
+                fieldOfficer.getId(), pincode != null ? pincode : "NULL");
+        
+        FieldOfficerSummaryDto dto = FieldOfficerSummaryDto.builder()
                 .fieldOfficerId(fieldOfficer.getId())
                 .userId(fieldOfficer.getUserId())
                 .fullName(fullName)
                 .username((String) userDetails.getOrDefault("username", ""))
                 .phoneNumber((String) userDetails.getOrDefault("phoneNumber", ""))
                 .email((String) userDetails.getOrDefault("email", ""))
+                .pincode(pincode)
                 .village(fieldOfficer.getVillage())
                 .district(fieldOfficer.getDistrict())
                 .state(fieldOfficer.getState())
@@ -217,6 +227,11 @@ public class FieldOfficerService {
                 .createdAt(fieldOfficer.getCreatedAt())
                 .lastUpdatedAt(fieldOfficer.getUpdatedAt())
                 .build();
+        
+        log.info("DTO created - FieldOfficerId: {}, Pincode in DTO: {}", 
+                dto.getFieldOfficerId(), dto.getPincode() != null ? dto.getPincode() : "NULL");
+        
+        return dto;
     }
 
     private String buildFullName(String firstName, String lastName) {

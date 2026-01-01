@@ -44,30 +44,47 @@ public class FieldOfficerAssignmentService {
 
     /**
      * Get suggested field officers for a farmer based on pincode matching.
-     * - If farms have pincodes: show ONLY field officers with matching pincodes
+     * - If farmId is provided: show ONLY field officers matching that specific farm's pincode
+     * - If farmId is null but farms have pincodes: show field officers matching any farm's pincode
      * - If no matches found (but farms have pincodes): show all field officers
      * - If no farms or no pincodes: show all field officers for manual selection
+     * 
+     * @param farmerUserId The farmer's user ID
+     * @param farmId Optional farm ID to filter by specific farm's pincode
+     * @return List of suggested field officers with assignment info
      */
-    public List<SuggestedFieldOfficerDto> getSuggestedFieldOfficers(Long farmerUserId) {
-        log.info("Getting suggested field officers for farmer userId: {}", farmerUserId);
+    public List<SuggestedFieldOfficerDto> getSuggestedFieldOfficers(Long farmerUserId, Long farmId) {
+        log.info("Getting suggested field officers for farmer userId: {}, farmId: {}", farmerUserId, farmId);
         
         // Step 1: Get all farms for the farmer
         List<Map<String, Object>> farms = fetchFarmerFarms(farmerUserId);
         List<FieldOfficer> fieldOfficersToReturn;
         boolean isManualSelection = false;
         
-        // Step 2: Extract unique pincodes from farms (if farms exist)
+        // Step 2: Extract pincodes based on farmId parameter
         Set<String> farmPincodes = Collections.emptySet();
-        if (farms != null && !farms.isEmpty()) {
-            log.debug("Processing {} farms for pincode extraction", farms.size());
-            farmPincodes = farms.stream()
-                    .map(farm -> {
-                        Object pincodeObj = farm.get("pincode");
-                        if (pincodeObj == null) {
-                            log.debug("Farm {} has null pincode", farm.get("farmName"));
-                            return null;
-                        }
-                        // Handle both String and Number types
+        Map<String, Object> selectedFarm = null;
+        
+        if (farmId != null && farmId > 0) {
+            // If farmId is provided, filter by that specific farm's pincode only
+            if (farms != null && !farms.isEmpty()) {
+                Optional<Map<String, Object>> farmOpt = farms.stream()
+                        .filter(farm -> {
+                            Object farmIdObj = farm.get("farmId");
+                            if (farmIdObj == null) {
+                                farmIdObj = farm.get("id");
+                            }
+                            if (farmIdObj instanceof Number) {
+                                return ((Number) farmIdObj).longValue() == farmId;
+                            }
+                            return String.valueOf(farmIdObj).equals(String.valueOf(farmId));
+                        })
+                        .findFirst();
+                
+                if (farmOpt.isPresent()) {
+                    selectedFarm = farmOpt.get();
+                    Object pincodeObj = selectedFarm.get("pincode");
+                    if (pincodeObj != null) {
                         String pincode;
                         if (pincodeObj instanceof String) {
                             pincode = ((String) pincodeObj).trim();
@@ -76,13 +93,47 @@ public class FieldOfficerAssignmentService {
                         } else {
                             pincode = pincodeObj.toString().trim();
                         }
-                        log.debug("Extracted pincode: {} from farm: {}", pincode, farm.get("farmName"));
-                        return pincode.isEmpty() ? null : pincode;
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
-            
-            log.info("Extracted {} unique pincodes from farms: {}", farmPincodes.size(), farmPincodes);
+                        if (!pincode.isEmpty()) {
+                            farmPincodes = Collections.singleton(pincode);
+                            log.info("Filtering by specific farm ID {} with pincode: {}", farmId, pincode);
+                        } else {
+                            log.warn("Selected farm ID {} has empty pincode", farmId);
+                        }
+                    } else {
+                        log.warn("Selected farm ID {} has null pincode", farmId);
+                    }
+                } else {
+                    log.warn("Farm ID {} not found for farmer userId {}", farmId, farmerUserId);
+                }
+            }
+        } else {
+            // If no farmId provided, extract pincodes from all farms (original behavior)
+            if (farms != null && !farms.isEmpty()) {
+                log.debug("Processing {} farms for pincode extraction", farms.size());
+                farmPincodes = farms.stream()
+                        .map(farm -> {
+                            Object pincodeObj = farm.get("pincode");
+                            if (pincodeObj == null) {
+                                log.debug("Farm {} has null pincode", farm.get("farmName"));
+                                return null;
+                            }
+                            // Handle both String and Number types
+                            String pincode;
+                            if (pincodeObj instanceof String) {
+                                pincode = ((String) pincodeObj).trim();
+                            } else if (pincodeObj instanceof Number) {
+                                pincode = String.valueOf(pincodeObj).trim();
+                            } else {
+                                pincode = pincodeObj.toString().trim();
+                            }
+                            log.debug("Extracted pincode: {} from farm: {}", pincode, farm.get("farmName"));
+                            return pincode.isEmpty() ? null : pincode;
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+                
+                log.info("Extracted {} unique pincodes from all farms: {}", farmPincodes.size(), farmPincodes);
+            }
         }
         
         // Step 3: Determine which field officers to return
@@ -159,6 +210,7 @@ public class FieldOfficerAssignmentService {
         // Create final copies for use in lambda
         final boolean finalIsManualSelection = isManualSelection;
         final List<Map<String, Object>> finalFarms = farms;
+        final Map<String, Object> finalSelectedFarm = selectedFarm;
         
         return fieldOfficersToReturn.stream()
                 .filter(fo -> {
@@ -171,21 +223,60 @@ public class FieldOfficerAssignmentService {
                 .map(fo -> {
                     Map<String, Object> userDetails = userMap.getOrDefault(fo.getUserId(), new HashMap<>());
                     
-                    // Find which farm pincodes match this field officer's pincode (if farms exist)
+                    // Find which farm pincodes match this field officer's pincode
                     List<String> matchingPincodes = Collections.emptyList();
                     int matchingFarmCount = 0;
                     
-                    if (!finalIsManualSelection && finalFarms != null && !finalFarms.isEmpty()) {
-                        matchingPincodes = finalFarms.stream()
-                                .map(farm -> (String) farm.get("pincode"))
-                                .filter(pincode -> pincode != null && pincode.equals(fo.getPincode()))
-                                .distinct()
-                                .collect(Collectors.toList());
-                        
-                        matchingFarmCount = (int) finalFarms.stream()
-                                .map(farm -> (String) farm.get("pincode"))
-                                .filter(pincode -> pincode != null && pincode.equals(fo.getPincode()))
-                                .count();
+                    if (!finalIsManualSelection) {
+                        if (finalSelectedFarm != null) {
+                            // If a specific farm is selected, check if it matches
+                            Object pincodeObj = finalSelectedFarm.get("pincode");
+                            String farmPincode = null;
+                            if (pincodeObj instanceof String) {
+                                farmPincode = ((String) pincodeObj).trim();
+                            } else if (pincodeObj instanceof Number) {
+                                farmPincode = String.valueOf(pincodeObj).trim();
+                            } else if (pincodeObj != null) {
+                                farmPincode = pincodeObj.toString().trim();
+                            }
+                            
+                            if (farmPincode != null && !farmPincode.isEmpty() && farmPincode.equals(fo.getPincode())) {
+                                matchingPincodes = Collections.singletonList(farmPincode);
+                                matchingFarmCount = 1;
+                            }
+                        } else if (finalFarms != null && !finalFarms.isEmpty()) {
+                            // Original behavior: check all farms
+                            matchingPincodes = finalFarms.stream()
+                                    .map(farm -> {
+                                        Object pincodeObj = farm.get("pincode");
+                                        if (pincodeObj instanceof String) {
+                                            return ((String) pincodeObj).trim();
+                                        } else if (pincodeObj instanceof Number) {
+                                            return String.valueOf(pincodeObj).trim();
+                                        } else if (pincodeObj != null) {
+                                            return pincodeObj.toString().trim();
+                                        }
+                                        return null;
+                                    })
+                                    .filter(pincode -> pincode != null && !pincode.isEmpty() && pincode.equals(fo.getPincode()))
+                                    .distinct()
+                                    .collect(Collectors.toList());
+                            
+                            matchingFarmCount = (int) finalFarms.stream()
+                                    .map(farm -> {
+                                        Object pincodeObj = farm.get("pincode");
+                                        if (pincodeObj instanceof String) {
+                                            return ((String) pincodeObj).trim();
+                                        } else if (pincodeObj instanceof Number) {
+                                            return String.valueOf(pincodeObj).trim();
+                                        } else if (pincodeObj != null) {
+                                            return pincodeObj.toString().trim();
+                                        }
+                                        return null;
+                                    })
+                                    .filter(pincode -> pincode != null && !pincode.isEmpty() && pincode.equals(fo.getPincode()))
+                                    .count();
+                        }
                     }
                     
                     return SuggestedFieldOfficerDto.builder()

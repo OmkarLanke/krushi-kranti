@@ -24,7 +24,9 @@ class AssignFieldOfficerDialog extends StatefulWidget {
 class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
   List<SuggestedFieldOfficer> _suggestedFieldOfficers = [];
   List<FarmInfo> _farms = [];
+  Map<int, AssignmentResponse> _farmAssignments = {}; // Map of farmId -> assignment
   bool _isLoading = true;
+  bool _isLoadingFieldOfficers = false;
   bool _isAssigning = false;
   String? _error;
   SuggestedFieldOfficer? _selectedFieldOfficer;
@@ -52,23 +54,64 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
     try {
       // Load farmer detail to get farms
       final farmerDetail = await AdminFarmerService.getFarmerDetail(widget.farmerId);
+      
+      // Load assignments to check which farms are already assigned
+      List<AssignmentResponse> assignments = [];
+      try {
+        assignments = await FieldOfficerAssignmentService.getAssignmentsForFarmer(
+            widget.farmerUserId);
+      } catch (e) {
+        // If assignments fail to load, continue without them
+        print('Warning: Failed to load assignments: $e');
+      }
+      
+      // Create a map of farmId -> assignment
+      Map<int, AssignmentResponse> farmAssignments = {};
+      for (var assignment in assignments) {
+        if (assignment.farmId != null) {
+          farmAssignments[assignment.farmId!] = assignment;
+        }
+      }
+      
       setState(() {
         _farms = farmerDetail.farms;
+        _farmAssignments = farmAssignments;
       });
 
-      // Load suggested field officers
-      final suggestions =
-          await FieldOfficerAssignmentService.getSuggestedFieldOfficers(
-              widget.farmerUserId);
+      // Load suggested field officers (without farmId initially)
+      await _loadFieldOfficers(null);
 
       setState(() {
-        _suggestedFieldOfficers = suggestions;
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadFieldOfficers(int? farmId) async {
+    setState(() {
+      _isLoadingFieldOfficers = true;
+    });
+
+    try {
+      final suggestions =
+          await FieldOfficerAssignmentService.getSuggestedFieldOfficers(
+              widget.farmerUserId,
+              farmId: farmId);
+
+      setState(() {
+        _suggestedFieldOfficers = suggestions;
+        _isLoadingFieldOfficers = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingFieldOfficers = false;
+        // Don't set error here, just log it
+        print('Error loading field officers: $e');
       });
     }
   }
@@ -368,27 +411,37 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
 
   Widget _buildFarmCard(FarmInfo farm) {
     final isSelected = _selectedFarm?.farmId == farm.farmId;
+    final isAssigned = _farmAssignments.containsKey(farm.farmId);
+    final assignment = isAssigned ? _farmAssignments[farm.farmId] : null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isSelected
             ? AppColors.brandGreen.withOpacity(0.1)
-            : Colors.white,
+            : isAssigned
+                ? Colors.orange.shade50
+                : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected
               ? AppColors.brandGreen
-              : Colors.grey.shade300,
+              : isAssigned
+                  ? Colors.orange.shade300
+                  : Colors.grey.shade300,
           width: isSelected ? 2 : 1,
         ),
       ),
       child: InkWell(
-        onTap: () {
-          setState(() {
-            _selectedFarm = farm;
-          });
-        },
+        onTap: isAssigned
+            ? null // Disable selection if already assigned
+            : () {
+                setState(() {
+                  _selectedFarm = farm;
+                });
+                // Reload field officers for the selected farm
+                _loadFieldOfficers(farm.farmId);
+              },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -398,11 +451,17 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
               Radio<FarmInfo>(
                 value: farm,
                 groupValue: _selectedFarm,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedFarm = value;
-                  });
-                },
+                onChanged: isAssigned
+                    ? null // Disable selection if already assigned
+                    : (value) {
+                        setState(() {
+                          _selectedFarm = value;
+                        });
+                        // Reload field officers for the selected farm
+                        if (value != null) {
+                          _loadFieldOfficers(value.farmId);
+                        }
+                      },
                 activeColor: AppColors.brandGreen,
               ),
               const SizedBox(width: 12),
@@ -504,6 +563,37 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         ],
                       ],
                     ),
+                    // Show assignment status if farm is already assigned
+                    if (isAssigned && assignment != null) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.orange.shade200),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.assignment_ind,
+                                size: 14, color: Colors.orange.shade700),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Already assigned to: ${assignment.fieldOfficerName}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  color: Colors.orange.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -533,7 +623,14 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
           ],
         ),
         const SizedBox(height: 12),
-        if (_suggestedFieldOfficers.isEmpty)
+        if (_isLoadingFieldOfficers)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (_suggestedFieldOfficers.isEmpty)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

@@ -28,7 +28,7 @@ public class FieldOfficerAssignment {
     @Column(name = "field_officer_id", nullable = false)
     private Long fieldOfficerId;
 
-    @Column(name = "farmer_user_id", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long farmerUserId; // Links to auth.users.id (farmer)
 
     @Column(name = "farm_id")
