@@ -15,7 +15,6 @@ class FieldOfficerProfileScreen extends StatefulWidget {
 class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
   bool _isLoading = true;
   Map<String, dynamic> _profileData = {};
-  bool _isAddressExpanded = false;
 
   @override
   void initState() {
@@ -29,23 +28,17 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
     });
 
     try {
-      // Try to fetch from API first
       try {
         final response = await HttpService.get("field-officer/profile");
         
-        // Handle different response structures
         Map<String, dynamic> data = {};
         if (response is Map<String, dynamic>) {
-          // ApiResponse format: { "message": "...", "data": {...} }
           if (response.containsKey('data')) {
             final dataValue = response['data'];
             if (dataValue is Map<String, dynamic>) {
               data = dataValue;
-            } else {
-              data = {};
             }
           } else {
-            // Response might be the data directly
             data = response;
           }
         }
@@ -56,7 +49,6 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
             _isLoading = false;
           });
 
-          // Also update local storage
           await StorageService.saveAuthDetails(
             email: data['email'] ?? "",
             phone: data['phoneNumber'] ?? "",
@@ -71,24 +63,14 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
           return;
         }
       } catch (apiError) {
-        // Show error to user
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to load profile: ${apiError.toString().replaceFirst("Exception: ", "")}'),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 3),
-            ),
-          );
+           // Handle silent error
         }
       }
 
-      // Fallback to local storage only if API completely fails
-      // Don't show fallback data if API returned an error about missing profile
       final userData = await StorageService.getUserDetails();
       if (mounted) {
         setState(() {
-          // Only use local storage if we have some data, otherwise show empty
           if (userData['firstName']?.toString().isNotEmpty == true || 
               userData['email']?.toString().isNotEmpty == true) {
             _profileData = {
@@ -99,7 +81,6 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
               'alternatePhone': userData['altPhone'] ?? '',
             };
           } else {
-            // No data available - show empty state
             _profileData = {};
           }
           _isLoading = false;
@@ -110,12 +91,6 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading profile: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     }
   }
@@ -129,16 +104,17 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
 
   String _getUsername() {
     final username = _profileData['username'] ?? '';
-    return username.isNotEmpty ? '@$username' : '';
+    return username.isNotEmpty ? 'Username: $username' : '';
   }
 
+  // UPDATED: Changed text to "Field Officer ID"
   String _getFieldOfficerId() {
     final fieldOfficerId = _profileData['fieldOfficerId'] ?? '';
     final userId = _profileData['userId'] ?? '';
     if (fieldOfficerId.toString().isNotEmpty) {
-      return 'FO$fieldOfficerId';
+      return 'Field Officer ID: $fieldOfficerId';
     } else if (userId.toString().isNotEmpty) {
-      return 'FO$userId';
+      return 'Field Officer ID: $userId';
     }
     return '';
   }
@@ -146,10 +122,16 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
   String? _formatDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return null;
     try {
-      // Handle YYYY-MM-DD format from backend
       final parts = dateStr.split("-");
       if (parts.length == 3) {
-        return "${parts[2]}/${parts[1]}/${parts[0]}"; // DD/MM/YYYY
+        final year = parts[0];
+        final month = int.tryParse(parts[1]) ?? 0;
+        final day = parts[2];
+        
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        final monthStr = (month > 0 && month <= 12) ? months[month - 1] : parts[1];
+        
+        return "$day $monthStr $year";
       }
       return dateStr;
     } catch (e) {
@@ -159,16 +141,7 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
 
   String? _formatGender(String? gender) {
     if (gender == null || gender.isEmpty) return null;
-    switch (gender.toUpperCase()) {
-      case 'MALE':
-        return 'Male';
-      case 'FEMALE':
-        return 'Female';
-      case 'OTHER':
-        return 'Other';
-      default:
-        return gender;
-    }
+    return gender[0].toUpperCase() + gender.substring(1).toLowerCase();
   }
 
   Future<void> _handleLogout() async {
@@ -177,14 +150,15 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Logout'),
         content: const Text('Are you sure you want to logout?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout'),
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -205,17 +179,18 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF9FAFB), 
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF9FAFB),
         elevation: 0,
+        centerTitle: true,
         automaticallyImplyLeading: false,
         title: Text(
-          'Krushikranti',
+          'Profile',
           style: GoogleFonts.poppins(
-            color: AppColors.brandGreen,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+            color: const Color(0xFF1F2937),
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -224,109 +199,90 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
               child: CircularProgressIndicator(color: AppColors.brandGreen),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
               child: Column(
                 children: [
-                  // User Identification Section
-                  Text(
-                    _getFullName(),
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                    textAlign: TextAlign.center,
+                  _buildProfileHeader(),
+                  const SizedBox(height: 30),
+                  
+                  _buildSectionHeader('Contact Information'),
+                  _buildModernField(
+                    label: 'Email Address',
+                    value: _profileData['email']?.toString() ?? '',
+                    icon: Icons.email_rounded,
+                    placeholder: 'Not provided',
                   ),
-                  if (_getUsername().isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _getUsername(),
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                  if (_getFieldOfficerId().isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'ID: ${_getFieldOfficerId()}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                  const SizedBox(height: 32),
-
-                  // Email Field
-                  _buildInputField(
-                    label: 'Your Email',
-                    icon: Icons.email_outlined,
-                    value: _profileData['email']?.toString() ?? 'Not provided',
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Phone Number Field
-                  _buildInputField(
+                  _buildModernField(
                     label: 'Phone Number',
-                    icon: Icons.phone_outlined,
-                    value: _profileData['phoneNumber']?.toString() ?? 'Not provided',
+                    value: _profileData['phoneNumber']?.toString() ?? '',
+                    icon: Icons.phone_rounded,
+                    placeholder: '--',
                   ),
-                  const SizedBox(height: 16),
-
-                  // Alternate Number Field
-                  _buildInputField(
+                  _buildModernField(
                     label: 'Alternate Number',
-                    icon: Icons.phone_android_outlined,
-                    value: (_profileData['alternatePhone'] != null && _profileData['alternatePhone'].toString().isNotEmpty) 
-                        ? _profileData['alternatePhone'].toString() 
-                        : 'Not provided',
+                    value: _profileData['alternatePhone']?.toString() ?? '',
+                    icon: Icons.phone_iphone_rounded,
+                    placeholder: 'Not provided',
                   ),
-                  const SizedBox(height: 16),
 
-                  // Date of Birth Field
-                  _buildInputField(
-                    label: 'Date of Birth',
-                    icon: Icons.calendar_today_outlined,
-                    value: _formatDate(_profileData['dateOfBirth']?.toString()) ?? 'Not provided',
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Gender Field
-                  _buildInputField(
-                    label: 'Gender',
-                    icon: Icons.person_outline,
-                    value: _formatGender(_profileData['gender']?.toString()) ?? 'Not provided',
-                  ),
                   const SizedBox(height: 24),
+                  
+                  _buildSectionHeader('Personal Details'),
+                  _buildModernField(
+                    label: 'Date of Birth',
+                    value: _formatDate(_profileData['dateOfBirth']?.toString()) ?? '',
+                    icon: Icons.calendar_month_rounded,
+                    placeholder: '--',
+                  ),
+                  _buildModernField(
+                    label: 'Gender',
+                    value: _formatGender(_profileData['gender']?.toString()) ?? '',
+                    icon: Icons.person_outline_rounded,
+                    placeholder: '--',
+                  ),
 
-                  // Address Section
-                  _buildAddressSection(),
+                  const SizedBox(height: 24),
+                  
+                  _buildSectionHeader('Location'),
+                  _buildAddressCard(),
 
                   const SizedBox(height: 40),
 
-                  // Logout Button
-                  SizedBox(
+                  Container(
                     width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.2),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: ElevatedButton(
                       onPressed: _handleLogout,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.red,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: Text(
-                        'Logout',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.logout_rounded, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Log Out',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -336,117 +292,252 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
     );
   }
 
-  Widget _buildInputField({
-    required String label,
-    required IconData icon,
-    required String value,
-  }) {
-    print("_buildInputField called for '$label' with value: '$value'");
+  Widget _buildProfileHeader() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.white,
+                child: CircleAvatar(
+                  radius: 56,
+                  backgroundColor: Colors.grey.shade100,
+                  backgroundImage: (_profileData['profilePic'] != null && _profileData['profilePic'].toString().isNotEmpty)
+                      ? NetworkImage(_profileData['profilePic'].toString())
+                      : null,
+                  child: (_profileData['profilePic'] == null || _profileData['profilePic'].toString().isEmpty)
+                      ? Icon(Icons.person, size: 50, color: Colors.grey.shade400)
+                      : null,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 5,
+                  )
+                ],
+              ),
+              child: const Icon(Icons.verified, color: Colors.orange, size: 24),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         Text(
-          label,
+          _getFullName(),
           style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1F2937),
+            height: 1.2,
           ),
         ),
+        const SizedBox(height: 4),
+        if (_getUsername().isNotEmpty)
+          Text(
+            _getUsername(),
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: const Color(0xFF1F2937),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300, width: 1),
-            borderRadius: BorderRadius.circular(25),
-            color: Colors.grey.shade50,
+            color: AppColors.brandGreen.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: Row(
-            children: [
-              Icon(icon, size: 20, color: AppColors.brandGreen),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  value,
+          child: Text(
+            _getFieldOfficerId(),
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.brandGreen,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title.toUpperCase(),
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade400,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernField({
+    required String label,
+    required String value,
+    required IconData icon,
+    String placeholder = '',
+  }) {
+    final hasValue = value.isNotEmpty;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.06),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.brandGreen, size: 22),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: Colors.black87,
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  hasValue ? value : placeholder,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    color: hasValue ? const Color(0xFF1F2937) : Colors.grey.shade300,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildAddressSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: () {
-            setState(() {
-              _isAddressExpanded = !_isAddressExpanded;
-            });
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildAddressCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.06),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.location_on_rounded, color: Colors.orange, size: 22),
+              ),
+              const SizedBox(width: 16),
               Text(
-                'Address',
+                'Address Details',
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1F2937),
                 ),
               ),
-              Icon(
-                _isAddressExpanded
-                    ? Icons.keyboard_arrow_up
-                    : Icons.keyboard_arrow_down,
-                color: Colors.grey.shade600,
-              ),
             ],
           ),
-        ),
-        if (_isAddressExpanded) ...[
+          
           const SizedBox(height: 16),
-          _buildAddressDetail('Pincode', _profileData['pincode'] ?? ''),
-          const SizedBox(height: 12),
-          _buildAddressDetail('District', _profileData['district'] ?? ''),
-          const SizedBox(height: 12),
-          _buildAddressDetail('Taluka', _profileData['taluka'] ?? ''),
-          const SizedBox(height: 12),
-          _buildAddressDetail('Village', _profileData['village'] ?? ''),
-          const SizedBox(height: 12),
-          _buildAddressDetail('State', _profileData['state'] ?? ''),
+          Container(height: 1, color: Colors.grey.shade100, margin: const EdgeInsets.only(bottom: 16)),
+          
+          _buildAddressRow('Pincode', _profileData['pincode']),
+          _buildAddressRow('District', _profileData['district']),
+          _buildAddressRow('Taluka', _profileData['taluka']),
+          _buildAddressRow('Village', _profileData['village']),
+          _buildAddressRow('State', _profileData['state']),
         ],
-      ],
+      ),
     );
   }
 
-  Widget _buildAddressDetail(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: Colors.grey.shade600,
+  Widget _buildAddressRow(String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-        Text(
-          value.isEmpty ? 'Not provided' : value,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
+          Text(
+            (value == null || value.isEmpty) ? '--' : value,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: const Color(0xFF1F2937),
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
