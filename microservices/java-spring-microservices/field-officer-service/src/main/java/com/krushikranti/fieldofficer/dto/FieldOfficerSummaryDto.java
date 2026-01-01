@@ -24,6 +24,7 @@ public class FieldOfficerSummaryDto {
     private String username;
     private String phoneNumber;
     private String email;
+    private String pincode;
     private String village;
     private String district;
     private String state;

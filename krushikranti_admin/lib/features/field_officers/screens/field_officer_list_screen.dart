@@ -53,6 +53,18 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         isActive: _isActiveFilter,
       );
 
+      // Debug: Print first field officer's pincode
+      if (response.fieldOfficers.isNotEmpty) {
+        print('DEBUG: First field officer pincode: ${response.fieldOfficers.first.pincode}');
+      }
+      
+      // Debug: Print first field officer's data to verify pincode is received
+      if (response.fieldOfficers.isNotEmpty) {
+        final firstOfficer = response.fieldOfficers.first;
+        print('DEBUG: First field officer - ID: ${firstOfficer.fieldOfficerId}, Pincode: ${firstOfficer.pincode}');
+        print('DEBUG: All field officer data: ${firstOfficer.toString()}');
+      }
+      
       setState(() {
         _fieldOfficers = response.fieldOfficers;
         _totalPages = response.totalPages;
@@ -295,6 +307,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
               DataColumn(label: Text('Username')),
               DataColumn(label: Text('Phone No')),
               DataColumn(label: Text('Email')),
+              DataColumn(label: Text('Pincode')),
               DataColumn(label: Text('Location')),
               DataColumn(label: Text('Status')),
             ],
@@ -331,6 +344,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         DataCell(Text(fieldOfficer.username)),
         DataCell(Text(fieldOfficer.phoneNumber)),
         DataCell(Text(fieldOfficer.email)),
+        DataCell(Text(fieldOfficer.pincode ?? '-')),
         DataCell(Text('${fieldOfficer.village ?? '-'}, ${fieldOfficer.district ?? '-'}')),
         DataCell(_buildStatusChip(fieldOfficer.isActive)),
       ],

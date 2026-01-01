@@ -67,6 +67,18 @@ public class AdminFieldOfficerController {
             }
             
             Map<String, Object> response = fieldOfficerService.getAllFieldOfficers(page, size, search, isActive);
+            
+            // Debug: Log response to verify pincode is included
+            @SuppressWarnings("unchecked")
+            List<FieldOfficerSummaryDto> fieldOfficers = (List<FieldOfficerSummaryDto>) response.get("fieldOfficers");
+            if (fieldOfficers != null && !fieldOfficers.isEmpty()) {
+                FieldOfficerSummaryDto firstOfficer = fieldOfficers.get(0);
+                log.info("Response contains {} field officers. First officer ID: {}, Pincode: {}", 
+                        fieldOfficers.size(), 
+                        firstOfficer.getFieldOfficerId(), 
+                        firstOfficer.getPincode() != null ? firstOfficer.getPincode() : "NULL");
+            }
+            
             return ResponseEntity.ok(new ApiResponse<>("Field officers retrieved successfully", response));
         } catch (Exception e) {
             log.error("Error retrieving field officers: {}", e.getMessage(), e);
@@ -76,17 +88,21 @@ public class AdminFieldOfficerController {
     }
 
     /**
-     * Get suggested field officers for a farmer based on pincode matching
+     * Get suggested field officers for a farmer based on pincode matching.
+     * If farmId is provided, only field officers matching that specific farm's pincode are returned.
+     * If farmId is null, field officers matching any of the farmer's farm pincodes are returned.
      */
     @GetMapping("/suggestions/{farmerUserId}")
     public ResponseEntity<ApiResponse<List<SuggestedFieldOfficerDto>>> getSuggestedFieldOfficers(
-            @PathVariable Long farmerUserId) {
+            @PathVariable Long farmerUserId,
+            @RequestParam(required = false) Long farmId) {
         try {
-            List<SuggestedFieldOfficerDto> suggestions = assignmentService.getSuggestedFieldOfficers(farmerUserId);
+            List<SuggestedFieldOfficerDto> suggestions = assignmentService.getSuggestedFieldOfficers(farmerUserId, farmId);
             return ResponseEntity.ok(new ApiResponse<>(
                     "Suggested field officers retrieved successfully", suggestions));
         } catch (Exception e) {
-            log.error("Error getting suggested field officers for farmer {}: {}", farmerUserId, e.getMessage(), e);
+            log.error("Error getting suggested field officers for farmer {} (farmId: {}): {}", 
+                    farmerUserId, farmId, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(e.getMessage(), null));
         }

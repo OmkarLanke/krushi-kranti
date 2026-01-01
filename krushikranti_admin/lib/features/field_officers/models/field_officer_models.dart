@@ -5,6 +5,7 @@ class FieldOfficerSummary {
   final String username;
   final String phoneNumber;
   final String email;
+  final String? pincode;
   final String? village;
   final String? district;
   final String? state;
@@ -19,6 +20,7 @@ class FieldOfficerSummary {
     required this.username,
     required this.phoneNumber,
     required this.email,
+    this.pincode,
     this.village,
     this.district,
     this.state,
@@ -35,6 +37,7 @@ class FieldOfficerSummary {
       username: json['username'] ?? '',
       phoneNumber: json['phoneNumber'] ?? '',
       email: json['email'] ?? '',
+      pincode: json['pincode'],
       village: json['village'],
       district: json['district'],
       state: json['state'],
@@ -139,4 +142,3 @@ class CreateFieldOfficerRequest {
     };
   }
 }
-

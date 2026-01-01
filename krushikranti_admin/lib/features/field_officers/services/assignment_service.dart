@@ -4,11 +4,16 @@ import '../models/assignment_models.dart';
 class FieldOfficerAssignmentService {
   static const String _basePath = 'admin/field-officers';
 
-  /// Get suggested field officers for a farmer based on pincode matching
+  /// Get suggested field officers for a farmer based on pincode matching.
+  /// If farmId is provided, only field officers matching that specific farm's pincode are returned.
   static Future<List<SuggestedFieldOfficer>> getSuggestedFieldOfficers(
-      int farmerUserId) async {
+      int farmerUserId, {int? farmId}) async {
     try {
-      final response = await HttpService.get('$_basePath/suggestions/$farmerUserId');
+      String url = '$_basePath/suggestions/$farmerUserId';
+      if (farmId != null) {
+        url += '?farmId=$farmId';
+      }
+      final response = await HttpService.get(url);
 
       if (response is Map && response.containsKey('data')) {
         final data = response['data'] as List;
