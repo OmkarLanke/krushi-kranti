@@ -5,10 +5,12 @@ class FieldOfficerSummary {
   final String username;
   final String phoneNumber;
   final String email;
+  final String? pincode;
   final String? village;
   final String? district;
   final String? state;
   final bool isActive;
+  final int? assignedFarmsCount;
   final DateTime? createdAt;
   final DateTime? lastUpdatedAt;
 
@@ -19,10 +21,12 @@ class FieldOfficerSummary {
     required this.username,
     required this.phoneNumber,
     required this.email,
+    this.pincode,
     this.village,
     this.district,
     this.state,
     required this.isActive,
+    this.assignedFarmsCount,
     this.createdAt,
     this.lastUpdatedAt,
   });
@@ -35,10 +39,12 @@ class FieldOfficerSummary {
       username: json['username'] ?? '',
       phoneNumber: json['phoneNumber'] ?? '',
       email: json['email'] ?? '',
+      pincode: json['pincode'],
       village: json['village'],
       district: json['district'],
       state: json['state'],
       isActive: json['isActive'] ?? true,
+      assignedFarmsCount: json['assignedFarmsCount'],
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'])
           : null,
@@ -139,4 +145,3 @@ class CreateFieldOfficerRequest {
     };
   }
 }
-

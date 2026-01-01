@@ -71,5 +71,15 @@ class KycService {
       throw Exception('Failed to verify bank account: $e');
     }
   }
+
+  // Test endpoint to bypass all KYC verifications (for testing purposes only)
+  static Future<KycStatusResponse> testVerifyAll() async {
+    try {
+      final response = await HttpService.post('kyc/test/verify-all', {});
+      return KycStatusResponse.fromJson(response['data'] ?? response);
+    } catch (e) {
+      throw Exception('Failed to test verify all KYC: $e');
+    }
+  }
 }
 

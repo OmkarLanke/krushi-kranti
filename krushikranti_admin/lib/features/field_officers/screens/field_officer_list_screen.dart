@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../models/field_officer_models.dart';
 import '../services/field_officer_service.dart';
+import '../services/assignment_service.dart';
 import 'add_field_officer_screen.dart';
+import 'field_officer_assignments_dialog.dart';
 
 class FieldOfficerListScreen extends StatefulWidget {
   const FieldOfficerListScreen({super.key});
@@ -53,6 +55,18 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         isActive: _isActiveFilter,
       );
 
+      // Debug: Print first field officer's pincode
+      if (response.fieldOfficers.isNotEmpty) {
+        print('DEBUG: First field officer pincode: ${response.fieldOfficers.first.pincode}');
+      }
+      
+      // Debug: Print first field officer's data to verify pincode is received
+      if (response.fieldOfficers.isNotEmpty) {
+        final firstOfficer = response.fieldOfficers.first;
+        print('DEBUG: First field officer - ID: ${firstOfficer.fieldOfficerId}, Pincode: ${firstOfficer.pincode}');
+        print('DEBUG: All field officer data: ${firstOfficer.toString()}');
+      }
+      
       setState(() {
         _fieldOfficers = response.fieldOfficers;
         _totalPages = response.totalPages;
@@ -295,8 +309,10 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
               DataColumn(label: Text('Username')),
               DataColumn(label: Text('Phone No')),
               DataColumn(label: Text('Email')),
+              DataColumn(label: Text('Pincode')),
               DataColumn(label: Text('Location')),
               DataColumn(label: Text('Status')),
+              DataColumn(label: Text('Farm Assignment')),
             ],
             rows: _fieldOfficers.map((fo) => _buildFieldOfficerRow(fo)).toList(),
           ),
@@ -331,8 +347,10 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         DataCell(Text(fieldOfficer.username)),
         DataCell(Text(fieldOfficer.phoneNumber)),
         DataCell(Text(fieldOfficer.email)),
+        DataCell(Text(fieldOfficer.pincode ?? '-')),
         DataCell(Text('${fieldOfficer.village ?? '-'}, ${fieldOfficer.district ?? '-'}')),
         DataCell(_buildStatusChip(fieldOfficer.isActive)),
+        DataCell(_buildFarmAssignmentCell(fieldOfficer)),
       ],
     );
   }
@@ -353,6 +371,69 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
           color: color,
           fontWeight: FontWeight.w500,
         ),
+      ),
+    );
+  }
+
+  Widget _buildFarmAssignmentCell(FieldOfficerSummary fieldOfficer) {
+    final count = fieldOfficer.assignedFarmsCount ?? 0;
+    
+    return InkWell(
+      onTap: count > 0
+          ? () => _showAssignmentsDialog(fieldOfficer)
+          : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: count > 0
+              ? AppColors.brandGreen.withOpacity(0.1)
+              : Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: count > 0
+                ? AppColors.brandGreen
+                : Colors.grey,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.agriculture,
+              size: 16,
+              color: count > 0 ? AppColors.brandGreen : Colors.grey,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              count.toString(),
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: count > 0 ? AppColors.brandGreen : Colors.grey,
+              ),
+            ),
+            if (count > 0) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 12,
+                color: AppColors.brandGreen,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAssignmentsDialog(FieldOfficerSummary fieldOfficer) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => FieldOfficerAssignmentsDialog(
+        fieldOfficerId: fieldOfficer.fieldOfficerId,
+        fieldOfficerName: fieldOfficer.fullName,
       ),
     );
   }

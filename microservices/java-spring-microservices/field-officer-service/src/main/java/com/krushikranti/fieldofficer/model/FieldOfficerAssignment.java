@@ -28,8 +28,11 @@ public class FieldOfficerAssignment {
     @Column(name = "field_officer_id", nullable = false)
     private Long fieldOfficerId;
 
-    @Column(name = "farmer_user_id", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long farmerUserId; // Links to auth.users.id (farmer)
+
+    @Column(name = "farm_id")
+    private Long farmId; // Links to farmer-service farms table. If NULL, assignment is for all farms of the farmer.
 
     @Column(name = "status", length = 20)
     @Enumerated(EnumType.STRING)

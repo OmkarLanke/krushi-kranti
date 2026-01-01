@@ -21,6 +21,9 @@ public class AssignFieldOfficerRequest {
     @NotNull(message = "Farmer user ID is required")
     private Long farmerUserId;
     
+    @NotNull(message = "Farm ID is required")
+    private Long farmId; // Farm ID from farmer-service farms table
+    
     private String notes; // Optional notes for the assignment
 }
 

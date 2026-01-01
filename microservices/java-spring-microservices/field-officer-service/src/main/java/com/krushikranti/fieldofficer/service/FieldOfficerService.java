@@ -3,7 +3,9 @@ package com.krushikranti.fieldofficer.service;
 import com.krushikranti.fieldofficer.dto.CreateFieldOfficerRequest;
 import com.krushikranti.fieldofficer.dto.FieldOfficerSummaryDto;
 import com.krushikranti.fieldofficer.model.FieldOfficer;
+import com.krushikranti.fieldofficer.model.FieldOfficerAssignment;
 import com.krushikranti.fieldofficer.repository.FieldOfficerRepository;
+import com.krushikranti.fieldofficer.repository.FieldOfficerAssignmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 public class FieldOfficerService {
 
     private final FieldOfficerRepository fieldOfficerRepository;
+    private final FieldOfficerAssignmentRepository assignmentRepository;
     private final WebClient.Builder webClientBuilder;
 
     @Value("${services.auth-service.url:http://localhost:4005}")
@@ -67,7 +70,10 @@ public class FieldOfficerService {
         // Fetch user details to build summary
         Map<String, Object> userDetails = fetchUserDetails(userId);
         
-        return buildSummaryDto(saved, userDetails);
+        // Count assigned farms (initially 0 for new field officer)
+        Integer assignedFarmsCount = countAssignedFarms(saved.getId());
+        
+        return buildSummaryDto(saved, userDetails, assignedFarmsCount);
     }
 
     /**
@@ -93,12 +99,24 @@ public class FieldOfficerService {
         // Fetch user details (username, email, phone) from auth service
         Map<Long, Map<String, Object>> userMap = fetchUserDetailsBatch(userIds);
 
+        // Fetch assignment counts for all field officers
+        Map<Long, Integer> assignmentCountMap = fieldOfficerPage.getContent().stream()
+                .collect(Collectors.toMap(
+                        FieldOfficer::getId,
+                        fo -> countAssignedFarms(fo.getId())
+                ));
+
         List<FieldOfficerSummaryDto> summaries = fieldOfficerPage.getContent().stream()
                 .map(fo -> {
                     Map<String, Object> userDetails = userMap.getOrDefault(fo.getUserId(), new HashMap<>());
-                    return buildSummaryDto(fo, userDetails);
+                    Integer assignedFarmsCount = assignmentCountMap.getOrDefault(fo.getId(), 0);
+                    return buildSummaryDto(fo, userDetails, assignedFarmsCount);
                 })
                 .collect(Collectors.toList());
+        
+        log.info("Total field officers in response: {}, First officer pincode: {}", 
+                summaries.size(), 
+                summaries.isEmpty() ? "N/A" : (summaries.get(0).getPincode() != null ? summaries.get(0).getPincode() : "NULL"));
 
         Map<String, Object> response = new HashMap<>();
         response.put("fieldOfficers", summaries);
@@ -200,23 +218,61 @@ public class FieldOfficerService {
         return userMap;
     }
 
-    private FieldOfficerSummaryDto buildSummaryDto(FieldOfficer fieldOfficer, Map<String, Object> userDetails) {
+    private FieldOfficerSummaryDto buildSummaryDto(FieldOfficer fieldOfficer, Map<String, Object> userDetails, Integer assignedFarmsCount) {
         String fullName = buildFullName(fieldOfficer.getFirstName(), fieldOfficer.getLastName());
         
-        return FieldOfficerSummaryDto.builder()
+        // Log pincode retrieval to verify it's being fetched from database
+        String pincode = fieldOfficer.getPincode();
+        log.info("Building DTO for field officer ID: {}, pincode from DB: {}", 
+                fieldOfficer.getId(), pincode != null ? pincode : "NULL");
+        
+        FieldOfficerSummaryDto dto = FieldOfficerSummaryDto.builder()
                 .fieldOfficerId(fieldOfficer.getId())
                 .userId(fieldOfficer.getUserId())
                 .fullName(fullName)
                 .username((String) userDetails.getOrDefault("username", ""))
                 .phoneNumber((String) userDetails.getOrDefault("phoneNumber", ""))
                 .email((String) userDetails.getOrDefault("email", ""))
+                .pincode(pincode)
                 .village(fieldOfficer.getVillage())
                 .district(fieldOfficer.getDistrict())
                 .state(fieldOfficer.getState())
                 .isActive(fieldOfficer.getIsActive())
+                .assignedFarmsCount(assignedFarmsCount)
                 .createdAt(fieldOfficer.getCreatedAt())
                 .lastUpdatedAt(fieldOfficer.getUpdatedAt())
                 .build();
+        
+        log.info("DTO created - FieldOfficerId: {}, Pincode in DTO: {}, Assigned Farms: {}", 
+                dto.getFieldOfficerId(), dto.getPincode() != null ? dto.getPincode() : "NULL", assignedFarmsCount);
+        
+        return dto;
+    }
+
+    /**
+     * Count the number of farms assigned to a field officer.
+     * Only counts assignments with farmId (not null) and status != CANCELLED.
+     */
+    private Integer countAssignedFarms(Long fieldOfficerId) {
+        try {
+            List<FieldOfficerAssignment> assignments = assignmentRepository.findByFieldOfficerId(
+                    fieldOfficerId, 
+                    org.springframework.data.domain.PageRequest.of(0, 10000)
+            ).getContent();
+            
+            // Count only assignments with farmId (specific farm assignments) and status != CANCELLED
+            long count = assignments.stream()
+                    .filter(assignment -> 
+                            assignment.getFarmId() != null && 
+                            assignment.getStatus() != FieldOfficerAssignment.AssignmentStatus.CANCELLED
+                    )
+                    .count();
+            
+            return (int) count;
+        } catch (Exception e) {
+            log.warn("Failed to count assigned farms for field officer ID {}: {}", fieldOfficerId, e.getMessage());
+            return 0;
+        }
     }
 
     private String buildFullName(String firstName, String lastName) {

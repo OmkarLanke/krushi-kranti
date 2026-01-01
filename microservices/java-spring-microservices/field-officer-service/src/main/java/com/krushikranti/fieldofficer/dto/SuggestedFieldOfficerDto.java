@@ -5,16 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * DTO for field officer list view - summary information
+ * DTO for suggested field officers based on pincode matching
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FieldOfficerSummaryDto {
+public class SuggestedFieldOfficerDto {
     
     private Long fieldOfficerId;
     private Long userId;
@@ -24,6 +24,8 @@ public class FieldOfficerSummaryDto {
     private String username;
     private String phoneNumber;
     private String email;
+    
+    // Location Info
     private String pincode;
     private String village;
     private String district;
@@ -32,11 +34,8 @@ public class FieldOfficerSummaryDto {
     // Status
     private Boolean isActive;
     
-    // Assignment Summary
-    private Integer assignedFarmsCount; // Number of farms assigned to this field officer
-    
-    // Timestamps
-    private LocalDateTime createdAt;
-    private LocalDateTime lastUpdatedAt;
+    // Matching Info
+    private List<String> matchingPincodes; // List of farm pincodes that match this FO's pincode
+    private Integer matchingFarmCount; // Number of farms with matching pincode
 }
 

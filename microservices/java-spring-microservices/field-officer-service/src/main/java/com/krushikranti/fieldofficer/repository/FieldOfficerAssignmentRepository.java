@@ -45,5 +45,28 @@ public interface FieldOfficerAssignmentRepository extends JpaRepository<FieldOff
      * Count active assignments for a field officer
      */
     long countByFieldOfficerIdAndStatusNot(Long fieldOfficerId, FieldOfficerAssignment.AssignmentStatus status);
+    
+    /**
+     * Find active assignment for a specific farm
+     * Used to check if a farm is already assigned to another field officer
+     */
+    @Query("SELECT a FROM FieldOfficerAssignment a WHERE " +
+           "a.farmId = :farmId AND " +
+           "a.status != 'CANCELLED'")
+    Optional<FieldOfficerAssignment> findActiveAssignmentByFarmId(
+        @Param("farmId") Long farmId
+    );
+    
+    /**
+     * Find active assignment for a field officer and farm
+     */
+    @Query("SELECT a FROM FieldOfficerAssignment a WHERE " +
+           "a.fieldOfficerId = :fieldOfficerId AND " +
+           "a.farmId = :farmId AND " +
+           "a.status != 'CANCELLED'")
+    Optional<FieldOfficerAssignment> findActiveAssignmentByFieldOfficerAndFarm(
+        @Param("fieldOfficerId") Long fieldOfficerId,
+        @Param("farmId") Long farmId
+    );
 }
 
