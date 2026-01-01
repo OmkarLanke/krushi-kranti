@@ -10,7 +10,7 @@ import '../../subscription/services/subscription_service.dart';
 // --- IMPORT YOUR TABS ---
 import 'home_screen.dart';
 import 'profile_screen.dart';
-import '../../sell/screens/sell_screen.dart';
+import '../../sell/screens/sell_screen.dart'; 
 // import '../../finance/screens/finance_screen.dart'; // Finance placeholder for now
 // import '../../crop_management/screens/crop_list_screen.dart'; // Keep commented until Crop List is built
 
