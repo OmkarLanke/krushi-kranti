@@ -796,6 +796,47 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         ),
                       ),
                     ],
+                    // Display farm assignment count
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: (fo.assignedFarmsCount ?? 0) > 0
+                            ? AppColors.brandGreen.withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: (fo.assignedFarmsCount ?? 0) > 0
+                              ? AppColors.brandGreen
+                              : Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.agriculture,
+                            size: 14,
+                            color: (fo.assignedFarmsCount ?? 0) > 0
+                                ? AppColors.brandGreen
+                                : Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${fo.assignedFarmsCount ?? 0} farm(s) assigned',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: (fo.assignedFarmsCount ?? 0) > 0
+                                  ? AppColors.brandGreen
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
