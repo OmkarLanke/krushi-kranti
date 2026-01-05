@@ -37,5 +37,8 @@ public class SuggestedFieldOfficerDto {
     // Matching Info
     private List<String> matchingPincodes; // List of farm pincodes that match this FO's pincode
     private Integer matchingFarmCount; // Number of farms with matching pincode
+    
+    // Assignment Info
+    private Integer assignedFarmsCount; // Number of farms currently assigned to this field officer
 }
 
