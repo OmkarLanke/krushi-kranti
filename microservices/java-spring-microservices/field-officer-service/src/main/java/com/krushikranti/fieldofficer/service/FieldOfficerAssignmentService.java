@@ -282,6 +282,9 @@ public class FieldOfficerAssignmentService {
                         }
                     }
                     
+                    // Count assigned farms for this field officer
+                    Integer assignedFarmsCount = countAssignedFarms(fo.getId());
+                    
                     return SuggestedFieldOfficerDto.builder()
                             .fieldOfficerId(fo.getId())
                             .userId(fo.getUserId())
@@ -296,6 +299,7 @@ public class FieldOfficerAssignmentService {
                             .isActive(fo.getIsActive())
                             .matchingPincodes(matchingPincodes)
                             .matchingFarmCount(matchingFarmCount)
+                            .assignedFarmsCount(assignedFarmsCount)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -1240,6 +1244,33 @@ public class FieldOfficerAssignmentService {
         String fn = firstName != null ? firstName : "";
         String ln = lastName != null ? lastName : "";
         return (fn + " " + ln).trim();
+    }
+
+    /**
+     * Count the number of farms assigned to a field officer.
+     * Only counts assignments with farmId (not null) and status != CANCELLED.
+     * This matches the logic used in FieldOfficerService for consistency.
+     */
+    private Integer countAssignedFarms(Long fieldOfficerId) {
+        try {
+            List<FieldOfficerAssignment> assignments = assignmentRepository.findByFieldOfficerId(
+                    fieldOfficerId, 
+                    PageRequest.of(0, 10000)
+            ).getContent();
+            
+            // Count only assignments with farmId (specific farm assignments) and status != CANCELLED
+            long count = assignments.stream()
+                    .filter(assignment -> 
+                            assignment.getFarmId() != null && 
+                            assignment.getStatus() != FieldOfficerAssignment.AssignmentStatus.CANCELLED
+                    )
+                    .count();
+            
+            return (int) count;
+        } catch (Exception e) {
+            log.warn("Failed to count assigned farms for field officer ID {}: {}", fieldOfficerId, e.getMessage());
+            return 0;
+        }
     }
 }
 

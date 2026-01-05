@@ -27,16 +27,58 @@ class AppLocalizationsHi extends AppLocalizations {
   String get assignedMsg => 'आपके नियुक्त कृषि विशेषज्ञ';
 
   @override
-  String get quickAction => 'त्वरित कार्य';
+  String get fieldOfficerAssignMsg => 'We\'ll assign';
 
   @override
-  String get alerts => 'सूचनाएं';
+  String get fieldOfficerSoonMsg => 'Field Officer for verification soon';
+
+  @override
+  String get fieldOfficerAssignedMsg => 'Your assigned Field Officer';
+
+  @override
+  String get viewFieldOfficerDetails => 'View Field Officer Details';
+
+  @override
+  String get fieldOfficerDetails => 'Field Officer Details';
+
+  @override
+  String get fieldOfficerName => 'Field Officer Name';
+
+  @override
+  String get fieldOfficerPhone => 'Phone Number';
+
+  @override
+  String get fieldOfficerLocation => 'Location';
+
+  @override
+  String get assignedOn => 'Assigned On';
+
+  @override
+  String get status => 'स्थिति';
+
+  @override
+  String get active => 'सक्रिय';
 
   @override
   String get pending => 'लंबित';
 
   @override
-  String get active => 'सक्रिय';
+  String get completed => 'Completed';
+
+  @override
+  String get cancelled => 'Cancelled';
+
+  @override
+  String get noFieldOfficerAssigned => 'No field officer assigned yet';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get quickAction => 'त्वरित कार्य';
+
+  @override
+  String get alerts => 'सूचनाएं';
 
   @override
   String get cropDetail => 'फसल विवरण';
@@ -502,9 +544,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get weight => 'वजन';
-
-  @override
-  String get status => 'स्थिति';
 
   @override
   String get statusReceived => 'प्राप्त हुआ';

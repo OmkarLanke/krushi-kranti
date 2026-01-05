@@ -1,6 +1,7 @@
 package com.krushikranti.fieldofficer.controller;
 
 import com.krushikranti.fieldofficer.dto.ApiResponse;
+import com.krushikranti.fieldofficer.dto.AssignmentResponseDto;
 import com.krushikranti.fieldofficer.dto.FieldOfficerAssignmentDto;
 import com.krushikranti.fieldofficer.dto.VerifyFarmRequest;
 import com.krushikranti.fieldofficer.dto.VerifyFarmResponse;
@@ -203,6 +204,38 @@ public class FieldOfficerController {
                     .body(new ApiResponse<>(e.getMessage(), null));
         } catch (Exception e) {
             log.error("Error getting verification: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Get field officer assignments for the logged-in farmer.
+     * This endpoint allows farmers to see which field officers are assigned to their farms.
+     */
+    @GetMapping("/farmer/assignments")
+    public ResponseEntity<ApiResponse<List<AssignmentResponseDto>>> getFarmerAssignments(
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+        try {
+            if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
+                log.error("Missing X-User-Id header for farmer assignments request");
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
+            }
+            
+            Long farmerUserId = Long.parseLong(userIdHeader.trim());
+            log.info("Fetching field officer assignments for farmer userId: {}", farmerUserId);
+            
+            List<AssignmentResponseDto> assignments = assignmentService.getAssignmentsForFarmer(farmerUserId);
+            
+            log.info("Successfully retrieved {} assignments for farmer userId: {}", assignments.size(), farmerUserId);
+            return ResponseEntity.ok(new ApiResponse<>("Assignments retrieved successfully", assignments));
+        } catch (NumberFormatException e) {
+            log.error("Invalid user ID format: {}", userIdHeader, e);
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>("Invalid user ID format: " + userIdHeader, null));
+        } catch (Exception e) {
+            log.error("Unexpected error retrieving farmer assignments for userId {}: {}", userIdHeader, e.getMessage(), e);
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
         }

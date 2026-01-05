@@ -136,6 +136,102 @@ abstract class AppLocalizations {
   /// **'Your assigned Krushi Tadnya'**
   String get assignedMsg;
 
+  /// No description provided for @fieldOfficerAssignMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll assign'**
+  String get fieldOfficerAssignMsg;
+
+  /// No description provided for @fieldOfficerSoonMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Field Officer for verification soon'**
+  String get fieldOfficerSoonMsg;
+
+  /// No description provided for @fieldOfficerAssignedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Your assigned Field Officer'**
+  String get fieldOfficerAssignedMsg;
+
+  /// No description provided for @viewFieldOfficerDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Field Officer Details'**
+  String get viewFieldOfficerDetails;
+
+  /// No description provided for @fieldOfficerDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Field Officer Details'**
+  String get fieldOfficerDetails;
+
+  /// No description provided for @fieldOfficerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Field Officer Name'**
+  String get fieldOfficerName;
+
+  /// No description provided for @fieldOfficerPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get fieldOfficerPhone;
+
+  /// No description provided for @fieldOfficerLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get fieldOfficerLocation;
+
+  /// No description provided for @assignedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned On'**
+  String get assignedOn;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get active;
+
+  /// No description provided for @pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
+  /// No description provided for @completed.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completed;
+
+  /// No description provided for @cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get cancelled;
+
+  /// No description provided for @noFieldOfficerAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'No field officer assigned yet'**
+  String get noFieldOfficerAssigned;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
   /// No description provided for @quickAction.
   ///
   /// In en, this message translates to:
@@ -147,18 +243,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Alerts'**
   String get alerts;
-
-  /// No description provided for @pending.
-  ///
-  /// In en, this message translates to:
-  /// **'Pending'**
-  String get pending;
-
-  /// No description provided for @active.
-  ///
-  /// In en, this message translates to:
-  /// **'Active'**
-  String get active;
 
   /// No description provided for @cropDetail.
   ///
@@ -1083,12 +1167,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Weight'**
   String get weight;
-
-  /// No description provided for @status.
-  ///
-  /// In en, this message translates to:
-  /// **'Status'**
-  String get status;
 
   /// No description provided for @statusReceived.
   ///

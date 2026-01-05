@@ -12,6 +12,7 @@ class SuggestedFieldOfficer {
   final bool isActive;
   final List<String> matchingPincodes;
   final int matchingFarmCount;
+  final int? assignedFarmsCount; // Number of farms currently assigned to this field officer
 
   SuggestedFieldOfficer({
     required this.fieldOfficerId,
@@ -27,6 +28,7 @@ class SuggestedFieldOfficer {
     required this.isActive,
     required this.matchingPincodes,
     required this.matchingFarmCount,
+    this.assignedFarmsCount,
   });
 
   factory SuggestedFieldOfficer.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,7 @@ class SuggestedFieldOfficer {
               .toList() ??
           [],
       matchingFarmCount: json['matchingFarmCount'] ?? 0,
+      assignedFarmsCount: json['assignedFarmsCount'],
     );
   }
 }

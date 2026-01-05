@@ -4,6 +4,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../dashboard/services/crop_service.dart';
+import '../../dashboard/services/field_officer_assignment_service.dart';
+import 'field_officer_details_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,19 +16,44 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool isAgentAssigned = false; 
+  List<Map<String, dynamic>> fieldOfficerAssignments = [];
+  bool isLoadingAssignments = true;
 
   @override
   void initState() {
     super.initState();
-    _checkAgentStatus(); 
+    _checkFieldOfficerAssignments(); 
   }
 
-  Future<void> _checkAgentStatus() async {
-    final crops = await CropService.getCrops();
-    if (mounted) {
-      setState(() {
-        isAgentAssigned = crops.isNotEmpty; 
-      });
+  Future<void> _checkFieldOfficerAssignments() async {
+    setState(() {
+      isLoadingAssignments = true;
+    });
+    
+    try {
+      final assignments = await FieldOfficerAssignmentService.getAssignments();
+      // Filter out CANCELLED assignments
+      final activeAssignments = assignments.where((assignment) {
+        final status = assignment['status']?.toString().toUpperCase();
+        return status != 'CANCELLED';
+      }).toList();
+      
+      if (mounted) {
+        setState(() {
+          fieldOfficerAssignments = activeAssignments;
+          isAgentAssigned = activeAssignments.isNotEmpty;
+          isLoadingAssignments = false;
+        });
+      }
+    } catch (e) {
+      // If error, assume no assignments
+      if (mounted) {
+        setState(() {
+          fieldOfficerAssignments = [];
+          isAgentAssigned = false;
+          isLoadingAssignments = false;
+        });
+      }
     }
   }
 
@@ -73,10 +100,12 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 24),
 
             // B. Banner
-            if (isAgentAssigned) 
-              _buildAgentAssignedCard(l10n)
+            if (isLoadingAssignments)
+              _buildLoadingBanner(l10n)
+            else if (isAgentAssigned) 
+              _buildFieldOfficerAssignedCard(l10n)
             else 
-              _buildAgentPendingBanner(l10n),
+              _buildFieldOfficerPendingBanner(l10n),
             
             const SizedBox(height: 28),
 
@@ -218,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAgentPendingBanner(AppLocalizations l10n) {
+  Widget _buildLoadingBanner(AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
@@ -231,7 +260,31 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            // ✅ FIXED: Updated withValues
+            color: AppColors.brandGreen.withValues(alpha: 0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildFieldOfficerPendingBanner(AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)], 
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
             color: AppColors.brandGreen.withValues(alpha: 0.4),
             blurRadius: 12,
             offset: const Offset(0, 6),
@@ -241,12 +294,12 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           Text(
-            l10n.assignMsg,
+            l10n.fieldOfficerAssignMsg,
             style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
-            l10n.soonMsg,
+            l10n.fieldOfficerSoonMsg,
             style: GoogleFonts.poppins(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
           ),
         ],
@@ -254,47 +307,92 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAgentAssignedCard(AppLocalizations l10n) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          // ✅ FIXED: Updated withValues
-          BoxShadow(color: Colors.grey.withValues(alpha: 0.08), blurRadius: 15, offset: const Offset(0, 4)),
-        ],
+  Widget _buildFieldOfficerAssignedCard(AppLocalizations l10n) {
+    if (fieldOfficerAssignments.isEmpty) {
+      return _buildFieldOfficerPendingBanner(l10n);
+    }
+
+    // Get the first active assignment
+    final assignment = fieldOfficerAssignments.first;
+    final fieldOfficerName = assignment['fieldOfficerName']?.toString() ?? 'Field Officer';
+    final fieldOfficerPhone = assignment['fieldOfficerPhone']?.toString() ?? '';
+    final fieldOfficerPincode = assignment['fieldOfficerPincode']?.toString() ?? '';
+
+    return GestureDetector(
+      onTap: () {
+        _showFieldOfficerDetailsDialog(l10n);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(color: Colors.grey.withValues(alpha: 0.08), blurRadius: 15, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 30,
+              backgroundColor: AppColors.creamBackground,
+              child: Icon(Icons.person, color: Colors.brown, size: 32),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.fieldOfficerAssignedMsg,
+                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    fieldOfficerName,
+                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  if (fieldOfficerPincode.isNotEmpty)
+                    Text(
+                      "Pincode: $fieldOfficerPincode",
+                      style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w500),
+                    ),
+                  const SizedBox(height: 4),
+                  if (fieldOfficerPhone.isNotEmpty)
+                    Text(
+                      fieldOfficerPhone,
+                      style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700),
+                    ),
+                  if (fieldOfficerAssignments.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        "+ ${fieldOfficerAssignments.length - 1} more",
+                        style: GoogleFonts.poppins(fontSize: 10, color: AppColors.brandGreen, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.brandGreen, width: 2),
+              ),
+              child: const Icon(Icons.arrow_forward_ios, color: AppColors.brandGreen, size: 18),
+            ),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 30,
-            backgroundColor: AppColors.creamBackground,
-            child: Icon(Icons.person, color: Colors.brown, size: 32),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.assignedMsg, style: GoogleFonts.poppins(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text("Jitendra Pawar", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
-                Text("Pune Main Branch\nFertilizer Adviser", style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w500)),
-                const SizedBox(height: 4),
-                Text("+91 7745858965", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700)),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.brandGreen, width: 2),
-            ),
-            child: const Icon(Icons.phone, color: AppColors.brandGreen, size: 22),
-          ),
-        ],
+    );
+  }
+
+  void _showFieldOfficerDetailsDialog(AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => FieldOfficerDetailsDialog(
+        assignments: fieldOfficerAssignments,
       ),
     );
   }
@@ -369,7 +467,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () async {
         if (route != null) {
           await Navigator.pushNamed(context, route);
-          _checkAgentStatus(); 
+          _checkFieldOfficerAssignments(); 
         }
       },
       child: Container(
@@ -412,10 +510,15 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  status, 
-                  style: GoogleFonts.poppins(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600),
+                Flexible(
+                  child: Text(
+                    status, 
+                    style: GoogleFonts.poppins(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                const SizedBox(width: 4),
                 const Icon(Icons.arrow_circle_right_outlined, color: AppColors.brandGreen, size: 26),
               ],
             )
