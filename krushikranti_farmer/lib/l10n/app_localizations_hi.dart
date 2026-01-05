@@ -724,6 +724,47 @@ class AppLocalizationsHi extends AppLocalizations {
   String get farmAddedSuccess => 'खेत सफलतापूर्वक जोड़ा गया';
 
   @override
+  String get farmLocationGPS => 'Farm Location (GPS)';
+
+  @override
+  String get captureFarmLocationDesc =>
+      'Capture your farm\'s GPS coordinates. This helps field officers verify your farm location.';
+
+  @override
+  String get captureFarmLocation => 'Capture Farm Location';
+
+  @override
+  String get retakeLocation => 'Retake Location';
+
+  @override
+  String get locationCaptured => 'Location Captured';
+
+  @override
+  String get latitude => 'Latitude';
+
+  @override
+  String get longitude => 'Longitude';
+
+  @override
+  String get accuracy => 'Accuracy';
+
+  @override
+  String get meters => 'meters';
+
+  @override
+  String get locationPermissionRequired => 'Location Permission Required';
+
+  @override
+  String get locationPermissionMessage =>
+      'Please enable location services and grant location permission to capture farm GPS coordinates.';
+
+  @override
+  String get openSettings => 'Open Settings';
+
+  @override
+  String get locationCapturedSuccess => 'Farm location captured successfully!';
+
+  @override
   String get noFarmsAdded => 'अभी तक कोई खेत नहीं जोड़ा गया';
 
   @override

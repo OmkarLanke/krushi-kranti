@@ -2,6 +2,13 @@
     <!-- Internet permission for network requests -->
     <uses-permission android:name="android.permission.INTERNET" />
     
+    <!-- Location permissions for GPS coordinates -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    
+    <!-- Camera permission for geotagged photos -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    
     <application
         android:label="krushikranti_farmer"
         android:name="${applicationName}"
