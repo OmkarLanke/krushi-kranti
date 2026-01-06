@@ -1600,6 +1600,18 @@ abstract class AppLocalizations {
   /// **'Farm location captured successfully!'**
   String get locationCapturedSuccess;
 
+  /// No description provided for @capturedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Captured On'**
+  String get capturedOn;
+
+  /// No description provided for @gpsCoordinates.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Coordinates'**
+  String get gpsCoordinates;
+
   /// No description provided for @noFarmsAdded.
   ///
   /// In en, this message translates to:

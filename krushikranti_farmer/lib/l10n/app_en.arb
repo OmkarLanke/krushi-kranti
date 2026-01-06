@@ -275,6 +275,8 @@
   "locationPermissionMessage": "Please enable location services and grant location permission to capture farm GPS coordinates.",
   "openSettings": "Open Settings",
   "locationCapturedSuccess": "Farm location captured successfully!",
+  "capturedOn": "Captured On",
+  "gpsCoordinates": "GPS Coordinates",
   "noFarmsAdded": "No farms added yet",
   "addYourFirstFarm": "Add your first farm to get started",
   "main": "Main",

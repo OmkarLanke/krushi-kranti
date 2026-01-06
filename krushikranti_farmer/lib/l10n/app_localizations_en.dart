@@ -764,6 +764,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationCapturedSuccess => 'Farm location captured successfully!';
 
   @override
+  String get capturedOn => 'Captured On';
+
+  @override
+  String get gpsCoordinates => 'GPS Coordinates';
+
+  @override
   String get noFarmsAdded => 'No farms added yet';
 
   @override

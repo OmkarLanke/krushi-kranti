@@ -168,9 +168,10 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
         if (_selectedEncumbranceStatus != null) 'encumbranceStatus': _selectedEncumbranceStatus,
         if (_encumbranceRemarksController.text.trim().isNotEmpty) 'encumbranceRemarks': _encumbranceRemarksController.text.trim(),
         // GPS coordinates (optional but recommended)
-        if (_farmLatitude != null) 'farmLatitude': _farmLatitude,
-        if (_farmLongitude != null) 'farmLongitude': _farmLongitude,
-        if (_farmLocationAccuracy != null) 'farmLocationAccuracy': _farmLocationAccuracy,
+        // Round to 4 decimal places to match backend validation
+        if (_farmLatitude != null) 'farmLatitude': double.parse(_farmLatitude!.toStringAsFixed(8)),
+        if (_farmLongitude != null) 'farmLongitude': double.parse(_farmLongitude!.toStringAsFixed(8)),
+        if (_farmLocationAccuracy != null) 'farmLocationAccuracy': double.parse(_farmLocationAccuracy!.toStringAsFixed(4)),
       };
 
       await HttpService.post("farmer/profile/farms", requestBody);
