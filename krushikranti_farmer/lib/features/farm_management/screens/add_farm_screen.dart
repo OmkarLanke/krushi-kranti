@@ -100,11 +100,45 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
         setState(() {
           _isLookingUp = false;
         });
-        
+
+        // Show a more user‑friendly and attractive error message
+        final rawError = e.toString().replaceFirst("Exception: ", "");
+        String friendlyMessage;
+
+        if (rawError.toLowerCase().contains('pincode not found')) {
+          friendlyMessage =
+              "We couldn't find this pincode. Please check the 6‑digit pincode and try again.";
+        } else if (rawError.toLowerCase().contains('no address found')) {
+          friendlyMessage = l10n.noAddressFound;
+        } else {
+          friendlyMessage =
+              "Something went wrong while fetching address details. Please try again.";
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceFirst("Exception: ", "")),
-            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            backgroundColor: Colors.red.shade600,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    friendlyMessage,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }

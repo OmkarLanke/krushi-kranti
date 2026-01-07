@@ -158,6 +158,13 @@
   "submitBtn": "जमा करें",
   "passwordsDoNotMatch": "पासवर्ड मेल नहीं खाते",
   "passwordResetSuccess": "पासवर्ड सफलतापूर्वक बदल दिया गया!",
+  "phoneHint": "मोबाइल नंबर दर्ज करें",
+  "phoneFormatError": "कृपया 10 अंकों का मान्य मोबाइल नंबर दर्ज करें",
+  "networkError": "नेटवर्क त्रुटि। कृपया अपना कनेक्शन जांचें और पुनः प्रयास करें।",
+  "incorrectPhoneError": "गलत मोबाइल नंबर। कृपया पुनः प्रयास करें।",
+  "emailRequired": "ईमेल आवश्यक है",
+  "incorrectEmailFormat": "गलत ईमेल प्रारूप",
+  "invalidEmailOrPassword": "अमान्य ईमेल या पासवर्ड",
 
   "sellTitle": "फसल विवरण",
   "dateLabel": "तारीख",

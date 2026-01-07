@@ -70,16 +70,11 @@ class _AddCropScreenState extends State<AddCropScreen> {
           if (farms.isNotEmpty) {
             selectedFarmId = farms[0]['id'] as int;
           } else {
-            // Show error if no farms - use delayed localization
+            // Show user-friendly error if no farms - use delayed localization
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 final l10n = AppLocalizations.of(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n?.noFarmsFound ?? "No farms found. Please add a farm first."),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                _showNoFarmsDialog(l10n);
               }
             });
           }
@@ -322,18 +317,19 @@ class _AddCropScreenState extends State<AddCropScreen> {
                 setState(() => selectedCropStatus = val);
               },
             ),
-            
+
             const SizedBox(height: 40),
-            
+
             // 4. SAVE BUTTON
             SizedBox(
               height: 50,
               child: ElevatedButton(
-                      onPressed: _isLoading ? null : () => _saveCrop(l10n),
+                      onPressed: (farms.isEmpty || _isLoading) ? null : () => _saveCrop(l10n),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.brandGreen,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  disabledBackgroundColor: Colors.grey.shade300,
                 ),
                       child: _isLoading
                           ? const SizedBox(
@@ -418,6 +414,128 @@ class _AddCropScreenState extends State<AddCropScreen> {
       default:
         return status.replaceAll('_', ' ');
     }
+  }
+
+  void _showNoFarmsDialog(AppLocalizations? l10n) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final dialogL10n = AppLocalizations.of(dialogContext) ?? l10n;
+        return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.info_outline, color: AppColors.brandGreen, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: const Text(
+                "Farm Required",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "To add crops, you need to add a farm first. A farm is required to track your crop details.",
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.black87,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.brandGreen.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.brandGreen.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb_outline, color: AppColors.brandGreen, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Click 'Add Farm' below to create your first farm.",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.brandGreen,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext); // Close dialog
+              Navigator.pop(context); // Close add crop screen
+            },
+            child: Text(
+              dialogL10n?.cancel ?? "Cancel",
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext); // Close dialog
+              Navigator.pop(context); // Close add crop screen
+              Navigator.pushNamed(context, AppRoutes.addFarm).then((result) {
+                // If farm was added successfully, user can try adding crop again
+                if (result == true && mounted) {
+                  final snackL10n = AppLocalizations.of(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text("Farm added! You can now add crops."),
+                      backgroundColor: Colors.green,
+                      action: SnackBarAction(
+                        label: snackL10n?.addCropBtn ?? "Add Crop",
+                        textColor: Colors.white,
+                        onPressed: () {
+                          Navigator.pushNamed(context, AppRoutes.addCrop);
+                        },
+                      ),
+                    ),
+                  );
+                }
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brandGreen,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.add, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  dialogL10n?.addFarm ?? "Add Farm",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
+        );
+      },
+    );
   }
 
   Future<void> _saveCrop(AppLocalizations l10n) async {
