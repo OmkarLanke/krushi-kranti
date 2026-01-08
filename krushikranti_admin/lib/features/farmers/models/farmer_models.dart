@@ -8,6 +8,7 @@ class FarmerSummary {
   final String? village;
   final String? district;
   final String? state;
+  final String? pincode;
   final bool isProfileComplete;
   final String kycStatus;
   final String subscriptionStatus;
@@ -30,6 +31,7 @@ class FarmerSummary {
     this.village,
     this.district,
     this.state,
+    this.pincode,
     required this.isProfileComplete,
     required this.kycStatus,
     required this.subscriptionStatus,
@@ -54,6 +56,7 @@ class FarmerSummary {
       village: json['village'],
       district: json['district'],
       state: json['state'],
+      pincode: json['pincode'],
       isProfileComplete: json['isProfileComplete'] ?? false,
       kycStatus: json['kycStatus'] ?? 'PENDING',
       subscriptionStatus: json['subscriptionStatus'] ?? 'PENDING',
@@ -154,6 +157,7 @@ class FarmerDetail {
   final SubscriptionInfo? subscription;
   final List<FarmInfo> farms;
   final List<CropInfo> crops;
+  final AssignmentInfo? assignment;
 
   FarmerDetail({
     required this.farmerId,
@@ -163,6 +167,7 @@ class FarmerDetail {
     this.subscription,
     required this.farms,
     required this.crops,
+    this.assignment,
   });
 
   factory FarmerDetail.fromJson(Map<String, dynamic> json) {
@@ -182,6 +187,37 @@ class FarmerDetail {
               ?.map((e) => CropInfo.fromJson(e))
               .toList() ??
           [],
+      assignment: json['assignment'] != null
+          ? AssignmentInfo.fromJson(json['assignment'])
+          : null,
+    );
+  }
+}
+
+class AssignmentInfo {
+  final int? fieldOfficerId;
+  final String? fieldOfficerName;
+  final String? fieldOfficerPhone;
+  final DateTime? assignedAt;
+  final int? assignedByAdminId;
+
+  AssignmentInfo({
+    this.fieldOfficerId,
+    this.fieldOfficerName,
+    this.fieldOfficerPhone,
+    this.assignedAt,
+    this.assignedByAdminId,
+  });
+
+  factory AssignmentInfo.fromJson(Map<String, dynamic> json) {
+    return AssignmentInfo(
+      fieldOfficerId: json['fieldOfficerId'],
+      fieldOfficerName: json['fieldOfficerName'],
+      fieldOfficerPhone: json['fieldOfficerPhone'],
+      assignedAt: json['assignedAt'] != null
+          ? DateTime.tryParse(json['assignedAt'])
+          : null,
+      assignedByAdminId: json['assignedByAdminId'],
     );
   }
 }
