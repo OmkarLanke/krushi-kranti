@@ -11,6 +11,7 @@ class AdminFarmerService {
     String? search,
     String? kycStatus,
     String? subscriptionStatus,
+    String? pincode,
   }) async {
     String endpoint = '$_basePath?page=$page&size=$size';
     
@@ -22,6 +23,9 @@ class AdminFarmerService {
     }
     if (subscriptionStatus != null && subscriptionStatus.isNotEmpty) {
       endpoint += '&subscriptionStatus=$subscriptionStatus';
+    }
+    if (pincode != null && pincode.isNotEmpty) {
+      endpoint += '&pincode=${Uri.encodeComponent(pincode)}';
     }
     
     final response = await HttpService.get(endpoint);
