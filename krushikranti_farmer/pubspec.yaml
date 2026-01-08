@@ -21,6 +21,13 @@ dependencies:
   # Networking
   http: ^1.2.0
   
+  # Location & Permissions
+  geolocator: ^10.1.0
+  permission_handler: ^11.0.0
+  
+  # EXIF data extraction for geotagged photos
+  exif: ^3.3.0
+  
   # Storage & UI
   shared_preferences: ^2.2.2
   google_fonts: ^6.2.1

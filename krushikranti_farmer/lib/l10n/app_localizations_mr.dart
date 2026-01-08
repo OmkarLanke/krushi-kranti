@@ -480,6 +480,29 @@ class AppLocalizationsMr extends AppLocalizations {
   String get passwordResetSuccess => 'पासवर्ड यशस्वीरित्या बदलला!';
 
   @override
+  String get phoneHint => 'मोबाईल नंबर टाका';
+
+  @override
+  String get phoneFormatError => 'कृपया वैध 10 अंकी मोबाईल नंबर प्रविष्ट करा';
+
+  @override
+  String get networkError =>
+      'नेटवर्क त्रुटी. कृपया आपले कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String get incorrectPhoneError =>
+      'चुकीचा मोबाईल नंबर. कृपया पुन्हा प्रयत्न करा.';
+
+  @override
+  String get emailRequired => 'ईमेल आवश्यक आहे';
+
+  @override
+  String get incorrectEmailFormat => 'चुकीचा ईमेल स्वरूप';
+
+  @override
+  String get invalidEmailOrPassword => 'अवैध ईमेल किंवा पासवर्ड';
+
+  @override
   String get sellTitle => 'पिकाचा तपशील';
 
   @override
@@ -722,6 +745,53 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get farmAddedSuccess => 'शेत यशस्वीरित्या जोडले गेले';
+
+  @override
+  String get farmLocationGPS => 'Farm Location (GPS)';
+
+  @override
+  String get captureFarmLocationDesc =>
+      'Capture your farm\'s GPS coordinates. This helps field officers verify your farm location.';
+
+  @override
+  String get captureFarmLocation => 'Capture Farm Location';
+
+  @override
+  String get retakeLocation => 'Retake Location';
+
+  @override
+  String get locationCaptured => 'Location Captured';
+
+  @override
+  String get latitude => 'Latitude';
+
+  @override
+  String get longitude => 'Longitude';
+
+  @override
+  String get accuracy => 'Accuracy';
+
+  @override
+  String get meters => 'meters';
+
+  @override
+  String get locationPermissionRequired => 'Location Permission Required';
+
+  @override
+  String get locationPermissionMessage =>
+      'Please enable location services and grant location permission to capture farm GPS coordinates.';
+
+  @override
+  String get openSettings => 'Open Settings';
+
+  @override
+  String get locationCapturedSuccess => 'Farm location captured successfully!';
+
+  @override
+  String get capturedOn => 'Captured On';
+
+  @override
+  String get gpsCoordinates => 'GPS Coordinates';
 
   @override
   String get noFarmsAdded => 'अद्याप शेत जोडलेले नाही';

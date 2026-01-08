@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need location access to capture farm GPS coordinates and verify field officer visits</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need location access to capture farm GPS coordinates and verify field officer visits</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access to capture geotagged farm photos for verification</string>
 </dict>
 </plist>

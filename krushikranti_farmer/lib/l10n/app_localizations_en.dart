@@ -480,6 +480,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordResetSuccess => 'Password Changed Successfully!';
 
   @override
+  String get phoneHint => 'Enter Mobile Number';
+
+  @override
+  String get phoneFormatError => 'Please enter a valid 10-digit phone number';
+
+  @override
+  String get networkError =>
+      'Network error. Please check your connection and try again.';
+
+  @override
+  String get incorrectPhoneError => 'Incorrect phone number. Please try again.';
+
+  @override
+  String get emailRequired => 'Email is required';
+
+  @override
+  String get incorrectEmailFormat => 'Incorrect email format';
+
+  @override
+  String get invalidEmailOrPassword => 'Invalid email or password';
+
+  @override
   String get sellTitle => 'Crop Details';
 
   @override
@@ -721,6 +743,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get farmAddedSuccess => 'Farm added successfully';
+
+  @override
+  String get farmLocationGPS => 'Farm Location (GPS)';
+
+  @override
+  String get captureFarmLocationDesc =>
+      'Capture your farm\'s GPS coordinates. This helps field officers verify your farm location.';
+
+  @override
+  String get captureFarmLocation => 'Capture Farm Location';
+
+  @override
+  String get retakeLocation => 'Retake Location';
+
+  @override
+  String get locationCaptured => 'Location Captured';
+
+  @override
+  String get latitude => 'Latitude';
+
+  @override
+  String get longitude => 'Longitude';
+
+  @override
+  String get accuracy => 'Accuracy';
+
+  @override
+  String get meters => 'meters';
+
+  @override
+  String get locationPermissionRequired => 'Location Permission Required';
+
+  @override
+  String get locationPermissionMessage =>
+      'Please enable location services and grant location permission to capture farm GPS coordinates.';
+
+  @override
+  String get openSettings => 'Open Settings';
+
+  @override
+  String get locationCapturedSuccess => 'Farm location captured successfully!';
+
+  @override
+  String get capturedOn => 'Captured On';
+
+  @override
+  String get gpsCoordinates => 'GPS Coordinates';
 
   @override
   String get noFarmsAdded => 'No farms added yet';

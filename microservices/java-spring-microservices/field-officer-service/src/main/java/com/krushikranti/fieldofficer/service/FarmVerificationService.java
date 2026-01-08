@@ -5,9 +5,11 @@ import com.krushikranti.fieldofficer.dto.VerifyFarmResponse;
 import com.krushikranti.fieldofficer.model.FarmVerification;
 import com.krushikranti.fieldofficer.model.FieldOfficer;
 import com.krushikranti.fieldofficer.model.FieldOfficerAssignment;
+import com.krushikranti.fieldofficer.model.VerificationPhoto;
 import com.krushikranti.fieldofficer.repository.FarmVerificationRepository;
 import com.krushikranti.fieldofficer.repository.FieldOfficerAssignmentRepository;
 import com.krushikranti.fieldofficer.repository.FieldOfficerRepository;
+import com.krushikranti.fieldofficer.repository.VerificationPhotoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ public class FarmVerificationService {
     private final FarmVerificationRepository verificationRepository;
     private final FieldOfficerRepository fieldOfficerRepository;
     private final FieldOfficerAssignmentRepository assignmentRepository;
+    private final VerificationPhotoRepository photoRepository;
 
     /**
      * Verify or reject a farm.
@@ -73,6 +76,14 @@ public class FarmVerificationService {
             }
         }
 
+        // Validation 5: If VERIFIED, photo URLs are required
+        if (status == FarmVerification.VerificationStatus.VERIFIED) {
+            if (request.getPhotoUrls() == null || request.getPhotoUrls().isEmpty()) {
+                throw new IllegalArgumentException(
+                        "At least one geotagged photo is required for farm verification.");
+            }
+        }
+
         // Check if verification already exists
         Optional<FarmVerification> existingVerification = 
                 verificationRepository.findByFarmIdAndFieldOfficerId(
@@ -111,6 +122,25 @@ public class FarmVerificationService {
         }
 
         FarmVerification saved = verificationRepository.save(verification);
+
+        // Save verification photos if provided
+        if (request.getPhotoUrls() != null && !request.getPhotoUrls().isEmpty()) {
+            // Delete existing photos for this verification (if updating)
+            photoRepository.deleteByVerificationId(saved.getId());
+            
+            // Save new photos
+            for (String photoUrl : request.getPhotoUrls()) {
+                VerificationPhoto photo = VerificationPhoto.builder()
+                        .verificationId(saved.getId())
+                        .photoUrl(photoUrl)
+                        .photoType(VerificationPhoto.PhotoType.FARM_OVERVIEW) // Default type
+                        .description("Geotagged farm verification photo")
+                        .build();
+                photoRepository.save(photo);
+                log.info("Saved verification photo URL: {} for verification ID: {}", 
+                        photoUrl, saved.getId());
+            }
+        }
         log.info("Farm verification saved successfully - ID: {}, Farm: {}, Status: {}", 
                 saved.getId(), request.getFarmId(), status);
 

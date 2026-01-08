@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
@@ -357,6 +358,66 @@ class _FarmListScreenState extends State<FarmListScreen> {
                 const SizedBox(height: 6),
                 _buildInfoRow(Icons.note, "${l10n.remarks}: ${farm.encumbranceRemarks}", Colors.grey.shade600),
               ],
+            ],
+            
+            // GPS Location Section (if available)
+            if (farm.farmLatitude != null && farm.farmLongitude != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.brandGreen.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.brandGreen.withOpacity(0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.my_location, size: 18, color: AppColors.brandGreen),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.farmLocationGPS,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoRow(
+                      Icons.location_on,
+                      "${l10n.latitude}: ${farm.farmLatitude!.toStringAsFixed(6)}°",
+                      AppColors.brandGreen,
+                    ),
+                    const SizedBox(height: 6),
+                    _buildInfoRow(
+                      Icons.location_on,
+                      "${l10n.longitude}: ${farm.farmLongitude!.toStringAsFixed(6)}°",
+                      AppColors.brandGreen,
+                    ),
+                    if (farm.farmLocationAccuracy != null) ...[
+                      const SizedBox(height: 6),
+                      _buildInfoRow(
+                        Icons.gps_fixed,
+                        "${l10n.accuracy}: ${farm.farmLocationAccuracy!.toStringAsFixed(1)} ${l10n.meters}",
+                        AppColors.brandGreen,
+                      ),
+                    ],
+                    if (farm.farmLocationCapturedAt != null) ...[
+                      const SizedBox(height: 6),
+                      _buildInfoRow(
+                        Icons.calendar_today,
+                        "${l10n.capturedOn}: ${DateFormat('dd MMM yyyy, hh:mm a').format(farm.farmLocationCapturedAt!)}",
+                        AppColors.brandGreen,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ],
           ],
         ),

@@ -28,4 +28,6 @@ public class VerifyFarmRequest {
     private Double latitude; // GPS latitude (optional)
     
     private Double longitude; // GPS longitude (optional)
+    
+    private java.util.List<String> photoUrls; // URLs of geotagged photos uploaded by field officer
 }

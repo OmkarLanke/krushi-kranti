@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
@@ -20,6 +21,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   String appLang = "en"; // default
   bool _isLoading = false;
+  bool _obscurePassword = true; // ✅ ADDED: Password visibility toggle
 
   String? usernameError; // ✅ ADDED: Username Error
   String? emailError;
@@ -268,6 +270,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   hint: translations[appLang]!["passwordHint"]!,
                   icon: Icons.lock_outline,
                   isPassword: true,
+                  obscureText: _obscurePassword,
+                  onTogglePassword: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
                 ),
                 if (passwordError != null) _errorText(passwordError!),
 
@@ -280,6 +288,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   hint: translations[appLang]!["phoneHint"]!,
                   icon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
+                  maxLength: 10,
                 ),
                 if (phoneError != null) _errorText(phoneError!),
 
@@ -351,7 +360,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     required String hint,
     required IconData icon,
     bool isPassword = false,
+    bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
+    int? maxLength,
+    VoidCallback? onTogglePassword,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -366,12 +378,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
           Expanded(
             child: TextField(
               controller: controller,
-              obscureText: isPassword,
+              obscureText: isPassword ? obscureText : false,
               keyboardType: keyboardType,
+              maxLength: maxLength,
+              inputFormatters: maxLength != null
+                  ? [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(maxLength),
+                    ]
+                  : null,
               decoration: InputDecoration(
                 hintText: hint,
                 border: InputBorder.none,
                 hintStyle: const TextStyle(color: AppColors.textSecondary),
+                counterText: '', // Hide character counter
+                suffixIcon: isPassword && onTogglePassword != null
+                    ? IconButton(
+                        icon: Icon(
+                          obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: AppColors.brandGreen,
+                          size: 20,
+                        ),
+                        onPressed: onTogglePassword,
+                      )
+                    : null,
               ),
               onChanged: (_) {
                 setState(() {

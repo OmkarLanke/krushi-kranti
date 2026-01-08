@@ -1036,6 +1036,48 @@ abstract class AppLocalizations {
   /// **'Password Changed Successfully!'**
   String get passwordResetSuccess;
 
+  /// No description provided for @phoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Mobile Number'**
+  String get phoneHint;
+
+  /// No description provided for @phoneFormatError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid 10-digit phone number'**
+  String get phoneFormatError;
+
+  /// No description provided for @networkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your connection and try again.'**
+  String get networkError;
+
+  /// No description provided for @incorrectPhoneError.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect phone number. Please try again.'**
+  String get incorrectPhoneError;
+
+  /// No description provided for @emailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required'**
+  String get emailRequired;
+
+  /// No description provided for @incorrectEmailFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect email format'**
+  String get incorrectEmailFormat;
+
+  /// No description provided for @invalidEmailOrPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email or password'**
+  String get invalidEmailOrPassword;
+
   /// No description provided for @sellTitle.
   ///
   /// In en, this message translates to:
@@ -1521,6 +1563,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Farm added successfully'**
   String get farmAddedSuccess;
+
+  /// No description provided for @farmLocationGPS.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm Location (GPS)'**
+  String get farmLocationGPS;
+
+  /// No description provided for @captureFarmLocationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture your farm\'s GPS coordinates. This helps field officers verify your farm location.'**
+  String get captureFarmLocationDesc;
+
+  /// No description provided for @captureFarmLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture Farm Location'**
+  String get captureFarmLocation;
+
+  /// No description provided for @retakeLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Retake Location'**
+  String get retakeLocation;
+
+  /// No description provided for @locationCaptured.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Captured'**
+  String get locationCaptured;
+
+  /// No description provided for @latitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Latitude'**
+  String get latitude;
+
+  /// No description provided for @longitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Longitude'**
+  String get longitude;
+
+  /// No description provided for @accuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'Accuracy'**
+  String get accuracy;
+
+  /// No description provided for @meters.
+  ///
+  /// In en, this message translates to:
+  /// **'meters'**
+  String get meters;
+
+  /// No description provided for @locationPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Permission Required'**
+  String get locationPermissionRequired;
+
+  /// No description provided for @locationPermissionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable location services and grant location permission to capture farm GPS coordinates.'**
+  String get locationPermissionMessage;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get openSettings;
+
+  /// No description provided for @locationCapturedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm location captured successfully!'**
+  String get locationCapturedSuccess;
+
+  /// No description provided for @capturedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Captured On'**
+  String get capturedOn;
+
+  /// No description provided for @gpsCoordinates.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Coordinates'**
+  String get gpsCoordinates;
 
   /// No description provided for @noFarmsAdded.
   ///

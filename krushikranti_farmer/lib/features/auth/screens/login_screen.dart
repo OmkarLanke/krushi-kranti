@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
@@ -19,7 +20,8 @@ class _LoginScreenState extends State<LoginScreen> {
   String appLang = "en";
   bool _isLoading = false;
 
-  String? phoneErrorText;
+  String? phoneFormatError; // Format validation errors (shown on phone field)
+  String? authError; // Authentication error (shown at bottom)
 
   final Map<String, Map<String, String>> translations = {
     "en": {
@@ -31,7 +33,9 @@ class _LoginScreenState extends State<LoginScreen> {
       "emailLogin": "Log in with Email & Password",
       "terms": "By continuing you agree to our Terms & Conditions and Privacy & Legal Policy",
       "signUp": "Sign Up",
-      "phoneError": "Please enter a valid 10-digit phone number"
+      "phoneError": "Please enter a valid 10-digit phone number",
+      "networkError": "Network error. Please check your connection and try again.",
+      "incorrectPhoneError": "Incorrect phone number. Please try again."
     },
     "hi": {
       "tagline": "भलाई से फिर जुड़ें",
@@ -42,7 +46,9 @@ class _LoginScreenState extends State<LoginScreen> {
       "emailLogin": "ईमेल और पासवर्ड से लॉग इन करें",
       "terms": "आगे बढ़ते हुए आप हमारी शर्तों और गोपनीयता नीति से सहमत हैं",
       "signUp": "साइन अप करें",
-      "phoneError": "कृपया 10 अंकों का मान्य मोबाइल नंबर दर्ज करें"
+      "phoneError": "कृपया 10 अंकों का मान्य मोबाइल नंबर दर्ज करें",
+      "networkError": "नेटवर्क त्रुटि। कृपया अपना कनेक्शन जांचें और पुनः प्रयास करें।",
+      "incorrectPhoneError": "गलत मोबाइल नंबर। कृपया पुनः प्रयास करें।"
     },
     "mr": {
       "tagline": "चांगुलपणाशी पुन्हा जोडले जा",
@@ -53,7 +59,9 @@ class _LoginScreenState extends State<LoginScreen> {
       "emailLogin": "ईमेल आणि पासवर्डसह लॉग इन करा",
       "terms": "पुढे जाताना आपण आमच्या अटी आणि गोपनीयता धोरणास सहमती देता",
       "signUp": "साइन अप",
-      "phoneError": "कृपया वैध 10 अंकी मोबाईल नंबर प्रविष्ट करा"
+      "phoneError": "कृपया वैध 10 अंकी मोबाईल नंबर प्रविष्ट करा",
+      "networkError": "नेटवर्क त्रुटी. कृपया आपले कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
+      "incorrectPhoneError": "चुकीचा मोबाईल नंबर. कृपया पुन्हा प्रयत्न करा."
     }
   };
 
@@ -166,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(25),
                           border: Border.all(
-                            color: phoneErrorText == null
+                            color: phoneFormatError == null
                                 ? AppColors.border
                                 : Colors.red,
                           ),
@@ -200,9 +208,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   border: InputBorder.none,
                                 ),
                                 onChanged: (value) {
-                                  if (value.length == 10) {
-                                    setState(() => phoneErrorText = null);
-                                  }
+                                  setState(() {
+                                    // Clear errors when user types
+                                    phoneFormatError = null;
+                                    authError = null;
+                                  });
                                 },
                               ),
                             ),
@@ -210,11 +220,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
 
-                      if (phoneErrorText != null)
+                      if (phoneFormatError != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 5, left: 10),
                           child: Text(
-                            phoneErrorText!,
+                            phoneFormatError!,
                             style: const TextStyle(color: Colors.red, fontSize: 12),
                           ),
                         ),
@@ -243,16 +253,22 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: _isLoading ? null : () async {
                             final phone = phoneController.text.trim();
 
+                            // Clear previous errors
+                            setState(() {
+                              phoneFormatError = null;
+                              authError = null;
+                            });
+
+                            // Validate phone format
                             if (!validatePhoneNumber(phone)) {
                               setState(() {
-                                phoneErrorText = translations[appLang]!["phoneError"];
+                                phoneFormatError = translations[appLang]!["phoneError"];
                               });
                               return;
                             }
 
                             setState(() {
                               _isLoading = true;
-                              phoneErrorText = null;
                             });
 
                             try {
@@ -280,15 +296,45 @@ class _LoginScreenState extends State<LoginScreen> {
                               
                               setState(() {
                                 _isLoading = false;
-                                phoneErrorText = e.toString().replaceFirst("Exception: ", "");
                               });
+
+                              // ✅ Industry-standard error handling
+                              final errorString = e.toString();
+                              final lowerError = errorString.toLowerCase();
                               
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(e.toString().replaceFirst("Exception: ", "")),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
+                              // Check if it's a REAL network error
+                              bool isRealNetworkError = false;
+                              
+                              if (e is SocketException) {
+                                isRealNetworkError = true;
+                              } else if (errorString.contains('Network Error:') || 
+                                         errorString.contains('Network error:')) {
+                                if (lowerError.contains('socketexception') ||
+                                    lowerError.contains('timeoutexception') ||
+                                    lowerError.contains('timeout') ||
+                                    lowerError.contains('connection refused') ||
+                                    lowerError.contains('failed host lookup') ||
+                                    lowerError.contains('connection timed out') ||
+                                    lowerError.contains('network is unreachable')) {
+                                  isRealNetworkError = true;
+                                }
+                              } else if (lowerError.contains('timeout') && 
+                                         (lowerError.contains('connection') || 
+                                          lowerError.contains('socket'))) {
+                                isRealNetworkError = true;
+                              }
+                              
+                              if (isRealNetworkError) {
+                                setState(() {
+                                  authError = translations[appLang]!["networkError"];
+                                });
+                              } else {
+                                // ✅ For ALL authentication failures (phone not found, etc.):
+                                // Show generic "Incorrect phone number. Please try again" message
+                                setState(() {
+                                  authError = translations[appLang]!["incorrectPhoneError"];
+                                });
+                              }
                             } finally {
                               if (mounted) {
                                 setState(() {
@@ -312,6 +358,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                         ),
                       ),
+
+                      // ✅ Authentication Error (shown at bottom)
+                      if (authError != null) ...[
+                        const SizedBox(height: 16),
+                        _authErrorText(authError!),
+                      ],
 
                       const SizedBox(height: 15),
 
@@ -376,6 +428,36 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ✅ Authentication error text (shown at bottom)
+  Widget _authErrorText(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade200, width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, size: 18, color: Colors.red.shade700),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: Colors.red.shade700,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
     );
   }

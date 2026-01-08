@@ -158,6 +158,13 @@
   "submitBtn": "सबमिट करा",
   "passwordsDoNotMatch": "पासवर्ड जुळत नाहीत",
   "passwordResetSuccess": "पासवर्ड यशस्वीरित्या बदलला!",
+  "phoneHint": "मोबाईल नंबर टाका",
+  "phoneFormatError": "कृपया वैध 10 अंकी मोबाईल नंबर प्रविष्ट करा",
+  "networkError": "नेटवर्क त्रुटी. कृपया आपले कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
+  "incorrectPhoneError": "चुकीचा मोबाईल नंबर. कृपया पुन्हा प्रयत्न करा.",
+  "emailRequired": "ईमेल आवश्यक आहे",
+  "incorrectEmailFormat": "चुकीचा ईमेल स्वरूप",
+  "invalidEmailOrPassword": "अवैध ईमेल किंवा पासवर्ड",
 
   "sellTitle": "पिकाचा तपशील",
   "dateLabel": "तारीख",
