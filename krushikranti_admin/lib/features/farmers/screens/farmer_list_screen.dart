@@ -74,6 +74,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   SortColumn? _sortColumn;
   SortDirection _sortDirection = SortDirection.descending;
   
+  // Dropdown overlay state
+  OverlayEntry? _dropdownOverlay;
+  final Map<String, GlobalKey> _filterKeys = {};
+  String? _openDropdownLabel;
+  
   // Search controllers for each column
   final _userIdSearchController = TextEditingController();
   final _fullNameSearchController = TextEditingController();
@@ -99,6 +104,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
 
   @override
   void dispose() {
+    _closeDropdown();
     _userIdSearchController.dispose();
     _fullNameSearchController.dispose();
     _usernameSearchController.dispose();
@@ -114,6 +120,12 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     _pincodeSearchDebounce?.cancel();
     _pincodeDebounce?.cancel();
     super.dispose();
+  }
+
+  void _closeDropdown() {
+    _dropdownOverlay?.remove();
+    _dropdownOverlay = null;
+    _openDropdownLabel = null;
   }
 
   Future<void> _loadAllFarmers() async {
@@ -767,6 +779,38 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     return count;
   }
 
+  void _showDropdown({
+    required String label,
+    required List<String> options,
+    required List<String> selectedValues,
+    required Function(List<String>) onChanged,
+    required GlobalKey key,
+  }) {
+    _closeDropdown();
+    
+    final RenderBox? renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final position = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    _openDropdownLabel = label;
+
+    _dropdownOverlay = OverlayEntry(
+      builder: (context) => _DropdownOverlay(
+        label: label,
+        options: options,
+        selectedValues: selectedValues,
+        onChanged: onChanged,
+        onClose: _closeDropdown,
+        position: position,
+        size: size,
+      ),
+    );
+
+    Overlay.of(context).insert(_dropdownOverlay!);
+  }
+
   Widget _buildMultiSelectFilter({
     required String label,
     required IconData icon,
@@ -775,308 +819,90 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     required Function(List<String>) onChanged,
     double? width,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: InkWell(
-        onTap: () => _showMultiSelectDialog(
-          label: label,
-          options: options,
-          selectedValues: selectedValues,
-          onChanged: onChanged,
+    if (!_filterKeys.containsKey(label)) {
+      _filterKeys[label] = GlobalKey();
+    }
+    final key = _filterKeys[label]!;
+
+    return GestureDetector(
+      onTap: () {
+        if (_openDropdownLabel == label) {
+          _closeDropdown();
+        } else {
+          _showDropdown(
+            label: label,
+            options: options,
+            selectedValues: selectedValues,
+            onChanged: onChanged,
+            key: key,
+          );
+        }
+      },
+      child: Container(
+        key: key,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
         ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 18, color: Colors.grey.shade400),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      selectedValues.isEmpty
-                          ? 'All $label'
-                          : selectedValues.length == 1
-                              ? selectedValues.first
-                              : '${selectedValues.length} selected',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: selectedValues.isEmpty
-                            ? Colors.grey.shade400
-                            : AppColors.textPrimary,
-                        fontWeight: selectedValues.isNotEmpty
-                            ? FontWeight.w500
-                            : FontWeight.normal,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              if (selectedValues.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(left: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.brandGreen,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    selectedValues.length.toString(),
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey.shade600),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showMultiSelectDialog({
-    required String label,
-    required List<String> options,
-    required List<String> selectedValues,
-    required Function(List<String>) onChanged,
-  }) {
-    List<String> tempSelected = List.from(selectedValues);
-    final TextEditingController searchController = TextEditingController();
-    String searchQuery = '';
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setStateDialog) {
-          // Apply local search on options
-          final List<String> filteredOptions = options
-              .where(
-                (o) => o.toLowerCase().contains(searchQuery.toLowerCase()),
-              )
-              .toList();
-
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            alignment: Alignment.topCenter,
-            insetPadding: const EdgeInsets.only(
-              left: 200,
-              right: 200,
-              top: 150,
-              bottom: 24,
-            ),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Select $label',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close_rounded, color: Colors.grey.shade600),
-                  onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: Colors.grey.shade400),
+            const SizedBox(width: 8),
+            Expanded(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Search field
-                  TextField(
-                    controller: searchController,
-                    onChanged: (value) {
-                      setStateDialog(() {
-                        searchQuery = value;
-                      });
-                    },
-                    style: GoogleFonts.poppins(fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: 'Search $label',
-                      hintStyle: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: Colors.grey.shade500,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        size: 18,
-                        color: Colors.grey.shade400,
-                      ),
-                      suffixIcon: searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(
-                                Icons.clear_rounded,
-                                size: 18,
-                                color: Colors.grey.shade400,
-                              ),
-                              onPressed: () {
-                                searchController.clear();
-                                setStateDialog(() {
-                                  searchQuery = '';
-                                });
-                              },
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            )
-                          : null,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: AppColors.brandGreen,
-                          width: 1.5,
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
+                  Text(
+                    label,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  if (filteredOptions.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text(
-                        'No options available',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    )
-                  else
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 400),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: filteredOptions.length,
-                        itemBuilder: (context, index) {
-                          final option = filteredOptions[index];
-                          final isSelected = tempSelected.contains(option);
-                          return CheckboxListTile(
-                            value: isSelected,
-                            onChanged: (value) {
-                              setStateDialog(() {
-                                if (value == true) {
-                                  tempSelected.add(option);
-                                } else {
-                                  tempSelected.remove(option);
-                                }
-                              });
-                            },
-                            title: Text(
-                              option,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            activeColor: AppColors.brandGreen,
-                            contentPadding: EdgeInsets.zero,
-                          );
-                        },
-                      ),
+                  const SizedBox(height: 4),
+                  Text(
+                    selectedValues.isEmpty
+                        ? 'All $label'
+                        : selectedValues.length == 1
+                            ? selectedValues.first
+                            : '${selectedValues.length} selected',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: selectedValues.isEmpty
+                          ? Colors.grey.shade400
+                          : AppColors.textPrimary,
+                      fontWeight: selectedValues.isNotEmpty
+                          ? FontWeight.w500
+                          : FontWeight.normal,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  setStateDialog(() {
-                    tempSelected.clear();
-                  });
-                  searchController.clear();
-                  searchQuery = '';
-                },
-                child: Text(
-                  'Clear All',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+            if (selectedValues.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.brandGreen,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ),
-              TextButton(
-                onPressed: () {
-                  setStateDialog(() {
-                    tempSelected = List.from(options);
-                  });
-                  searchController.clear();
-                  searchQuery = '';
-                },
                 child: Text(
-                  'Select All',
+                  selectedValues.length.toString(),
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: AppColors.brandGreen,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
                 ),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  onChanged(tempSelected);
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brandGreen,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  'Apply',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+            Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey.shade600),
+          ],
+        ),
       ),
     );
   }
@@ -2919,6 +2745,270 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
           }
         },
       ),
+    );
+  }
+}
+
+class _DropdownOverlay extends StatefulWidget {
+  final String label;
+  final List<String> options;
+  final List<String> selectedValues;
+  final Function(List<String>) onChanged;
+  final VoidCallback onClose;
+  final Offset position;
+  final Size size;
+
+  const _DropdownOverlay({
+    required this.label,
+    required this.options,
+    required this.selectedValues,
+    required this.onChanged,
+    required this.onClose,
+    required this.position,
+    required this.size,
+  });
+
+  @override
+  State<_DropdownOverlay> createState() => _DropdownOverlayState();
+}
+
+class _DropdownOverlayState extends State<_DropdownOverlay> {
+  late TextEditingController _searchController;
+  String searchQuery = '';
+  List<String> tempSelected = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    tempSelected = List.from(widget.selectedValues);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> filteredOptions = widget.options
+        .where(
+          (o) => o.toLowerCase().contains(searchQuery.toLowerCase()),
+        )
+        .toList();
+
+    return Stack(
+      children: [
+        // Backdrop to close dropdown on tap outside
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: widget.onClose,
+            child: Container(
+              color: Colors.transparent,
+            ),
+          ),
+        ),
+        // Dropdown content
+        Positioned(
+          left: widget.position.dx,
+          top: widget.position.dy + widget.size.height + 4,
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+            child: Container(
+              width: 320,
+              constraints: const BoxConstraints(maxHeight: 400),
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Search field
+                  TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value;
+                      });
+                    },
+                    style: GoogleFonts.poppins(fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Search ${widget.label}',
+                      hintStyle: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: Colors.grey.shade500,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        size: 18,
+                        color: Colors.grey.shade400,
+                      ),
+                      suffixIcon: searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(
+                                Icons.clear_rounded,
+                                size: 18,
+                                color: Colors.grey.shade400,
+                              ),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  searchQuery = '';
+                                });
+                              },
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            )
+                          : null,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade300,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade300,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: AppColors.brandGreen,
+                          width: 1.5,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Action buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            tempSelected.clear();
+                            _searchController.clear();
+                            searchQuery = '';
+                          });
+                        },
+                        child: Text(
+                          'Clear All',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            tempSelected = List.from(widget.options);
+                            _searchController.clear();
+                            searchQuery = '';
+                          });
+                        },
+                        child: Text(
+                          'Select All',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.brandGreen,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 1),
+                  const SizedBox(height: 4),
+                  // Options list
+                  if (filteredOptions.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(
+                        'No options available',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filteredOptions.length,
+                        itemBuilder: (context, index) {
+                          final option = filteredOptions[index];
+                          final isSelected = tempSelected.contains(option);
+                          return CheckboxListTile(
+                            value: isSelected,
+                            onChanged: (value) {
+                              setState(() {
+                                if (value == true) {
+                                  tempSelected.add(option);
+                                } else {
+                                  tempSelected.remove(option);
+                                }
+                              });
+                            },
+                            title: Text(
+                              option,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            activeColor: AppColors.brandGreen,
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                          );
+                        },
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  // Apply button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        widget.onChanged(tempSelected);
+                        widget.onClose();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brandGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Apply',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
