@@ -480,6 +480,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordResetSuccess => 'Password Changed Successfully!';
 
   @override
+  String get phoneHint => 'Enter Mobile Number';
+
+  @override
+  String get phoneFormatError => 'Please enter a valid 10-digit phone number';
+
+  @override
+  String get networkError =>
+      'Network error. Please check your connection and try again.';
+
+  @override
+  String get incorrectPhoneError => 'Incorrect phone number. Please try again.';
+
+  @override
+  String get emailRequired => 'Email is required';
+
+  @override
+  String get incorrectEmailFormat => 'Incorrect email format';
+
+  @override
+  String get invalidEmailOrPassword => 'Invalid email or password';
+
+  @override
   String get sellTitle => 'Crop Details';
 
   @override

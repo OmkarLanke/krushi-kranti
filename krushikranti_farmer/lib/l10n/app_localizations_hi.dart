@@ -480,6 +480,29 @@ class AppLocalizationsHi extends AppLocalizations {
   String get passwordResetSuccess => 'पासवर्ड सफलतापूर्वक बदल दिया गया!';
 
   @override
+  String get phoneHint => 'मोबाइल नंबर दर्ज करें';
+
+  @override
+  String get phoneFormatError =>
+      'कृपया 10 अंकों का मान्य मोबाइल नंबर दर्ज करें';
+
+  @override
+  String get networkError =>
+      'नेटवर्क त्रुटि। कृपया अपना कनेक्शन जांचें और पुनः प्रयास करें।';
+
+  @override
+  String get incorrectPhoneError => 'गलत मोबाइल नंबर। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get emailRequired => 'ईमेल आवश्यक है';
+
+  @override
+  String get incorrectEmailFormat => 'गलत ईमेल प्रारूप';
+
+  @override
+  String get invalidEmailOrPassword => 'अमान्य ईमेल या पासवर्ड';
+
+  @override
   String get sellTitle => 'फसल विवरण';
 
   @override

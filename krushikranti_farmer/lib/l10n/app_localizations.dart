@@ -1036,6 +1036,48 @@ abstract class AppLocalizations {
   /// **'Password Changed Successfully!'**
   String get passwordResetSuccess;
 
+  /// No description provided for @phoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Mobile Number'**
+  String get phoneHint;
+
+  /// No description provided for @phoneFormatError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid 10-digit phone number'**
+  String get phoneFormatError;
+
+  /// No description provided for @networkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your connection and try again.'**
+  String get networkError;
+
+  /// No description provided for @incorrectPhoneError.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect phone number. Please try again.'**
+  String get incorrectPhoneError;
+
+  /// No description provided for @emailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required'**
+  String get emailRequired;
+
+  /// No description provided for @incorrectEmailFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect email format'**
+  String get incorrectEmailFormat;
+
+  /// No description provided for @invalidEmailOrPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email or password'**
+  String get invalidEmailOrPassword;
+
   /// No description provided for @sellTitle.
   ///
   /// In en, this message translates to:

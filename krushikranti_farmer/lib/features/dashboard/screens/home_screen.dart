@@ -18,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isAgentAssigned = false; 
   List<Map<String, dynamic>> fieldOfficerAssignments = [];
   bool isLoadingAssignments = true;
+  bool isNavigating = false;
 
   @override
   void initState() {
@@ -397,6 +398,47 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
+                    strokeWidth: 3,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Loading...',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildQuickActionGrid(BuildContext context, AppLocalizations l10n) {
     final String cropStatus = isAgentAssigned ? l10n.active : l10n.pending; 
     final Color cropStatusColor = isAgentAssigned ? AppColors.brandGreen : AppColors.pendingStatus;
@@ -465,9 +507,27 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return GestureDetector(
       onTap: () async {
-        if (route != null) {
-          await Navigator.pushNamed(context, route);
-          _checkFieldOfficerAssignments(); 
+        if (route != null && !isNavigating) {
+          setState(() {
+            isNavigating = true;
+          });
+          
+          // Show loading dialog
+          _showLoadingDialog(context);
+          
+          // Small delay to show loading animation
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          // Hide loading dialog and navigate
+          if (mounted) {
+            Navigator.pop(context); // Close loading dialog
+            await Navigator.pushNamed(context, route);
+            _checkFieldOfficerAssignments();
+            
+            setState(() {
+              isNavigating = false;
+            });
+          }
         }
       },
       child: Container(

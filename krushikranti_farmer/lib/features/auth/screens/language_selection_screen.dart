@@ -3,6 +3,7 @@ import 'package:provider/provider.dart'; // ✅ Added Provider
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/providers/locale_provider.dart'; // ✅ Added LocaleProvider
+import '../../../core/services/storage_service.dart'; // ✅ Added StorageService
 
 class LanguageSelectionScreen extends StatefulWidget {
   const LanguageSelectionScreen({super.key});
@@ -14,6 +15,23 @@ class LanguageSelectionScreen extends StatefulWidget {
 
 class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   String selectedLang = "en"; // default
+
+  @override
+  void initState() {
+    super.initState();
+    // Load saved language preference
+    _loadSavedLanguage();
+  }
+
+  Future<void> _loadSavedLanguage() async {
+    // Load saved language from storage
+    final String? savedLang = await StorageService.getLanguage();
+    if (savedLang != null && mounted) {
+      setState(() {
+        selectedLang = savedLang;
+      });
+    }
+  }
 
   final Map<String, Map<String, String>> translations = {
     "en": {
