@@ -44,7 +44,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   int _currentPage = 0;
   int _totalPages = 0;
   int _totalElements = 0;
-  final int _pageSize = 5; // Changed to 5 farmers per page
+  final int _pageSize = 100; // Show 100 farmers per page
   
   // Column-specific search queries
   String? _userIdSearch;
@@ -94,6 +94,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   Timer? _locationSearchDebounce;
   Timer? _pincodeSearchDebounce;
   Timer? _pincodeDebounce;
+  
+  // Scroll controllers for table scrolling
+  final _horizontalScrollController = ScrollController();
+  final _verticalScrollController = ScrollController();
 
   @override
   void initState() {
@@ -119,6 +123,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     _locationSearchDebounce?.cancel();
     _pincodeSearchDebounce?.cancel();
     _pincodeDebounce?.cancel();
+    _horizontalScrollController.dispose();
+    _verticalScrollController.dispose();
     super.dispose();
   }
 
@@ -1595,10 +1601,17 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         borderRadius: BorderRadius.circular(16),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: _buildCustomTable(
-                constraints.maxWidth > 0 ? constraints.maxWidth : 1200,
+            return Scrollbar(
+              controller: _horizontalScrollController,
+              thumbVisibility: true,
+              thickness: 12,
+              radius: const Radius.circular(6),
+              child: SingleChildScrollView(
+                controller: _horizontalScrollController,
+                scrollDirection: Axis.horizontal,
+                child: _buildCustomTable(
+                  constraints.maxWidth > 0 ? constraints.maxWidth : 1200,
+                ),
               ),
             );
           },
@@ -1635,25 +1648,21 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         kycWidth +
         subscriptionWidth +
         fieldOfficerWidth;
-    
-    // Effective min width (either table content or available width)
-    final tableMinWidth =
-        totalWidth > minWidth ? totalWidth : minWidth;
 
-    // Calculate minimum height for 5 rows (page size)
+    // Calculate minimum height for rows (page size)
+    // Set max height to show approximately 15-20 rows at a time, then scroll
+    const double maxVisibleHeight = 800.0; // Max height for visible area
     final minDataHeight = _pageSize * rowHeight;
-    final totalMinHeight = headerHeight + filterHeight + minDataHeight;
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        minWidth: tableMinWidth,
-        minHeight: totalMinHeight,
+        minWidth: totalWidth, // Use actual table width, not viewport width
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header Row
+          // Header Row (Fixed)
           Container(
             height: headerHeight,
             decoration: BoxDecoration(
@@ -1686,7 +1695,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               ],
             ),
           ),
-          // Filter Row
+          // Filter Row (Fixed)
           Container(
             height: filterHeight,
             decoration: BoxDecoration(
@@ -1719,36 +1728,48 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               ],
             ),
           ),
-          // Data Rows Container with minimum height
-          ConstrainedBox(
-            constraints: BoxConstraints(minHeight: minDataHeight),
-            child: _filteredFarmers.isEmpty
-                ? _buildEmptyState(tableMinWidth, minDataHeight)
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ..._filteredFarmers.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final farmer = entry.value;
-                        return _buildCustomFarmerRow(
-                          farmer,
-                          rowHeight,
-                          userIdWidth,
-                          usernameWidth,
-                          fullNameWidth,
-                          phoneWidth,
-                          locationWidth,
-                          pincodeWidth,
-                          farmsWidth,
-                          kycWidth,
-                          subscriptionWidth,
-                          fieldOfficerWidth,
-                          index == _filteredFarmers.length - 1, // Last row
-                        );
-                      }),
-                    ],
-                  ),
+          // Data Rows Container with vertical scrolling
+          SizedBox(
+            height: maxVisibleHeight,
+            child: Scrollbar(
+              controller: _verticalScrollController,
+              thumbVisibility: true,
+              thickness: 12,
+              radius: const Radius.circular(6),
+              child: SingleChildScrollView(
+                controller: _verticalScrollController,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: minDataHeight),
+                  child: _filteredFarmers.isEmpty
+                      ? _buildEmptyState(totalWidth, minDataHeight)
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ..._filteredFarmers.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final farmer = entry.value;
+                              return _buildCustomFarmerRow(
+                                farmer,
+                                rowHeight,
+                                userIdWidth,
+                                usernameWidth,
+                                fullNameWidth,
+                                phoneWidth,
+                                locationWidth,
+                                pincodeWidth,
+                                farmsWidth,
+                                kycWidth,
+                                subscriptionWidth,
+                                fieldOfficerWidth,
+                                index == _filteredFarmers.length - 1, // Last row
+                              );
+                            }),
+                          ],
+                        ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
