@@ -50,6 +50,7 @@
         <module>field-officer-service</module>
         <module>subscription-service</module>
         <module>kyc-service</module>
+        <module>file-service</module>
     </modules>
 
     <dependencyManagement>
