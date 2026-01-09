@@ -221,6 +221,25 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
     );
   }
 
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'ASSIGNED':
+        return Colors.blue;
+      case 'IN_PROGRESS':
+        return Colors.orange;
+      case 'COMPLETED':
+        return AppColors.success;
+      case 'CANCELLED':
+        return AppColors.error;
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -563,33 +582,151 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         ],
                       ],
                     ),
-                    // Show assignment status if farm is already assigned
+                    // Show detailed assignment information if farm is already assigned
                     if (isAssigned && assignment != null) ...[
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.orange.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.shade200, width: 1),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.assignment_ind,
-                                size: 14, color: Colors.orange.shade700),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                'Already assigned to: ${assignment.fieldOfficerName}',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 11,
-                                  color: Colors.orange.shade700,
-                                  fontWeight: FontWeight.w500,
+                            Row(
+                              children: [
+                                Icon(Icons.assignment_ind,
+                                    size: 16, color: Colors.orange.shade700),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Already Assigned',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: Colors.orange.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
+                            const SizedBox(height: 8),
+                            // Field Officer Name
+                            Row(
+                              children: [
+                                Icon(Icons.person, size: 14, color: Colors.orange.shade700),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    assignment.fieldOfficerName,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 13,
+                                      color: Colors.orange.shade900,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            // Phone Number
+                            if (assignment.fieldOfficerPhone.isNotEmpty) ...[
+                              Row(
+                                children: [
+                                  Icon(Icons.phone, size: 14, color: Colors.orange.shade700),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    assignment.fieldOfficerPhone,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.orange.shade800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                            ],
+                            // Location/Pincode
+                            if (assignment.fieldOfficerPincode != null && assignment.fieldOfficerPincode!.isNotEmpty) ...[
+                              Row(
+                                children: [
+                                  Icon(Icons.location_on, size: 14, color: Colors.orange.shade700),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Pincode: ${assignment.fieldOfficerPincode}',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.orange.shade800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                            ],
+                            // Assignment Date
+                            if (assignment.assignedAt != null) ...[
+                              Row(
+                                children: [
+                                  Icon(Icons.calendar_today, size: 14, color: Colors.orange.shade700),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Assigned: ${_formatDate(assignment.assignedAt!)}',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.orange.shade800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                            ],
+                            // Status
+                            Row(
+                              children: [
+                                Icon(Icons.info_outline, size: 14, color: Colors.orange.shade700),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: _getStatusColor(assignment.status).withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: _getStatusColor(assignment.status).withOpacity(0.5),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    assignment.status,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      color: _getStatusColor(assignment.status),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Notes
+                            if (assignment.notes != null && assignment.notes!.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(Icons.note, size: 14, color: Colors.orange.shade700),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      assignment.notes!,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: Colors.orange.shade800,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
