@@ -56,7 +56,7 @@ public class AdminFarmerService {
     /**
      * Get paginated list of all farmers with summary info
      */
-    public AdminFarmerListResponse getAllFarmers(int page, int size, String search, String kycStatus, String subscriptionStatus) {
+    public AdminFarmerListResponse getAllFarmers(int page, int size, String search, String kycStatus, String subscriptionStatus, String pincode) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         
         Page<Farmer> farmerPage;
@@ -67,7 +67,16 @@ public class AdminFarmerService {
             farmerPage = farmerRepository.findAll(pageable);
         }
 
-        List<Long> userIds = farmerPage.getContent().stream()
+        // Filter by pincode if provided
+        List<Farmer> filteredFarmers = farmerPage.getContent();
+        if (pincode != null && !pincode.trim().isEmpty()) {
+            filteredFarmers = filteredFarmers.stream()
+                    .filter(farmer -> farmer.getPincode() != null && 
+                            farmer.getPincode().equalsIgnoreCase(pincode.trim()))
+                    .collect(Collectors.toList());
+        }
+
+        List<Long> userIds = filteredFarmers.stream()
                 .map(Farmer::getUserId)
                 .collect(Collectors.toList());
 
@@ -85,7 +94,7 @@ public class AdminFarmerService {
 
         List<AdminFarmerSummaryDto> summaries = new ArrayList<>();
         
-        for (Farmer farmer : farmerPage.getContent()) {
+        for (Farmer farmer : filteredFarmers) {
             Map<String, Object> kycInfo = kycMap.getOrDefault(farmer.getUserId(), Map.of());
             Map<String, Object> subInfo = subscriptionMap.getOrDefault(farmer.getUserId(), Map.of());
             Map<String, Object> userInfo = userMap.getOrDefault(farmer.getUserId(), Map.of());
@@ -124,6 +133,7 @@ public class AdminFarmerService {
                     .village(farmer.getVillage())
                     .district(farmer.getDistrict())
                     .state(farmer.getState())
+                    .pincode(farmer.getPincode())
                     .isProfileComplete(isProfileComplete(farmer))
                     .kycStatus(currentKycStatus)
                     .subscriptionStatus(currentSubStatus)

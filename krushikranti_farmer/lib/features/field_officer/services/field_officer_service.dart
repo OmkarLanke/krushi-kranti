@@ -40,6 +40,8 @@ class FieldOfficerService {
     String? feedback,
     String? rejectionReason,
     List<String>? photoUrls,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       final requestBody = <String, dynamic>{
@@ -57,6 +59,12 @@ class FieldOfficerService {
 
       if (photoUrls != null && photoUrls.isNotEmpty) {
         requestBody['photoUrls'] = photoUrls;
+      }
+
+      // Add GPS coordinates
+      if (latitude != null && longitude != null) {
+        requestBody['latitude'] = latitude;
+        requestBody['longitude'] = longitude;
       }
 
       final response = await HttpService.post(

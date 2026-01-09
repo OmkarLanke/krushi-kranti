@@ -67,6 +67,15 @@ public class FarmResponse {
     private String verificationRemarks;
 
     // ========================================
+    // GPS LOCATION COORDINATES
+    // ========================================
+    
+    private BigDecimal farmLatitude;
+    private BigDecimal farmLongitude;
+    private BigDecimal farmLocationAccuracy;
+    private LocalDateTime farmLocationCapturedAt;
+
+    // ========================================
     // STATUS & METADATA
     // ========================================
     

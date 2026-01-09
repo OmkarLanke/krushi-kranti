@@ -1,6 +1,12 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/geotagged_photo_service.dart';
+import '../../../core/services/location_service.dart';
+import '../../../core/services/http_service.dart';
 import '../services/field_officer_service.dart';
 
 class FarmVerificationScreen extends StatefulWidget {
@@ -104,6 +110,186 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     super.dispose();
   }
 
+  /// Capture GPS location for verification
+  Future<void> _captureVerificationLocation(int farmId) async {
+    final state = _farmVerificationStates[farmId];
+    if (state == null) return;
+
+    setState(() {
+      state.isCapturingLocation = true;
+      state.locationError = null;
+    });
+
+    try {
+      Position position = await LocationService.getCurrentPositionWithAccuracy(
+        maxAccuracy: 20.0, // Require accuracy better than 20 meters
+        accuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 30),
+      );
+
+      if (mounted) {
+        setState(() {
+          state.verificationLatitude = position.latitude;
+          state.verificationLongitude = position.longitude;
+          state.verificationAccuracy = position.accuracy;
+          state.locationError = null;
+          state.isCapturingLocation = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location captured successfully!'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } on LocationException catch (e) {
+      if (mounted) {
+        setState(() {
+          state.locationError = e.message;
+          state.isCapturingLocation = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          state.locationError = 'Failed to capture location: ${e.toString()}';
+          state.isCapturingLocation = false;
+        });
+      }
+    }
+  }
+
+  /// Capture geotagged photo for verification
+  Future<void> _captureGeotaggedPhoto(int farmId) async {
+    final state = _farmVerificationStates[farmId];
+    if (state == null) return;
+
+    setState(() {
+      state.isCapturingPhoto = true;
+      state.photoError = null;
+    });
+
+    try {
+      // Add timeout to the entire photo capture process
+      GeotaggedPhotoResult result = await GeotaggedPhotoService.captureGeotaggedPhoto(
+        maxAccuracy: 20.0,
+        accuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 30),
+      ).timeout(
+        const Duration(seconds: 60), // Total timeout for entire process
+        onTimeout: () {
+          throw GeotaggedPhotoException(
+            'Photo capture timed out. Please try again.',
+          );
+        },
+      );
+
+      if (mounted) {
+        // Verify photo file exists before setting it
+        if (await result.photoFile.exists()) {
+          setState(() {
+            state.geotaggedPhoto = result.photoFile;
+            // Update GPS from photo if not already captured
+            if (state.verificationLatitude == null || state.verificationLongitude == null) {
+              state.verificationLatitude = result.effectiveLatitude;
+              state.verificationLongitude = result.effectiveLongitude;
+              state.verificationAccuracy = result.gpsAccuracy;
+            }
+            state.photoError = null;
+            state.isCapturingPhoto = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Geotagged photo captured successfully!'),
+              backgroundColor: AppColors.success,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          throw GeotaggedPhotoException(
+            'Photo file was not saved properly. Please try again.',
+          );
+        }
+      }
+    } on GeotaggedPhotoException catch (e) {
+      if (mounted) {
+        setState(() {
+          state.photoError = e.message;
+          state.isCapturingPhoto = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } on TimeoutException catch (e) {
+      if (mounted) {
+        setState(() {
+          state.photoError = 'Photo capture timed out. Please try again.';
+          state.isCapturingPhoto = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Photo capture timed out. Please try again.'),
+            backgroundColor: AppColors.error,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          state.photoError = 'Failed to capture photo: ${e.toString()}';
+          state.isCapturingPhoto = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to capture photo: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Validate GPS coordinates match farm location (100m threshold)
+  bool _validateGpsCoordinates(int farmId, Map<String, dynamic> farm) {
+    final state = _farmVerificationStates[farmId];
+    if (state == null || state.verificationLatitude == null || state.verificationLongitude == null) {
+      return false;
+    }
+
+    // Get farm GPS coordinates
+    final farmLat = farm['farmLatitude']?.toDouble();
+    final farmLon = farm['farmLongitude']?.toDouble();
+
+    if (farmLat == null || farmLon == null) {
+      // Farm doesn't have GPS coordinates, can't validate
+      return true; // Allow verification if farm has no GPS
+    }
+
+    // Calculate distance between farm location and verification location
+    final distance = Geolocator.distanceBetween(
+      farmLat,
+      farmLon,
+      state.verificationLatitude!,
+      state.verificationLongitude!,
+    );
+
+    // Check if within 100 meters threshold
+    return distance <= 100.0;
+  }
+
   Future<void> _submitVerification(
       int farmId, Map<String, dynamic> farm) async {
     final state = _farmVerificationStates[farmId];
@@ -119,6 +305,41 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         ),
       );
       return;
+    }
+
+    // If verifying (not rejecting), require GPS and photo
+    if (state.selectedStatus == 'VERIFIED') {
+      if (state.verificationLatitude == null || state.verificationLongitude == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please capture GPS location before verifying the farm'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      if (state.geotaggedPhoto == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please capture a geotagged photo of the farm before verification'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      // Validate GPS coordinates match farm location
+      if (!_validateGpsCoordinates(farmId, farm)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('GPS coordinates do not match farm location. Please ensure you are at the farm location (within 100m).'),
+            backgroundColor: AppColors.error,
+            duration: Duration(seconds: 5),
+          ),
+        );
+        return;
+      }
     }
 
     // If rejected, require feedback or rejection reason
@@ -142,6 +363,83 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     });
 
     try {
+      // Upload photo to file service and get URL
+      List<String>? photoUrls;
+      if (state.geotaggedPhoto != null) {
+        try {
+          // Show uploading message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Uploading photo...'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+
+          // Upload photo to file service
+          // Note: If file service is not available, we'll proceed without photo URL
+          // The backend will handle the case where photoUrls is null
+          try {
+            final photoUrl = await HttpService.uploadFile(
+              state.geotaggedPhoto!,
+              folder: 'farm-verifications',
+              fileName: 'farm_${farmId}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            );
+            
+            photoUrls = [photoUrl];
+            
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Photo uploaded successfully!'),
+                  backgroundColor: AppColors.success,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          } catch (uploadError) {
+            // Log the error but don't block verification if file service is unavailable
+            print('Photo upload failed: $uploadError');
+            
+            // Check if it's an authentication error
+            final errorMessage = uploadError.toString();
+            if (errorMessage.contains('Unauthorized') || errorMessage.contains('401')) {
+              if (mounted) {
+                setState(() {
+                  state.isSubmitting = false;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Authentication failed. Please login again and try verifying the farm.'),
+                    backgroundColor: AppColors.error,
+                    duration: Duration(seconds: 5),
+                  ),
+                );
+              }
+              return; // Don't proceed if authentication fails
+            }
+            
+            // For other errors (like file service not available), proceed without photo
+            // Show a warning but allow verification to continue
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Photo upload failed, but proceeding with verification: ${uploadError.toString()}'),
+                  backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+            // Continue without photo URL - backend will handle this
+          }
+        } catch (e) {
+          // Catch any other unexpected errors
+          print('Unexpected error during photo upload: $e');
+          // Continue without photo URL
+        }
+      }
+
       await FieldOfficerService.verifyFarm(
         farmId: farmId.toString(),
         status: state.selectedStatus!,
@@ -151,6 +449,9 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         rejectionReason: state.rejectionReasonController.text.trim().isNotEmpty
             ? state.rejectionReasonController.text.trim()
             : null,
+        latitude: state.verificationLatitude,
+        longitude: state.verificationLongitude,
+        photoUrls: photoUrls,
       );
 
       if (mounted) {
@@ -613,6 +914,10 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                 if (!state.isVerified) ...[
                   const SizedBox(height: 24),
                   const Divider(),
+                  const SizedBox(height: 16),
+
+                  // GPS Location & Photo Capture Section (Required for VERIFIED status)
+                  _buildGpsAndPhotoSection(farmId, state, farm),
                   const SizedBox(height: 16),
 
                   // Verification Status Selection
@@ -1158,6 +1463,230 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       },
     );
   }
+
+  /// Build GPS Location and Photo Capture Section
+  Widget _buildGpsAndPhotoSection(
+    int farmId,
+    FarmVerificationState state,
+    Map<String, dynamic> farm,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.location_on, size: 18, color: AppColors.brandGreen),
+            const SizedBox(width: 8),
+            Text(
+              'Location & Photo Verification',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF212121),
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        // GPS Location Capture
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: state.verificationLatitude != null
+                ? AppColors.success.withOpacity(0.05)
+                : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: state.verificationLatitude != null
+                  ? AppColors.success.withOpacity(0.3)
+                  : Colors.grey.shade300,
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.gps_fixed,
+                    size: 18,
+                    color: state.verificationLatitude != null
+                        ? AppColors.success
+                        : Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'GPS Location',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF212121),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (state.verificationLatitude != null)
+                    Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                ],
+              ),
+              if (state.verificationLatitude != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Lat: ${state.verificationLatitude!.toStringAsFixed(6)}°',
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700),
+                ),
+                Text(
+                  'Lon: ${state.verificationLongitude!.toStringAsFixed(6)}°',
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700),
+                ),
+                if (state.verificationAccuracy != null)
+                  Text(
+                    'Accuracy: ${state.verificationAccuracy!.toStringAsFixed(1)}m',
+                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700),
+                  ),
+              ],
+              if (state.locationError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  state.locationError!,
+                  style: GoogleFonts.poppins(fontSize: 12, color: AppColors.error),
+                ),
+              ],
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: state.isCapturingLocation
+                      ? null
+                      : () => _captureVerificationLocation(farmId),
+                  icon: state.isCapturingLocation
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          state.verificationLatitude != null
+                              ? Icons.refresh
+                              : Icons.my_location,
+                          size: 18,
+                        ),
+                  label: Text(
+                    state.verificationLatitude != null
+                        ? 'Retake Location'
+                        : 'Capture GPS Location',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        
+        // Geotagged Photo Capture
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: state.geotaggedPhoto != null
+                ? AppColors.success.withOpacity(0.05)
+                : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: state.geotaggedPhoto != null
+                  ? AppColors.success.withOpacity(0.3)
+                  : Colors.grey.shade300,
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.camera_alt,
+                    size: 18,
+                    color: state.geotaggedPhoto != null
+                        ? AppColors.success
+                        : Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Farm Photo (Geotagged)',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF212121),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (state.geotaggedPhoto != null)
+                    Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                ],
+              ),
+              if (state.geotaggedPhoto != null) ...[
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(
+                    state.geotaggedPhoto!,
+                    height: 100,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ],
+              if (state.photoError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  state.photoError!,
+                  style: GoogleFonts.poppins(fontSize: 12, color: AppColors.error),
+                ),
+              ],
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: state.isCapturingPhoto
+                      ? null
+                      : () => _captureGeotaggedPhoto(farmId),
+                  icon: state.isCapturingPhoto
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          state.geotaggedPhoto != null
+                              ? Icons.camera_alt
+                              : Icons.add_a_photo,
+                          size: 18,
+                        ),
+                  label: Text(
+                    state.geotaggedPhoto != null
+                        ? 'Retake Photo'
+                        : 'Capture Farm Photo',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // Helper class to store verification state for each farm
@@ -1168,4 +1697,14 @@ class FarmVerificationState {
       TextEditingController();
   bool isSubmitting = false;
   bool isVerified = false;
+  
+  // GPS and Photo data
+  double? verificationLatitude;
+  double? verificationLongitude;
+  double? verificationAccuracy;
+  File? geotaggedPhoto;
+  bool isCapturingLocation = false;
+  bool isCapturingPhoto = false;
+  String? locationError;
+  String? photoError;
 }

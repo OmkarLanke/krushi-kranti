@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/http_service.dart';
+import '../../../core/services/location_service.dart';
 
 class AddFarmScreen extends StatefulWidget {
   const AddFarmScreen({super.key});
@@ -37,6 +39,13 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
   String? _selectedEncumbranceStatus;
   String? _selectedVillage;
   List<String> _villageList = [];
+  
+  // GPS Location
+  double? _farmLatitude;
+  double? _farmLongitude;
+  double? _farmLocationAccuracy;
+  bool _isCapturingLocation = false;
+  String? _locationError;
 
   // Enum values
   final List<String> _farmTypes = ['ORGANIC', 'CONVENTIONAL', 'MIXED', 'VERMI_COMPOST'];
@@ -192,6 +201,11 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
         if (_estimatedValueController.text.trim().isNotEmpty) 'estimatedLandValue': double.parse(_estimatedValueController.text.trim()),
         if (_selectedEncumbranceStatus != null) 'encumbranceStatus': _selectedEncumbranceStatus,
         if (_encumbranceRemarksController.text.trim().isNotEmpty) 'encumbranceRemarks': _encumbranceRemarksController.text.trim(),
+        // GPS coordinates (optional but recommended)
+        // Round to 4 decimal places to match backend validation
+        if (_farmLatitude != null) 'farmLatitude': double.parse(_farmLatitude!.toStringAsFixed(8)),
+        if (_farmLongitude != null) 'farmLongitude': double.parse(_farmLongitude!.toStringAsFixed(8)),
+        if (_farmLocationAccuracy != null) 'farmLocationAccuracy': double.parse(_farmLocationAccuracy!.toStringAsFixed(4)),
       };
 
       await HttpService.post("farmer/profile/farms", requestBody);
@@ -475,6 +489,10 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                 maxLines: 3),
               const SizedBox(height: 30),
 
+              // GPS Location Section
+              _buildLocationSection(l10n),
+              const SizedBox(height: 30),
+
               // Save Button
               SizedBox(
                 width: double.infinity,
@@ -648,6 +666,231 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
             setState(() => _selectedVillage = v);
           },
         ),
+      ),
+    );
+  }
+
+  /// Build GPS Location Section
+  Widget _buildLocationSection(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        border: Border.all(color: AppColors.brandGreen.withOpacity(0.3), width: 1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.location_on, color: AppColors.brandGreen, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                l10n.farmLocationGPS,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l10n.captureFarmLocationDesc,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Location Status
+          if (_farmLatitude != null && _farmLongitude != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.brandGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.brandGreen.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle, color: AppColors.brandGreen, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.locationCaptured,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.brandGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "${l10n.latitude}: ${_farmLatitude!.toStringAsFixed(6)}",
+                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade700),
+                  ),
+                  Text(
+                    "${l10n.longitude}: ${_farmLongitude!.toStringAsFixed(6)}",
+                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade700),
+                  ),
+                  if (_farmLocationAccuracy != null)
+                    Text(
+                      "${l10n.accuracy}: ${_farmLocationAccuracy!.toStringAsFixed(1)} ${l10n.meters}",
+                      style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade700),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Error Message
+          if (_locationError != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _locationError!,
+                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.red.shade700),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Capture Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isCapturingLocation ? null : _captureFarmLocation,
+              icon: _isCapturingLocation
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                    )
+                  : Icon(
+                      _farmLatitude != null ? Icons.refresh : Icons.my_location,
+                      size: 18,
+                    ),
+              label: Text(
+                _farmLatitude != null ? l10n.retakeLocation : l10n.captureFarmLocation,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brandGreen,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Capture farm GPS location
+  Future<void> _captureFarmLocation() async {
+    setState(() {
+      _isCapturingLocation = true;
+      _locationError = null;
+    });
+
+    try {
+      // Get current position with high accuracy
+      Position position = await LocationService.getCurrentPositionWithAccuracy(
+        maxAccuracy: 20.0, // Require accuracy better than 20 meters
+        accuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 30),
+      );
+
+      if (mounted) {
+        setState(() {
+          _farmLatitude = position.latitude;
+          _farmLongitude = position.longitude;
+          _farmLocationAccuracy = position.accuracy;
+          _locationError = null;
+          _isCapturingLocation = false;
+        });
+
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.locationCapturedSuccess),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } on LocationException catch (e) {
+      if (mounted) {
+        setState(() {
+          _locationError = e.message;
+          _isCapturingLocation = false;
+        });
+
+        // Show error dialog with option to open settings
+        if (e.message.contains('permanently denied') || e.message.contains('disabled')) {
+          _showLocationSettingsDialog();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _locationError = "Failed to capture location: ${e.toString()}";
+          _isCapturingLocation = false;
+        });
+      }
+    }
+  }
+
+  /// Show dialog to open location settings
+  void _showLocationSettingsDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.locationPermissionRequired),
+        content: Text(l10n.locationPermissionMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await LocationService.openLocationSettings();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brandGreen,
+            ),
+            child: Text(l10n.openSettings),
+          ),
+        ],
       ),
     );
   }

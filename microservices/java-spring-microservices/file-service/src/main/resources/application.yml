@@ -1,0 +1,43 @@
+server:
+  port: 4008
+
+spring:
+  application:
+    name: file-service
+  
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# AWS S3 Configuration
+# IMPORTANT: Set these environment variables before running:
+#   AWS_ACCESS_KEY_ID=your-access-key
+#   AWS_SECRET_ACCESS_KEY=your-secret-key
+#   AWS_REGION=ap-south-1
+#   S3_BUCKET=krushikranti-files
+aws:
+  access-key-id: ${AWS_ACCESS_KEY_ID}
+  secret-access-key: ${AWS_SECRET_ACCESS_KEY}
+  region: ${AWS_REGION:ap-south-1}
+  s3:
+    bucket: ${S3_BUCKET:krushikranti-files}
+    base-folder: ""  # Optional base folder prefix for all uploads
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    com.krushikranti.file: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
