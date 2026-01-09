@@ -70,6 +70,27 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
     });
   }
 
+  AssignmentResponse? _getFarmAssignment(int farmId) {
+    if (_assignments.isEmpty) return null;
+    
+    // First try to find assignment for this specific farm
+    try {
+      final specificAssignment = _assignments.firstWhere(
+        (assignment) => assignment.farmId == farmId,
+      );
+      return specificAssignment;
+    } catch (e) {
+      // No specific assignment found, check for assignment for all farms (farmId is null)
+      try {
+        return _assignments.firstWhere(
+          (assignment) => assignment.farmId == null,
+        );
+      } catch (e) {
+        return null;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -655,6 +676,9 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                             farm.verifiedByOfficerId != null ||
                             farm.isVerified;
     
+    // Get the assignment details for this farm
+    final assignment = _getFarmAssignment(farm.farmId);
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -684,14 +708,17 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
           width: 1,
         ),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
+          // Left side: Farm name and details
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Farm name
+                Text(
                   farm.farmName,
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
@@ -699,45 +726,252 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                     color: AppColors.textPrimary,
                   ),
                 ),
-              ),
-              _buildStatusChip(
-                hasFieldOfficer ? 'Field Officer Assign' : 'Field Officer not assign',
-                hasFieldOfficer ? 'Field Officer Assign' : 'Field Officer not assign',
-                hasFieldOfficer ? AppColors.success : AppColors.error,
-              ),
-            ],
+                const SizedBox(height: 16),
+                // Farm details
+                _buildInfoRow('Type', farm.farmType ?? '-'),
+                _buildInfoRow('Area', '${farm.totalAreaAcres?.toStringAsFixed(2) ?? '-'} acres'),
+                _buildInfoRow(
+                  'Location',
+                  '${farm.village ?? '-'}, ${farm.taluka ?? '-'}, ${farm.district ?? '-'}, ${farm.state ?? '-'}',
+                ),
+                if (farm.pincode != null && farm.pincode!.isNotEmpty)
+                  _buildInfoRow('Pincode', farm.pincode!),
+                _buildInfoRow('Soil Type', farm.soilType ?? '-'),
+                _buildInfoRow('Irrigation', farm.irrigationType ?? '-'),
+                _buildInfoRow('Ownership', farm.landOwnership ?? '-'),
+                if (farm.surveyNumber != null && farm.surveyNumber!.isNotEmpty)
+                  _buildInfoRow('Survey No', farm.surveyNumber!),
+                if (farm.pattaNumber != null && farm.pattaNumber!.isNotEmpty)
+                  _buildInfoRow('Patta No', farm.pattaNumber!),
+                if (farm.landRegistrationNumber != null && farm.landRegistrationNumber!.isNotEmpty)
+                  _buildInfoRow('Land Reg. No', farm.landRegistrationNumber!),
+                if (farm.estimatedLandValue != null)
+                  _buildInfoRow('Estimated Value', '₹${farm.estimatedLandValue!.toStringAsFixed(2)}'),
+                if (farm.encumbranceStatus != null && farm.encumbranceStatus!.isNotEmpty)
+                  _buildInfoRow('Encumbrance', farm.encumbranceStatus!),
+                if (farm.encumbranceRemarks != null && farm.encumbranceRemarks!.isNotEmpty)
+                  _buildInfoRow('Encumbrance Remarks', farm.encumbranceRemarks!),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          _buildInfoRow('Type', farm.farmType ?? '-'),
-          _buildInfoRow('Area', '${farm.totalAreaAcres?.toStringAsFixed(2) ?? '-'} acres'),
-          _buildInfoRow(
-            'Location',
-            '${farm.village ?? '-'}, ${farm.taluka ?? '-'}, ${farm.district ?? '-'}, ${farm.state ?? '-'}',
+          
+          // Right side: Status chip and Field officer details (aligned vertically)
+          const SizedBox(width: 24),
+          Flexible(
+            flex: 1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Status chip at the top
+                _buildStatusChip(
+                  hasFieldOfficer ? 'Field Officer Assign' : 'Field Officer not assign',
+                  hasFieldOfficer ? 'Field Officer Assign' : 'Field Officer not assign',
+                  hasFieldOfficer ? AppColors.success : AppColors.error,
+                ),
+                // Field officer details directly below
+                if (hasFieldOfficer && assignment != null) ...[
+                  const SizedBox(height: 12),
+                  _buildFieldOfficerDetails(assignment),
+                ] else if (hasFieldOfficer && farm.verifiedByOfficerName != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.success.withOpacity(0.2), width: 1),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          farm.verifiedByOfficerName!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        if (farm.verifiedAt != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Verified: ${_formatDate(farm.verifiedAt)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-          if (farm.pincode != null && farm.pincode!.isNotEmpty)
-            _buildInfoRow('Pincode', farm.pincode!),
-          _buildInfoRow('Soil Type', farm.soilType ?? '-'),
-          _buildInfoRow('Irrigation', farm.irrigationType ?? '-'),
-          _buildInfoRow('Ownership', farm.landOwnership ?? '-'),
-          if (farm.surveyNumber != null && farm.surveyNumber!.isNotEmpty)
-            _buildInfoRow('Survey No', farm.surveyNumber!),
-          if (farm.pattaNumber != null && farm.pattaNumber!.isNotEmpty)
-            _buildInfoRow('Patta No', farm.pattaNumber!),
-          if (farm.landRegistrationNumber != null && farm.landRegistrationNumber!.isNotEmpty)
-            _buildInfoRow('Land Reg. No', farm.landRegistrationNumber!),
-          if (farm.estimatedLandValue != null)
-            _buildInfoRow('Estimated Value', '₹${farm.estimatedLandValue!.toStringAsFixed(2)}'),
-          if (farm.encumbranceStatus != null && farm.encumbranceStatus!.isNotEmpty)
-            _buildInfoRow('Encumbrance', farm.encumbranceStatus!),
-          if (farm.encumbranceRemarks != null && farm.encumbranceRemarks!.isNotEmpty)
-            _buildInfoRow('Encumbrance Remarks', farm.encumbranceRemarks!),
-          if (hasFieldOfficer && farm.verifiedByOfficerName != null)
-            _buildInfoRow('Field Officer', farm.verifiedByOfficerName!),
-          if (hasFieldOfficer && farm.verifiedAt != null)
-            _buildInfoRow('Verified On', _formatDate(farm.verifiedAt)),
         ],
       ),
     );
+  }
+
+  Widget _buildFieldOfficerDetails(AssignmentResponse assignment) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.success.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.success.withOpacity(0.3), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Field Officer Name with Status - compact single line
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(Icons.person_outline, size: 14, color: AppColors.success),
+              const SizedBox(width: 6),
+              Text(
+                assignment.fieldOfficerName,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _getAssignmentStatusColor(assignment.status).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(
+                    color: _getAssignmentStatusColor(assignment.status).withOpacity(0.4),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  assignment.status,
+                  style: GoogleFonts.poppins(
+                    fontSize: 9,
+                    color: _getAssignmentStatusColor(assignment.status),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Compact details - right aligned, single line each
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            alignment: WrapAlignment.end,
+            children: [
+              // Phone Number
+              if (assignment.fieldOfficerPhone.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.phone_outlined, size: 12, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      assignment.fieldOfficerPhone,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              // Pincode
+              if (assignment.fieldOfficerPincode != null && assignment.fieldOfficerPincode!.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.location_on_outlined, size: 12, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      assignment.fieldOfficerPincode!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              // Assignment Date
+              if (assignment.assignedAt != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatDate(assignment.assignedAt!),
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          // Notes (if available)
+          if (assignment.notes != null && assignment.notes!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.success.withOpacity(0.2), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.note_outlined, size: 12, color: AppColors.textSecondary),
+                  const SizedBox(width: 6),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 200),
+                    child: Text(
+                      assignment.notes!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        color: AppColors.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      textAlign: TextAlign.right,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _getAssignmentStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'ASSIGNED':
+        return Colors.blue;
+      case 'IN_PROGRESS':
+        return Colors.orange;
+      case 'COMPLETED':
+        return AppColors.success;
+      case 'CANCELLED':
+        return AppColors.error;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildCropCard(CropInfo crop) {
