@@ -32,6 +32,8 @@ public class KafkaConfig {
         configProps.put(ProducerConfig.ACKS_CONFIG, "all"); // Wait for all replicas
         configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
         configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        // Reduce max.block.ms to fail fast if Kafka is unavailable (default is 60000ms = 60s)
+        configProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 2000); // 2 seconds timeout
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 

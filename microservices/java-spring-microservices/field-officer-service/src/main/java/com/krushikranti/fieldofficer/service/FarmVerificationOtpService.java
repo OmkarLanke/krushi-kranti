@@ -40,39 +40,39 @@ public class FarmVerificationOtpService {
      * @return Generated OTP
      */
     public String generateOtp(Long farmId, Long farmerUserId, Long fieldOfficerUserId) {
-        // Check rate limiting
-        String rateLimitKey = "farm_verification_otp_rate_limit:{farmId}:{fieldOfficerUserId}"
-                .replace("{farmId}", String.valueOf(farmId))
-                .replace("{fieldOfficerUserId}", String.valueOf(fieldOfficerUserId));
+        // Rate limiting key: farm_verification_otp_rate_limit:{farmId}:{fieldOfficerUserId}
+        String rateLimitKey = "farm_verification_otp_rate_limit:" + farmId + ":" + fieldOfficerUserId;
         
-        String requestCount = redisTemplate.opsForValue().get(rateLimitKey);
-        if (requestCount != null) {
-            int count = Integer.parseInt(requestCount);
-            if (count >= maxRequestsPerHour) {
-                throw new IllegalStateException(
-                        "Maximum OTP requests exceeded. Please wait before requesting again.");
-            }
+        // Use atomic increment to check and update rate limit in one operation
+        Long currentCount = redisTemplate.opsForValue().increment(rateLimitKey);
+        
+        // If this is the first request (count == 1), set expiration
+        if (currentCount == 1) {
+            redisTemplate.expire(rateLimitKey, 1, TimeUnit.HOURS);
+        }
+        
+        // Check if rate limit exceeded (after increment, so we check if count > max)
+        if (currentCount > maxRequestsPerHour) {
+            // Decrement since we're rejecting the request
+            redisTemplate.opsForValue().decrement(rateLimitKey);
+            log.warn("OTP rate limit exceeded - Farm ID: {}, Field Officer User ID: {}, Count: {}", 
+                    farmId, fieldOfficerUserId, currentCount);
+            throw new IllegalStateException(
+                    "Maximum OTP requests exceeded. Please wait before requesting again.");
         }
 
         // Generate OTP
         String otp = generateRandomOtp();
         
         // Store OTP with key: farm_verification_otp:{farmId}:{farmerUserId}
-        String otpKey = "farm_verification_otp:{farmId}:{farmerUserId}"
-                .replace("{farmId}", String.valueOf(farmId))
-                .replace("{farmerUserId}", String.valueOf(farmerUserId));
+        String otpKey = "farm_verification_otp:" + farmId + ":" + farmerUserId;
         
         // Store OTP with metadata (field officer ID for audit)
         String otpValue = otp + ":" + fieldOfficerUserId;
         redisTemplate.opsForValue().set(otpKey, otpValue, otpExpiration, TimeUnit.SECONDS);
         
-        // Update rate limit counter
-        String currentCount = redisTemplate.opsForValue().get(rateLimitKey);
-        int newCount = (currentCount == null) ? 1 : Integer.parseInt(currentCount) + 1;
-        redisTemplate.opsForValue().set(rateLimitKey, String.valueOf(newCount), 1, TimeUnit.HOURS);
-        
-        log.info("Generated OTP for farm verification - Farm ID: {}, Farmer User ID: {}, Field Officer User ID: {}", 
-                farmId, farmerUserId, fieldOfficerUserId);
+        log.info("Generated OTP for farm verification - Farm ID: {}, Farmer User ID: {}, Field Officer User ID: {}, Rate Limit Count: {}", 
+                farmId, farmerUserId, fieldOfficerUserId, currentCount);
         
         return otp;
     }
@@ -86,9 +86,7 @@ public class FarmVerificationOtpService {
      * @return true if OTP is valid, false otherwise
      */
     public boolean validateOtp(Long farmId, Long farmerUserId, String otp) {
-        String otpKey = "farm_verification_otp:{farmId}:{farmerUserId}"
-                .replace("{farmId}", String.valueOf(farmId))
-                .replace("{farmerUserId}", String.valueOf(farmerUserId));
+        String otpKey = "farm_verification_otp:" + farmId + ":" + farmerUserId;
         
         String storedValue = redisTemplate.opsForValue().get(otpKey);
         
@@ -106,12 +104,11 @@ public class FarmVerificationOtpService {
             redisTemplate.delete(otpKey);
             
             // Mark as validated (store validation status for 1 hour)
-            String validationKey = "farm_verification_otp_validated:{farmId}:{farmerUserId}"
-                    .replace("{farmId}", String.valueOf(farmId))
-                    .replace("{farmerUserId}", String.valueOf(farmerUserId));
+            String validationKey = "farm_verification_otp_validated:" + farmId + ":" + farmerUserId;
             redisTemplate.opsForValue().set(validationKey, "true", 1, TimeUnit.HOURS);
             
-            log.info("OTP validated successfully - Farm ID: {}, Farmer User ID: {}", farmId, farmerUserId);
+            log.info("OTP validated successfully - Farm ID: {}, Farmer User ID: {}, Validation Key: {}", 
+                    farmId, farmerUserId, validationKey);
             return true;
         }
         
@@ -127,22 +124,42 @@ public class FarmVerificationOtpService {
      * @return true if OTP was validated, false otherwise
      */
     public boolean isOtpValidated(Long farmId, Long farmerUserId) {
-        String validationKey = "farm_verification_otp_validated:{farmId}:{farmerUserId}"
-                .replace("{farmId}", String.valueOf(farmId))
-                .replace("{farmerUserId}", String.valueOf(farmerUserId));
+        String validationKey = "farm_verification_otp_validated:" + farmId + ":" + farmerUserId;
         
         String validated = redisTemplate.opsForValue().get(validationKey);
-        return "true".equals(validated);
+        boolean isValid = "true".equals(validated);
+        
+        log.info("Checking OTP validation - Farm ID: {}, Farmer User ID: {}, Validation Key: {}, Redis Value: {}, Is Valid: {}", 
+                farmId, farmerUserId, validationKey, validated, isValid);
+        
+        // Also check if there are any similar keys (for debugging)
+        if (!isValid) {
+            try {
+                java.util.Set<String> keys = redisTemplate.keys("farm_verification_otp_validated:" + farmId + ":*");
+                log.warn("OTP validation key not found. Searched for: {}. Found similar keys: {}", validationKey, keys);
+            } catch (Exception e) {
+                log.warn("Could not search for similar keys: {}", e.getMessage());
+            }
+        }
+        
+        return isValid;
     }
 
     /**
      * Clear OTP validation status (useful for testing or reset)
      */
     public void clearOtpValidation(Long farmId, Long farmerUserId) {
-        String validationKey = "farm_verification_otp_validated:{farmId}:{farmerUserId}"
-                .replace("{farmId}", String.valueOf(farmId))
-                .replace("{farmerUserId}", String.valueOf(farmerUserId));
+        String validationKey = "farm_verification_otp_validated:" + farmId + ":" + farmerUserId;
         redisTemplate.delete(validationKey);
+    }
+    
+    /**
+     * Clear rate limit for a specific farm and field officer (useful for testing or reset)
+     */
+    public void clearRateLimit(Long farmId, Long fieldOfficerUserId) {
+        String rateLimitKey = "farm_verification_otp_rate_limit:" + farmId + ":" + fieldOfficerUserId;
+        redisTemplate.delete(rateLimitKey);
+        log.info("Cleared rate limit for Farm ID: {}, Field Officer User ID: {}", farmId, fieldOfficerUserId);
     }
 
     /**

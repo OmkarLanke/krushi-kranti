@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -262,6 +263,197 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     }
   }
 
+  /// Request OTP for farm verification
+  Future<void> _requestOtp(int farmId) async {
+    final state = _farmVerificationStates[farmId];
+    if (state == null) {
+      return;
+    }
+
+    setState(() {
+      state.isRequestingOtp = true;
+      state.otpError = null;
+    });
+
+    try {
+      final response = await FieldOfficerService.requestOtp(
+        farmId: farmId.toString(),
+      );
+
+      if (mounted) {
+        setState(() {
+          state.isRequestingOtp = false;
+          state.isOtpRequested = true;
+          if (response['otpExpiresAt'] != null) {
+            state.otpExpiresAt = DateTime.parse(response['otpExpiresAt']);
+            // Start countdown timer
+            _startOtpCountdown(farmId);
+          }
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('OTP sent successfully to farmer. Please ask the farmer for the OTP.'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        // Extract user-friendly error message
+        String errorMessage = _extractErrorMessage(e.toString());
+        
+        setState(() {
+          state.isRequestingOtp = false;
+          state.otpError = errorMessage;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Validate OTP entered by field officer
+  Future<void> _validateOtp(int farmId) async {
+    final state = _farmVerificationStates[farmId];
+    if (state == null) {
+      return;
+    }
+
+    final otp = state.otpController.text.trim();
+    if (otp.isEmpty || otp.length != 6) {
+      setState(() {
+        state.otpError = 'Please enter a valid 6-digit OTP';
+      });
+      return;
+    }
+
+    setState(() {
+      state.isValidatingOtp = true;
+      state.otpError = null;
+    });
+
+    try {
+      final response = await FieldOfficerService.validateOtp(
+        farmId: farmId.toString(),
+        otp: otp,
+      );
+
+      // Debug logging
+      print('=== OTP VALIDATION RESPONSE ===');
+      print('Response: $response');
+      print('Response type: ${response.runtimeType}');
+      print('isValid field: ${response['isValid']}');
+      print('valid field: ${response['valid']}');
+      print('isValid type: ${response['isValid']?.runtimeType}');
+      print('valid type: ${response['valid']?.runtimeType}');
+
+      if (mounted) {
+        // Backend returns 'valid' (lowercase) due to Jackson serialization of boolean fields starting with 'is'
+        // Handle both 'isValid' and 'valid' for compatibility
+        final isValid = response['isValid'] ?? response['valid'] ?? false;
+        print('=== SETTING OTP VALIDATION STATE ===');
+        print('isValid: $isValid');
+        print('Before setState - state.isOtpValidated: ${state.isOtpValidated}');
+        
+        setState(() {
+          state.isValidatingOtp = false;
+          state.isOtpValidated = isValid;
+          print('Inside setState - setting isOtpValidated to: $isValid');
+          if (isValid) {
+            state.otpController.clear();
+            state.otpCountdownSeconds = null;
+          } else {
+            state.otpError = response['message'] ?? 'Invalid OTP. Please try again.';
+          }
+        });
+        
+        print('After setState - state.isOtpValidated: ${state.isOtpValidated}');
+
+        if (isValid) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('OTP validated successfully! You can now submit verification.'),
+              backgroundColor: AppColors.success,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Invalid OTP. Please try again.'),
+              backgroundColor: AppColors.error,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        // Extract user-friendly error message
+        String errorMessage = _extractErrorMessage(e.toString());
+        
+        setState(() {
+          state.isValidatingOtp = false;
+          state.otpError = errorMessage;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Start OTP countdown timer
+  void _startOtpCountdown(int farmId) {
+    final state = _farmVerificationStates[farmId];
+    if (state == null || state.otpExpiresAt == null) {
+      return;
+    }
+
+    // Update countdown every second
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      final state = _farmVerificationStates[farmId];
+      if (state == null) {
+        timer.cancel();
+        return;
+      }
+
+      final now = DateTime.now();
+      final expiresAt = state.otpExpiresAt!;
+      final difference = expiresAt.difference(now);
+
+      if (difference.inSeconds <= 0) {
+        setState(() {
+          state.otpCountdownSeconds = 0;
+          state.isOtpRequested = false;
+        });
+        timer.cancel();
+      } else {
+        setState(() {
+          state.otpCountdownSeconds = difference.inSeconds;
+        });
+      }
+    });
+  }
+
   /// Validate GPS coordinates match farm location (100m threshold)
   bool _validateGpsCoordinates(int farmId, Map<String, dynamic> farm) {
     final state = _farmVerificationStates[farmId];
@@ -307,7 +499,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       return;
     }
 
-    // If verifying (not rejecting), require GPS and photo
+    // If verifying (not rejecting), require GPS, photo, and OTP validation
     if (state.selectedStatus == 'VERIFIED') {
       if (state.verificationLatitude == null || state.verificationLongitude == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -340,6 +532,25 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         );
         return;
       }
+
+      // Require OTP validation before submitting verification
+      print('=== SUBMIT VERIFICATION - OTP CHECK ===');
+      print('state.isOtpValidated: ${state.isOtpValidated}');
+      print('state.selectedStatus: ${state.selectedStatus}');
+      
+      if (!state.isOtpValidated) {
+        print('ERROR: OTP not validated! Blocking submission.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please request and validate OTP before submitting verification.'),
+            backgroundColor: AppColors.error,
+            duration: Duration(seconds: 5),
+          ),
+        );
+        return;
+      }
+      
+      print('OTP validation check passed. Proceeding with verification submission...');
     }
 
     // If rejected, require feedback or rejection reason
@@ -1684,8 +1895,276 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             ],
           ),
         ),
+        const SizedBox(height: 12),
+        
+        // OTP Verification Section (only for VERIFIED status)
+        if (state.selectedStatus == 'VERIFIED') ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: state.isOtpValidated
+                  ? AppColors.success.withOpacity(0.05)
+                  : Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: state.isOtpValidated
+                    ? AppColors.success.withOpacity(0.3)
+                    : Colors.orange.shade300,
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.verified_user,
+                      size: 18,
+                      color: state.isOtpValidated
+                          ? AppColors.success
+                          : Colors.orange.shade700,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'OTP Verification',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF212121),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (state.isOtpValidated)
+                      Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                
+                // Request OTP Button
+                if (!state.isOtpRequested && !state.isOtpValidated) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: state.isRequestingOtp
+                          ? null
+                          : () => _requestOtp(farmId),
+                      icon: state.isRequestingOtp
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send, size: 18),
+                      label: Text(
+                        state.isRequestingOtp ? 'Requesting OTP...' : 'Request OTP',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+                
+                // OTP Input Section (after OTP is requested)
+                if (state.isOtpRequested && !state.isOtpValidated) ...[
+                  Text(
+                    'Enter the 6-digit OTP received by the farmer:',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: state.otpController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 8,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '000000',
+                      hintStyle: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 8,
+                        color: Colors.grey.shade400,
+                      ),
+                      counterText: '',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.brandGreen, width: 2),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.error),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.error, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    ),
+                  ),
+                  if (state.otpCountdownSeconds != null && state.otpCountdownSeconds! > 0) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'OTP expires in: ${_formatCountdown(state.otpCountdownSeconds!)}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.orange.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                  if (state.otpError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      state.otpError!,
+                      style: GoogleFonts.poppins(fontSize: 12, color: AppColors.error),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: state.isValidatingOtp
+                          ? null
+                          : () => _validateOtp(farmId),
+                      icon: state.isValidatingOtp
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.verified, size: 18),
+                      label: Text(
+                        state.isValidatingOtp ? 'Validating...' : 'Validate OTP',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brandGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+                
+                // OTP Validated Success Message
+                if (state.isOtpValidated) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.success.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'OTP validated successfully! You can now submit verification.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ],
     );
+  }
+
+  /// Format countdown seconds to MM:SS
+  String _formatCountdown(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
+  /// Extract user-friendly error message from exception string
+  String _extractErrorMessage(String errorString) {
+    try {
+      // Try to extract JSON message from error string
+      // Format: "Error: 500 - {"message":"...","data":null}"
+      if (errorString.contains('"message"')) {
+        final jsonStart = errorString.indexOf('{');
+        final jsonEnd = errorString.lastIndexOf('}');
+        if (jsonStart != -1 && jsonEnd != -1) {
+          final jsonStr = errorString.substring(jsonStart, jsonEnd + 1);
+          final decoded = jsonDecode(jsonStr);
+          if (decoded is Map && decoded.containsKey('message')) {
+            return decoded['message'] as String;
+          }
+        }
+      }
+      
+      // Try to extract message after "message":" pattern
+      final messageMatch = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(errorString);
+      if (messageMatch != null) {
+        return messageMatch.group(1) ?? errorString;
+      }
+      
+      // Remove common prefixes
+      String cleaned = errorString
+          .replaceAll('Exception: ', '')
+          .replaceAll('Network Error: ', '')
+          .replaceAll('Error: ', '');
+      
+      // If it contains status code, try to extract just the message part
+      if (cleaned.contains(' - ')) {
+        final parts = cleaned.split(' - ');
+        if (parts.length > 1) {
+          // Try to parse the JSON part
+          try {
+            final jsonStr = parts[1];
+            final decoded = jsonDecode(jsonStr);
+            if (decoded is Map && decoded.containsKey('message')) {
+              return decoded['message'] as String;
+            }
+          } catch (_) {
+            // If parsing fails, return the last part
+            return parts.last;
+          }
+        }
+      }
+      
+      return cleaned;
+    } catch (_) {
+      // If all parsing fails, return cleaned version
+      return errorString
+          .replaceAll('Exception: ', '')
+          .replaceAll('Network Error: ', '')
+          .replaceAll('Error: ', '');
+    }
   }
 }
 
@@ -1707,4 +2186,14 @@ class FarmVerificationState {
   bool isCapturingPhoto = false;
   String? locationError;
   String? photoError;
+  
+  // OTP data
+  final TextEditingController otpController = TextEditingController();
+  bool isRequestingOtp = false;
+  bool isValidatingOtp = false;
+  bool isOtpValidated = false;
+  bool isOtpRequested = false;
+  String? otpError;
+  DateTime? otpExpiresAt;
+  int? otpCountdownSeconds;
 }

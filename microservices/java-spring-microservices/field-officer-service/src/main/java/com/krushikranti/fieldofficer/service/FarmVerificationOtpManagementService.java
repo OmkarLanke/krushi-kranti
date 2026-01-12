@@ -76,18 +76,26 @@ public class FarmVerificationOtpManagementService {
         // 5. Generate OTP
         String otp = otpService.generateOtp(farmId, farmerUserId, fieldOfficerUserId);
 
-        // 6. Send notification via Kafka
-        notificationProducer.sendFarmVerificationOtpNotification(
-                farmerUserId,
-                farmerPhoneNumber,
-                otp,
-                farmId,
-                farmName,
-                fieldOfficerName
-        );
-
-        log.info("OTP generated and notification sent - Farm ID: {}, Farmer User ID: {}, OTP: {}", 
-                farmId, farmerUserId, otp);
+        // 6. Send notification via Kafka (non-blocking - don't fail OTP request if Kafka is down)
+        try {
+            notificationProducer.sendFarmVerificationOtpNotification(
+                    farmerUserId,
+                    farmerPhoneNumber,
+                    otp,
+                    farmId,
+                    farmName,
+                    fieldOfficerName
+            );
+            log.info("OTP generated and notification sent - Farm ID: {}, Farmer User ID: {}, OTP: {}", 
+                    farmId, farmerUserId, otp);
+        } catch (Exception e) {
+            // Log error but don't fail the OTP request
+            // The OTP is already generated and stored in Redis
+            log.error("Failed to send notification to Kafka, but OTP was generated successfully. " +
+                    "Farm ID: {}, Farmer User ID: {}, OTP: {}. Error: {}", 
+                    farmId, farmerUserId, otp, e.getMessage());
+            // Continue - OTP is still valid even if notification fails
+        }
 
         return RequestOtpResponse.builder()
                 .farmId(farmId)
@@ -118,13 +126,18 @@ public class FarmVerificationOtpManagementService {
 
         // 3. Get farmer userId from assignment
         Long farmerUserId = assignment.getFarmerUserId();
+        log.info("Assignment details - Assignment ID: {}, Farm ID: {}, Farmer User ID: {}, Field Officer ID: {}", 
+                assignment.getId(), farmId, farmerUserId, fieldOfficer.getId());
 
         // 4. Validate OTP
+        log.info("Calling otpService.validateOtp - Farm ID: {}, Farmer User ID: {}, OTP: {}", 
+                farmId, farmerUserId, otp);
         boolean isValid = otpService.validateOtp(farmId, farmerUserId, otp);
 
         if (isValid) {
-            log.info("OTP validated successfully - Farm ID: {}, Farmer User ID: {}", 
-                    farmId, farmerUserId);
+            String expectedValidationKey = "farm_verification_otp_validated:" + farmId + ":" + farmerUserId;
+            log.info("OTP validated successfully - Farm ID: {}, Farmer User ID: {}. Validation key stored in Redis: {}", 
+                    farmId, farmerUserId, expectedValidationKey);
             return ValidateOtpResponse.builder()
                     .farmId(farmId)
                     .isValid(true)
@@ -145,6 +158,9 @@ public class FarmVerificationOtpManagementService {
      * Check if OTP has been validated for this farm verification.
      */
     public boolean isOtpValidated(Long farmId, Long fieldOfficerUserId) {
+        log.info("Checking OTP validation status - Farm ID: {}, Field Officer User ID: {}", 
+                farmId, fieldOfficerUserId);
+        
         FieldOfficer fieldOfficer = fieldOfficerRepository.findByUserId(fieldOfficerUserId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Field officer not found with userId: " + fieldOfficerUserId));
@@ -155,7 +171,25 @@ public class FarmVerificationOtpManagementService {
                         "You are not assigned to farm ID: " + farmId));
 
         Long farmerUserId = assignment.getFarmerUserId();
-        return otpService.isOtpValidated(farmId, farmerUserId);
+        log.info("Assignment details for validation check - Assignment ID: {}, Farm ID: {}, Farmer User ID: {}, Field Officer ID: {}", 
+                assignment.getId(), farmId, farmerUserId, fieldOfficer.getId());
+        
+        String expectedValidationKey = "farm_verification_otp_validated:" + farmId + ":" + farmerUserId;
+        log.info("Checking validation for Farm ID: {}, Farmer User ID: {}, Expected Validation Key: {}", 
+                farmId, farmerUserId, expectedValidationKey);
+        
+        boolean isValid = otpService.isOtpValidated(farmId, farmerUserId);
+        log.info("OTP validation check result - Farm ID: {}, Farmer User ID: {}, Validation Key: {}, Is Valid: {}", 
+                farmId, farmerUserId, expectedValidationKey, isValid);
+        
+        return isValid;
+    }
+
+    /**
+     * Clear OTP rate limit for a farm (useful for testing/resetting)
+     */
+    public void clearRateLimit(Long farmId, Long fieldOfficerUserId) {
+        otpService.clearRateLimit(farmId, fieldOfficerUserId);
     }
 
     /**
@@ -228,20 +262,17 @@ public class FarmVerificationOtpManagementService {
             WebClient webClient = webClientBuilder.baseUrl(authServiceUrl).build();
             
             Map<String, Object> response = webClient.get()
-                    .uri("/auth/users/{userId}", farmerUserId)
+                    .uri("/auth/user/{userId}", farmerUserId)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
             
-            if (response != null && response.containsKey("data")) {
-                Object data = response.get("data");
-                if (data instanceof Map) {
-                    Map<String, Object> userData = (Map<String, Object>) data;
-                    return Map.of(
-                            "phoneNumber", userData.getOrDefault("phoneNumber", ""),
-                            "userId", farmerUserId
-                    );
-                }
+            // Auth service returns UserInfo directly (not wrapped in ApiResponse)
+            if (response != null) {
+                return Map.of(
+                        "phoneNumber", response.getOrDefault("phoneNumber", ""),
+                        "userId", farmerUserId
+                );
             }
             
             return Map.of("phoneNumber", "", "userId", farmerUserId);
@@ -259,26 +290,25 @@ public class FarmVerificationOtpManagementService {
             WebClient webClient = webClientBuilder.baseUrl(authServiceUrl).build();
             
             Map<String, Object> response = webClient.get()
-                    .uri("/auth/users/{userId}", fieldOfficerUserId)
+                    .uri("/auth/user/{userId}", fieldOfficerUserId)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
             
-            if (response != null && response.containsKey("data")) {
-                Object data = response.get("data");
-                if (data instanceof Map) {
-                    Map<String, Object> userData = (Map<String, Object>) data;
-                    return Map.of(
-                            "name", userData.getOrDefault("username", "Field Officer"),
-                            "username", userData.getOrDefault("username", ""),
-                            "userId", fieldOfficerUserId
-                    );
-                }
+            // Auth service returns UserInfo directly (not wrapped in ApiResponse)
+            if (response != null) {
+                String username = (String) response.getOrDefault("username", "Field Officer");
+                return Map.of(
+                        "name", username,
+                        "username", username,
+                        "userId", fieldOfficerUserId
+                );
             }
             
             return Map.of("name", "Field Officer", "userId", fieldOfficerUserId);
         } catch (Exception e) {
-            log.error("Failed to fetch field officer info from auth-service: {}", e.getMessage(), e);
+            log.warn("Failed to fetch field officer info from auth-service: {}. Using default name.", e.getMessage());
+            // Don't log full stack trace for this - it's not critical
             return Map.of("name", "Field Officer", "userId", fieldOfficerUserId);
         }
     }

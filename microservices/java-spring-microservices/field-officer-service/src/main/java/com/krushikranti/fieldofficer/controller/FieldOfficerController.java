@@ -278,6 +278,11 @@ public class FieldOfficerController {
             log.warn("Invalid OTP request: {}", e.getMessage());
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (IllegalStateException e) {
+            // Rate limit exceeded or similar state errors
+            log.warn("OTP request failed due to state: {}", e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ApiResponse<>(e.getMessage(), null));
         } catch (Exception e) {
             log.error("Error requesting OTP: {}", e.getMessage(), e);
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
@@ -329,6 +334,71 @@ public class FieldOfficerController {
                     .body(new ApiResponse<>(e.getMessage(), null));
         } catch (Exception e) {
             log.error("Error validating OTP: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Clear OTP rate limit for a farm (useful for testing/resetting)
+     */
+    @DeleteMapping("/farms/{farmId}/otp-rate-limit")
+    public ResponseEntity<ApiResponse<String>> clearOtpRateLimit(
+            @PathVariable Long farmId,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+        try {
+            if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
+            }
+
+            Long fieldOfficerUserId = Long.parseLong(userIdHeader.trim());
+            otpManagementService.clearRateLimit(farmId, fieldOfficerUserId);
+            
+            return ResponseEntity.ok(new ApiResponse<>(
+                    "Rate limit cleared successfully for farm " + farmId, 
+                    "Rate limit reset. You can now request OTP again."));
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>("Invalid user ID format: " + userIdHeader, null));
+        } catch (Exception e) {
+            log.error("Error clearing rate limit: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Debug endpoint to check OTP validation status
+     */
+    @GetMapping("/farms/{farmId}/otp-validation-status")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> checkOtpValidationStatus(
+            @PathVariable Long farmId,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+        try {
+            if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
+            }
+
+            Long fieldOfficerUserId = Long.parseLong(userIdHeader.trim());
+            log.info("=== DEBUG: Checking OTP validation status for Farm ID: {}, Field Officer User ID: {} ===", 
+                    farmId, fieldOfficerUserId);
+            
+            boolean isValid = otpManagementService.isOtpValidated(farmId, fieldOfficerUserId);
+            
+            Map<String, Object> status = new java.util.HashMap<>();
+            status.put("farmId", farmId);
+            status.put("fieldOfficerUserId", fieldOfficerUserId);
+            status.put("isOtpValidated", isValid);
+            
+            log.info("=== DEBUG: OTP validation status result: {} for Farm ID: {}, Field Officer User ID: {} ===", 
+                    isValid, farmId, fieldOfficerUserId);
+            
+            return ResponseEntity.ok(new ApiResponse<>(
+                    "OTP validation status checked", status));
+        } catch (Exception e) {
+            log.error("Error checking OTP validation status: {}", e.getMessage(), e);
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
         }

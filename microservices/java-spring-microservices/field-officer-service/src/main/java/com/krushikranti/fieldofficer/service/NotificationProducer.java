@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Kafka producer for sending notification events
@@ -52,14 +53,20 @@ public class NotificationProducer {
                 .priority("HIGH")
                 .build();
 
-        try {
-            kafkaTemplate.send(NOTIFICATION_TOPIC, event);
-            log.info("Sent farm verification OTP notification event - Farmer User ID: {}, Farm ID: {}, OTP: {}", 
-                    farmerUserId, farmId, otp);
-        } catch (Exception e) {
-            log.error("Failed to send notification event to Kafka: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to send notification: " + e.getMessage(), e);
-        }
+        // Send notification asynchronously in a separate thread to avoid blocking
+        CompletableFuture.runAsync(() -> {
+            try {
+                // This will timeout after 2 seconds (max.block.ms) if Kafka is unavailable
+                kafkaTemplate.send(NOTIFICATION_TOPIC, event);
+                log.info("Sent farm verification OTP notification event - Farmer User ID: {}, Farm ID: {}, OTP: {}", 
+                        farmerUserId, farmId, otp);
+            } catch (Exception e) {
+                // Log error but don't throw exception - notification failure shouldn't block OTP generation
+                // The OTP is already generated and stored in Redis, so the request should succeed
+                log.error("Failed to send notification event to Kafka (non-blocking) - Farmer User ID: {}, Farm ID: {}, Error: {}", 
+                        farmerUserId, farmId, e.getMessage());
+            }
+        });
     }
 }
 
