@@ -97,6 +97,18 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
+        <!-- Redis for OTP storage -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Kafka for notification events -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
         <!-- javax.annotation for gRPC generated code -->
         <dependency>
             <groupId>javax.annotation</groupId>
