@@ -520,6 +520,31 @@ abstract class AppLocalizations {
   /// **'Please enter a valid area in acres'**
   String get validAcres;
 
+  /// No description provided for @errorCropAreaFullyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'You tried to add {acres} acres, but your farm area is only {farmArea} acres and it\'s already fully used. Please reduce the crop area or remove existing crops to add new ones.'**
+  String errorCropAreaFullyUsed(String acres, String farmArea);
+
+  /// No description provided for @errorCropAreaAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'You tried to add {acres} acres, but your farm area is only {farmArea} acres. Only {availableArea} acres are available. Please reduce the crop area to {availableArea} acres or less.'**
+  String errorCropAreaAvailable(
+      String acres, String farmArea, String availableArea);
+
+  /// No description provided for @errorCropAreaExceed.
+  ///
+  /// In en, this message translates to:
+  /// **'You tried to add {acres} acres, but your farm area is only {farmArea} acres. The total crop area cannot exceed the farm area. Please reduce the crop area or remove existing crops.'**
+  String errorCropAreaExceed(String acres, String farmArea);
+
+  /// No description provided for @errorCropAreaLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'You tried to add {acres} acres, but this area is already used. Your crop area limit has been reached. Please reduce the area or remove existing crops to add new ones.'**
+  String errorCropAreaLimitReached(String acres);
+
   /// No description provided for @profileRequired.
   ///
   /// In en, this message translates to:

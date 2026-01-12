@@ -220,6 +220,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validAcres => 'Please enter a valid area in acres';
 
   @override
+  String errorCropAreaFullyUsed(String acres, String farmArea) {
+    return 'You tried to add $acres acres, but your farm area is only $farmArea acres and it\'s already fully used. Please reduce the crop area or remove existing crops to add new ones.';
+  }
+
+  @override
+  String errorCropAreaAvailable(
+      String acres, String farmArea, String availableArea) {
+    return 'You tried to add $acres acres, but your farm area is only $farmArea acres. Only $availableArea acres are available. Please reduce the crop area to $availableArea acres or less.';
+  }
+
+  @override
+  String errorCropAreaExceed(String acres, String farmArea) {
+    return 'You tried to add $acres acres, but your farm area is only $farmArea acres. The total crop area cannot exceed the farm area. Please reduce the crop area or remove existing crops.';
+  }
+
+  @override
+  String errorCropAreaLimitReached(String acres) {
+    return 'You tried to add $acres acres, but this area is already used. Your crop area limit has been reached. Please reduce the area or remove existing crops to add new ones.';
+  }
+
+  @override
   String get profileRequired => 'Profile Required';
 
   @override

@@ -149,8 +149,9 @@ class _CropListScreenState extends State<CropListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Crop Name and Status
+            // Crop Name and Status Badge
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Text(
@@ -162,6 +163,10 @@ class _CropListScreenState extends State<CropListScreen> {
                     ),
                   ),
                 ),
+                if (crop.cropStatus != null) ...[
+                  const SizedBox(width: 8),
+                  _buildCropStatusBadge(crop.cropStatus!, l10n),
+                ],
               ],
             ),
             const SizedBox(height: 16),
@@ -199,10 +204,6 @@ class _CropListScreenState extends State<CropListScreen> {
                   if (crop.harvestingDate != null) ...[
                     const SizedBox(height: 8),
                     _buildInfoRow(Icons.event, "${l10n.harvestingDate}: ${_formatDate(crop.harvestingDate!)}", Colors.grey.shade700),
-                  ],
-                  if (crop.cropStatus != null) ...[
-                    const SizedBox(height: 8),
-                    _buildInfoRow(Icons.info_outline, "${l10n.cropStatus}: ${_getLocalizedStatus(crop.cropStatus!, l10n)}", Colors.grey.shade700),
                   ],
                 ],
               ),
@@ -268,6 +269,65 @@ class _CropListScreenState extends State<CropListScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  // Helper to get status color
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'PLANNED':
+        return const Color(0xFF9E9E9E); // Gray
+      case 'SOWN':
+        return const Color(0xFF2196F3); // Blue
+      case 'GROWING':
+        return AppColors.brandGreen; // Green
+      case 'HARVESTED':
+        return const Color(0xFF4CAF50); // Dark Green
+      case 'FAILED':
+        return const Color(0xFFF44336); // Red
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Build crop status badge with shadow and border
+  Widget _buildCropStatusBadge(String status, AppLocalizations l10n) {
+    final statusText = _getLocalizedStatus(status, l10n).toUpperCase();
+    final statusColor = _getStatusColor(status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20), // Pill-shaped rounded corners
+        border: Border.all(
+          color: statusColor.withOpacity(0.4),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: statusColor.withOpacity(0.1),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Text(
+        statusText,
+        style: GoogleFonts.poppins(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: statusColor,
+          letterSpacing: 0.3,
+        ),
+      ),
     );
   }
 

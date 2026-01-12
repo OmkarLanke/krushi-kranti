@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart'; // ✅ Relative Import
 import '../../../core/constants/app_colors.dart';
@@ -538,6 +539,95 @@ class _AddCropScreenState extends State<AddCropScreen> {
     );
   }
 
+  // Helper method to generate user-friendly error messages
+  String _getUserFriendlyErrorMessage(dynamic error, double? acres, AppLocalizations l10n) {
+    final errorString = error.toString();
+    String actualMessage = errorString;
+    
+    // Try to extract JSON message from error string
+    try {
+      // Look for JSON in the error string (format: {...})
+      final jsonMatch = RegExp(r'\{[^}]+\}').firstMatch(errorString);
+      if (jsonMatch != null) {
+        final jsonString = jsonMatch.group(0);
+        if (jsonString != null) {
+          final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+          if (jsonData.containsKey('message')) {
+            actualMessage = jsonData['message'] as String;
+          }
+        }
+      }
+    } catch (e) {
+      // If JSON parsing fails, use the original error string
+    }
+    
+    final errorLower = actualMessage.toLowerCase();
+    
+    // Check for crop area exceed errors
+    if (errorLower.contains('cannot exceed') || 
+        errorLower.contains('exceed') ||
+        errorLower.contains('exceeds') ||
+        errorLower.contains('available area') ||
+        errorLower.contains('total crop area')) {
+      
+      // Extract numbers from the message
+      final numbers = RegExp(r'(\d+\.?\d*)').allMatches(actualMessage);
+      String? totalCropArea;
+      String? farmArea;
+      String? availableArea;
+      
+      if (numbers.length >= 3) {
+        totalCropArea = numbers.elementAt(0).group(0);
+        farmArea = numbers.elementAt(1).group(0);
+        availableArea = numbers.elementAt(2).group(0);
+      } else if (numbers.length >= 2) {
+        totalCropArea = numbers.elementAt(0).group(0);
+        farmArea = numbers.elementAt(1).group(0);
+      }
+      
+      final acresText = acres != null 
+          ? acres == acres.toInt() 
+              ? acres.toInt().toString() 
+              : acres.toStringAsFixed(2)
+          : 'the entered';
+      
+      if (farmArea != null && availableArea != null) {
+        final available = double.tryParse(availableArea) ?? 0;
+        if (available <= 0) {
+          return l10n.errorCropAreaFullyUsed(acresText, farmArea);
+        } else {
+          return l10n.errorCropAreaAvailable(acresText, farmArea, availableArea);
+        }
+      } else if (farmArea != null) {
+        return l10n.errorCropAreaExceed(acresText, farmArea);
+      } else {
+        return l10n.errorCropAreaLimitReached(acresText);
+      }
+    }
+    
+    // Check for other crop area limit errors
+    if (errorLower.contains('limit') || 
+        errorLower.contains('already used') ||
+        errorLower.contains('crop limit') ||
+        errorLower.contains('area limit') ||
+        errorLower.contains('maximum') ||
+        errorLower.contains('reached') ||
+        errorLower.contains('not available') ||
+        errorLower.contains('insufficient')) {
+      
+      final acresText = acres != null 
+          ? acres == acres.toInt() 
+              ? acres.toInt().toString() 
+              : acres.toStringAsFixed(2)
+          : 'the entered';
+      
+      return l10n.errorCropAreaLimitReached(acresText);
+    }
+    
+    // Return the actual message (cleaned up)
+    return actualMessage.replaceFirst("Exception: ", "").replaceFirst("Network Error: ", "").replaceFirst("Error: ", "");
+  }
+
   Future<void> _saveCrop(AppLocalizations l10n) async {
     if (selectedFarmId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -599,10 +689,14 @@ class _AddCropScreenState extends State<AddCropScreen> {
           _isLoading = false;
         });
         
+        // Parse error message for user-friendly display
+        final errorMessage = _getUserFriendlyErrorMessage(e, acres, l10n);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceFirst("Exception: ", "")),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
