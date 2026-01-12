@@ -62,7 +62,7 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
             widget.farmerUserId);
       } catch (e) {
         // If assignments fail to load, continue without them
-        print('Warning: Failed to load assignments: $e');
+        debugPrint('Warning: Failed to load assignments: $e');
       }
       
       // Create a map of farmId -> assignment
@@ -111,7 +111,7 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
       setState(() {
         _isLoadingFieldOfficers = false;
         // Don't set error here, just log it
-        print('Error loading field officers: $e');
+        debugPrint('Error loading field officers: $e');
       });
     }
   }
@@ -242,11 +242,17 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.8,
-        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
+        width: screenWidth > 1200 ? screenWidth * 0.8 : screenWidth * 0.95,
+        constraints: BoxConstraints(
+          maxWidth: screenWidth > 1200 ? 900 : screenWidth - 32,
+          maxHeight: screenHeight > 800 ? 700 : screenHeight - 40,
+        ),
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -510,6 +516,8 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -554,11 +562,15 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         Icon(Icons.location_on,
                             size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 4),
-                        Text(
-                          '${farm.village ?? ""}, ${farm.district ?? ""}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
+                        Expanded(
+                          child: Text(
+                            '${farm.village ?? ""}, ${farm.district ?? ""}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                         if (farm.pincode != null) ...[
@@ -624,6 +636,8 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                                       color: Colors.orange.shade900,
                                       fontWeight: FontWeight.w600,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
                                   ),
                                 ),
                               ],
@@ -863,6 +877,8 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -871,6 +887,8 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         fontSize: 13,
                         color: AppColors.textSecondary,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -878,11 +896,15 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         Icon(Icons.location_on,
                             size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 4),
-                        Text(
-                          '${fo.village ?? ""}, ${fo.district ?? ""}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
+                        Expanded(
+                          child: Text(
+                            '${fo.village ?? ""}, ${fo.district ?? ""}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                         if (fo.pincode != null) ...[

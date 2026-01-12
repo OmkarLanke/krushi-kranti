@@ -39,7 +39,8 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
         );
       } catch (e) {
         // If assignment fetch fails, continue without it
-        print('Failed to fetch assignments: $e');
+        // Assignment data is optional, so we continue without it
+        debugPrint('Failed to fetch assignments: $e');
       }
       
       setState(() {
@@ -93,11 +94,20 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: screenWidth > 1200 ? 20 : 16,
+        vertical: screenHeight > 800 ? 40 : 20,
+      ),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 1000, maxHeight: 900),
+        constraints: BoxConstraints(
+          maxWidth: screenWidth > 1200 ? 1000 : screenWidth - 32,
+          maxHeight: screenHeight > 800 ? 900 : screenHeight - 40,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -199,9 +209,9 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -234,7 +244,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
-              onPressed: _loadFarmerDetail,
+                  onPressed: _loadFarmerDetail,
                   icon: const Icon(Icons.refresh_rounded),
                   label: const Text('Retry'),
                   style: ElevatedButton.styleFrom(
@@ -248,8 +258,8 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-            ),
-          ],
+                ),
+              ],
             ),
           ),
         ),
@@ -262,10 +272,10 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
       color: AppColors.background,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Profile Section
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Profile Section
             _buildSection(
               'Profile Information',
               Icons.person_outline_rounded,
@@ -274,7 +284,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
             ),
             const SizedBox(height: 20),
 
-          // KYC Section
+            // KYC Section
             _buildSection(
               'KYC Verification',
               Icons.verified_user_outlined,
@@ -283,7 +293,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
             ),
             const SizedBox(height: 20),
 
-          // Subscription Section
+            // Subscription Section
             _buildSection(
               'Subscription',
               Icons.card_membership_outlined,
@@ -292,7 +302,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
             ),
             const SizedBox(height: 20),
 
-          // Farms Section
+            // Farms Section
             _buildSection(
               'Farms (${farmer.farms.length})',
               Icons.agriculture_rounded,
@@ -301,14 +311,14 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
             ),
             const SizedBox(height: 20),
 
-          // Crops Section
+            // Crops Section
             _buildSection(
               'Crops (${farmer.crops.length})',
               Icons.eco_rounded,
               AppColors.success,
               _buildCropsContent(farmer.crops),
             ),
-        ],
+          ],
         ),
       ),
     );
@@ -376,6 +386,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
         _buildInfoRow(
           'Address',
           '${profile.village ?? '-'}, ${profile.taluka ?? '-'}, ${profile.district ?? '-'}, ${profile.state ?? '-'}',
+          maxLines: 2,
         ),
         if (profile.pincode != null && profile.pincode!.isNotEmpty)
           _buildInfoRow('Pincode', profile.pincode!),
@@ -385,7 +396,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
           valueColor: profile.isProfileComplete ? AppColors.success : AppColors.warning,
         ),
         if (profile.createdAt != null)
-        _buildInfoRow('Registered On', _formatDate(profile.createdAt)),
+          _buildInfoRow('Registered On', _formatDate(profile.createdAt)),
       ],
     );
   }
@@ -469,7 +480,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
   Widget _buildVerificationCard(String title, bool verified, List<String> details) {
     return Container(
       padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
+      decoration: BoxDecoration(
         gradient: verified
             ? LinearGradient(
                 begin: Alignment.topLeft,
@@ -494,10 +505,10 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
               : AppColors.error.withOpacity(0.3),
           width: 1,
         ),
-          ),
-          child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -508,7 +519,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                       colors: [
                         AppColors.success.withOpacity(0.3),
                         AppColors.success.withOpacity(0.1),
-                  ],
+                      ],
                     )
                   : LinearGradient(
                       begin: Alignment.topLeft,
@@ -519,18 +530,18 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                       ],
                     ),
               shape: BoxShape.circle,
-          ),
+            ),
             child: Icon(
               verified ? Icons.check_circle_rounded : Icons.pending_rounded,
               color: verified ? AppColors.success : AppColors.error,
               size: 20,
             ),
-              ),
+          ),
           const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
                   title,
                   style: GoogleFonts.poppins(
@@ -548,12 +559,12 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                           fontSize: 13,
                           color: AppColors.textSecondary,
                         ),
-                ),
+                      ),
                     )),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -708,24 +719,30 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
           width: 1,
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Left side: Farm name and details
-          Expanded(
-            flex: 2,
-            child: Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 600;
+          
+          if (isWide) {
+            return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Farm name
-                Text(
-                  farm.farmName,
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+                // Left side: Farm name and details
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Farm name
+                      Text(
+                        farm.farmName,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                 const SizedBox(height: 16),
                 // Farm details
                 _buildInfoRow('Type', farm.farmType ?? '-'),
@@ -733,6 +750,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                 _buildInfoRow(
                   'Location',
                   '${farm.village ?? '-'}, ${farm.taluka ?? '-'}, ${farm.district ?? '-'}, ${farm.state ?? '-'}',
+                  maxLines: 2,
                 ),
                 if (farm.pincode != null && farm.pincode!.isNotEmpty)
                   _buildInfoRow('Pincode', farm.pincode!),
@@ -764,8 +782,8 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
               children: [
                 // Status chip at the top
                 _buildStatusChip(
-                  hasFieldOfficer ? 'Field Officer Assign' : 'Field Officer not assign',
-                  hasFieldOfficer ? 'Field Officer Assign' : 'Field Officer not assign',
+                  'Field Officer',
+                  hasFieldOfficer ? 'Assigned' : 'Not Assigned',
                   hasFieldOfficer ? AppColors.success : AppColors.error,
                 ),
                 // Field officer details directly below
@@ -810,6 +828,102 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
             ),
           ),
         ],
+      );
+          } else {
+            // Stack layout for narrow screens
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Farm name
+                Text(
+                  farm.farmName,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: AppColors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 16),
+                // Status chip at the top
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    _buildStatusChip(
+                      'Field Officer',
+                      hasFieldOfficer ? 'Assigned' : 'Not Assigned',
+                      hasFieldOfficer ? AppColors.success : AppColors.error,
+                    ),
+                  ],
+                ),
+                // Field officer details
+                if (hasFieldOfficer && assignment != null) ...[
+                  const SizedBox(height: 12),
+                  _buildFieldOfficerDetails(assignment),
+                ] else if (hasFieldOfficer && farm.verifiedByOfficerName != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.success.withOpacity(0.2), width: 1),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          farm.verifiedByOfficerName!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        if (farm.verifiedAt != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Verified: ${_formatDate(farm.verifiedAt)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                // Farm details
+                _buildInfoRow('Type', farm.farmType ?? '-'),
+                _buildInfoRow('Area', '${farm.totalAreaAcres?.toStringAsFixed(2) ?? '-'} acres'),
+                _buildInfoRow(
+                  'Location',
+                  '${farm.village ?? '-'}, ${farm.taluka ?? '-'}, ${farm.district ?? '-'}, ${farm.state ?? '-'}',
+                  maxLines: 2,
+                ),
+                if (farm.pincode != null && farm.pincode!.isNotEmpty)
+                  _buildInfoRow('Pincode', farm.pincode!),
+                _buildInfoRow('Soil Type', farm.soilType ?? '-'),
+                _buildInfoRow('Irrigation', farm.irrigationType ?? '-'),
+                _buildInfoRow('Ownership', farm.landOwnership ?? '-'),
+                if (farm.surveyNumber != null && farm.surveyNumber!.isNotEmpty)
+                  _buildInfoRow('Survey No', farm.surveyNumber!),
+                if (farm.pattaNumber != null && farm.pattaNumber!.isNotEmpty)
+                  _buildInfoRow('Patta No', farm.pattaNumber!),
+                if (farm.landRegistrationNumber != null && farm.landRegistrationNumber!.isNotEmpty)
+                  _buildInfoRow('Land Reg. No', farm.landRegistrationNumber!),
+                if (farm.estimatedLandValue != null)
+                  _buildInfoRow('Estimated Value', '₹${farm.estimatedLandValue!.toStringAsFixed(2)}'),
+                if (farm.encumbranceStatus != null && farm.encumbranceStatus!.isNotEmpty)
+                  _buildInfoRow('Encumbrance', farm.encumbranceStatus!),
+                if (farm.encumbranceRemarks != null && farm.encumbranceRemarks!.isNotEmpty)
+                  _buildInfoRow('Encumbrance Remarks', farm.encumbranceRemarks!),
+              ],
+            );
+          }
+        },
       ),
     );
   }
@@ -936,8 +1050,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                 children: [
                   Icon(Icons.note_outlined, size: 12, color: AppColors.textSecondary),
                   const SizedBox(width: 6),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 200),
+                  Flexible(
                     child: Text(
                       assignment.notes!,
                       style: GoogleFonts.poppins(
@@ -1007,7 +1120,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                 ),
               ),
               _buildStatusChip(
-                crop.cropStatus ?? 'UNKNOWN',
+                'Status',
                 (crop.cropStatus ?? 'UNKNOWN').toUpperCase(),
                 _getCropStatusColor(crop.cropStatus),
               ),
@@ -1052,7 +1165,7 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {Color? valueColor}) {
+  Widget _buildInfoRow(String label, String value, {Color? valueColor, int? maxLines}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -1077,6 +1190,8 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                 color: valueColor ?? AppColors.textPrimary,
                 fontSize: 13,
               ),
+              maxLines: maxLines,
+              overflow: maxLines != null ? TextOverflow.ellipsis : null,
             ),
           ),
         ],

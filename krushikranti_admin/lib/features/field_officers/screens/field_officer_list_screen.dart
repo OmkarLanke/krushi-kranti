@@ -370,12 +370,24 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
       filtered = filtered.where((fo) {
         final createdDate = fo.createdAt;
         if (createdDate == null) return false;
-        if (_startDate != null && createdDate.isBefore(_startDate!)) {
-          return false;
+        
+        // Check start date: exclude dates before start date (at start of day)
+        if (_startDate != null) {
+          final startOfStartDate = DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
+          final startOfCreatedDate = DateTime(createdDate.year, createdDate.month, createdDate.day);
+          if (startOfCreatedDate.isBefore(startOfStartDate)) {
+            return false;
+          }
         }
-        if (_endDate != null && createdDate.isAfter(_endDate!.add(const Duration(days: 1)))) {
-          return false;
+        
+        // Check end date: include dates up to and including end date (at end of day)
+        if (_endDate != null) {
+          final endOfEndDate = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
+          if (createdDate.isAfter(endOfEndDate)) {
+            return false;
+          }
         }
+        
         return true;
       }).toList();
     }
@@ -430,20 +442,24 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
 
     // Calculate pagination
     final totalFiltered = filtered.length;
-    final totalPages = (totalFiltered / _pageSize).ceil();
+    final totalPages = totalFiltered > 0 ? (totalFiltered / _pageSize).ceil() : 1;
     
-    // Get current page data
-    final startIndex = _currentPage * _pageSize;
+    // Get current page data with proper bounds checking
+    final startIndex = (_currentPage * _pageSize).clamp(0, totalFiltered);
     final endIndex = (startIndex + _pageSize).clamp(0, totalFiltered);
-    final pageData = filtered.sublist(
-      startIndex.clamp(0, totalFiltered),
-      endIndex,
-    );
+    
+    // Ensure current page is valid
+    final validCurrentPage = _currentPage.clamp(0, totalPages > 0 ? totalPages - 1 : 0);
+    
+    final List<FieldOfficerSummary> pageData = totalFiltered > 0 && startIndex < endIndex
+        ? filtered.sublist(startIndex, endIndex)
+        : <FieldOfficerSummary>[];
 
     setState(() {
       _filteredFieldOfficers = pageData;
       _totalPages = totalPages;
       _totalElements = totalFiltered;
+      _currentPage = validCurrentPage; // Update current page to a valid value
       _fieldOfficers = pageData; // For compatibility
     });
   }
@@ -1558,7 +1574,10 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     // Calculate minimum height for rows (page size)
     // Set max height to show approximately 15-20 rows at a time, then scroll
     const double maxVisibleHeight = 800.0; // Max height for visible area
-    final minDataHeight = _pageSize * rowHeight;
+    // Calculate actual data height based on filtered field officers
+    // The Column will be as tall as needed, and the SizedBox will clip it to maxVisibleHeight
+    final actualDataHeight = _filteredFieldOfficers.length * rowHeight;
+    final minDataHeight = actualDataHeight > maxVisibleHeight ? maxVisibleHeight : actualDataHeight;
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -1643,7 +1662,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: minDataHeight),
                   child: _filteredFieldOfficers.isEmpty
-                      ? _buildEmptyState(totalWidth, minDataHeight)
+                      ? _buildEmptyState(totalWidth, 400.0)
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
@@ -2089,19 +2108,27 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                   ],
                 ), false),
                 _buildDivider(),
-                _buildDataCell(usernameWidth, Text(
-                  fieldOfficer.username,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: AppColors.textPrimary,
+                _buildDataCell(usernameWidth, SizedBox(
+                  width: usernameWidth - 24,
+                  child: Text(
+                    fieldOfficer.username,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ), false),
                 _buildDivider(),
-                _buildDataCell(phoneWidth, Text(
-                  fieldOfficer.phoneNumber,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: AppColors.textPrimary,
+                _buildDataCell(phoneWidth, SizedBox(
+                  width: phoneWidth - 24,
+                  child: Text(
+                    fieldOfficer.phoneNumber,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ), false),
                 _buildDivider(),
@@ -2117,11 +2144,15 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                   ),
                 ), false),
                 _buildDivider(),
-                _buildDataCell(pincodeWidth, Text(
-                  fieldOfficer.pincode ?? '-',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: AppColors.textPrimary,
+                _buildDataCell(pincodeWidth, SizedBox(
+                  width: pincodeWidth - 24,
+                  child: Text(
+                    fieldOfficer.pincode ?? '-',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ), false),
                 _buildDivider(),
