@@ -1374,12 +1374,24 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       filtered = filtered.where((farmer) {
         final registeredDate = farmer.registeredAt;
         if (registeredDate == null) return false;
-        if (_startDate != null && registeredDate.isBefore(_startDate!)) {
-          return false;
+        
+        // Check start date: exclude dates before start date (at start of day)
+        if (_startDate != null) {
+          final startOfStartDate = DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
+          final startOfRegisteredDate = DateTime(registeredDate.year, registeredDate.month, registeredDate.day);
+          if (startOfRegisteredDate.isBefore(startOfStartDate)) {
+            return false;
+          }
         }
-        if (_endDate != null && registeredDate.isAfter(_endDate!.add(const Duration(days: 1)))) {
-          return false;
+        
+        // Check end date: include dates up to and including end date (at end of day)
+        if (_endDate != null) {
+          final endOfEndDate = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
+          if (registeredDate.isAfter(endOfEndDate)) {
+            return false;
+          }
         }
+        
         return true;
       }).toList();
     }
@@ -1427,21 +1439,30 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
 
     // Calculate pagination
     final totalFiltered = filtered.length;
-    final totalPages = (totalFiltered / _pageSize).ceil();
+    final totalPages = totalFiltered > 0 ? (totalFiltered / _pageSize).ceil() : 1;
     
-    // Get current page data
-    final startIndex = _currentPage * _pageSize;
+    // Ensure current page is valid before calculating indices
+    final validCurrentPage = totalPages > 0 
+        ? _currentPage.clamp(0, totalPages - 1) 
+        : 0;
+    
+    // Get current page data with proper bounds checking
+    final startIndex = (validCurrentPage * _pageSize).clamp(0, totalFiltered);
     final endIndex = (startIndex + _pageSize).clamp(0, totalFiltered);
-    final pageData = filtered.sublist(
-      startIndex.clamp(0, totalFiltered),
-      endIndex,
-    );
+    
+    final pageData = totalFiltered > 0 && startIndex < endIndex
+        ? filtered.sublist(startIndex, endIndex)
+        : <FarmerSummary>[];
 
     setState(() {
       _filteredFarmers = pageData;
       _totalPages = totalPages;
       _totalElements = totalFiltered;
       _farmers = pageData; // For compatibility
+      // Update current page if it was out of bounds
+      if (_currentPage != validCurrentPage) {
+        _currentPage = validCurrentPage;
+      }
     });
   }
 
@@ -1649,10 +1670,12 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         subscriptionWidth +
         fieldOfficerWidth;
 
-    // Calculate minimum height for rows (page size)
-    // Set max height to show approximately 15-20 rows at a time, then scroll
+    // Calculate height for rows
+    // Set max height to show approximately 10-12 rows at a time, then scroll
     const double maxVisibleHeight = 800.0; // Max height for visible area
-    final minDataHeight = _pageSize * rowHeight;
+    // Calculate actual data height based on filtered farmers
+    // The Column will be as tall as needed, and the SizedBox will clip it to maxVisibleHeight
+    final actualDataHeight = _filteredFarmers.length * rowHeight;
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -1738,11 +1761,9 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               radius: const Radius.circular(6),
               child: SingleChildScrollView(
                 controller: _verticalScrollController,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: minDataHeight),
-                  child: _filteredFarmers.isEmpty
-                      ? _buildEmptyState(totalWidth, minDataHeight)
-                      : Column(
+                child: _filteredFarmers.isEmpty
+                    ? _buildEmptyState(totalWidth, actualDataHeight)
+                    : Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -1767,7 +1788,6 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                             }),
                           ],
                         ),
-                ),
               ),
             ),
           ),
@@ -2022,6 +2042,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   Widget _buildSearchInput(double width, TextEditingController controller, String hint, Function(String) onChanged) {
     return StatefulBuilder(
       builder: (context, setStateLocal) {
+        final hasText = controller.text.isNotEmpty;
+        
         return SizedBox(
           width: width - 24,
           child: TextField(
@@ -2053,7 +2075,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               ),
               filled: true,
               fillColor: Colors.white,
-              suffixIcon: controller.text.isNotEmpty
+              suffixIcon: hasText
                   ? IconButton(
                       icon: Icon(Icons.clear_rounded, size: 14, color: Colors.grey.shade400),
                       onPressed: () {
@@ -2073,9 +2095,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   }
 
   Widget _buildEmptyState(double tableWidth, double minHeight) {
+    // Use a reasonable height for empty state instead of the calculated minHeight
+    const double emptyStateHeight = 400.0;
     return Container(
       width: tableWidth,
-      height: minHeight,
+      height: emptyStateHeight,
       color: Colors.white,
       child: Center(
         child: Padding(

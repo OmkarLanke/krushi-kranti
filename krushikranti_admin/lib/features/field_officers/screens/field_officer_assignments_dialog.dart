@@ -48,7 +48,7 @@ class _FieldOfficerAssignmentsDialogState
       });
     } catch (e) {
       setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = _parseErrorMessage(e.toString());
         _isLoading = false;
       });
     }
@@ -58,9 +58,20 @@ class _FieldOfficerAssignmentsDialogState
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: EdgeInsets.all(
+        MediaQuery.of(context).size.width > 600 ? 40 : 20,
+      ),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.8,
-        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
+        width: MediaQuery.of(context).size.width > 1200
+            ? 900
+            : MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height > 700
+            ? 700
+            : MediaQuery.of(context).size.height * 0.9,
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width > 1200 ? 900 : double.infinity,
+          maxHeight: MediaQuery.of(context).size.height > 700 ? 700 : double.infinity,
+        ),
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -105,7 +116,11 @@ class _FieldOfficerAssignmentsDialogState
             // Content
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
+                      ),
+                    )
                   : _error != null
                       ? _buildErrorView()
                       : _assignments.isEmpty
@@ -228,6 +243,8 @@ class _FieldOfficerAssignmentsDialogState
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           if (assignment.farmLocation != null) ...[
                             const SizedBox(height: 4),
@@ -237,6 +254,8 @@ class _FieldOfficerAssignmentsDialogState
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ],
@@ -325,10 +344,55 @@ class _FieldOfficerAssignmentsDialogState
               fontSize: 13,
               color: AppColors.textPrimary,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
     );
+  }
+
+  /// Parse and return user-friendly error messages
+  String _parseErrorMessage(String error) {
+    // Remove "Exception: " prefix if present
+    String message = error.replaceFirst('Exception: ', '').trim();
+    String lowerMessage = message.toLowerCase();
+    
+    // Handle network errors
+    if (lowerMessage.contains('network error') || 
+        lowerMessage.contains('socketexception') ||
+        lowerMessage.contains('failed host lookup') ||
+        lowerMessage.contains('connection refused') ||
+        lowerMessage.contains('connection reset')) {
+      return 'Network connection failed. Please check your internet connection and try again.';
+    }
+    
+    // Handle server errors
+    if (lowerMessage.contains('server error') ||
+        lowerMessage.contains('500') ||
+        lowerMessage.contains('internal server error')) {
+      return 'Server error. Please try again later.';
+    }
+    
+    // Handle service not found
+    if (lowerMessage.contains('not found') ||
+        lowerMessage.contains('404')) {
+      return 'Service unavailable. Please try again later.';
+    }
+    
+    // Handle timeout errors
+    if (lowerMessage.contains('timeout') ||
+        lowerMessage.contains('timed out')) {
+      return 'Request timed out. Please check your connection and try again.';
+    }
+    
+    // Return the original message if it's already user-friendly
+    // Otherwise, return a generic error message
+    if (message.isNotEmpty && message.length < 100) {
+      return message;
+    }
+    
+    return 'Failed to load assignments. Please try again.';
   }
 
   Widget _buildStatusChip(String status) {

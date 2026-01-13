@@ -70,9 +70,14 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
     
     if (pincode.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter a valid 6-digit pincode"),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: Text(
+            "Please enter a valid 6-digit pincode",
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
       return;
@@ -106,8 +111,13 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceFirst("Exception: ", "")),
-            backgroundColor: Colors.red,
+            content: Text(
+              _parseErrorMessage(e.toString()),
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         );
       }
@@ -120,6 +130,18 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
       initialDate: DateTime.now().subtract(const Duration(days: 365 * 25)),
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.brandGreen,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     
     if (picked != null) {
@@ -136,9 +158,14 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
 
     if (_selectedVillage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select a village"),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: Text(
+            "Please select a village",
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
       return;
@@ -146,9 +173,14 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
 
     if (_selectedGender == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select gender"),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: Text(
+            "Please select gender",
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
       return;
@@ -181,9 +213,14 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Field officer created successfully"),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(
+              "Field officer created successfully",
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         );
         Navigator.pop(context, true);
@@ -196,12 +233,44 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceFirst("Exception: ", "")),
-            backgroundColor: Colors.red,
+            content: Text(
+              _parseErrorMessage(e.toString()),
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         );
       }
     }
+  }
+
+  String _parseErrorMessage(String error) {
+    String message = error.replaceFirst("Exception: ", "").trim();
+    String lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.contains('network error') || 
+        lowerMessage.contains('socketexception') ||
+        lowerMessage.contains('failed host lookup')) {
+      return 'Network connection failed. Please check your internet connection and try again.';
+    }
+    
+    if (lowerMessage.contains('server error') ||
+        lowerMessage.contains('500')) {
+      return 'Server error. Please try again later.';
+    }
+    
+    if (lowerMessage.contains('not found') ||
+        lowerMessage.contains('404')) {
+      return 'Service unavailable. Please try again later.';
+    }
+    
+    if (message.isNotEmpty && message.length < 100) {
+      return message;
+    }
+    
+    return 'Failed to create field officer. Please try again.';
   }
 
   @override
@@ -212,51 +281,77 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Add Field Officer',
           style: GoogleFonts.poppins(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
           ),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header Section (matching list screen style)
+              Text(
+                'Create New Field Officer',
+                style: GoogleFonts.poppins(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.5,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Fill in the details to create a new field officer account',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w400,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 32),
+              
               // Personal Information Section
-              _buildSectionHeader('Personal Information'),
+              _buildSectionHeader('Personal Information', Icons.person_outline),
               const SizedBox(height: 16),
               _buildPersonalInfoSection(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
               
               // Contact Information Section
-              _buildSectionHeader('Contact Information'),
+              _buildSectionHeader('Contact Information', Icons.phone_outlined),
               const SizedBox(height: 16),
               _buildContactInfoSection(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
               
               // Address Information Section
-              _buildSectionHeader('Address Information'),
+              _buildSectionHeader('Address Information', Icons.location_on_outlined),
               const SizedBox(height: 16),
               _buildAddressInfoSection(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
               
               // Credentials Section
-              _buildSectionHeader('Credentials'),
+              _buildSectionHeader('Credentials', Icons.lock_outline),
               const SizedBox(height: 16),
               _buildCredentialsSection(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
               
               // Additional Section
-              _buildSectionHeader('Additional'),
+              _buildSectionHeader('Additional', Icons.settings_outlined),
               const SizedBox(height: 16),
               _buildAdditionalSection(),
               const SizedBox(height: 32),
@@ -270,41 +365,142 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
-      ),
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.brandGreen.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: AppColors.brandGreen,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildPersonalInfoSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 600;
+          
+          if (isWide) {
+            return Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _firstNameController,
+                        label: 'First Name',
+                        hint: 'Enter first name',
+                        isRequired: true,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'First name is required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _lastNameController,
+                        label: 'Last Name',
+                        hint: 'Enter last name',
+                        isRequired: true,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Last name is required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _dobController,
+                        label: 'Date of Birth',
+                        hint: 'Select date',
+                        isReadOnly: true,
+                        suffixIcon: Icon(Icons.calendar_today_outlined, color: Colors.grey.shade400, size: 20),
+                        onTap: _selectDate,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildDropdownField(
+                        value: _selectedGender,
+                        label: 'Gender',
+                        hint: 'Select gender',
+                        isRequired: true,
+                        items: const [
+                          DropdownMenuItem(value: 'MALE', child: Text('Male')),
+                          DropdownMenuItem(value: 'FEMALE', child: Text('Female')),
+                          DropdownMenuItem(value: 'OTHER', child: Text('Other')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedGender = value;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Gender is required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          } else {
+            return Column(
+              children: [
+                _buildTextField(
                   controller: _firstNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'First Name *',
-                    hintText: 'Enter first name',
-                  ),
+                  label: 'First Name',
+                  hint: 'Enter first name',
+                  isRequired: true,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'First name is required';
@@ -312,15 +508,12 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
                     return null;
                   },
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextFormField(
+                const SizedBox(height: 20),
+                _buildTextField(
                   controller: _lastNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Last Name *',
-                    hintText: 'Enter last name',
-                  ),
+                  label: 'Last Name',
+                  hint: 'Enter last name',
+                  isRequired: true,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Last name is required';
@@ -328,32 +521,21 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
                     return null;
                   },
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
+                const SizedBox(height: 20),
+                _buildTextField(
                   controller: _dobController,
-                  decoration: const InputDecoration(
-                    labelText: 'Date of Birth',
-                    hintText: 'Select date',
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  readOnly: true,
+                  label: 'Date of Birth',
+                  hint: 'Select date',
+                  isReadOnly: true,
+                  suffixIcon: Icon(Icons.calendar_today_outlined, color: Colors.grey.shade400, size: 20),
                   onTap: _selectDate,
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: DropdownButtonFormField<String>(
+                const SizedBox(height: 20),
+                _buildDropdownField(
                   value: _selectedGender,
-                  decoration: const InputDecoration(
-                    labelText: 'Gender *',
-                    hintText: 'Select gender',
-                  ),
+                  label: 'Gender',
+                  hint: 'Select gender',
+                  isRequired: true,
                   items: const [
                     DropdownMenuItem(value: 'MALE', child: Text('Male')),
                     DropdownMenuItem(value: 'FEMALE', child: Text('Female')),
@@ -371,35 +553,35 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
                     return null;
                   },
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            );
+          }
+        },
       ),
     );
   }
 
   Widget _buildContactInfoSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
-          TextFormField(
+          _buildTextField(
             controller: _phoneController,
-            decoration: const InputDecoration(
-              labelText: 'Phone Number *',
-              hintText: 'Enter 10-digit phone number',
-            ),
+            label: 'Phone Number',
+            hint: 'Enter 10-digit phone number',
+            isRequired: true,
             keyboardType: TextInputType.phone,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -411,13 +593,11 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
-          TextFormField(
+          const SizedBox(height: 20),
+          _buildTextField(
             controller: _altPhoneController,
-            decoration: const InputDecoration(
-              labelText: 'Alternate Phone',
-              hintText: 'Enter alternate phone (optional)',
-            ),
+            label: 'Alternate Phone',
+            hint: 'Enter alternate phone (optional)',
             keyboardType: TextInputType.phone,
             validator: (value) {
               if (value != null && value.trim().isNotEmpty) {
@@ -428,13 +608,12 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
-          TextFormField(
+          const SizedBox(height: 20),
+          _buildTextField(
             controller: _emailController,
-            decoration: const InputDecoration(
-              labelText: 'Email *',
-              hintText: 'Enter email address',
-            ),
+            label: 'Email',
+            hint: 'Enter email address',
+            isRequired: true,
             keyboardType: TextInputType.emailAddress,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -453,141 +632,250 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
 
   Widget _buildAddressInfoSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 600;
+          
+          return Column(
             children: [
-              Expanded(
-                flex: 2,
-                child: TextFormField(
-                  controller: _pincodeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Pincode *',
-                    hintText: 'Enter 6-digit pincode',
-                  ),
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Pincode is required';
-                    }
-                    if (!RegExp(r'^[0-9]{6}$').hasMatch(value.trim())) {
-                      return 'Pincode must be 6 digits';
-                    }
-                    return null;
-                  },
+              if (isWide)
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _buildTextField(
+                        controller: _pincodeController,
+                        label: 'Pincode',
+                        hint: 'Enter 6-digit pincode',
+                        isRequired: true,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Pincode is required';
+                          }
+                          if (!RegExp(r'^[0-9]{6}$').hasMatch(value.trim())) {
+                            return 'Pincode must be 6 digits';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.brandGreen.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton.icon(
+                          onPressed: _isLookingUp ? null : _lookupAddress,
+                          icon: _isLookingUp
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Icon(Icons.search_rounded, size: 18),
+                          label: Text(
+                            _isLookingUp ? 'Looking up...' : 'Lookup',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.brandGreen,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    _buildTextField(
+                      controller: _pincodeController,
+                      label: 'Pincode',
+                      hint: 'Enter 6-digit pincode',
+                      isRequired: true,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Pincode is required';
+                        }
+                        if (!RegExp(r'^[0-9]{6}$').hasMatch(value.trim())) {
+                          return 'Pincode must be 6 digits';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.brandGreen.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton.icon(
+                        onPressed: _isLookingUp ? null : _lookupAddress,
+                        icon: _isLookingUp
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Icon(Icons.search_rounded, size: 18),
+                        label: Text(
+                          _isLookingUp ? 'Looking up...' : 'Lookup',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.brandGreen,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              const SizedBox(height: 20),
+              _buildTextField(
+                controller: _districtController,
+                label: 'District',
+                hint: 'Auto-filled from pincode',
+                isReadOnly: true,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _isLookingUp ? null : _lookupAddress,
-                  icon: _isLookingUp
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.search),
-                  label: Text(_isLookingUp ? 'Looking up...' : 'Lookup'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandGreen,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
+              const SizedBox(height: 20),
+              _buildTextField(
+                controller: _talukaController,
+                label: 'Taluka',
+                hint: 'Auto-filled from pincode',
+                isReadOnly: true,
+              ),
+              const SizedBox(height: 20),
+              _buildTextField(
+                controller: _stateController,
+                label: 'State',
+                hint: 'Auto-filled from pincode',
+                isReadOnly: true,
+              ),
+              const SizedBox(height: 20),
+              _buildDropdownField(
+                value: _selectedVillage,
+                label: 'Village',
+                hint: _villageList.isEmpty ? 'No villages found. Please lookup pincode first.' : 'Select village',
+                isRequired: true,
+                items: _villageList.isEmpty
+                    ? [
+                        const DropdownMenuItem(
+                          value: null,
+                          enabled: false,
+                          child: Text('No villages available'),
+                        ),
+                      ]
+                    : _villageList.map((village) {
+                        return DropdownMenuItem(
+                          value: village,
+                          child: Text(
+                            village,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        );
+                      }).toList(),
+                onChanged: _villageList.isEmpty
+                    ? null
+                    : (value) {
+                        if (mounted) {
+                          setState(() {
+                            _selectedVillage = value;
+                          });
+                        }
+                      },
+                validator: (value) {
+                  if (_villageList.isEmpty) {
+                    return 'Please lookup pincode first';
+                  }
+                  if (value == null) {
+                    return 'Village is required';
+                  }
+                  return null;
+                },
               ),
             ],
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _districtController,
-            decoration: const InputDecoration(
-              labelText: 'District',
-              hintText: 'Auto-filled from pincode',
-            ),
-            readOnly: true,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _talukaController,
-            decoration: const InputDecoration(
-              labelText: 'Taluka',
-              hintText: 'Auto-filled from pincode',
-            ),
-            readOnly: true,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _stateController,
-            decoration: const InputDecoration(
-              labelText: 'State',
-              hintText: 'Auto-filled from pincode',
-            ),
-            readOnly: true,
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _selectedVillage,
-            decoration: const InputDecoration(
-              labelText: 'Village *',
-              hintText: 'Select village',
-            ),
-            items: _villageList.map((village) {
-              return DropdownMenuItem(
-                value: village,
-                child: Text(village),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedVillage = value;
-              });
-            },
-            validator: (value) {
-              if (value == null) {
-                return 'Village is required';
-              }
-              return null;
-            },
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
   Widget _buildCredentialsSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
-          TextFormField(
+          _buildTextField(
             controller: _usernameController,
-            decoration: const InputDecoration(
-              labelText: 'Username *',
-              hintText: 'Enter username (admin assigns)',
-            ),
+            label: 'Username',
+            hint: 'Enter username (admin assigns)',
+            isRequired: true,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Username is required';
@@ -598,22 +886,25 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
-          TextFormField(
+          const SizedBox(height: 20),
+          _buildTextField(
             controller: _passwordController,
-            decoration: InputDecoration(
-              labelText: 'Password *',
-              hintText: 'Enter password (min 8 characters)',
-              suffixIcon: IconButton(
-                icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              ),
-            ),
+            label: 'Password',
+            hint: 'Enter password (min 8 characters)',
+            isRequired: true,
             obscureText: _obscurePassword,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                color: Colors.grey.shade400,
+                size: 20,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
+            ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Password is required';
@@ -624,22 +915,25 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
-          TextFormField(
+          const SizedBox(height: 20),
+          _buildTextField(
             controller: _confirmPasswordController,
-            decoration: InputDecoration(
-              labelText: 'Confirm Password *',
-              hintText: 'Re-enter password',
-              suffixIcon: IconButton(
-                icon: Icon(_obscureConfirmPassword ? Icons.visibility : Icons.visibility_off),
-                onPressed: () {
-                  setState(() {
-                    _obscureConfirmPassword = !_obscureConfirmPassword;
-                  });
-                },
-              ),
-            ),
+            label: 'Confirm Password',
+            hint: 'Re-enter password',
+            isRequired: true,
             obscureText: _obscureConfirmPassword,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                color: Colors.grey.shade400,
+                size: 20,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureConfirmPassword = !_obscureConfirmPassword;
+                });
+              },
+            ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Please confirm password';
@@ -657,20 +951,35 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
 
   Widget _buildAdditionalSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: SwitchListTile(
-        title: const Text('Active Status'),
-        subtitle: const Text('Field officer will be active by default'),
+        contentPadding: EdgeInsets.zero,
+        title: Text(
+          'Active Status',
+          style: GoogleFonts.poppins(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          'Field officer will be active by default',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          ),
+        ),
         value: _isActive,
         onChanged: (value) {
           setState(() {
@@ -682,37 +991,174 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
     );
   }
 
-  Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _submitForm,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.brandGreen,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    bool isRequired = false,
+    bool isReadOnly = false,
+    TextInputType? keyboardType,
+    int? maxLength,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    VoidCallback? onTap,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      readOnly: isReadOnly,
+      keyboardType: keyboardType,
+      maxLength: maxLength,
+      obscureText: obscureText,
+      onTap: onTap,
+      validator: validator,
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        color: AppColors.textPrimary,
+      ),
+      decoration: InputDecoration(
+        labelText: isRequired ? '$label *' : label,
+        hintText: hint,
+        hintStyle: GoogleFonts.poppins(
+          fontSize: 14,
+          color: Colors.grey.shade400,
         ),
-        child: _isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
+        labelStyle: GoogleFonts.poppins(
+          fontSize: 13,
+          color: AppColors.textSecondary,
+        ),
+        suffixIcon: suffixIcon,
+        errorMaxLines: 2,
+        filled: true,
+        fillColor: isReadOnly ? Colors.grey.shade50 : Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.brandGreen, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.error, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.error, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String? value,
+    required String label,
+    required String hint,
+    required List<DropdownMenuItem<String>> items,
+    Function(String?)? onChanged,
+    bool isRequired = false,
+    String? Function(String?)? validator,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: isRequired ? '$label *' : label,
+        hintText: hint,
+        hintStyle: GoogleFonts.poppins(
+          fontSize: 14,
+          color: Colors.grey.shade400,
+        ),
+        labelStyle: GoogleFonts.poppins(
+          fontSize: 13,
+          color: AppColors.textSecondary,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        errorMaxLines: 2,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.brandGreen, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.error, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.error, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        color: AppColors.textPrimary,
+      ),
+      items: items,
+      onChanged: onChanged,
+      validator: validator,
+      icon: Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
+      dropdownColor: Colors.white,
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.brandGreen.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _isLoading ? null : _submitForm,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.brandGreen,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 0,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  'Create Field Officer',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              )
-            : Text(
-                'Create Field Officer',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+        ),
       ),
     );
   }
 }
-

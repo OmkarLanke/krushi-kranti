@@ -103,5 +103,62 @@ class FieldOfficerService {
       return {};
     }
   }
+
+  /// Request OTP for farm verification
+  static Future<Map<String, dynamic>> requestOtp({
+    required String farmId,
+  }) async {
+    try {
+      // POST /field-officer/farms/{farmId}/request-otp
+      final response = await HttpService.post(
+        'field-officer/farms/$farmId/request-otp',
+        {},
+      );
+
+      if (response is Map && response.containsKey('data')) {
+        return response['data'] as Map<String, dynamic>;
+      }
+
+      return response as Map<String, dynamic>;
+    } catch (e) {
+      print('Error requesting OTP: $e');
+      rethrow;
+    }
+  }
+
+  /// Validate OTP for farm verification
+  static Future<Map<String, dynamic>> validateOtp({
+    required String farmId,
+    required String otp,
+  }) async {
+    try {
+      // POST /field-officer/farms/{farmId}/validate-otp
+      final response = await HttpService.post(
+        'field-officer/farms/$farmId/validate-otp',
+        {
+          'farmId': int.parse(farmId),
+          'otp': otp,
+        },
+      );
+
+      print('=== FieldOfficerService.validateOtp ===');
+      print('Raw response: $response');
+      print('Response type: ${response.runtimeType}');
+      print('Has data key: ${response is Map && response.containsKey('data')}');
+
+      if (response is Map && response.containsKey('data')) {
+        final data = response['data'] as Map<String, dynamic>;
+        print('Extracted data: $data');
+        print('Data isValid: ${data['isValid']}');
+        return data;
+      }
+
+      print('Returning response directly: $response');
+      return response as Map<String, dynamic>;
+    } catch (e) {
+      print('Error validating OTP: $e');
+      rethrow;
+    }
+  }
 }
 

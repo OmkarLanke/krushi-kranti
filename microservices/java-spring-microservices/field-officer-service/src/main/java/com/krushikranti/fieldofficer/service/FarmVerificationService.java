@@ -31,6 +31,7 @@ public class FarmVerificationService {
     private final FieldOfficerRepository fieldOfficerRepository;
     private final FieldOfficerAssignmentRepository assignmentRepository;
     private final VerificationPhotoRepository photoRepository;
+    private final FarmVerificationOtpManagementService otpManagementService;
 
     /**
      * Verify or reject a farm.
@@ -82,6 +83,23 @@ public class FarmVerificationService {
                 throw new IllegalArgumentException(
                         "At least one geotagged photo is required for farm verification.");
             }
+            
+            // Validation 6: If VERIFIED, OTP must be validated
+            log.info("=== VERIFICATION SUBMISSION: Checking OTP validation for Farm ID: {}, Field Officer User ID: {} ===", 
+                    request.getFarmId(), fieldOfficerUserId);
+            boolean isOtpValid = otpManagementService.isOtpValidated(request.getFarmId(), fieldOfficerUserId);
+            log.info("=== VERIFICATION SUBMISSION: OTP validation check result: {} for Farm ID: {}, Field Officer User ID: {} ===", 
+                    isOtpValid, request.getFarmId(), fieldOfficerUserId);
+            
+            if (!isOtpValid) {
+                log.error("=== VERIFICATION SUBMISSION FAILED: OTP not validated for Farm ID: {}, Field Officer User ID: {} ===", 
+                        request.getFarmId(), fieldOfficerUserId);
+                throw new IllegalArgumentException(
+                        "OTP validation is required before submitting farm verification. " +
+                        "Please request and validate OTP first.");
+            }
+            log.info("=== VERIFICATION SUBMISSION: OTP validation passed for Farm ID: {}, Field Officer User ID: {} ===", 
+                    request.getFarmId(), fieldOfficerUserId);
         }
 
         // Check if verification already exists

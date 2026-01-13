@@ -1380,4 +1380,46 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bankAlreadyVerifiedMessage =>
       'Your bank account is already verified. You cannot verify it again.';
+
+  @override
+  String get otpVerification => 'OTP Verification';
+
+  @override
+  String get requestOtp => 'Request OTP';
+
+  @override
+  String get requestingOtp => 'Requesting OTP...';
+
+  @override
+  String get enterOtpFromFarmer =>
+      'Enter the 6-digit OTP received by the farmer:';
+
+  @override
+  String get validateOtp => 'Validate OTP';
+
+  @override
+  String get validatingOtp => 'Validating...';
+
+  @override
+  String get otpValidatedSuccess =>
+      'OTP validated successfully! You can now submit verification.';
+
+  @override
+  String otpExpiresIn(String time) {
+    return 'OTP expires in: $time';
+  }
+
+  @override
+  String get otpSentToFarmer =>
+      'OTP sent successfully to farmer. Please ask the farmer for the OTP.';
+
+  @override
+  String get otpRequiredForVerification =>
+      'Please request and validate OTP before submitting verification.';
+
+  @override
+  String get invalidOtp => 'Invalid OTP. Please try again.';
+
+  @override
+  String get enterValidOtp => 'Please enter a valid 6-digit OTP';
 }
