@@ -5,6 +5,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/http_service.dart';
+import '../../dashboard/services/field_officer_assignment_service.dart';
 import '../models/farm_model.dart';
 
 class FarmListScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
   bool _isLoading = true;
   List<Farm> _farms = [];
   String? _errorMessage;
+  Map<int?, Map<String, dynamic>> _fieldOfficerAssignments = {}; // Map of farmId -> assignment
 
   @override
   void initState() {
@@ -32,8 +34,15 @@ class _FarmListScreenState extends State<FarmListScreen> {
     });
 
     try {
-      final response = await HttpService.get("farmer/profile/farms");
+      // Load farms and field officer assignments in parallel
+      final farmsFuture = HttpService.get("farmer/profile/farms");
+      final assignmentsFuture = _loadFieldOfficerAssignments();
+
+      final response = await farmsFuture;
       final data = response['data'] ?? [];
+      
+      // Wait for assignments to load
+      await assignmentsFuture;
       
       if (mounted) {
         setState(() {
@@ -51,6 +60,70 @@ class _FarmListScreenState extends State<FarmListScreen> {
         });
       }
     }
+  }
+
+  Future<void> _loadFieldOfficerAssignments() async {
+    try {
+      final assignments = await FieldOfficerAssignmentService.getAssignments();
+      
+      // Filter active assignments
+      final activeAssignments = assignments.where((assignment) {
+        final status = assignment['status']?.toString().toUpperCase() ?? '';
+        return status == 'ASSIGNED' || status == 'ACTIVE';
+      }).toList();
+
+      // Create a map of farmId -> assignment
+      final Map<int?, Map<String, dynamic>> assignmentsMap = {};
+      Map<String, dynamic>? allFarmsAssignment;
+      
+      for (var assignment in activeAssignments) {
+        final farmIdObj = assignment['farmId'];
+        // If farmId is null, it means assignment is for all farms
+        if (farmIdObj == null) {
+          allFarmsAssignment = assignment;
+        } else {
+          // Convert farmId to int
+          int? farmId;
+          if (farmIdObj is int) {
+            farmId = farmIdObj;
+          } else if (farmIdObj is String) {
+            farmId = int.tryParse(farmIdObj);
+          } else if (farmIdObj is num) {
+            farmId = farmIdObj.toInt();
+          }
+          
+          if (farmId != null) {
+            assignmentsMap[farmId] = assignment;
+          }
+        }
+      }
+      
+      // Store "all farms" assignment with key -1
+      if (allFarmsAssignment != null) {
+        assignmentsMap[-1] = allFarmsAssignment;
+      }
+
+      if (mounted) {
+        setState(() {
+          _fieldOfficerAssignments = assignmentsMap;
+        });
+      }
+    } catch (e) {
+      // Silently fail - field officer assignments are optional
+      print('Error loading field officer assignments: $e');
+    }
+  }
+
+  Map<String, dynamic>? _getFieldOfficerAssignmentForFarm(Farm farm) {
+    // First check for specific farm assignment
+    if (farm.id != null && _fieldOfficerAssignments.containsKey(farm.id)) {
+      return _fieldOfficerAssignments[farm.id];
+    }
+    // If no specific assignment, check for "all farms" assignment
+    if (_fieldOfficerAssignments.containsKey(-1)) {
+      return _fieldOfficerAssignments[-1];
+    }
+    return null;
   }
 
   String _getLocalizedFarmType(String type, AppLocalizations l10n) {
@@ -190,13 +263,28 @@ class _FarmListScreenState extends State<FarmListScreen> {
                       ),
                     )
                   : RefreshIndicator(
-                      onRefresh: _loadFarms,
+                      onRefresh: () async {
+                        await _loadFarms();
+                      },
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
                         itemCount: _farms.length,
                         itemBuilder: (context, index) {
                           final farm = _farms[index];
-                          return _buildFarmCard(farm, l10n);
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            duration: Duration(milliseconds: 300 + (index * 50)),
+                            curve: Curves.easeOut,
+                            builder: (context, value, child) {
+                              return Transform.translate(
+                                offset: Offset(0, 20 * (1 - value)),
+                                child: Opacity(
+                                  opacity: value,
+                                  child: _buildFarmCard(farm, l10n),
+                                ),
+                              );
+                            },
+                          );
                         },
                       ),
                     ),
@@ -204,6 +292,8 @@ class _FarmListScreenState extends State<FarmListScreen> {
   }
 
   Widget _buildFarmCard(Farm farm, AppLocalizations l10n) {
+    final fieldOfficerAssignment = _getFieldOfficerAssignmentForFarm(farm);
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -215,19 +305,32 @@ class _FarmListScreenState extends State<FarmListScreen> {
           children: [
             // Farm Name and Verified Badge
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
-                    farm.farmName,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        farm.farmName,
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Field Officer Assignment Section (inline with farm name)
+                      if (fieldOfficerAssignment != null)
+                        _buildFieldOfficerAssignmentCard(fieldOfficerAssignment, l10n)
+                      else
+                        _buildNoFieldOfficerCard(l10n),
+                    ],
                   ),
                 ),
                 if (farm.isVerified == true)
                   Container(
+                    margin: const EdgeInsets.only(left: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppColors.brandGreen.withOpacity(0.1),
@@ -380,7 +483,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
                         Text(
                           l10n.farmLocationGPS,
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
+                            fontSize: 14,                 
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
                           ),
@@ -437,6 +540,236 @@ class _FarmListScreenState extends State<FarmListScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFieldOfficerAssignmentCard(Map<String, dynamic> assignment, AppLocalizations l10n) {
+    final fieldOfficerName = assignment['fieldOfficerName']?.toString() ?? 'Field Officer';
+    final fieldOfficerPhone = assignment['fieldOfficerPhone']?.toString() ?? '';
+    final fieldOfficerPincode = assignment['fieldOfficerPincode']?.toString() ?? '';
+    final assignedAt = assignment['assignedAt'];
+    
+    // Format assigned date
+    String assignedDateStr = '';
+    if (assignedAt != null) {
+      try {
+        final dateTime = DateTime.parse(assignedAt.toString());
+        assignedDateStr = DateFormat('M/d/yyyy').format(dateTime);
+      } catch (e) {
+        assignedDateStr = assignedAt.toString();
+      }
+    }
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.9 + (0.1 * value),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white, // White background for cleaner look
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppColors.brandGreen.withOpacity(0.2),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                    spreadRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: AppColors.brandGreen.withOpacity(0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // "Field Officer Assign" label
+                  Text(
+                    'Field Officer Assign',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.brandGreen,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Field Officer name with badge
+                  Row(
+                    children: [
+                      Icon(Icons.person, size: 14, color: Colors.grey.shade700),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          fieldOfficerName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade800,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4FC3F7), // Light blue
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          'ASSIGNED',
+                          style: GoogleFonts.poppins(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  // Phone, Pincode, Date in a single row
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 4,
+                    children: [
+                      if (fieldOfficerPhone.isNotEmpty)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.phone, size: 12, color: Colors.grey.shade700),
+                            const SizedBox(width: 3),
+                            Text(
+                              fieldOfficerPhone,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (fieldOfficerPincode.isNotEmpty)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.location_on, size: 12, color: Colors.grey.shade700),
+                            const SizedBox(width: 3),
+                            Text(
+                              fieldOfficerPincode,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (assignedDateStr.isNotEmpty)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.calendar_today, size: 12, color: Colors.grey.shade700),
+                            const SizedBox(width: 3),
+                            Text(
+                              assignedDateStr,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNoFieldOfficerCard(AppLocalizations l10n) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.9 + (0.1 * value),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white, // White background for cleaner look
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppColors.brandGreen.withOpacity(0.2),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                    spreadRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: AppColors.brandGreen.withOpacity(0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Field Officer Assign',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.brandGreen,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Not Assigned',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

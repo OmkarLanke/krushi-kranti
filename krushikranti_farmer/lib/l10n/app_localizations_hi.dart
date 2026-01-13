@@ -220,6 +220,27 @@ class AppLocalizationsHi extends AppLocalizations {
   String get validAcres => 'कृपया एकड़ में वैध क्षेत्र दर्ज करें';
 
   @override
+  String errorCropAreaFullyUsed(String acres, String farmArea) {
+    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन आपका खेत क्षेत्र केवल $farmArea एकड़ है और यह पहले से ही पूरी तरह से उपयोग में है। कृपया फसल क्षेत्र कम करें या नए जोड़ने के लिए मौजूदा फसलें हटाएं।';
+  }
+
+  @override
+  String errorCropAreaAvailable(
+      String acres, String farmArea, String availableArea) {
+    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन आपका खेत क्षेत्र केवल $farmArea एकड़ है। केवल $availableArea एकड़ उपलब्ध हैं। कृपया फसल क्षेत्र को $availableArea एकड़ या उससे कम करें।';
+  }
+
+  @override
+  String errorCropAreaExceed(String acres, String farmArea) {
+    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन आपका खेत क्षेत्र केवल $farmArea एकड़ है। कुल फसल क्षेत्र खेत क्षेत्र से अधिक नहीं हो सकता। कृपया फसल क्षेत्र कम करें या मौजूदा फसलें हटाएं।';
+  }
+
+  @override
+  String errorCropAreaLimitReached(String acres) {
+    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन यह क्षेत्र पहले से ही उपयोग में है। आपकी फसल क्षेत्र सीमा पहुंच गई है। कृपया क्षेत्र कम करें या नए जोड़ने के लिए मौजूदा फसलें हटाएं।';
+  }
+
+  @override
   String get profileRequired => 'प्रोफाइल आवश्यक';
 
   @override

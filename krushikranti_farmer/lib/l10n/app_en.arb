@@ -77,6 +77,50 @@
   "noFarmsFound": "No farms found. Please add a farm first.",
   "pleaseSelectFarm": "Please select a farm",
   "validAcres": "Please enter a valid area in acres",
+  "errorCropAreaFullyUsed": "You tried to add {acres} acres, but your farm area is only {farmArea} acres and it's already fully used. Please reduce the crop area or remove existing crops to add new ones.",
+  "@errorCropAreaFullyUsed": {
+    "placeholders": {
+      "acres": {
+        "type": "String"
+      },
+      "farmArea": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCropAreaAvailable": "You tried to add {acres} acres, but your farm area is only {farmArea} acres. Only {availableArea} acres are available. Please reduce the crop area to {availableArea} acres or less.",
+  "@errorCropAreaAvailable": {
+    "placeholders": {
+      "acres": {
+        "type": "String"
+      },
+      "farmArea": {
+        "type": "String"
+      },
+      "availableArea": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCropAreaExceed": "You tried to add {acres} acres, but your farm area is only {farmArea} acres. The total crop area cannot exceed the farm area. Please reduce the crop area or remove existing crops.",
+  "@errorCropAreaExceed": {
+    "placeholders": {
+      "acres": {
+        "type": "String"
+      },
+      "farmArea": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCropAreaLimitReached": "You tried to add {acres} acres, but this area is already used. Your crop area limit has been reached. Please reduce the area or remove existing crops to add new ones.",
+  "@errorCropAreaLimitReached": {
+    "placeholders": {
+      "acres": {
+        "type": "String"
+      }
+    }
+  },
   "profileRequired": "Profile Required",
   "completeProfileFirst": "Please complete your profile first before adding crops.",
   "cancel": "Cancel",
