@@ -55,31 +55,53 @@ class Sidebar extends StatelessWidget {
         children: [
           // Logo Section
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.brandGreenLight.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+            child: Center(
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white,
+                      Colors.white.withOpacity(0.95),
                     ],
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: AppColors.brandGreenLight.withOpacity(0.5),
+                    width: 3,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.35),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                      spreadRadius: 4,
+                    ),
+                    BoxShadow(
+                      color: AppColors.brandGreenLight.withOpacity(0.6),
+                      blurRadius: 35,
+                      offset: const Offset(0, 12),
+                      spreadRadius: 8,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(14),
                     child: Image.asset(
                       'assets/images/logo.png',
-                      width: 48,
-                      height: 48,
                       fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      width: double.infinity,
+                      height: double.infinity,
                       errorBuilder: (context, error, stackTrace) {
-                        // Fallback to icon if image fails to load
+                        // Enhanced fallback icon if image fails to load
                         return Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -95,40 +117,14 @@ class Sidebar extends StatelessWidget {
                           child: const Icon(
                             Icons.agriculture_rounded,
                             color: Colors.white,
-                            size: 26,
+                            size: 76,
                           ),
                         );
                       },
                     ),
                   ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                Text(
-                  'Krushi Kranti',
-                  style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      Text(
-                        'Admin',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white.withOpacity(0.7),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
           
