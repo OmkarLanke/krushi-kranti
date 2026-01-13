@@ -3,9 +3,14 @@ package com.krushikranti.fieldofficer.controller;
 import com.krushikranti.fieldofficer.dto.ApiResponse;
 import com.krushikranti.fieldofficer.dto.AssignmentResponseDto;
 import com.krushikranti.fieldofficer.dto.FieldOfficerAssignmentDto;
+import com.krushikranti.fieldofficer.dto.RequestOtpRequest;
+import com.krushikranti.fieldofficer.dto.RequestOtpResponse;
+import com.krushikranti.fieldofficer.dto.ValidateOtpRequest;
+import com.krushikranti.fieldofficer.dto.ValidateOtpResponse;
 import com.krushikranti.fieldofficer.dto.VerifyFarmRequest;
 import com.krushikranti.fieldofficer.dto.VerifyFarmResponse;
 import com.krushikranti.fieldofficer.service.FarmVerificationService;
+import com.krushikranti.fieldofficer.service.FarmVerificationOtpManagementService;
 import com.krushikranti.fieldofficer.service.FieldOfficerAssignmentService;
 import com.krushikranti.fieldofficer.service.FieldOfficerProfileService;
 import jakarta.validation.Valid;
@@ -30,6 +35,7 @@ public class FieldOfficerController {
     private final FieldOfficerProfileService fieldOfficerProfileService;
     private final FieldOfficerAssignmentService assignmentService;
     private final FarmVerificationService verificationService;
+    private final FarmVerificationOtpManagementService otpManagementService;
 
     /**
      * Get field officer's own profile
@@ -236,6 +242,163 @@ public class FieldOfficerController {
                     .body(new ApiResponse<>("Invalid user ID format: " + userIdHeader, null));
         } catch (Exception e) {
             log.error("Unexpected error retrieving farmer assignments for userId {}: {}", userIdHeader, e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Request OTP for farm verification.
+     * Generates OTP and sends notification to farmer.
+     */
+    @PostMapping("/farms/{farmId}/request-otp")
+    public ResponseEntity<ApiResponse<com.krushikranti.fieldofficer.dto.RequestOtpResponse>> requestOtp(
+            @PathVariable Long farmId,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+        try {
+            if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
+                log.error("Missing X-User-Id header for request OTP");
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
+            }
+
+            Long fieldOfficerUserId = Long.parseLong(userIdHeader.trim());
+            log.info("Requesting OTP for farm verification - Farm ID: {}, Field Officer User ID: {}", 
+                    farmId, fieldOfficerUserId);
+
+            RequestOtpResponse response = 
+                    otpManagementService.requestOtp(farmId, fieldOfficerUserId);
+
+            return ResponseEntity.ok(new ApiResponse<>("OTP sent successfully to farmer", response));
+        } catch (NumberFormatException e) {
+            log.error("Invalid user ID format: {}", userIdHeader, e);
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>("Invalid user ID format: " + userIdHeader, null));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid OTP request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (IllegalStateException e) {
+            // Rate limit exceeded or similar state errors
+            log.warn("OTP request failed due to state: {}", e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Error requesting OTP: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Validate OTP for farm verification.
+     */
+    @PostMapping("/farms/{farmId}/validate-otp")
+    public ResponseEntity<ApiResponse<com.krushikranti.fieldofficer.dto.ValidateOtpResponse>> validateOtp(
+            @PathVariable Long farmId,
+            @Valid @RequestBody com.krushikranti.fieldofficer.dto.ValidateOtpRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+        try {
+            if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
+                log.error("Missing X-User-Id header for validate OTP");
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
+            }
+
+            // Validate farmId matches request
+            if (!farmId.equals(request.getFarmId())) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>("Farm ID in path does not match request body", null));
+            }
+
+            Long fieldOfficerUserId = Long.parseLong(userIdHeader.trim());
+            log.info("Validating OTP for farm verification - Farm ID: {}, Field Officer User ID: {}", 
+                    farmId, fieldOfficerUserId);
+
+            ValidateOtpResponse response = 
+                    otpManagementService.validateOtp(farmId, request.getOtp(), fieldOfficerUserId);
+
+            if (response.isValid()) {
+                return ResponseEntity.ok(new ApiResponse<>("OTP validated successfully", response));
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>(response.getMessage(), response));
+            }
+        } catch (NumberFormatException e) {
+            log.error("Invalid user ID format: {}", userIdHeader, e);
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>("Invalid user ID format: " + userIdHeader, null));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid OTP validation request: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Error validating OTP: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Clear OTP rate limit for a farm (useful for testing/resetting)
+     */
+    @DeleteMapping("/farms/{farmId}/otp-rate-limit")
+    public ResponseEntity<ApiResponse<String>> clearOtpRateLimit(
+            @PathVariable Long farmId,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+        try {
+            if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
+            }
+
+            Long fieldOfficerUserId = Long.parseLong(userIdHeader.trim());
+            otpManagementService.clearRateLimit(farmId, fieldOfficerUserId);
+            
+            return ResponseEntity.ok(new ApiResponse<>(
+                    "Rate limit cleared successfully for farm " + farmId, 
+                    "Rate limit reset. You can now request OTP again."));
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>("Invalid user ID format: " + userIdHeader, null));
+        } catch (Exception e) {
+            log.error("Error clearing rate limit: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Debug endpoint to check OTP validation status
+     */
+    @GetMapping("/farms/{farmId}/otp-validation-status")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> checkOtpValidationStatus(
+            @PathVariable Long farmId,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+        try {
+            if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
+            }
+
+            Long fieldOfficerUserId = Long.parseLong(userIdHeader.trim());
+            log.info("=== DEBUG: Checking OTP validation status for Farm ID: {}, Field Officer User ID: {} ===", 
+                    farmId, fieldOfficerUserId);
+            
+            boolean isValid = otpManagementService.isOtpValidated(farmId, fieldOfficerUserId);
+            
+            Map<String, Object> status = new java.util.HashMap<>();
+            status.put("farmId", farmId);
+            status.put("fieldOfficerUserId", fieldOfficerUserId);
+            status.put("isOtpValidated", isValid);
+            
+            log.info("=== DEBUG: OTP validation status result: {} for Farm ID: {}, Field Officer User ID: {} ===", 
+                    isValid, farmId, fieldOfficerUserId);
+            
+            return ResponseEntity.ok(new ApiResponse<>(
+                    "OTP validation status checked", status));
+        } catch (Exception e) {
+            log.error("Error checking OTP validation status: {}", e.getMessage(), e);
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
         }

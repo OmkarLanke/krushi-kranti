@@ -495,5 +495,25 @@
   "panAlreadyVerified": "PAN already verified",
   "panAlreadyVerifiedMessage": "Your PAN is already verified. You cannot verify it again.",
   "bankAlreadyVerified": "Bank already verified",
-  "bankAlreadyVerifiedMessage": "Your bank account is already verified. You cannot verify it again."
+  "bankAlreadyVerifiedMessage": "Your bank account is already verified. You cannot verify it again.",
+
+  "otpVerification": "OTP Verification",
+  "requestOtp": "Request OTP",
+  "requestingOtp": "Requesting OTP...",
+  "enterOtpFromFarmer": "Enter the 6-digit OTP received by the farmer:",
+  "validateOtp": "Validate OTP",
+  "validatingOtp": "Validating...",
+  "otpValidatedSuccess": "OTP validated successfully! You can now submit verification.",
+  "otpExpiresIn": "OTP expires in: {time}",
+  "@otpExpiresIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "otpSentToFarmer": "OTP sent successfully to farmer. Please ask the farmer for the OTP.",
+  "otpRequiredForVerification": "Please request and validate OTP before submitting verification.",
+  "invalidOtp": "Invalid OTP. Please try again.",
+  "enterValidOtp": "Please enter a valid 6-digit OTP"
 }

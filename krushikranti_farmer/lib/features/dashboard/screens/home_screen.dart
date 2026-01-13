@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 import '../../../l10n/app_localizations.dart'; 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../dashboard/services/crop_service.dart';
 import '../../dashboard/services/field_officer_assignment_service.dart';
+import '../../dashboard/services/notification_service.dart';
 import 'field_officer_details_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,11 +22,30 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> fieldOfficerAssignments = [];
   bool isLoadingAssignments = true;
   bool isNavigating = false;
+  final NotificationService _notificationService = NotificationService();
+  StreamSubscription<NotificationModel>? _notificationSubscription;
 
   @override
   void initState() {
     super.initState();
-    _checkFieldOfficerAssignments(); 
+    _checkFieldOfficerAssignments();
+    _setupNotificationListener();
+  }
+
+  void _setupNotificationListener() {
+    _notificationSubscription = _notificationService.notificationStream.listen(
+      (notification) {
+        if (mounted && notification.type == 'FARM_VERIFICATION_OTP') {
+          setState(() {}); // Refresh UI to show new notification
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkFieldOfficerAssignments() async {
@@ -100,7 +122,11 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildWeatherHeader(l10n),
             const SizedBox(height: 24),
 
-            // B. Banner
+            // B. OTP Notification Banner (if any)
+            if (_notificationService.otpNotifications.isNotEmpty)
+              ..._buildOtpNotificationBanners(l10n),
+            
+            // C. Banner
             if (isLoadingAssignments)
               _buildLoadingBanner(l10n)
             else if (isAgentAssigned) 
@@ -387,6 +413,157 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  /// Build OTP notification banners
+  List<Widget> _buildOtpNotificationBanners(AppLocalizations l10n) {
+    final otpNotifications = _notificationService.otpNotifications;
+    if (otpNotifications.isEmpty) {
+      return [];
+    }
+
+    return otpNotifications.map((notification) {
+      final otp = notification.data?['otp'] ?? '';
+      final farmName = notification.data?['farmName'] ?? 'Farm';
+      final fieldOfficerName = notification.data?['fieldOfficerName'] ?? 'Field Officer';
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.orange.shade400,
+              Colors.orange.shade600,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.orange.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.verified_user,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Farm Verification OTP',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$fieldOfficerName is verifying "$farmName"',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                  onPressed: () {
+                    _notificationService.removeNotification(notification.id);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 2,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Your OTP Code',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        otp,
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 4,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy, color: Colors.white, size: 24),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: otp));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('OTP copied to clipboard: $otp'),
+                          backgroundColor: AppColors.success,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    tooltip: 'Copy OTP',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Please share this OTP with the field officer to complete verification.',
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                color: Colors.white.withOpacity(0.9),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
   }
 
   void _showFieldOfficerDetailsDialog(AppLocalizations l10n) {
