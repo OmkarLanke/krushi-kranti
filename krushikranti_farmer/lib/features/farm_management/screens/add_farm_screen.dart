@@ -295,34 +295,47 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
     final l10n = AppLocalizations.of(context)!;
     
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+        centerTitle: true,
         title: Text(
           l10n.addFarm,
           style: GoogleFonts.poppins(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 20,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
           ),
         ),
-        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Farm Name
-              _buildLabel("${l10n.farmName} *"),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.agriculture_rounded, "${l10n.farmName} *"),
+              const SizedBox(height: 12),
               _buildTextField(_farmNameController, l10n.enterFarmName, validator: (v) {
                 if (v == null || v.trim().isEmpty) return l10n.farmNameRequired;
                 return null;
@@ -330,16 +343,16 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
               const SizedBox(height: 20),
 
               // Farm Type
-              _buildLabel(l10n.farmType),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.eco_rounded, l10n.farmType),
+              const SizedBox(height: 12),
               _buildLocalizedDropdown(_farmTypes, _selectedFarmType, (value) {
                 setState(() => _selectedFarmType = value);
               }, l10n.selectFarmType, (t) => _getLocalizedFarmType(t, l10n)),
               const SizedBox(height: 20),
 
               // Total Area
-              _buildLabel("${l10n.totalAreaAcres} *"),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.square_foot_rounded, "${l10n.totalAreaAcres} *"),
+              const SizedBox(height: 12),
               _buildTextField(_totalAreaController, l10n.enterAreaAcres, 
                 keyboardType: TextInputType.number,
                 validator: (v) {
@@ -352,8 +365,8 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
               const SizedBox(height: 20),
 
               // Pincode
-              _buildLabel("${l10n.pincode} *"),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.pin_rounded, "${l10n.pincode} *"),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -376,7 +389,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                       ? const SizedBox(
                           width: 50,
                           height: 50,
-                          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                          child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brandGreen)),
                         )
                       : ElevatedButton(
                           onPressed: _lookupAddress,
@@ -384,7 +397,8 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                             backgroundColor: AppColors.brandGreen,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
                           ),
                           child: Text(l10n.lookup),
                         ),
@@ -393,90 +407,83 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
               const SizedBox(height: 20),
 
               // Village
-              _buildLabel("${l10n.village} *"),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.location_city_rounded, "${l10n.village} *"),
+              const SizedBox(height: 12),
               _buildVillageDropdown(l10n),
               const SizedBox(height: 20),
 
               // Taluka, District, State (read-only)
-              _buildLabel(l10n.taluka),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.location_on_rounded, l10n.taluka),
+              const SizedBox(height: 12),
               _buildTextField(_talukaController, "", enabled: false),
               const SizedBox(height: 20),
 
-              _buildLabel(l10n.district),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.map_rounded, l10n.district),
+              const SizedBox(height: 12),
               _buildTextField(_districtController, "", enabled: false),
               const SizedBox(height: 20),
 
-              _buildLabel(l10n.state),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.public_rounded, l10n.state),
+              const SizedBox(height: 12),
               _buildTextField(_stateController, "", enabled: false),
               const SizedBox(height: 20),
 
               // Soil Type
-              _buildLabel(l10n.soilType),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.terrain_rounded, l10n.soilType),
+              const SizedBox(height: 12),
               _buildLocalizedDropdown(_soilTypes, _selectedSoilType, (value) {
                 setState(() => _selectedSoilType = value);
               }, l10n.selectSoilType, (t) => _getLocalizedSoilType(t, l10n)),
               const SizedBox(height: 20),
 
               // Irrigation Type
-              _buildLabel(l10n.irrigationType),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.water_drop_rounded, l10n.irrigationType),
+              const SizedBox(height: 12),
               _buildLocalizedDropdown(_irrigationTypes, _selectedIrrigationType, (value) {
                 setState(() => _selectedIrrigationType = value);
               }, l10n.selectIrrigationType, (t) => _getLocalizedIrrigationType(t, l10n)),
               const SizedBox(height: 20),
 
               // Land Ownership
-              _buildLabel("${l10n.landOwnership} *"),
-              const SizedBox(height: 8),
+              _buildSectionHeader(Icons.home_rounded, "${l10n.landOwnership} *"),
+              const SizedBox(height: 12),
               _buildLocalizedDropdown(_landOwnershipTypes, _selectedLandOwnership, (value) {
                 setState(() => _selectedLandOwnership = value);
               }, l10n.selectLandOwnership, (t) => _getLocalizedOwnership(t, l10n)),
               const SizedBox(height: 20),
 
               // Collateral Information Section
-              Text(
-                l10n.collateralInfo,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.brandGreen,
-                ),
-              ),
-              const SizedBox(height: 16),
+              _buildSectionHeader(Icons.description_rounded, l10n.collateralInfo),
+              const SizedBox(height: 20),
 
               // Survey Number
               _buildLabel(l10n.surveyNumber),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               _buildTextField(_surveyNumberController, l10n.enterSurveyNumber),
               const SizedBox(height: 20),
 
               // Land Registration Number
               _buildLabel(l10n.landRegNumber),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               _buildTextField(_landRegController, l10n.enterLandRegNumber),
               const SizedBox(height: 20),
 
               // Patta Number
               _buildLabel(l10n.pattaNumber),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               _buildTextField(_pattaNumberController, l10n.enterPattaNumber),
               const SizedBox(height: 20),
 
               // Estimated Land Value
               _buildLabel(l10n.estimatedLandValue),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               _buildTextField(_estimatedValueController, l10n.enterEstimatedValue,
                 keyboardType: TextInputType.number),
               const SizedBox(height: 20),
 
               // Encumbrance Status
               _buildLabel(l10n.encumbranceStatus),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               _buildLocalizedDropdown(_encumbranceStatuses, _selectedEncumbranceStatus, (value) {
                 setState(() => _selectedEncumbranceStatus = value);
               }, l10n.selectEncumbranceStatus, (t) => _getLocalizedEncumbrance(t, l10n)),
@@ -484,26 +491,22 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
 
               // Encumbrance Remarks
               _buildLabel(l10n.encumbranceRemarks),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               _buildTextField(_encumbranceRemarksController, l10n.enterRemarks,
                 maxLines: 3),
-              const SizedBox(height: 30),
+              const SizedBox(height: 28),
 
               // GPS Location Section
               _buildLocationSection(l10n),
-              const SizedBox(height: 30),
+              const SizedBox(height: 28),
 
               // Save Button
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                height: 50,
+                child: ElevatedButton.icon(
                   onPressed: _isLoading ? null : _saveFarm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandGreen,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: _isLoading
+                  icon: _isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
@@ -512,17 +515,25 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : Text(
-                          l10n.saveFarm,
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      : const Icon(Icons.check_rounded, size: 20),
+                  label: Text(
+                    l10n.saveFarm,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -530,13 +541,45 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
     );
   }
 
+  Widget _buildSectionHeader(IconData icon, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.brandGreen),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.grey.shade700,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: Colors.black87,
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade700,
+          letterSpacing: 0.3,
+        ),
       ),
     );
   }
@@ -551,29 +594,56 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
     String? Function(String?)? validator,
     void Function(String)? onChanged,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: enabled ? Colors.white : Colors.grey.shade100,
-        border: Border.all(
-          color: enabled ? AppColors.brandGreen : Colors.grey.shade400,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(12),
+    return TextFormField(
+      controller: controller,
+      enabled: enabled,
+      keyboardType: keyboardType,
+      maxLength: maxLength,
+      maxLines: maxLines,
+      validator: validator,
+      onChanged: onChanged,
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        color: enabled ? Colors.black87 : Colors.grey.shade600,
       ),
-      child: TextFormField(
-        controller: controller,
-        enabled: enabled,
-        keyboardType: keyboardType,
-        maxLength: maxLength,
-        maxLines: maxLines,
-        validator: validator,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-          counterText: "",
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: GoogleFonts.poppins(
+          color: Colors.grey.shade500,
+          fontSize: 14,
         ),
+        labelStyle: GoogleFonts.poppins(
+          color: Colors.grey.shade600,
+          fontSize: 14,
+        ),
+        filled: true,
+        fillColor: enabled ? Colors.white : Colors.grey.shade100,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.brandGreen, width: 2),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+        counterText: "",
       ),
     );
   }
@@ -617,21 +687,36 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.brandGreen, width: 1),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200, width: 1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          hint: Text(hint, style: TextStyle(color: Colors.grey.shade600)),
+          hint: Text(
+            hint,
+            style: GoogleFonts.poppins(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
           isExpanded: true,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: Colors.black87,
+          ),
           items: items.map((item) {
             return DropdownMenuItem(
               value: item,
-              child: Text(getLocalizedText(item)),
+              child: Text(
+                getLocalizedText(item),
+                style: GoogleFonts.poppins(fontSize: 14),
+              ),
             );
           }).toList(),
           onChanged: onChanged,
+          dropdownColor: Colors.white,
         ),
       ),
     );
@@ -643,7 +728,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
       decoration: BoxDecoration(
         color: _villageList.isEmpty ? Colors.grey.shade100 : Colors.white,
         border: Border.all(
-          color: _villageList.isEmpty ? Colors.grey.shade400 : AppColors.brandGreen,
+          color: _villageList.isEmpty ? Colors.grey.shade300 : Colors.grey.shade200,
           width: 1,
         ),
         borderRadius: BorderRadius.circular(12),
@@ -652,19 +737,30 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
         child: DropdownButton<String>(
           hint: Text(
             _villageList.isEmpty ? l10n.enterPincodeToLoadVillages : l10n.selectVillage,
-            style: TextStyle(color: Colors.grey.shade600),
+            style: GoogleFonts.poppins(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
           ),
           value: _selectedVillage,
           isExpanded: true,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: Colors.black87,
+          ),
           items: _villageList.map((v) {
             return DropdownMenuItem(
               value: v,
-              child: Text(v),
+              child: Text(
+                v,
+                style: GoogleFonts.poppins(fontSize: 14),
+              ),
             );
           }).toList(),
           onChanged: _villageList.isEmpty ? null : (v) {
             setState(() => _selectedVillage = v);
           },
+          dropdownColor: Colors.white,
         ),
       ),
     );
@@ -675,23 +771,38 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: Border.all(color: AppColors.brandGreen.withOpacity(0.3), width: 1),
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.brandGreen.withOpacity(0.06),
+            AppColors.brandGreen.withOpacity(0.02),
+          ],
+        ),
+        border: Border.all(color: AppColors.brandGreen.withOpacity(0.15), width: 1),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.location_on, color: AppColors.brandGreen, size: 20),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.brandGreen.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.my_location_rounded, color: AppColors.brandGreen, size: 16),
+              ),
               const SizedBox(width: 8),
               Text(
                 l10n.farmLocationGPS,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: AppColors.brandGreen,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],
@@ -700,8 +811,9 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
           Text(
             l10n.captureFarmLocationDesc,
             style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: Colors.grey.shade700,
+              fontSize: 13,
+              color: Colors.grey.shade600,
+              letterSpacing: 0.2,
             ),
           ),
           const SizedBox(height: 16),
@@ -709,18 +821,18 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
           // Location Status
           if (_farmLatitude != null && _farmLongitude != null) ...[
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.brandGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.brandGreen.withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.brandGreen.withOpacity(0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.check_circle, color: AppColors.brandGreen, size: 18),
+                      Icon(Icons.check_circle_rounded, color: AppColors.brandGreen, size: 18),
                       const SizedBox(width: 8),
                       Text(
                         l10n.locationCaptured,
@@ -732,20 +844,23 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(
                     "${l10n.latitude}: ${_farmLatitude!.toStringAsFixed(6)}",
-                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade700),
+                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     "${l10n.longitude}: ${_farmLongitude!.toStringAsFixed(6)}",
-                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade700),
+                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700),
                   ),
-                  if (_farmLocationAccuracy != null)
+                  if (_farmLocationAccuracy != null) ...[
+                    const SizedBox(height: 4),
                     Text(
                       "${l10n.accuracy}: ${_farmLocationAccuracy!.toStringAsFixed(1)} ${l10n.meters}",
-                      style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade700),
+                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700),
                     ),
+                  ],
                 ],
               ),
             ),
@@ -758,12 +873,12 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withOpacity(0.2)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: Colors.red, size: 18),
+                  Icon(Icons.error_outline_rounded, color: Colors.red.shade600, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -789,7 +904,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                     )
                   : Icon(
-                      _farmLatitude != null ? Icons.refresh : Icons.my_location,
+                      _farmLatitude != null ? Icons.refresh_rounded : Icons.my_location_rounded,
                       size: 18,
                     ),
               label: Text(
@@ -797,6 +912,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
                 ),
               ),
               style: ElevatedButton.styleFrom(
@@ -804,6 +920,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
               ),
             ),
           ),

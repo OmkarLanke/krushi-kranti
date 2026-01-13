@@ -145,23 +145,36 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l10n.kycVerification,
           style: GoogleFonts.poppins(
-            color: Colors.black,
-            fontSize: 18,
+            color: Colors.white,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
           ),
         ),
         centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.brandGreen))
@@ -184,8 +197,9 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                       l10n.verificationSteps,
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: Colors.black87,
+                        letterSpacing: 0.3,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -291,17 +305,17 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                       const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
+                        height: 50,
+                        child: ElevatedButton.icon(
                           onPressed: _navigateToNextStep,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.brandGreen,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
+                          icon: Icon(
+                            _kycStatus?.completedSteps == 0 
+                                ? Icons.play_arrow_rounded 
+                                : Icons.arrow_forward_rounded,
+                            color: Colors.white,
+                            size: 20,
                           ),
-                          child: Text(
+                          label: Text(
                             _kycStatus?.completedSteps == 0 
                                 ? l10n.startVerification 
                                 : l10n.continueVerification,
@@ -309,7 +323,15 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
+                              letterSpacing: 0.3,
                             ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.brandGreen,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
                           ),
                         ),
                       ),
@@ -346,8 +368,9 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
           l10n.yourKycDetails,
           style: GoogleFonts.poppins(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: Colors.black87,
+            letterSpacing: 0.3,
           ),
         ),
         const SizedBox(height: 12),
@@ -418,15 +441,15 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -435,15 +458,22 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: AppColors.brandGreen.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(10),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.brandGreen.withOpacity(0.15),
+                  AppColors.brandGreen.withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: AppColors.brandGreen, size: 22),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,17 +484,19 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
+                    letterSpacing: 0.2,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 ...filtered.map(
                   (line) => Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
+                    padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
                       line,
                       style: GoogleFonts.poppins(
-                        fontSize: 12,
+                        fontSize: 13,
                         color: Colors.grey.shade700,
+                        height: 1.4,
                       ),
                     ),
                   ),
@@ -579,21 +611,21 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
       child: InkWell(
         onTap: isEnabled ? onTap : null,
         borderRadius: BorderRadius.circular(12),
-        child: Container(
+          child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isVerified 
                   ? Colors.green.shade200 
-                  : (isEnabled ? Colors.grey.shade200 : Colors.grey.shade100),
+                  : (isEnabled ? Colors.grey.shade300 : Colors.grey.shade200),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
+                blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
             ],
@@ -602,19 +634,36 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
             children: [
               // Icon
               Container(
-                width: 48,
-                height: 48,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
-                  color: isVerified 
-                      ? Colors.green.shade50 
-                      : (isEnabled ? AppColors.brandGreen.withOpacity(0.1) : Colors.grey.shade100),
+                  gradient: isVerified
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.green.shade50,
+                            Colors.green.shade50.withOpacity(0.5),
+                          ],
+                        )
+                      : (isEnabled
+                          ? LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.brandGreen.withOpacity(0.15),
+                                AppColors.brandGreen.withOpacity(0.05),
+                              ],
+                            )
+                          : null),
+                  color: !isVerified && !isEnabled ? Colors.grey.shade100 : null,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
                   color: isVerified 
-                      ? Colors.green 
-                      : (isEnabled ? AppColors.brandGreen : Colors.grey),
+                      ? Colors.green.shade600
+                      : (isEnabled ? AppColors.brandGreen : Colors.grey.shade400),
                   size: 24,
                 ),
               ),
@@ -629,17 +678,19 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: isEnabled ? Colors.black87 : Colors.grey,
+                        color: isEnabled ? Colors.black87 : Colors.grey.shade600,
+                        letterSpacing: 0.2,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: isVerified ? Colors.green : Colors.grey.shade600,
+                        fontSize: 13,
+                        color: isVerified ? Colors.green.shade700 : Colors.grey.shade600,
+                        height: 1.3,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -647,11 +698,18 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
               ),
               // Status Icon
               if (isVerified)
-                const Icon(Icons.check_circle, color: Colors.green, size: 24)
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 22),
+                )
               else if (isEnabled)
-                const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16)
+                Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey.shade400, size: 16)
               else
-                Icon(Icons.lock, color: Colors.grey.shade400, size: 20),
+                Icon(Icons.lock_rounded, color: Colors.grey.shade400, size: 20),
             ],
           ),
         ),

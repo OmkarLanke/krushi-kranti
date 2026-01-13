@@ -40,38 +40,77 @@ class _SellScreenState extends State<SellScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text(l10n.yourSales, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
-        centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false, 
+        centerTitle: true,
+        title: Text(
+          l10n.yourSales,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () {
+            // Check if we can pop, otherwise navigate to dashboard
+            if (Navigator.canPop(context)) {
+              Navigator.of(context).pop();
+            } else {
+              // Navigate to dashboard/home screen if no previous route
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.dashboard,
+                (route) => false,
+              );
+            }
+          },
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
-      body: FutureBuilder<List<SalesOrderModel>>(
-        future: _ordersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.brandGreen));
-          }
-          if (snapshot.hasError) {
-            return const Center(child: Text("Error loading orders"));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No sales found"));
-          }
+      body: RefreshIndicator(
+        onRefresh: () async => _loadOrders(),
+        color: AppColors.brandGreen,
+        child: FutureBuilder<List<SalesOrderModel>>(
+          future: _ordersFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.brandGreen));
+            }
+            if (snapshot.hasError) {
+              return _buildErrorState(l10n);
+            }
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return _buildEmptyState(l10n);
+            }
 
-          final orders = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(20),
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              return _buildOrderCard(context, orders[index], l10n);
-            },
-          );
-        },
+            final orders = snapshot.data!;
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              itemCount: orders.length,
+              itemBuilder: (context, index) {
+                return _buildOrderCard(context, orders[index], l10n);
+              },
+            );
+          },
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           // Navigate to add order screen
           await Navigator.pushNamed(context, AppRoutes.addOrder);
@@ -79,8 +118,16 @@ class _SellScreenState extends State<SellScreen> {
           _loadOrders();
         },
         backgroundColor: AppColors.brandGreen,
-        child: const Icon(Icons.add, color: Colors.white),
-                    ),
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: Text(
+          "Add Order",
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+      ),
     );
   }
 
@@ -91,80 +138,256 @@ class _SellScreenState extends State<SellScreen> {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.08), 
-              blurRadius: 10, 
-              offset: const Offset(0, 4)
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F8E9),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.brandGreen,
+                    AppColors.brandGreen.withOpacity(0.8),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.brandGreen.withValues(alpha: 0.3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brandGreen.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.inventory_2_outlined, color: AppColors.brandGreen),
-              ),
+              child: const Icon(Icons.inventory_2_rounded, color: Colors.white, size: 22),
+            ),
             const SizedBox(width: 16),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
                     "${l10n.orderId} ${order.id}",
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Colors.black87,
+                      letterSpacing: 0.2,
+                    ),
                   ),
-                  Text(
-                    "${l10n.placedOn} ${order.date}",
-                    style: GoogleFonts.poppins(color: Colors.grey, fontSize: 10),
-                  ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
-                      children: [
-                      _buildMiniTag("${l10n.items}: ${order.items.toString().padLeft(2, '0')}"),
-                      const SizedBox(width: 8),
-                      _buildMiniTag("${l10n.weight}: ${order.weight}"),
-                      const SizedBox(width: 8),
+                    children: [
+                      Icon(Icons.calendar_today_rounded, size: 12, color: Colors.grey.shade600),
+                      const SizedBox(width: 4),
                       Text(
-                        "${l10n.status} : ", 
-                        style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold)
-                      ),
-                      Text(
-                        _getLocalStatus(order.status, l10n),
+                        "${l10n.placedOn} ${order.date}",
                         style: GoogleFonts.poppins(
-                          fontSize: 10, 
-                          color: order.statusColor,
-                          fontWeight: FontWeight.bold
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ],
-                  )
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _buildMiniTag(Icons.shopping_bag_rounded, "${l10n.items}: ${order.items.toString().padLeft(2, '0')}"),
+                      _buildMiniTag(Icons.scale_rounded, "${l10n.weight}: ${order.weight}"),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: order.statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: order.statusColor.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "${l10n.status}: ",
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                            Text(
+                              _getLocalStatus(order.status, l10n),
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: order.statusColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-            
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-            ],
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey.shade400),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildMiniTag(String text) {
-    return Text(
-        text,
-      style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black87),
+  Widget _buildMiniTag(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.grey.shade600),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(AppLocalizations l10n) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.brandGreen.withOpacity(0.1),
+                    AppColors.brandGreen.withOpacity(0.05),
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.shopping_cart_outlined,
+                size: 64,
+                color: AppColors.brandGreen,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              "No Sales Orders",
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade800,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Create your first sales order to get started",
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                letterSpacing: 0.2,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(AppLocalizations l10n) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 64,
+                color: Colors.red.shade400,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              "Error Loading Orders",
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade800,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Please try again later",
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _loadOrders,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: const Text("Retry"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brandGreen,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

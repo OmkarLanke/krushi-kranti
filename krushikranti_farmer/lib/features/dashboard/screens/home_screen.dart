@@ -85,85 +85,106 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF5F7FA),
       
       // --- 1. HEADER ---
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false, 
-        titleSpacing: 24,
+        automaticallyImplyLeading: false,
+        titleSpacing: 20,
         title: Text(
-          l10n.krushiKranti, 
+          l10n.krushiKranti,
           style: GoogleFonts.poppins(
-            color: AppColors.brandGreen,
-            fontSize: 32, 
-            fontWeight: FontWeight.w700, 
-            height: 1.0, 
-            letterSpacing: -0.5,
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            height: 1.0,
+            letterSpacing: 0.5,
           ),
         ),
         actions: [
-          _buildCircleIcon(Icons.search),
+          _buildCircleIcon(Icons.search_rounded),
           const SizedBox(width: 12),
-          _buildCircleIcon(Icons.notifications_none),
-          const SizedBox(width: 24),
+          _buildCircleIcon(Icons.notifications_none_rounded),
+          const SizedBox(width: 20),
         ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
 
       // --- 2. BODY ---
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            
             // A. Weather
             _buildWeatherHeader(l10n),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // B. OTP Notification Banner (if any)
-            if (_notificationService.otpNotifications.isNotEmpty)
+            if (_notificationService.otpNotifications.isNotEmpty) ...[
               ..._buildOtpNotificationBanners(l10n),
+              const SizedBox(height: 20),
+            ],
             
             // C. Banner
             if (isLoadingAssignments)
               _buildLoadingBanner(l10n)
-            else if (isAgentAssigned) 
+            else if (isAgentAssigned)
               _buildFieldOfficerAssignedCard(l10n)
-            else 
+            else
               _buildFieldOfficerPendingBanner(l10n),
             
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
 
-            // C. Quick Action Title
-            Text(
-              l10n.quickAction,
-              style: GoogleFonts.poppins(
-                fontSize: 20, 
-                fontWeight: FontWeight.w700, 
-                color: Colors.black,
+            // D. Quick Action Title
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                l10n.quickAction,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
+                  letterSpacing: 0.3,
+                ),
               ),
             ),
             const SizedBox(height: 16),
 
-            // D. Grid
+            // E. Grid
             _buildQuickActionGrid(context, l10n),
             
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
 
-            // E. Alerts
-            Text(
-              l10n.alerts,
-              style: GoogleFonts.poppins(
-                fontSize: 20, 
-                fontWeight: FontWeight.w700,
-                color: Colors.black,
+            // F. Alerts
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                l10n.alerts,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
+                  letterSpacing: 0.3,
+                ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _buildAlertCard(context),
-            const SizedBox(height: 40), 
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -175,25 +196,50 @@ class _HomeScreenState extends State<HomeScreen> {
   // ===========================================================================
 
   Widget _buildCircleIcon(IconData icon) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        // ✅ FIXED: Updated withValues
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)), 
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          // TODO: Add navigation/action
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
       ),
-      child: Icon(icon, color: Colors.black54, size: 26),
     );
   }
 
   Widget _buildWeatherHeader(AppLocalizations l10n) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.creamBackground,
-        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.creamBackground,
+            AppColors.creamBackground.withOpacity(0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -205,39 +251,45 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "${l10n.hello} Ramesh,", 
+                  "${l10n.hello} Ramesh,",
                   style: GoogleFonts.poppins(
-                    fontSize: 18, 
+                    fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: AppColors.brandGreen,
                     height: 1.2,
+                    letterSpacing: 0.3,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Row(
                   children: [
+                    Icon(
+                      Icons.location_on_rounded,
+                      size: 16,
+                      color: Colors.grey.shade700,
+                    ),
+                    const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        l10n.currentLocation, 
+                        l10n.currentLocation,
                         style: GoogleFonts.poppins(
-                          color: AppColors.textPrimary, 
-                          fontWeight: FontWeight.w500, 
-                          fontSize: 12
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                          letterSpacing: 0.2,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.location_on, size: 14, color: AppColors.textPrimary),
                   ],
                 ),
               ],
             ),
           ),
-
+          const SizedBox(width: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -246,27 +298,40 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "28°", 
+                    "28°",
                     style: GoogleFonts.poppins(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700, 
+                      fontSize: 36,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                       height: 1.0,
+                      letterSpacing: -0.5,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "High: 30° / Low: 15°", 
+                    "High: 30° / Low: 15°",
                     style: GoogleFonts.poppins(
-                      fontSize: 10, 
-                      color: Colors.grey.shade700, 
-                      fontWeight: FontWeight.w600
+                      fontSize: 11,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
                     ),
                   ),
                 ],
               ),
               const SizedBox(width: 12),
-              const Icon(Icons.cloud, size: 48, color: Color(0xFF29B6F6)), 
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.cloud_rounded,
+                  size: 40,
+                  color: Color(0xFF29B6F6),
+                ),
+              ),
             ],
           ),
         ],
@@ -302,32 +367,57 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildFieldOfficerPendingBanner(AppLocalizations l10n) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)], 
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brandGreen.withValues(alpha: 0.4),
-            blurRadius: 12,
+            color: AppColors.brandGreen.withOpacity(0.4),
+            blurRadius: 15,
             offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Column(
         children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.person_add_alt_1_rounded,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 16),
           Text(
             l10n.fieldOfficerAssignMsg,
-            style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             l10n.fieldOfficerSoonMsg,
-            style: GoogleFonts.poppins(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -345,71 +435,144 @@ class _HomeScreenState extends State<HomeScreen> {
     final fieldOfficerPhone = assignment['fieldOfficerPhone']?.toString() ?? '';
     final fieldOfficerPincode = assignment['fieldOfficerPincode']?.toString() ?? '';
 
-    return GestureDetector(
-      onTap: () {
-        _showFieldOfficerDetailsDialog(l10n);
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(color: Colors.grey.withValues(alpha: 0.08), blurRadius: 15, offset: const Offset(0, 4)),
-          ],
-        ),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              radius: 30,
-              backgroundColor: AppColors.creamBackground,
-              child: Icon(Icons.person, color: Colors.brown, size: 32),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.fieldOfficerAssignedMsg,
-                    style: GoogleFonts.poppins(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.bold),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          _showFieldOfficerDetailsDialog(l10n);
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 15,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.brandGreen,
+                      AppColors.brandGreen.withOpacity(0.6),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    fieldOfficerName,
-                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                  if (fieldOfficerPincode.isNotEmpty)
+                  shape: BoxShape.circle,
+                ),
+                child: const CircleAvatar(
+                  radius: 28,
+                  backgroundColor: AppColors.creamBackground,
+                  child: Icon(Icons.person_rounded, color: Colors.brown, size: 30),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      "Pincode: $fieldOfficerPincode",
-                      style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w500),
-                    ),
-                  const SizedBox(height: 4),
-                  if (fieldOfficerPhone.isNotEmpty)
-                    Text(
-                      fieldOfficerPhone,
-                      style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700),
-                    ),
-                  if (fieldOfficerAssignments.length > 1)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        "+ ${fieldOfficerAssignments.length - 1} more",
-                        style: GoogleFonts.poppins(fontSize: 10, color: AppColors.brandGreen, fontWeight: FontWeight.w600),
+                      l10n.fieldOfficerAssignedMsg,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
                       ),
                     ),
-                ],
+                    const SizedBox(height: 6),
+                    Text(
+                      fieldOfficerName,
+                      style: GoogleFonts.poppins(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    if (fieldOfficerPincode.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.pin_drop_rounded,
+                            size: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "Pincode: $fieldOfficerPincode",
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (fieldOfficerPhone.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.phone_rounded,
+                            size: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            fieldOfficerPhone,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (fieldOfficerAssignments.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          "+ ${fieldOfficerAssignments.length - 1} more",
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: AppColors.brandGreen,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.brandGreen, width: 2),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.brandGreen.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.brandGreen.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: AppColors.brandGreen,
+                  size: 18,
+                ),
               ),
-              child: const Icon(Icons.arrow_forward_ios, color: AppColors.brandGreen, size: 18),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -675,91 +838,141 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActionCard(
-    BuildContext context, 
-    IconData icon, 
-    String title, 
-    String? route, 
-    String status, 
-    Color statusColor
+    BuildContext context,
+    IconData icon,
+    String title,
+    String? route,
+    String status,
+    Color statusColor,
   ) {
-    return GestureDetector(
-      onTap: () async {
-        if (route != null && !isNavigating) {
-          setState(() {
-            isNavigating = true;
-          });
-          
-          // Show loading dialog
-          _showLoadingDialog(context);
-          
-          // Small delay to show loading animation
-          await Future.delayed(const Duration(milliseconds: 500));
-          
-          // Hide loading dialog and navigate
-          if (mounted) {
-            Navigator.pop(context); // Close loading dialog
-            await Navigator.pushNamed(context, route);
-            _checkFieldOfficerAssignments();
-            
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          if (route != null && !isNavigating) {
             setState(() {
-              isNavigating = false;
+              isNavigating = true;
             });
-          }
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            // ✅ FIXED: Updated withValues
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.06),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.brandGreen, 
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: Colors.white, size: 24),
-            ),
-            
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Text(
-                title,
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13, height: 1.2),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    status, 
-                    style: GoogleFonts.poppins(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            // Show loading dialog
+            _showLoadingDialog(context);
+
+            // Small delay to show loading animation
+            await Future.delayed(const Duration(milliseconds: 500));
+
+            // Hide loading dialog and navigate
+            if (mounted) {
+              Navigator.pop(context); // Close loading dialog
+              await Navigator.pushNamed(context, route);
+              _checkFieldOfficerAssignments();
+
+              setState(() {
+                isNavigating = false;
+              });
+            }
+          }
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.brandGreen,
+                      AppColors.brandGreen.withOpacity(0.8),
+                    ],
                   ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.brandGreen.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                const Icon(Icons.arrow_circle_right_outlined, color: AppColors.brandGreen, size: 26),
-              ],
-            )
-          ],
+                child: Icon(icon, color: Colors.white, size: 24),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.only(top: 12.0),
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    height: 1.3,
+                    color: Colors.black87,
+                    letterSpacing: 0.2,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.only(top: 12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          status,
+                          style: GoogleFonts.poppins(
+                            color: statusColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandGreen.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppColors.brandGreen,
+                        size: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -771,32 +984,43 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
-                // ✅ FIXED: Updated withValues
                 BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.05), 
-                  blurRadius: 10,
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Row(
               children: [
-                const Icon(Icons.warning_rounded, color: Colors.redAccent, size: 30),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.warning_rounded,
+                    color: Colors.redAccent,
+                    size: 24,
+                  ),
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
                     "Lorem Ipsum is simply dummy text of the printing.",
                     style: GoogleFonts.poppins(
-                      fontSize: 12, 
-                      color: AppColors.alertText, 
-                      fontWeight: FontWeight.w600,
-                      height: 1.3,
-                    ), 
+                      fontSize: 13,
+                      color: AppColors.alertText,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                      letterSpacing: 0.2,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -808,31 +1032,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(width: 12),
 
-        GestureDetector(
-          onTap: () {
-            // TODO: Navigate to ThynkChat
-          },
-          child: Container(
-            width: 64, 
-            height: 64,
-            padding: const EdgeInsets.all(8), 
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.shade300, width: 1.5),
-              boxShadow: [
-                // ✅ FIXED: Updated withValues
-                BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.05), 
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              // TODO: Navigate to ThynkChat
+            },
+            borderRadius: BorderRadius.circular(32),
+            child: Container(
+              width: 64,
+              height: 64,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.grey.shade200,
+                  width: 1.5,
                 ),
-              ],
-            ),
-            child: Image.asset(
-              'assets/images/ai_logo.png',
-              fit: BoxFit.contain,
-              errorBuilder: (c, o, s) => const Icon(Icons.smart_toy, color: AppColors.brandGreen),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Image.asset(
+                'assets/images/ai_logo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (c, o, s) => const Icon(
+                  Icons.smart_toy_rounded,
+                  color: AppColors.brandGreen,
+                  size: 32,
+                ),
+              ),
             ),
           ),
         ),

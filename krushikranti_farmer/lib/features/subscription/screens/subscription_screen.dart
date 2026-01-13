@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
@@ -399,18 +400,38 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final l10n = AppLocalizations.of(context)!;
     
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text(l10n.subscription),
-        backgroundColor: AppColors.brandGreen,
+        title: Text(
+          l10n.subscription,
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        elevation: 0,
         automaticallyImplyLeading: !isSubscribed, // Show back button if not subscribed
         leading: isSubscribed 
             ? IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
         actions: [
           // Show skip button only if not subscribed
           if (!isSubscribed)
@@ -693,17 +714,26 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   Widget _buildBenefitsCard() {
     final l10n = AppLocalizations.of(context)!;
     final benefits = [
-      {'icon': Icons.money_off, 'text': l10n.benefitZeroInterest},
-      {'icon': Icons.cloud, 'text': l10n.benefitTimelyWeather},
-      {'icon': Icons.trending_up, 'text': l10n.benefitDirectRates},
-      {'icon': Icons.wb_sunny, 'text': l10n.benefitWeatherUpdates},
-      {'icon': Icons.shopping_cart, 'text': l10n.benefitPremiumMarket},
-      {'icon': Icons.support_agent, 'text': l10n.benefitExpertAdvice},
+      {'icon': Icons.money_off_rounded, 'text': l10n.benefitZeroInterest},
+      {'icon': Icons.cloud_rounded, 'text': l10n.benefitTimelyWeather},
+      {'icon': Icons.trending_up_rounded, 'text': l10n.benefitDirectRates},
+      {'icon': Icons.wb_sunny_rounded, 'text': l10n.benefitWeatherUpdates},
+      {'icon': Icons.shopping_cart_rounded, 'text': l10n.benefitPremiumMarket},
+      {'icon': Icons.support_agent_rounded, 'text': l10n.benefitExpertAdvice},
     ];
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -711,25 +741,55 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.star, color: Colors.amber),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.amber.shade50,
+                        Colors.amber.shade50.withOpacity(0.5),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.star_rounded, color: Colors.amber, size: 22),
+                ),
+                const SizedBox(width: 12),
                 Text(
                   l10n.subscriptionBenefits,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                    letterSpacing: 0.3,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             ...benefits.map((benefit) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.only(bottom: 14),
               child: Row(
                 children: [
-                  Icon(benefit['icon'] as IconData, color: AppColors.brandGreen),
-                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandGreen.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(benefit['icon'] as IconData, color: AppColors.brandGreen, size: 20),
+                  ),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Text(
                       benefit['text'] as String,
-                      style: const TextStyle(fontSize: 14),
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.black87,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -737,20 +797,32 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             )).toList(),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.brandGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.brandGreen.withOpacity(0.15),
+                    AppColors.brandGreen.withOpacity(0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.brandGreen.withOpacity(0.2),
+                  width: 1,
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     l10n.only999Year,
-                    style: const TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.brandGreen,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ],
@@ -839,32 +911,39 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final canSubscribe = _profileCompletion?['canSubscribe'] ?? true;
 
     return SizedBox(
-      height: 56,
-      child: ElevatedButton(
+      height: 50,
+      child: ElevatedButton.icon(
         onPressed: _isPaymentInProgress || !canSubscribe ? null : _initiatePayment,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.brandGreen,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        child: _isPaymentInProgress
+        icon: _isPaymentInProgress
             ? const SizedBox(
-                height: 24,
-                width: 24,
+                height: 20,
+                width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : Builder(
-                builder: (context) {
-                  final l10n = AppLocalizations.of(context)!;
-                  return Text(
-                    '${l10n.subscribeNow} - ${l10n.only999Year}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  );
-                },
+            : const Icon(Icons.payment_rounded, color: Colors.white, size: 22),
+        label: Builder(
+          builder: (context) {
+            final l10n = AppLocalizations.of(context)!;
+            return Text(
+              '${l10n.subscribeNow} - ${l10n.only999Year}',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                letterSpacing: 0.3,
               ),
+            );
+          },
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.brandGreen,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 0,
+        ),
       ),
     );
   }

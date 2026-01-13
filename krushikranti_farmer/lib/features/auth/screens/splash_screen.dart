@@ -32,8 +32,16 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     if (token == null || token.isEmpty) {
-      // No token → fresh user → go to language selection/login flow
-      Navigator.pushReplacementNamed(context, AppRoutes.languageSelection);
+      // No token → check if language preference exists
+      final savedLanguage = await StorageService.getLanguage();
+      
+      if (savedLanguage == null || savedLanguage.isEmpty) {
+        // First time user → show language selection screen
+        Navigator.pushReplacementNamed(context, AppRoutes.languageSelection);
+      } else {
+        // Language already selected → go directly to login
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+      }
       return;
     }
 
