@@ -192,28 +192,28 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                   Expanded(
                     flex: 4, 
                     child: TextFormField(
-                      controller: _quantityController,
-                      keyboardType: TextInputType.number,
+                          controller: _quantityController,
+                          keyboardType: TextInputType.number,
                       style: GoogleFonts.poppins(fontSize: 14),
-                      decoration: _inputDecoration("e.g. 100"),
-                      validator: (v) => v!.isEmpty ? l10n.fillAllFields : null,
+                          decoration: _inputDecoration("e.g. 100"),
+                          validator: (v) => v!.isEmpty ? l10n.fillAllFields : null,
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     flex: 3, 
                     child: DropdownButtonFormField<String>(
-                      isExpanded: true,
-                      value: _selectedUnit,
+                          isExpanded: true,
+                          value: _selectedUnit,
                       style: GoogleFonts.poppins(fontSize: 14),
-                      decoration: _inputDecoration("Unit"),
+                          decoration: _inputDecoration("Unit"),
                       icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.brandGreen),
                       items: _units.map((u) => DropdownMenuItem(
                         value: u,
                         child: Text(u, style: GoogleFonts.poppins(fontSize: 14)),
                       )).toList(),
-                      onChanged: (v) => setState(() => _selectedUnit = v),
-                      validator: (v) => v == null ? "" : null,
+                          onChanged: (v) => setState(() => _selectedUnit = v),
+                          validator: (v) => v == null ? "" : null,
                     ),
                   ),
                 ],
@@ -270,11 +270,11 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
             title,
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w600,
-              fontSize: 14,
+          fontSize: 14, 
               color: Colors.grey.shade700,
               letterSpacing: 0.5,
             ),
-          ),
+        ),
         ],
       ),
     );
@@ -307,7 +307,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
         borderSide: BorderSide(color: AppColors.brandGreen, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Colors.red, width: 1),
       ),
       focusedErrorBorder: OutlineInputBorder(

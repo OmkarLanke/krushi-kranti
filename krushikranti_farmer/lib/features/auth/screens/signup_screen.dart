@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
@@ -205,41 +206,67 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          translations[appLang]!["signupNow"]!,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.all(20),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
 
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new),
-                  onPressed: () => Navigator.pop(context),
-                ),
-
-                const SizedBox(height: 10),
-
                 Text(
                   translations[appLang]!["hey"]!,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                    letterSpacing: 0.3,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   translations[appLang]!["signupNow"]!,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.brandGreen,
+                    letterSpacing: 0.3,
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
                 // --- 1. USERNAME FIELD (ADDED BACK) ---
                 _label(translations[appLang]!["username"]!),
@@ -297,32 +324,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 // SUBMIT BUTTON
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  height: 50,
+                  child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.black,
+                      backgroundColor: AppColors.brandGreen,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
                     ),
-                    onPressed: _isLoading ? null : validateForm, // ✅ Calls updated validation
-                    child: _isLoading
+                    icon: _isLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : Text(
-                            translations[appLang]!["getOtp"]!,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                        : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                    label: Text(
+                      translations[appLang]!["getOtp"]!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    onPressed: _isLoading ? null : validateForm,
                   ),
                 ),
 
@@ -338,19 +369,48 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget _label(String text) {
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 13,
-        color: AppColors.textSecondary,
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+        letterSpacing: 0.2,
       ),
     );
   }
 
   Widget _errorText(String msg) {
     return Padding(
-      padding: const EdgeInsets.only(top: 4, left: 6),
-      child: Text(
-        msg,
-        style: const TextStyle(color: Colors.red, fontSize: 12),
+      padding: const EdgeInsets.only(top: 8, left: 0),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.shade200, width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.red.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.error_outline_rounded, size: 16, color: Colors.red.shade700),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                msg,
+                style: GoogleFonts.poppins(
+                  color: Colors.red.shade700,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -368,19 +428,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.brandGreen, width: 1),
-        borderRadius: BorderRadius.circular(25),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: AppColors.brandGreen),
-          const SizedBox(width: 10),
+          Container(
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: AppColors.brandGreen),
+          ),
           Expanded(
             child: TextField(
               controller: controller,
               obscureText: isPassword ? obscureText : false,
               keyboardType: keyboardType,
               maxLength: maxLength,
+              style: GoogleFonts.poppins(fontSize: 14),
               inputFormatters: maxLength != null
                   ? [
                       FilteringTextInputFormatter.digitsOnly,
@@ -390,12 +459,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
               decoration: InputDecoration(
                 hintText: hint,
                 border: InputBorder.none,
-                hintStyle: const TextStyle(color: AppColors.textSecondary),
-                counterText: '', // Hide character counter
+                hintStyle: GoogleFonts.poppins(
+                  color: Colors.grey.shade400,
+                  fontSize: 14,
+                ),
+                counterText: '',
                 suffixIcon: isPassword && onTogglePassword != null
                     ? IconButton(
                         icon: Icon(
-                          obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
                           color: AppColors.brandGreen,
                           size: 20,
                         ),

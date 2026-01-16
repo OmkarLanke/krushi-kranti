@@ -233,23 +233,23 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: SizedBox(
-              width: double.infinity,
+            width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  // Navigate to PAN verification
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const PanVerificationScreen()),
-                  );
-                },
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                // Navigate to PAN verification
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PanVerificationScreen()),
+                );
+              },
                 icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
                 label: Text(
-                  l10n.continueToPan,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                l10n.continueToPan,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
                 ),
@@ -692,7 +692,7 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
-                  ),
+                        ),
                 ),
               ),
               

@@ -212,52 +212,52 @@ class _AddCropScreenState extends State<AddCropScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Farm Selection (if multiple farms)
-            if (farms.length > 1) ...[
+                  // Farm Selection (if multiple farms)
+                  if (farms.length > 1) ...[
               _buildSectionHeader(Icons.agriculture_rounded, l10n.selectFarm),
               const SizedBox(height: 12),
-              DropdownButtonFormField<int>(
-                decoration: _inputDecoration(l10n.farmLabel),
-                value: selectedFarmId,
-                items: farms.map((farm) => DropdownMenuItem(
-                  value: farm['id'] as int,
-                  child: Text(farm['name'] as String),
-                )).toList(),
-                onChanged: (val) => setState(() => selectedFarmId = val),
-              ),
-              const SizedBox(height: 20),
-            ],
-            
+                    DropdownButtonFormField<int>(
+                      decoration: _inputDecoration(l10n.farmLabel),
+                      value: selectedFarmId,
+                      items: farms.map((farm) => DropdownMenuItem(
+                        value: farm['id'] as int,
+                        child: Text(farm['name'] as String),
+                      )).toList(),
+                      onChanged: (val) => setState(() => selectedFarmId = val),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  
             // Crop Type Section
             _buildSectionHeader(Icons.category_rounded, l10n.selectCategory),
             const SizedBox(height: 12),
-            DropdownButtonFormField<int>(
-              key: ValueKey(selectedCropTypeId ?? 'type_reset'),
-              decoration: _inputDecoration(l10n.categoryLabel),
-              value: selectedCropTypeId,
-              items: cropTypes.map((type) => DropdownMenuItem(
-                value: type['id'] as int,
-                child: Text(type['displayName'] as String),
+                  DropdownButtonFormField<int>(
+                    key: ValueKey(selectedCropTypeId ?? 'type_reset'),
+                    decoration: _inputDecoration(l10n.categoryLabel),
+                    value: selectedCropTypeId,
+                    items: cropTypes.map((type) => DropdownMenuItem(
+                      value: type['id'] as int,
+                      child: Text(type['displayName'] as String),
               )).toList(),
-              onChanged: (val) {
-                setState(() {
-                  selectedCropTypeId = val;
-                  selectedCropTypeName = cropTypes.firstWhere((t) => t['id'] == val)['displayName'] as String;
-                  selectedCropNameId = null;
-                  selectedCropName = null;
-                  cropNames = [];
-                });
-                if (val != null) {
-                  _loadCropNames(val);
-                }
-              },
+                    onChanged: (val) {
+                      setState(() {
+                        selectedCropTypeId = val;
+                        selectedCropTypeName = cropTypes.firstWhere((t) => t['id'] == val)['displayName'] as String;
+                        selectedCropNameId = null;
+                        selectedCropName = null;
+                        cropNames = [];
+                      });
+                      if (val != null) {
+                        _loadCropNames(val);
+                      }
+                    },
             ),
             const SizedBox(height: 20),
             
             // Crop Name Section
             _buildSectionHeader(Icons.grass_rounded, l10n.selectCropName),
             const SizedBox(height: 12),
-            _isLoadingCropNames
+                  _isLoadingCropNames
                 ? Container(
                     padding: const EdgeInsets.all(20.0),
                     decoration: BoxDecoration(
@@ -265,29 +265,29 @@ class _AddCropScreenState extends State<AddCropScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Center(
-                      child: CircularProgressIndicator(color: AppColors.brandGreen),
+                          child: CircularProgressIndicator(color: AppColors.brandGreen),
                     ),
                   )
-                : DropdownButtonFormField<int>(
-                    key: ValueKey("${selectedCropTypeId}_${selectedCropNameId ?? 'name'}"),
-                    decoration: _inputDecoration(l10n.cropNameLabel),
-                    value: selectedCropNameId,
-                    items: cropNames.map((name) => DropdownMenuItem(
-                      value: name['id'] as int,
-                      child: Text(name['displayName'] as String ?? name['name'] as String),
+                      : DropdownButtonFormField<int>(
+                          key: ValueKey("${selectedCropTypeId}_${selectedCropNameId ?? 'name'}"),
+                          decoration: _inputDecoration(l10n.cropNameLabel),
+                          value: selectedCropNameId,
+                          items: cropNames.map((name) => DropdownMenuItem(
+                            value: name['id'] as int,
+                            child: Text(name['displayName'] as String ?? name['name'] as String),
                     )).toList(),
-                    onChanged: selectedCropTypeId == null || cropNames.isEmpty
-                        ? null
-                        : (val) {
-                            setState(() {
-                              selectedCropNameId = val;
-                              if (val != null) {
-                                final selected = cropNames.firstWhere((n) => n['id'] == val);
-                                selectedCropName = selected['displayName'] as String? ?? selected['name'] as String;
-                              }
-                            });
-                          },
-                  ),
+                          onChanged: selectedCropTypeId == null || cropNames.isEmpty
+                              ? null
+                              : (val) {
+                                  setState(() {
+                                    selectedCropNameId = val;
+                                    if (val != null) {
+                                      final selected = cropNames.firstWhere((n) => n['id'] == val);
+                                      selectedCropName = selected['displayName'] as String? ?? selected['name'] as String;
+                                    }
+                                  });
+                                },
+            ),
             const SizedBox(height: 20),
 
             // Land Area Section
@@ -296,7 +296,7 @@ class _AddCropScreenState extends State<AddCropScreen> {
             TextFormField(
               controller: acresController,
               keyboardType: TextInputType.number,
-              decoration: _inputDecoration(l10n.acresHint).copyWith(suffixText: l10n.acresSuffix),
+                    decoration: _inputDecoration(l10n.acresHint).copyWith(suffixText: l10n.acresSuffix),
             ),
             const SizedBox(height: 20),
 
@@ -355,7 +355,7 @@ class _AddCropScreenState extends State<AddCropScreen> {
             SizedBox(
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: (farms.isEmpty || _isLoading) ? null : () => _saveCrop(l10n),
+                      onPressed: (farms.isEmpty || _isLoading) ? null : () => _saveCrop(l10n),
                 icon: _isLoading
                     ? const SizedBox(
                         height: 20,
@@ -382,7 +382,7 @@ class _AddCropScreenState extends State<AddCropScreen> {
                   elevation: 0,
                 ),
               ),
-            ),
+                ),
             const SizedBox(height: 20),
           ],
         ),

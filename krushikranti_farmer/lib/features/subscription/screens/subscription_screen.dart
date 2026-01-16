@@ -364,18 +364,39 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           children: [
             const Icon(Icons.check_circle, color: Colors.green),
             const SizedBox(width: 8),
-            Text(title),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
-        content: Text(message),
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(fontSize: 14),
+        ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.brandGreen,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            child: const Text('Continue'),
+            child: Text(
+              'Continue',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -925,19 +946,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               )
             : const Icon(Icons.payment_rounded, color: Colors.white, size: 22),
         label: Builder(
-          builder: (context) {
-            final l10n = AppLocalizations.of(context)!;
-            return Text(
-              '${l10n.subscribeNow} - ${l10n.only999Year}',
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Text(
+                    '${l10n.subscribeNow} - ${l10n.only999Year}',
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
                 letterSpacing: 0.3,
               ),
-            );
-          },
-        ),
+                  );
+                },
+              ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.brandGreen,
           foregroundColor: Colors.white,

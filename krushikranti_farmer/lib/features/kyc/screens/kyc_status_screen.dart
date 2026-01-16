@@ -611,7 +611,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
       child: InkWell(
         onTap: isEnabled ? onTap : null,
         borderRadius: BorderRadius.circular(12),
-          child: Container(
+        child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,

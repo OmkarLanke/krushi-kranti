@@ -209,11 +209,11 @@ class _FarmListScreenState extends State<FarmListScreen> {
             color: Colors.transparent,
             child: InkWell(
               onTap: () async {
-                final result = await Navigator.pushNamed(context, AppRoutes.addFarm);
-                if (result == true) {
-                  _loadFarms(); // Refresh list after adding
-                }
-              },
+              final result = await Navigator.pushNamed(context, AppRoutes.addFarm);
+              if (result == true) {
+                _loadFarms(); // Refresh list after adding
+              }
+            },
               borderRadius: BorderRadius.circular(20),
               child: Container(
                 margin: const EdgeInsets.only(right: 16),
@@ -236,8 +236,8 @@ class _FarmListScreenState extends State<FarmListScreen> {
                 AppColors.brandGreen,
                 AppColors.brandGreen.withOpacity(0.8),
               ],
-            ),
-          ),
+                              ),
+                            ),
         ),
       ),
       body: _isLoading
@@ -326,36 +326,36 @@ class _FarmListScreenState extends State<FarmListScreen> {
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
                           letterSpacing: 0.2,
-                        ),
-                      ),
+                  ),
+                ),
                       if (farm.isVerified == true) ...[
                         const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.brandGreen.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandGreen.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                               Icon(Icons.verified, size: 12, color: AppColors.brandGreen),
-                              const SizedBox(width: 4),
-                              Text(
-                                l10n.verified,
-                                style: GoogleFonts.poppins(
+                        const SizedBox(width: 4),
+                        Text(
+                          l10n.verified,
+                          style: GoogleFonts.poppins(
                                   fontSize: 11,
-                                  color: AppColors.brandGreen,
+                            color: AppColors.brandGreen,
                                   fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                          ),
+                        ),
                             ],
                           ),
                         ),
                       ],
-                    ],
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -404,15 +404,15 @@ class _FarmListScreenState extends State<FarmListScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        l10n.main,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
+                  Text(
+                    l10n.main,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppColors.brandGreen,
                           letterSpacing: 0.2,
-                        ),
-                      ),
+                    ),
+                  ),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -444,15 +444,15 @@ class _FarmListScreenState extends State<FarmListScreen> {
                       color: Colors.grey.shade600,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      l10n.landDetailsSection,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
+              Text(
+                l10n.landDetailsSection,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade700,
                         letterSpacing: 0.5,
-                      ),
-                    ),
+                ),
+              ),
                   ],
                 ),
               ),
@@ -494,15 +494,15 @@ class _FarmListScreenState extends State<FarmListScreen> {
                       color: Colors.grey.shade600,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      l10n.collateralSection,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
+              Text(
+                l10n.collateralSection,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade700,
                         letterSpacing: 0.5,
-                      ),
-                    ),
+                ),
+              ),
                   ],
                 ),
               ),
@@ -569,7 +569,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
                         Text(
                           l10n.farmLocationGPS,
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
+                            fontSize: 14,                 
                             fontWeight: FontWeight.w600,
                             color: AppColors.brandGreen,
                             letterSpacing: 0.2,
@@ -663,25 +663,25 @@ class _FarmListScreenState extends State<FarmListScreen> {
 
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
+              decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.brandGreen.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
+                border: Border.all(
+                  color: AppColors.brandGreen.withOpacity(0.2),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
+                    blurRadius: 8,
             offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
           Row(
             children: [
               Container(
@@ -693,130 +693,130 @@ class _FarmListScreenState extends State<FarmListScreen> {
                 child: Icon(Icons.person_rounded, size: 14, color: AppColors.brandGreen),
               ),
               const SizedBox(width: 8),
-              Text(
-                'Field Officer Assign',
-                style: GoogleFonts.poppins(
+                  Text(
+                    'Field Officer Assign',
+                    style: GoogleFonts.poppins(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.brandGreen,
-                  letterSpacing: 0.2,
-                ),
-              ),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.brandGreen,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
             ],
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
+                  Row(
+                    children: [
               Expanded(
-                child: Text(
-                  fieldOfficerName,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                        child: Text(
+                          fieldOfficerName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                     color: Colors.black87,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(
+                        decoration: BoxDecoration(
                   color: const Color(0xFF4FC3F7),
                   borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'ASSIGNED',
-                  style: GoogleFonts.poppins(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    letterSpacing: 0.3,
+                        ),
+                        child: Text(
+                          'ASSIGNED',
+                          style: GoogleFonts.poppins(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ],
-          ),
           if (fieldOfficerPhone.isNotEmpty || fieldOfficerPincode.isNotEmpty || assignedDateStr.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Wrap(
+                  Wrap(
               spacing: 12,
               runSpacing: 6,
-              children: [
-                if (fieldOfficerPhone.isNotEmpty)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (fieldOfficerPhone.isNotEmpty)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                       Icon(Icons.phone_rounded, size: 12, color: Colors.grey.shade600),
                       const SizedBox(width: 4),
-                      Text(
-                        fieldOfficerPhone,
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
+                            Text(
+                              fieldOfficerPhone,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
                           color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                if (fieldOfficerPincode.isNotEmpty)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+                      if (fieldOfficerPincode.isNotEmpty)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                       Icon(Icons.location_on_rounded, size: 12, color: Colors.grey.shade600),
                       const SizedBox(width: 4),
-                      Text(
-                        fieldOfficerPincode,
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
+                            Text(
+                              fieldOfficerPincode,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
                           color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                if (assignedDateStr.isNotEmpty)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+                      if (assignedDateStr.isNotEmpty)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                       Icon(Icons.calendar_today_rounded, size: 12, color: Colors.grey.shade600),
                       const SizedBox(width: 4),
-                      Text(
-                        assignedDateStr,
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
+                            Text(
+                              assignedDateStr,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
                           color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
                     ],
                   ),
-              ],
-            ),
           ],
-        ],
-      ),
+                ],
+          ),
     );
   }
 
   Widget _buildNoFieldOfficerCard(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
+              decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.brandGreen.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
+                border: Border.all(
+                  color: AppColors.brandGreen.withOpacity(0.2),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
+                    blurRadius: 8,
             offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+                  ),
+                ],
+              ),
       child: Row(
         children: [
           Container(
@@ -829,33 +829,33 @@ class _FarmListScreenState extends State<FarmListScreen> {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Field Officer Assign',
-                  style: GoogleFonts.poppins(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Field Officer Assign',
+                    style: GoogleFonts.poppins(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.brandGreen,
-                    letterSpacing: 0.2,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.brandGreen,
+                      letterSpacing: 0.2,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 4),
-                Text(
-                  'Not Assigned',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+                  Text(
+                    'Not Assigned',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
         ],
-      ),
-    );
+          ),
+        );
   }
 
   Widget _buildEmptyState(AppLocalizations l10n) {

@@ -170,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               colors: [
                 AppColors.brandGreen,
                 AppColors.brandGreen.withOpacity(0.8),
-              ],
+        ],
             ),
           ),
         ),
@@ -195,63 +195,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     children: [
-                      _buildMenuItem(Icons.badge_outlined, l10n.myDetails, onTap: () {
-                        Navigator.pushNamed(context, AppRoutes.myDetails);
-                      }),
+            _buildMenuItem(Icons.badge_outlined, l10n.myDetails, onTap: () {
+              Navigator.pushNamed(context, AppRoutes.myDetails);
+            }),
                       _buildMenuItemDivider(),
-                      _buildMenuItem(Icons.agriculture_outlined, l10n.farmDetails, onTap: () {
-                        Navigator.pushNamed(context, AppRoutes.farmList);
-                      }),
+            _buildMenuItem(Icons.agriculture_outlined, l10n.farmDetails, onTap: () {
+              Navigator.pushNamed(context, AppRoutes.farmList);
+            }),
                       _buildMenuItemDivider(),
-                      _buildMenuItem(Icons.grass, l10n.cropDetails, onTap: () {
-                        Navigator.pushNamed(context, AppRoutes.cropList);
-                      }),
+            _buildMenuItem(Icons.grass, l10n.cropDetails, onTap: () {
+              Navigator.pushNamed(context, AppRoutes.cropList);
+            }),
                     ],
                   ),
                   
                   const SizedBox(height: 20),
-                  
+
                   // Services Section
                   _buildSectionTitle("Services", l10n),
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     children: [
-                      _buildSubscriptionMenuItem(),
+            _buildSubscriptionMenuItem(),
                       _buildMenuItemDivider(),
                       _buildKycMenuItem(),
                     ],
                   ),
                   
                   const SizedBox(height: 20),
-                  
+            
                   // Financial Section
                   _buildSectionTitle("Financial", l10n),
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     children: [
-                      _buildMenuItem(Icons.account_balance_outlined, l10n.bankAccount, onTap: () {}),
+            _buildMenuItem(Icons.account_balance_outlined, l10n.bankAccount, onTap: () {}),
                       _buildMenuItemDivider(),
                       _buildMenuItem(Icons.account_balance_wallet_outlined, l10n.finance, onTap: () {}),
                     ],
                   ),
-                  
+            
                   const SizedBox(height: 20),
-                  
+            
                   // Support Section
                   _buildSectionTitle("Support", l10n),
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     children: [
-                      _buildMenuItem(Icons.help_outline, l10n.help, onTap: () {}),
+            _buildMenuItem(Icons.help_outline, l10n.help, onTap: () {}),
                       _buildMenuItemDivider(),
-                      _buildMenuItem(Icons.info_outline, l10n.about, onTap: () {}),
+            _buildMenuItem(Icons.info_outline, l10n.about, onTap: () {}),
                     ],
                   ),
-                  
+            
                   const SizedBox(height: 32),
 
-                  // --- 3. LOGOUT BUTTON ---
-                  _buildLogoutButton(context, l10n),
+            // --- 3. LOGOUT BUTTON ---
+            _buildLogoutButton(context, l10n),
                   const SizedBox(height: 32), 
                 ],
               ),
@@ -281,15 +281,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: _isLoading
           ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
+        child: Padding(
+          padding: EdgeInsets.all(20.0),
                 child: CircularProgressIndicator(color: AppColors.brandGreen),
-              ),
+        ),
             )
           : Row(
-              children: [
+      children: [
                 // Avatar with gradient border
-                Container(
+        Container(
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -303,50 +303,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Container(
                     width: 80,
                     height: 80,
-                    decoration: BoxDecoration(
+          decoration: BoxDecoration(
                       color: Colors.grey.shade100,
                       shape: BoxShape.circle,
-                      image: hasImage
-                          ? DecorationImage(
-                              image: FileImage(File(userPicPath)),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                    ),
-                    child: !hasImage
+            image: hasImage 
+              ? DecorationImage(
+                  image: FileImage(File(userPicPath)),
+                  fit: BoxFit.cover,
+                )
+              : null,
+          ),
+          child: !hasImage 
                         ? Icon(
                             Icons.person,
                             size: 45,
                             color: Colors.grey.shade400,
                           )
-                        : null,
-                  ),
+              : null,
+        ),
                 ),
                 const SizedBox(width: 20),
-                
-                // Name & Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
+        
+        // Name & Info
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
                           Expanded(
-                            child: Text(
-                              userName,
-                              style: GoogleFonts.poppins(
+                    child: Text(
+                      userName, 
+                      style: GoogleFonts.poppins(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black87,
                                 letterSpacing: 0.3,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
                       ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
                       const SizedBox(height: 6),
-                      if (userEmail.isNotEmpty)
+              if (userEmail.isNotEmpty)
                         Row(
                           children: [
                             Icon(
@@ -357,17 +357,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                userEmail,
-                                style: GoogleFonts.poppins(
+                  userEmail, 
+                  style: GoogleFonts.poppins(
                                   fontSize: 13,
                                   color: Colors.grey.shade600,
                                   fontWeight: FontWeight.w400,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
-                        ),
+                ),
+            ],
+          ),
                     ],
                   ),
                 ),
@@ -427,7 +427,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+      onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -448,15 +448,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  title,
-                  style: GoogleFonts.poppins(
+        title,
+        style: GoogleFonts.poppins(
                     fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+          fontWeight: FontWeight.w500, 
+          color: Colors.black87,
                     letterSpacing: 0.2,
                   ),
-                ),
-              ),
+        ),
+      ),
               Icon(
                 Icons.chevron_right,
                 color: Colors.grey.shade400,
@@ -484,9 +484,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(context, AppRoutes.subscription);
-        },
+      onTap: () {
+        Navigator.pushNamed(context, AppRoutes.subscription);
+      },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -494,39 +494,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
+        decoration: BoxDecoration(
                   color: _isSubscribed
                       ? Colors.green.shade50
                       : Colors.orange.shade50,
                   borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  _isSubscribed ? Icons.verified : Icons.card_membership,
+        ),
+        child: Icon(
+          _isSubscribed ? Icons.verified : Icons.card_membership,
                   color: _isSubscribed ? Colors.green.shade700 : Colors.orange.shade700,
                   size: 22,
-                ),
-              ),
+        ),
+      ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.subscription,
-                      style: GoogleFonts.poppins(
+        l10n.subscription,
+        style: GoogleFonts.poppins(
                         fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
                         letterSpacing: 0.2,
-                      ),
-                    ),
+        ),
+      ),
                     const SizedBox(height: 4),
                     Text(
                       _isSubscribed
                           ? l10n.active
                           : "${l10n.subscribeNow} - ${l10n.only999Year}",
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
                         color: _isSubscribed
                             ? Colors.green.shade700
                             : Colors.orange.shade700,
@@ -534,8 +534,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ],
-                ),
-              ),
+        ),
+      ),
               _isSubscribed
                   ? Container(
                       padding: const EdgeInsets.all(6),
@@ -549,20 +549,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         size: 20,
                       ),
                     )
-                  : Container(
+          : Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
+              decoration: BoxDecoration(
                         color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: Colors.orange.shade200,
                           width: 1,
                         ),
-                      ),
-                      child: Text(
-                        l10n.subscribeNow,
-                        style: GoogleFonts.poppins(
+              ),
+              child: Text(
+                l10n.subscribeNow,
+                style: GoogleFonts.poppins(
                           fontSize: 11,
                           color: Colors.orange.shade700,
                           fontWeight: FontWeight.w600,
@@ -570,9 +570,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
             ],
-          ),
-        ),
-      ),
+                ),
+              ),
+            ),
     );
   }
 
@@ -580,14 +580,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isComplete = _kycStatus?.isComplete ?? false;
     final completedSteps = _kycStatus?.completedSteps ?? 0;
-
+    
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
+      onTap: () {
           Navigator.pushNamed(context, AppRoutes.kycStatus)
               .then((_) => _loadKycStatus());
-        },
+      },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -595,13 +595,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
+        decoration: BoxDecoration(
                   color: isComplete
                       ? Colors.green.shade50
                       : Colors.orange.shade50,
                   borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
+        ),
+        child: Icon(
                   isComplete
                       ? Icons.verified
                       : Icons.verified_user_outlined,
@@ -609,31 +609,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ? Colors.green.shade700
                       : Colors.orange.shade700,
                   size: 22,
-                ),
-              ),
+        ),
+      ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.kyc,
-                      style: GoogleFonts.poppins(
+        l10n.kyc,
+        style: GoogleFonts.poppins(
                         fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
                         letterSpacing: 0.2,
-                      ),
-                    ),
+        ),
+      ),
                     const SizedBox(height: 4),
                     Text(
-                      isComplete
-                          ? l10n.kycComplete
-                          : (completedSteps > 0
-                              ? '$completedSteps ${l10n.of3StepsCompleted}'
-                              : l10n.kycPending),
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
+        isComplete 
+            ? l10n.kycComplete 
+            : (completedSteps > 0 
+                ? '$completedSteps ${l10n.of3StepsCompleted}' 
+                : l10n.kycPending),
+        style: GoogleFonts.poppins(
+          fontSize: 12,
                         color: isComplete
                             ? Colors.green.shade700
                             : Colors.orange.shade700,
@@ -641,8 +641,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ],
-                ),
-              ),
+        ),
+      ),
               isComplete
                   ? Container(
                       padding: const EdgeInsets.all(6),
@@ -656,30 +656,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         size: 20,
                       ),
                     )
-                  : Container(
+          : Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
+              decoration: BoxDecoration(
                         color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: Colors.orange.shade200,
                           width: 1,
                         ),
-                      ),
-                      child: Text(
-                        l10n.startVerification,
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
+              ),
+              child: Text(
+                l10n.startVerification,
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
                           color: Colors.orange.shade700,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
             ],
-          ),
-        ),
-      ),
+                ),
+              ),
+            ),
     );
   }
 
@@ -699,40 +699,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          _showLanguageSelectionDialog();
-        },
+      onTap: () {
+        _showLanguageSelectionDialog();
+      },
         borderRadius: BorderRadius.circular(20),
-        child: Container(
+      child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
+        decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
               color: Colors.white.withOpacity(0.3),
-              width: 1,
-            ),
+            width: 1,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.language,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.language,
                 size: 18,
                 color: Colors.white,
-              ),
+            ),
               const SizedBox(width: 6),
-              Text(
-                currentLangCode,
-                style: GoogleFonts.poppins(
+            Text(
+              currentLangCode,
+              style: GoogleFonts.poppins(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w600,
                   color: Colors.white,
                   letterSpacing: 0.5,
                 ),
               ),
             ],
-          ),
+            ),
         ),
       ),
     );
@@ -756,10 +756,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                ),
+              ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+                mainAxisSize: MainAxisSize.min,
+                children: [
                     Text(
                       "Select Language",
                       style: GoogleFonts.poppins(
@@ -770,49 +770,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    _buildLanguageOption(
-                      context: dialogContext,
-                      code: "en",
-                      name: "English",
-                      selectedLang: selectedLang,
-                      onTap: () {
-                        setState(() {
-                          selectedLang = "en";
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    _buildLanguageOption(
-                      context: dialogContext,
-                      code: "hi",
-                      name: "हिंदी",
-                      selectedLang: selectedLang,
-                      onTap: () {
-                        setState(() {
-                          selectedLang = "hi";
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    _buildLanguageOption(
-                      context: dialogContext,
-                      code: "mr",
-                      name: "मराठी",
-                      selectedLang: selectedLang,
-                      onTap: () {
-                        setState(() {
-                          selectedLang = "mr";
-                        });
-                      },
-                    ),
+                  _buildLanguageOption(
+                    context: dialogContext,
+                    code: "en",
+                    name: "English",
+                    selectedLang: selectedLang,
+                    onTap: () {
+                      setState(() {
+                        selectedLang = "en";
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildLanguageOption(
+                    context: dialogContext,
+                    code: "hi",
+                    name: "हिंदी",
+                    selectedLang: selectedLang,
+                    onTap: () {
+                      setState(() {
+                        selectedLang = "hi";
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildLanguageOption(
+                    context: dialogContext,
+                    code: "mr",
+                    name: "मराठी",
+                    selectedLang: selectedLang,
+                    onTap: () {
+                      setState(() {
+                        selectedLang = "mr";
+                      });
+                    },
+                  ),
                     const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.of(dialogContext).pop();
-                            },
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
@@ -823,24 +823,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 width: 1.5,
                               ),
                             ),
-                            child: Text(
-                              "Cancel",
-                              style: GoogleFonts.poppins(
+                  child: Text(
+                    "Cancel",
+                    style: GoogleFonts.poppins(
                                 color: Colors.grey.shade700,
                                 fontWeight: FontWeight.w500,
                                 fontSize: 15,
                               ),
-                            ),
-                          ),
-                        ),
+                    ),
+                  ),
+                ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () {
-                              Provider.of<LocaleProvider>(context, listen: false)
-                                  .setLocale(Locale(selectedLang));
-                              Navigator.of(dialogContext).pop();
-                            },
+                  onPressed: () {
+                    Provider.of<LocaleProvider>(context, listen: false)
+                        .setLocale(Locale(selectedLang));
+                    Navigator.of(dialogContext).pop();
+                  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.brandGreen,
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -849,17 +849,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               elevation: 0,
                             ),
-                            child: Text(
-                              "Save",
-                              style: GoogleFonts.poppins(
+                  child: Text(
+                    "Save",
+                    style: GoogleFonts.poppins(
                                 color: Colors.white,
-                                fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                                 fontSize: 15,
                               ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    ),
+                  ),
+                ),
+              ],
                     ),
                   ],
                 ),
@@ -883,29 +883,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+      onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        child: Container(
+      child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          decoration: BoxDecoration(
+        decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.brandGreen.withOpacity(0.1)
                 : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
+          border: Border.all(
               color: isSelected
                   ? AppColors.brandGreen
                   : Colors.grey.shade200,
               width: isSelected ? 2 : 1,
-            ),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  name,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                name,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
                     fontWeight: isSelected
                         ? FontWeight.w600
                         : FontWeight.w500,
@@ -913,14 +913,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ? AppColors.brandGreen
                         : Colors.black87,
                     letterSpacing: 0.2,
-                  ),
                 ),
               ),
-              if (isSelected)
+            ),
+            if (isSelected)
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: AppColors.brandGreen,
+                color: AppColors.brandGreen,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -928,8 +928,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.white,
                     size: 16,
                   ),
-                ),
-            ],
+              ),
+          ],
           ),
         ),
       ),
@@ -940,20 +940,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () async {
-          await StorageService.clearSession();
-          if (!context.mounted) return;
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.splash,
-            (route) => false,
-          );
-        },
+      onTap: () async {
+        await StorageService.clearSession();
+        if (!context.mounted) return;
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          AppRoutes.splash, 
+          (route) => false,
+        );
+      },
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
                 Colors.red.shade400,
@@ -970,27 +970,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 offset: const Offset(0, 4),
               ),
             ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
               const Icon(
                 Icons.logout_rounded,
                 color: Colors.white,
                 size: 22,
               ),
               const SizedBox(width: 12),
-              Text(
-                l10n.logout,
-                style: GoogleFonts.poppins(
+            Text(
+              l10n.logout,
+              style: GoogleFonts.poppins(
                   color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
                   letterSpacing: 0.5,
                 ),
               ),
             ],
-          ),
+            ),
         ),
       ),
     );

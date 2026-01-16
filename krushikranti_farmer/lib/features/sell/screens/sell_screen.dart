@@ -87,28 +87,28 @@ class _SellScreenState extends State<SellScreen> {
         onRefresh: () async => _loadOrders(),
         color: AppColors.brandGreen,
         child: FutureBuilder<List<SalesOrderModel>>(
-          future: _ordersFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.brandGreen));
-            }
-            if (snapshot.hasError) {
+        future: _ordersFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: AppColors.brandGreen));
+          }
+          if (snapshot.hasError) {
               return _buildErrorState(l10n);
-            }
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return _buildEmptyState(l10n);
-            }
+          }
 
-            final orders = snapshot.data!;
-            return ListView.builder(
+          final orders = snapshot.data!;
+          return ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                return _buildOrderCard(context, orders[index], l10n);
-              },
-            );
-          },
-        ),
+            itemCount: orders.length,
+            itemBuilder: (context, index) {
+              return _buildOrderCard(context, orders[index], l10n);
+            },
+          );
+        },
+      ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
@@ -127,7 +127,7 @@ class _SellScreenState extends State<SellScreen> {
             fontSize: 14,
           ),
         ),
-      ),
+                    ),
     );
   }
 
@@ -145,7 +145,7 @@ class _SellScreenState extends State<SellScreen> {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
+              blurRadius: 10, 
               offset: const Offset(0, 2),
             ),
           ],
@@ -173,12 +173,12 @@ class _SellScreenState extends State<SellScreen> {
                 ],
               ),
               child: const Icon(Icons.inventory_2_rounded, color: Colors.white, size: 22),
-            ),
+              ),
             const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                   Text(
                     "${l10n.orderId} ${order.id}",
                     style: GoogleFonts.poppins(
@@ -190,7 +190,7 @@ class _SellScreenState extends State<SellScreen> {
                   ),
                   const SizedBox(height: 6),
                   Row(
-                    children: [
+                      children: [
                       Icon(Icons.calendar_today_rounded, size: 12, color: Colors.grey.shade600),
                       const SizedBox(width: 4),
                       Text(
@@ -230,12 +230,12 @@ class _SellScreenState extends State<SellScreen> {
                                 fontWeight: FontWeight.w500,
                                 color: Colors.grey.shade700,
                               ),
-                            ),
-                            Text(
-                              _getLocalStatus(order.status, l10n),
-                              style: GoogleFonts.poppins(
+                      ),
+                      Text(
+                        _getLocalStatus(order.status, l10n),
+                        style: GoogleFonts.poppins(
                                 fontSize: 11,
-                                color: order.statusColor,
+                          color: order.statusColor,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -326,7 +326,7 @@ class _SellScreenState extends State<SellScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-          ],
+            ],
         ),
       ),
     );

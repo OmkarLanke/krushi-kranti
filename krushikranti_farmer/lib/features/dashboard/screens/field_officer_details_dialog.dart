@@ -42,19 +42,19 @@ class FieldOfficerDetailsDialog extends StatelessWidget {
             _buildHeader(context, l10n),
 
             // Content
-            Expanded(
+              Expanded(
               child: assignments.isEmpty
                   ? _buildEmptyState(l10n)
                   : ListView.builder(
                       padding: const EdgeInsets.all(20),
-                      shrinkWrap: true,
-                      itemCount: assignments.length,
-                      itemBuilder: (context, index) {
-                        final assignment = assignments[index];
-                        return _buildFieldOfficerCard(context, assignment, l10n);
-                      },
-                    ),
-            ),
+                  shrinkWrap: true,
+                  itemCount: assignments.length,
+                  itemBuilder: (context, index) {
+                    final assignment = assignments[index];
+                    return _buildFieldOfficerCard(context, assignment, l10n);
+                  },
+                ),
+              ),
           ],
         ),
       ),
@@ -254,43 +254,43 @@ class FieldOfficerDetailsDialog extends StatelessWidget {
                 ),
                 child: const CircleAvatar(
                   radius: 28,
-                  backgroundColor: AppColors.creamBackground,
+                      backgroundColor: AppColors.creamBackground,
                   child: Icon(Icons.person_rounded, color: Colors.brown, size: 30),
                 ),
-              ),
+                    ),
               const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      fieldOfficerName,
-                      style: GoogleFonts.poppins(
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            fieldOfficerName,
+                            style: GoogleFonts.poppins(
                         fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w700,
                         color: Colors.black87,
                         letterSpacing: 0.2,
-                      ),
-                    ),
+                            ),
+                          ),
                     const SizedBox(height: 6),
-                    Container(
+                          Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
+                            decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: statusColor.withOpacity(0.3),
                           width: 1,
                         ),
-                      ),
-                      child: Text(
-                        statusText,
-                        style: GoogleFonts.poppins(
+                            ),
+                            child: Text(
+                              statusText,
+                              style: GoogleFonts.poppins(
                           fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: statusColor,
+                                fontWeight: FontWeight.w600,
+                                color: statusColor,
                           letterSpacing: 0.2,
-                        ),
+                          ),
                       ),
                     ),
                   ],

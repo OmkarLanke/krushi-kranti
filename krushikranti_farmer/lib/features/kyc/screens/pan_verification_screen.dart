@@ -166,23 +166,23 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: SizedBox(
-              width: double.infinity,
+            width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  // Navigate to Bank verification
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const BankVerificationScreen()),
-                  );
-                },
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                // Navigate to Bank verification
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BankVerificationScreen()),
+                );
+              },
                 icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
                 label: Text(
-                  l10n.continueToBank,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                l10n.continueToBank,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
                 ),
@@ -328,17 +328,17 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.brandGreen,
                         borderRadius: BorderRadius.circular(8),
-                      ),
+                ),
                       child: const Icon(Icons.looks_two_rounded, color: Colors.white, size: 14),
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${l10n.step} 2 ${l10n.of3}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
+                  '${l10n.step} 2 ${l10n.of3}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.brandGreen,
-                      ),
+                    color: AppColors.brandGreen,
+                  ),
                     ),
                   ],
                 ),
@@ -533,7 +533,7 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
-                  ),
+                        ),
                 ),
               ),
             ],

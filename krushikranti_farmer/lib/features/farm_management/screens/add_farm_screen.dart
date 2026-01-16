@@ -517,21 +517,21 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
                         )
                       : const Icon(Icons.check_rounded, size: 20),
                   label: Text(
-                    l10n.saveFarm,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 16,
+                          l10n.saveFarm,
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 16,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.3,
-                    ),
-                  ),
+                          ),
+                        ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.brandGreen,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
-                  ),
                 ),
+              ),
               ),
               const SizedBox(height: 20),
             ],
@@ -573,10 +573,10 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
     return Padding(
       padding: const EdgeInsets.only(left: 4),
       child: Text(
-        text,
-        style: GoogleFonts.poppins(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+      text,
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
           color: Colors.grey.shade700,
           letterSpacing: 0.3,
         ),
@@ -595,19 +595,19 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
     void Function(String)? onChanged,
   }) {
     return TextFormField(
-      controller: controller,
-      enabled: enabled,
-      keyboardType: keyboardType,
-      maxLength: maxLength,
-      maxLines: maxLines,
-      validator: validator,
-      onChanged: onChanged,
+        controller: controller,
+        enabled: enabled,
+        keyboardType: keyboardType,
+        maxLength: maxLength,
+        maxLines: maxLines,
+        validator: validator,
+        onChanged: onChanged,
       style: GoogleFonts.poppins(
         fontSize: 14,
         color: enabled ? Colors.black87 : Colors.grey.shade600,
       ),
-      decoration: InputDecoration(
-        hintText: hint,
+        decoration: InputDecoration(
+          hintText: hint,
         hintStyle: GoogleFonts.poppins(
           color: Colors.grey.shade500,
           fontSize: 14,

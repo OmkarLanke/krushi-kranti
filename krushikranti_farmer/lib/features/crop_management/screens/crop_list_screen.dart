@@ -69,10 +69,10 @@ class _CropListScreenState extends State<CropListScreen> {
             color: Colors.transparent,
             child: InkWell(
               onTap: () {
-                Navigator.pushNamed(context, AppRoutes.addCrop).then((_) {
-                  _loadCrops();
-                });
-              },
+              Navigator.pushNamed(context, AppRoutes.addCrop).then((_) {
+                _loadCrops();
+              });
+            },
               borderRadius: BorderRadius.circular(20),
               child: Container(
                 margin: const EdgeInsets.only(right: 16),
@@ -255,15 +255,15 @@ class _CropListScreenState extends State<CropListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _getCropDisplay(crop, l10n),
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
+                    _getCropDisplay(crop, l10n),
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                      color: Colors.black87,
                           letterSpacing: 0.2,
                           height: 1.2,
                         ),
-                      ),
+                    ),
                       if (crop.cropStatus != null) ...[
                         const SizedBox(height: 6),
                         _buildCropStatusBadge(crop.cropStatus!, l10n),
@@ -313,15 +313,15 @@ class _CropListScreenState extends State<CropListScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        l10n.cropDetail,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
+                  Text(
+                    l10n.cropDetail,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppColors.brandGreen,
                           letterSpacing: 0.2,
-                        ),
-                      ),
+                    ),
+                  ),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -357,10 +357,10 @@ class _CropListScreenState extends State<CropListScreen> {
                       color: Colors.grey.shade600,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      "Additional Details",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
+              Text(
+                "Additional Details",
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade700,
                         letterSpacing: 0.5,
@@ -547,7 +547,7 @@ class _CropListScreenState extends State<CropListScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                ),
+              ),
                 elevation: 0,
               ),
             ),

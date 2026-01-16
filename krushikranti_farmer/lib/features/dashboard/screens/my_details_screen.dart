@@ -226,7 +226,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
   Widget _buildIncompleteProfileBanner(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+                      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -243,74 +243,74 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
             offset: const Offset(0, 4),
           ),
         ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
               Icons.person_add_alt_1,
               color: Colors.white,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.profileIncomplete,
-                  style: GoogleFonts.poppins(
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l10n.profileIncomplete,
+                                  style: GoogleFonts.poppins(
                     fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w600,
                     color: Colors.white,
                     letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.completeProfileDetails,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  l10n.completeProfileDetails,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
                     color: Colors.white.withOpacity(0.9),
                     fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
           const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, "/onboarding_personal");
-            },
-            style: ElevatedButton.styleFrom(
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, "/onboarding_personal");
+                            },
+                            style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: Colors.orange.shade700,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
                 vertical: 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
               elevation: 0,
+                            ),
+                            child: Text(
+                              l10n.completeProfile,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
             ),
-            child: Text(
-              l10n.completeProfile,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -318,8 +318,8 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
     return Padding(
       padding: const EdgeInsets.only(left: 4),
       child: Text(
-        title,
-        style: GoogleFonts.poppins(
+      title,
+      style: GoogleFonts.poppins(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: Colors.grey.shade700,
@@ -367,24 +367,24 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                 icon,
                 size: 20,
                 color: AppColors.brandGreen,
-              ),
+      ),
             ),
             const SizedBox(width: 16),
           ],
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
                     letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 6),
+            ),
+          ),
+          const SizedBox(height: 6),
                 Text(
                   value,
                   style: GoogleFonts.poppins(
@@ -395,7 +395,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                   ),
                 ),
               ],
-            ),
+              ),
           ),
         ],
       ),

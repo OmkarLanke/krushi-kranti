@@ -110,7 +110,7 @@ class OrderDetailScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      "Entry Verified at VCP weighbridge Quality and final price is confirmed",
+              "Entry Verified at VCP weighbridge Quality and final price is confirmed",
                       style: GoogleFonts.poppins(
                         color: Colors.grey.shade700,
                         fontSize: 13,
@@ -149,7 +149,7 @@ class OrderDetailScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            l10n.weighNote,
+                    l10n.weighNote,
                             style: GoogleFonts.poppins(
                               color: AppColors.brandGreen,
                               fontSize: 12,
@@ -223,21 +223,21 @@ class OrderDetailScreen extends StatelessWidget {
               title: l10n.finalBreakment,
               child: Column(
                 children: [
-                  _buildRow("Produce Total", "₹ 6200", isBoldValue: true),
+                   _buildRow("Produce Total", "₹ 6200", isBoldValue: true),
                   const SizedBox(height: 10),
-                  _buildRow(l10n.loanDeduction, "₹ 4000", isBoldValue: true),
+                   _buildRow(l10n.loanDeduction, "₹ 4000", isBoldValue: true),
                   const SizedBox(height: 12),
                   const Divider(height: 1, color: Color(0xFFE0E0E0)),
                   const SizedBox(height: 12),
-                  _buildRow(l10n.balance, "₹ 1200", isBoldValue: true),
+                   _buildRow(l10n.balance, "₹ 1200", isBoldValue: true),
                   const SizedBox(height: 10),
-                  _buildRow(l10n.settlementStatus, l10n.pending, isBoldValue: true),
+                   _buildRow(l10n.settlementStatus, l10n.pending, isBoldValue: true),
                   const SizedBox(height: 10),
-                  _buildRow(l10n.settlementCycle, "T +2 days", isBoldValue: true),
+                   _buildRow(l10n.settlementCycle, "T +2 days", isBoldValue: true),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+             const SizedBox(height: 20),
           ],
         ),
       ),
@@ -293,8 +293,8 @@ class OrderDetailScreen extends StatelessWidget {
 
   Widget _buildRow(String label, String value, {bool isHeader = false, bool isBoldValue = false}) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
         Expanded(
           child: Text(
             label,
@@ -316,7 +316,7 @@ class OrderDetailScreen extends StatelessWidget {
                   fontSize: 13,
                   color: isBoldValue ? Colors.black87 : Colors.black87,
                   letterSpacing: 0.2,
-                ),
+      ),
         ),
       ],
     );
@@ -324,8 +324,8 @@ class OrderDetailScreen extends StatelessWidget {
 
   Widget _buildSettlementRow(String p, String w, String pr, String t) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
         Expanded(
           flex: 2,
           child: Text(
@@ -370,7 +370,7 @@ class OrderDetailScreen extends StatelessWidget {
             ),
           ),
         ),
-      ],
+        ],
     );
   }
 

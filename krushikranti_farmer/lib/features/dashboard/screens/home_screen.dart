@@ -91,15 +91,15 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: false, 
         titleSpacing: 20,
         title: Text(
-          l10n.krushiKranti,
+          l10n.krushiKranti, 
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 28,
-            fontWeight: FontWeight.w700,
-            height: 1.0,
+            fontWeight: FontWeight.w700, 
+            height: 1.0, 
             letterSpacing: 0.5,
           ),
         ),
@@ -117,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
               colors: [
                 AppColors.brandGreen,
                 AppColors.brandGreen.withOpacity(0.8),
-              ],
+        ],
             ),
           ),
         ),
@@ -142,9 +142,9 @@ class _HomeScreenState extends State<HomeScreen> {
             // C. Banner
             if (isLoadingAssignments)
               _buildLoadingBanner(l10n)
-            else if (isAgentAssigned)
+            else if (isAgentAssigned) 
               _buildFieldOfficerAssignedCard(l10n)
-            else
+            else 
               _buildFieldOfficerPendingBanner(l10n),
             
             const SizedBox(height: 24),
@@ -153,8 +153,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.only(left: 4),
               child: Text(
-                l10n.quickAction,
-                style: GoogleFonts.poppins(
+              l10n.quickAction,
+              style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade800,
@@ -173,8 +173,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.only(left: 4),
               child: Text(
-                l10n.alerts,
-                style: GoogleFonts.poppins(
+              l10n.alerts,
+              style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade800,
@@ -206,13 +206,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           width: 44,
           height: 44,
-          decoration: BoxDecoration(
+      decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.2),
-            shape: BoxShape.circle,
+        shape: BoxShape.circle,
             border: Border.all(
               color: Colors.white.withOpacity(0.3),
               width: 1,
-            ),
+      ),
           ),
           child: Icon(icon, color: Colors.white, size: 22),
         ),
@@ -251,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "${l10n.hello} Ramesh,",
+                  "${l10n.hello} Ramesh,", 
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -273,10 +273,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        l10n.currentLocation,
+                        l10n.currentLocation, 
                         style: GoogleFonts.poppins(
                           color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w500, 
                           fontSize: 13,
                           letterSpacing: 0.2,
                         ),
@@ -298,10 +298,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "28°",
+                    "28°", 
                     style: GoogleFonts.poppins(
                       fontSize: 36,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w700, 
                       color: AppColors.textPrimary,
                       height: 1.0,
                       letterSpacing: -0.5,
@@ -309,10 +309,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "High: 30° / Low: 15°",
+                    "High: 30° / Low: 15°", 
                     style: GoogleFonts.poppins(
                       fontSize: 11,
-                      color: Colors.grey.shade700,
+                      color: Colors.grey.shade700, 
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.2,
                     ),
@@ -370,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)], 
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -438,25 +438,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          _showFieldOfficerDetailsDialog(l10n);
-        },
+      onTap: () {
+        _showFieldOfficerDetailsDialog(l10n);
+      },
         borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
+          boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.04),
                 blurRadius: 15,
                 offset: const Offset(0, 4),
               ),
-            ],
-          ),
-          child: Row(
-            children: [
+          ],
+        ),
+        child: Row(
+          children: [
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
@@ -470,34 +470,34 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: const CircleAvatar(
                   radius: 28,
-                  backgroundColor: AppColors.creamBackground,
+              backgroundColor: AppColors.creamBackground,
                   child: Icon(Icons.person_rounded, color: Colors.brown, size: 30),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.fieldOfficerAssignedMsg,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.fieldOfficerAssignedMsg,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: Colors.grey.shade600,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.2,
                       ),
-                    ),
+                  ),
                     const SizedBox(height: 6),
-                    Text(
-                      fieldOfficerName,
+                  Text(
+                    fieldOfficerName,
                       style: GoogleFonts.poppins(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                         color: Colors.black87,
                         letterSpacing: 0.2,
                       ),
-                    ),
+                  ),
                     if (fieldOfficerPincode.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Row(
@@ -508,19 +508,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.grey.shade600,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            "Pincode: $fieldOfficerPincode",
+                    Text(
+                      "Pincode: $fieldOfficerPincode",
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: Colors.grey.shade600,
                               fontWeight: FontWeight.w500,
-                            ),
+                    ),
                           ),
                         ],
                       ),
                     ],
                     if (fieldOfficerPhone.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                  const SizedBox(height: 4),
                       Row(
                         children: [
                           Icon(
@@ -529,49 +529,49 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.grey.shade600,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            fieldOfficerPhone,
+                    Text(
+                      fieldOfficerPhone,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Colors.black87,
-                            ),
+                    ),
                           ),
                         ],
                       ),
                     ],
-                    if (fieldOfficerAssignments.length > 1)
-                      Padding(
+                  if (fieldOfficerAssignments.length > 1)
+                    Padding(
                         padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          "+ ${fieldOfficerAssignments.length - 1} more",
+                      child: Text(
+                        "+ ${fieldOfficerAssignments.length - 1} more",
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             color: AppColors.brandGreen,
                             fontWeight: FontWeight.w600,
                           ),
-                        ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
+            ),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
                   color: AppColors.brandGreen.withOpacity(0.1),
-                  shape: BoxShape.circle,
+                shape: BoxShape.circle,
                   border: Border.all(
                     color: AppColors.brandGreen.withOpacity(0.3),
                     width: 1.5,
                   ),
-                ),
+              ),
                 child: const Icon(
                   Icons.arrow_forward_ios_rounded,
                   color: AppColors.brandGreen,
                   size: 18,
                 ),
-              ),
-            ],
+            ),
+          ],
           ),
         ),
       ),
@@ -838,61 +838,61 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActionCard(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String? route,
-    String status,
+    BuildContext context, 
+    IconData icon, 
+    String title, 
+    String? route, 
+    String status, 
     Color statusColor,
   ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () async {
-          if (route != null && !isNavigating) {
+      onTap: () async {
+        if (route != null && !isNavigating) {
+          setState(() {
+            isNavigating = true;
+          });
+          
+          // Show loading dialog
+          _showLoadingDialog(context);
+          
+          // Small delay to show loading animation
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          // Hide loading dialog and navigate
+          if (mounted) {
+            Navigator.pop(context); // Close loading dialog
+            await Navigator.pushNamed(context, route);
+            _checkFieldOfficerAssignments();
+            
             setState(() {
-              isNavigating = true;
+              isNavigating = false;
             });
-
-            // Show loading dialog
-            _showLoadingDialog(context);
-
-            // Small delay to show loading animation
-            await Future.delayed(const Duration(milliseconds: 500));
-
-            // Hide loading dialog and navigate
-            if (mounted) {
-              Navigator.pop(context); // Close loading dialog
-              await Navigator.pushNamed(context, route);
-              _checkFieldOfficerAssignments();
-
-              setState(() {
-                isNavigating = false;
-              });
-            }
           }
-        },
+        }
+      },
         borderRadius: BorderRadius.circular(20),
-        child: Container(
+      child: Container(
           padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
+        decoration: BoxDecoration(
+          color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
+          boxShadow: [
+            BoxShadow(
                 color: Colors.black.withOpacity(0.04),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
+              decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -901,7 +901,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       AppColors.brandGreen.withOpacity(0.8),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.brandGreen.withOpacity(0.3),
@@ -909,14 +909,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       offset: const Offset(0, 2),
                     ),
                   ],
-                ),
-                child: Icon(icon, color: Colors.white, size: 24),
               ),
-
-              Padding(
+              child: Icon(icon, color: Colors.white, size: 24),
+            ),
+            
+            Padding(
                 padding: const EdgeInsets.only(top: 12.0),
-                child: Text(
-                  title,
+              child: Text(
+                title,
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -924,17 +924,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.black87,
                     letterSpacing: 0.2,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
+            ),
 
               Padding(
                 padding: const EdgeInsets.only(top: 12.0),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
@@ -942,18 +942,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: statusColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          status,
+                  child: Text(
+                    status, 
                           style: GoogleFonts.poppins(
                             color: statusColor,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.2,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                     ),
                     const SizedBox(width: 8),
                     Container(
@@ -968,10 +968,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 18,
                       ),
                     ),
-                  ],
+              ],
                 ),
               ),
-            ],
+          ],
           ),
         ),
       ),
@@ -1016,11 +1016,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     "Lorem Ipsum is simply dummy text of the printing.",
                     style: GoogleFonts.poppins(
                       fontSize: 13,
-                      color: AppColors.alertText,
+                      color: AppColors.alertText, 
                       fontWeight: FontWeight.w500,
                       height: 1.4,
                       letterSpacing: 0.2,
-                    ),
+                    ), 
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1035,32 +1035,32 @@ class _HomeScreenState extends State<HomeScreen> {
         Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () {
-              // TODO: Navigate to ThynkChat
-            },
+          onTap: () {
+            // TODO: Navigate to ThynkChat
+          },
             borderRadius: BorderRadius.circular(32),
-            child: Container(
-              width: 64,
-              height: 64,
+          child: Container(
+            width: 64, 
+            height: 64,
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
                 border: Border.all(
                   color: Colors.grey.shade200,
                   width: 1.5,
                 ),
-                boxShadow: [
-                  BoxShadow(
+              boxShadow: [
+                BoxShadow(
                     color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Image.asset(
-                'assets/images/ai_logo.png',
-                fit: BoxFit.contain,
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Image.asset(
+              'assets/images/ai_logo.png',
+              fit: BoxFit.contain,
                 errorBuilder: (c, o, s) => const Icon(
                   Icons.smart_toy_rounded,
                   color: AppColors.brandGreen,

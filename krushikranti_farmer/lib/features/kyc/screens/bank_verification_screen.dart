@@ -224,21 +224,21 @@ class _BankVerificationScreenState extends State<BankVerificationScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: SizedBox(
-              width: double.infinity,
+            width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  // Pop back to profile or KYC status screen
-                  Navigator.popUntil(context, (route) => route.isFirst || route.settings.name == '/kyc-status');
-                  Navigator.pop(context); // Pop one more to go back to profile
-                },
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                // Pop back to profile or KYC status screen
+                Navigator.popUntil(context, (route) => route.isFirst || route.settings.name == '/kyc-status');
+                Navigator.pop(context); // Pop one more to go back to profile
+              },
                 icon: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
                 label: Text(
-                  l10n.done,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                l10n.done,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
                 ),
@@ -384,17 +384,17 @@ class _BankVerificationScreenState extends State<BankVerificationScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.brandGreen,
                         borderRadius: BorderRadius.circular(8),
-                      ),
+                ),
                       child: const Icon(Icons.looks_3_rounded, color: Colors.white, size: 14),
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${l10n.step} 3 ${l10n.of3} - ${l10n.finalStep}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
+                  '${l10n.step} 3 ${l10n.of3} - ${l10n.finalStep}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.brandGreen,
-                      ),
+                    color: AppColors.brandGreen,
+                  ),
                     ),
                   ],
                 ),
@@ -724,7 +724,7 @@ class _BankVerificationScreenState extends State<BankVerificationScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
-                  ),
+                        ),
                 ),
               ),
             ],
