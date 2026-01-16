@@ -48,7 +48,7 @@ gateway:
     payment-service: http://payment-service:4006
     profile-service: http://profile-service:4007
     file-service: http://file-service:4008
-    notification-service: http://notification-service:4009
+    notification-service: http://notification-service:4016
     chat-service: http://chat-service:4010
     advisory-service: http://advisory-service:4011
     support-service: http://support-service:4012

@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST Controller for Farm management.
@@ -153,6 +154,59 @@ public class FarmController {
         return ResponseEntity.ok(new ApiResponse<>(
                 "Valid collateral farms retrieved successfully",
                 farms));
+    }
+
+    /**
+     * Update farm verification status (internal endpoint for field-officer-service).
+     * This endpoint is called by field-officer-service after farm verification.
+     */
+    @PutMapping("/{farmId}/verification")
+    public ResponseEntity<ApiResponse<Void>> updateFarmVerificationStatus(
+            @PathVariable Long farmId,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
+            @RequestBody Map<String, Object> request) {
+        
+        log.info("=== RECEIVED FARM VERIFICATION STATUS UPDATE REQUEST ===");
+        log.info("Farm ID: {}, Request: {}, Headers - X-User-Id: {}", farmId, request, userIdHeader);
+        
+        Boolean isVerified = (Boolean) request.get("isVerified");
+        Long verifiedByOfficerId = null;
+        if (request.get("verifiedByOfficerId") != null) {
+            try {
+                Object officerIdObj = request.get("verifiedByOfficerId");
+                if (officerIdObj instanceof Number) {
+                    verifiedByOfficerId = ((Number) officerIdObj).longValue();
+                } else {
+                    verifiedByOfficerId = Long.parseLong(officerIdObj.toString());
+                }
+            } catch (Exception e) {
+                log.warn("Could not parse verifiedByOfficerId: {}", request.get("verifiedByOfficerId"));
+            }
+        }
+        String verificationRemarks = (String) request.get("verificationRemarks");
+        
+        if (isVerified == null) {
+            log.error("isVerified field is missing in request");
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>("isVerified field is required", null));
+        }
+        
+        log.info("Updating verification status for farm {}: isVerified={}, verifiedBy={}, remarks={}", 
+                farmId, isVerified, verifiedByOfficerId, verificationRemarks);
+        
+        try {
+            farmService.updateFarmVerificationStatus(farmId, isVerified, verifiedByOfficerId, verificationRemarks);
+            log.info("=== SUCCESSFULLY UPDATED FARM VERIFICATION STATUS ===");
+            log.info("Farm ID: {}, isVerified: {}", farmId, isVerified);
+        } catch (Exception e) {
+            log.error("=== ERROR UPDATING FARM VERIFICATION STATUS ===");
+            log.error("Farm ID: {}, Error: {}", farmId, e.getMessage(), e);
+            throw e;
+        }
+        
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Farm verification status updated successfully",
+                null));
     }
 }
 
