@@ -8,6 +8,7 @@ import '../../../core/services/storage_service.dart';
 import '../../../core/services/http_service.dart';
 import '../../kyc/services/kyc_service.dart';
 import '../../kyc/models/kyc_models.dart';
+import '../../dashboard/services/notification_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -428,6 +429,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildLogoutButton(BuildContext context, AppLocalizations l10n) {
     return GestureDetector(
       onTap: () async {
+        // Clear notifications before logout to prevent cross-user data leakage
+        NotificationService().clearOnLogout();
         await StorageService.clearSession();
         if (!context.mounted) return;
         Navigator.pushNamedAndRemoveUntil(

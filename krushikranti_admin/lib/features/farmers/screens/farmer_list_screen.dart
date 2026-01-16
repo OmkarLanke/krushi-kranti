@@ -1647,17 +1647,17 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     const double filterHeight = 52.0;
     
     // Column widths - optimized for better layout
-    // Order: User ID, Username, Full Name, Phone No, Location, Pincode, Farms, KYC, Subscription, Field Officer
+    // Order: User ID, Username, Full Name, Phone No, Location, Pincode, KYC, Subscription, Field Officer, Verified Farms
     const double userIdWidth = 110.0;
     const double usernameWidth = 150.0;
     const double fullNameWidth = 200.0;
     const double phoneWidth = 140.0;
     const double locationWidth = 280.0;
     const double pincodeWidth = 120.0;
-    const double farmsWidth = 100.0;
     const double kycWidth = 130.0;
     const double subscriptionWidth = 150.0;
     const double fieldOfficerWidth = 160.0;
+    const double verifiedFarmsWidth = 130.0;
     
     final totalWidth = userIdWidth +
         usernameWidth +
@@ -1665,10 +1665,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         phoneWidth +
         locationWidth +
         pincodeWidth +
-        farmsWidth +
         kycWidth +
         subscriptionWidth +
-        fieldOfficerWidth;
+        fieldOfficerWidth +
+        verifiedFarmsWidth;
 
     // Calculate height for rows
     // Set max height to show approximately 10-12 rows at a time, then scroll
@@ -1708,13 +1708,13 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 _buildHeaderDivider(),
                 _buildHeaderCell('Pincode', pincodeWidth, null, false),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Farms', farmsWidth, SortColumn.farmCount, false),
-                _buildHeaderDivider(),
                 _buildHeaderCell('KYC', kycWidth, SortColumn.kycStatus, false),
                 _buildHeaderDivider(),
                 _buildHeaderCell('Subscription', subscriptionWidth, SortColumn.subscriptionStatus, false),
                 _buildHeaderDivider(),
                 _buildHeaderCell('Field Officer', fieldOfficerWidth, null, true),
+                _buildHeaderDivider(),
+                _buildHeaderCell('Verified Farms', verifiedFarmsWidth, SortColumn.farmCount, false),
               ],
             ),
           ),
@@ -1741,13 +1741,13 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 _buildDivider(),
                 _buildFilterCell(pincodeWidth, 'pincode'),
                 _buildDivider(),
-                _buildFilterCell(farmsWidth, null),
-                _buildDivider(),
                 _buildFilterCell(kycWidth, 'kyc'),
                 _buildDivider(),
                 _buildFilterCell(subscriptionWidth, 'subscription'),
                 _buildDivider(),
                 _buildFilterCell(fieldOfficerWidth, 'fieldOfficer'),
+                _buildDivider(),
+                _buildFilterCell(verifiedFarmsWidth, null),
               ],
             ),
           ),
@@ -1779,10 +1779,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                                 phoneWidth,
                                 locationWidth,
                                 pincodeWidth,
-                                farmsWidth,
                                 kycWidth,
                                 subscriptionWidth,
                                 fieldOfficerWidth,
+                                verifiedFarmsWidth,
                                 index == _filteredFarmers.length - 1, // Last row
                               );
                             }),
@@ -2175,10 +2175,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     double phoneWidth,
     double locationWidth,
     double pincodeWidth,
-    double farmsWidth,
     double kycWidth,
     double subscriptionWidth,
     double fieldOfficerWidth,
+    double verifiedFarmsWidth,
     bool isLastRow,
   ) {
     return MouseRegion(
@@ -2291,8 +2291,17 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             ),
           ), false),
           _buildDivider(),
-          // Farms
-          _buildDataCell(farmsWidth, Container(
+          // KYC Status
+          _buildDataCell(kycWidth, _buildStatusChip(farmer.kycStatus, _getKycStatusColor(farmer.kycStatus)), false),
+          _buildDivider(),
+          // Subscription Status
+          _buildDataCell(subscriptionWidth, _buildStatusChip(farmer.subscriptionStatus, _getSubStatusColor(farmer.subscriptionStatus)), false),
+          _buildDivider(),
+          // Field Officer
+          _buildDataCell(fieldOfficerWidth, _buildFieldOfficerCell(farmer), false),
+          _buildDivider(),
+          // Verified Farms
+          _buildDataCell(verifiedFarmsWidth, Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.blue.shade50,
@@ -2307,16 +2316,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 color: Colors.blue.shade700,
               ),
             ),
-          ), false),
-          _buildDivider(),
-          // KYC Status
-          _buildDataCell(kycWidth, _buildStatusChip(farmer.kycStatus, _getKycStatusColor(farmer.kycStatus)), false),
-          _buildDivider(),
-          // Subscription Status
-          _buildDataCell(subscriptionWidth, _buildStatusChip(farmer.subscriptionStatus, _getSubStatusColor(farmer.subscriptionStatus)), false),
-          _buildDivider(),
-          // Field Officer
-          _buildDataCell(fieldOfficerWidth, _buildFieldOfficerCell(farmer), true),
+          ), true),
         ],
             ),
           ),
