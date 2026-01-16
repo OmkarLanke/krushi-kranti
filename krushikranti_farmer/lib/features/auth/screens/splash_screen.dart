@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_routes.dart';
-import '../../../core/constants/app_colors.dart'; // update path if needed
+import '../../../core/constants/app_colors.dart';
 import '../../../core/services/storage_service.dart';
 import '../../subscription/services/subscription_service.dart';
 
@@ -32,8 +33,16 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     if (token == null || token.isEmpty) {
-      // No token → fresh user → go to language selection/login flow
+      // No token → check if language preference exists
+      final savedLanguage = await StorageService.getLanguage();
+      
+      if (savedLanguage == null || savedLanguage.isEmpty) {
+        // First time user → show language selection screen
       Navigator.pushReplacementNamed(context, AppRoutes.languageSelection);
+      } else {
+        // Language already selected → go directly to login
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+      }
       return;
     }
 
@@ -94,45 +103,95 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Heading
-              const Text(
-                "Welcome to\nKrushiKranti",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.brandGreen,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // Logo
-              Image.asset(
-                'assets/images/logo/krushi_logo.png', // update to match your asset
-                height: 300,
-                width: 300,
-                fit: BoxFit.contain,
-              ),
-
-              const SizedBox(height: 40),
-
-              // Tagline
-              const Text(
-                "THE FARMER IS SELF-SUFFICIENT",
-                style: TextStyle(
-                  fontSize: 14,
-                  letterSpacing: 1,
-                  color: AppColors.textSecondary,
-                ),
-              ),
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.brandGreen.withOpacity(0.05),
+              Colors.white,
             ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo with gradient container
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.brandGreen.withOpacity(0.15),
+                        AppColors.brandGreen.withOpacity(0.05),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.brandGreen.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/images/logo/krushi_logo.png',
+                    height: 200,
+                    width: 200,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => 
+                      Icon(Icons.agriculture_rounded, size: 100, color: AppColors.brandGreen),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Heading
+                Text(
+                  "Welcome to\nKrushiKranti",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.brandGreen,
+                    letterSpacing: 0.5,
+                    height: 1.2,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Tagline
+                Text(
+                  "THE FARMER IS SELF-SUFFICIENT",
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    letterSpacing: 2,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Loading indicator
+                const SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

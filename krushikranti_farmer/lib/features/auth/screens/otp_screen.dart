@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
@@ -367,129 +368,166 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // 🔙 FIXED BACK BUTTON
-            Positioned(
-              top: 10,
-              left: 10,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 24),
-                onPressed: () => Navigator.pop(context),
-              ),
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          titleText[appLang]!,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
             ),
-
-            // MAIN CONTENT
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 70),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF6EEB6E),
-                        shape: BoxShape.circle,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.brandGreen.withOpacity(0.15),
+                        AppColors.brandGreen.withOpacity(0.05),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.brandGreen.withOpacity(0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
-                      child: const Icon(Icons.lock, size: 40, color: Colors.white),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      titleText[appLang]!,
-                      style: const TextStyle(
-                        color: AppColors.brandGreen,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      enterOtpText[appLang]!,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    
-                    // OTP Input Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(6, (i) => _otpBox(i)),
-                    ),
-                    
-                    const SizedBox(height: 10),
-                    // Resend OTP - Show timer or button
-                    timerSeconds > 0
-                        ? Text(
-                            "${resendText[appLang]}: ${timerSeconds.toString().padLeft(2, '0')}s",
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          )
-                        : TextButton(
-                            onPressed: _isResending ? null : _resendOtp,
-                            child: _isResending
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
-                                    ),
-                                  )
-                                : Text(
-                                    resendText[appLang]!,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: AppColors.brandGreen,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
-                    const SizedBox(height: 40),
-                    
-                    // SUBMIT BUTTON
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                    ],
+                  ),
+                  child: Icon(Icons.lock_rounded, size: 50, color: AppColors.brandGreen),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  titleText[appLang]!,
+                  style: GoogleFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  enterOtpText[appLang]!,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                
+                // OTP Input Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(6, (i) => _otpBox(i)),
+                ),
+                
+                const SizedBox(height: 16),
+                // Resend OTP - Show timer or button
+                timerSeconds > 0
+                    ? Text(
+                        "${resendText[appLang]}: ${timerSeconds.toString().padLeft(2, '0')}s",
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
                         ),
-                        onPressed: _isLoading ? null : _submitOtp, // ✅ Call logic function
-                        child: _isLoading
+                      )
+                    : TextButton(
+                        onPressed: _isResending ? null : _resendOtp,
+                        child: _isResending
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
                                 ),
                               )
                             : Text(
-                                submitButtonText[appLang]!,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                resendText[appLang]!,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: AppColors.brandGreen,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
                                 ),
                               ),
                       ),
+                const SizedBox(height: 32),
+                
+                // SUBMIT BUTTON
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
                     ),
-                    const SizedBox(height: 30),
-                  ],
+                    icon: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.verified_rounded, color: Colors.white, size: 20),
+                    label: Text(
+                      submitButtonText[appLang]!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    onPressed: _isLoading ? null : _submitOtp,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 20),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -497,15 +535,34 @@ class _OtpScreenState extends State<OtpScreen> {
 
   Widget _otpBox(int index) {
     return SizedBox(
-      width: 50,
+      width: 48,
       child: TextField(
         controller: otpControllers[index],
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
         maxLength: 1,
-        decoration: const InputDecoration(
+        style: GoogleFonts.poppins(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: Colors.black87,
+        ),
+        decoration: InputDecoration(
           counterText: "",
-          border: OutlineInputBorder(),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.brandGreen, width: 2),
+          ),
+          contentPadding: EdgeInsets.zero,
         ),
         onChanged: (value) {
           if (value.isNotEmpty && index < 5) {

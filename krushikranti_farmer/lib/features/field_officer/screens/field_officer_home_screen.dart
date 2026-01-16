@@ -243,36 +243,57 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 24,
         title: Text(
           'KrushiKranti',
           style: GoogleFonts.poppins(
-            color: AppColors.brandGreen,
-            fontSize: 32,
+            color: Colors.white,
+            fontSize: 24,
             fontWeight: FontWeight.w700,
             height: 1.0,
             letterSpacing: -0.5,
           ),
         ),
         actions: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.brandGreen.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.notifications_none,
-              color: AppColors.brandGreen,
-              size: 20,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                // Handle notification tap
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 40,
+                height: 40,
+                margin: const EdgeInsets.only(right: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.notifications_none,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 24),
         ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? _buildLoadingState()
@@ -566,36 +587,42 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
                     ),
                   );
                 },
-                borderRadius: BorderRadius.circular(12),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 5,
-                        offset: const Offset(0, 1),
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppColors.brandGreen.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.brandGreen,
+                              AppColors.brandGreen.withOpacity(0.8),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           Icons.location_on,
-                          color: AppColors.brandGreen,
-                          size: 20,
+                          color: Colors.white,
+                          size: 22,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -603,16 +630,17 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
                             Text(
                               'Assigned Villages',
                               style: GoogleFonts.poppins(
-                                fontSize: 14,
+                                fontSize: 15,
                                 color: AppColors.textPrimary,
                                 fontWeight: FontWeight.w600,
+                                letterSpacing: 0.2,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 4),
                             Text(
                               '${_assignedVillages.length} ${_assignedVillages.length == 1 ? 'village' : 'villages'} assigned',
                               style: GoogleFonts.poppins(
-                                fontSize: 12,
+                                fontSize: 13,
                                 color: AppColors.textSecondary,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -621,9 +649,9 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
                         ),
                       ),
                       Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: AppColors.textSecondary,
+                        Icons.arrow_forward_ios_rounded,
+                        size: 18,
+                        color: AppColors.brandGreen,
                       ),
                     ],
                   ),
@@ -668,42 +696,53 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
 
   Widget _buildStatCard(String label, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 1),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: AppColors.brandGreen,
-            size: 24,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: AppColors.brandGreen,
+              size: 22,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 24,
+              fontSize: 26,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             label,
             style: GoogleFonts.poppins(
-              fontSize: 12,
+              fontSize: 13,
               color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -717,25 +756,40 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  size: 20,
-                  color: AppColors.textPrimary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Pending Verification',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+            Flexible(
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandGreen.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.calendar_today,
+                      size: 18,
+                      color: AppColors.brandGreen,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      'Pending Verification',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        letterSpacing: 0.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            ElevatedButton(
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
               onPressed: () {
                 // Navigate to first pending verification or show list
                 if (_pendingVerifications.isNotEmpty) {
@@ -750,20 +804,22 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
                   ).then((_) => _loadData());
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandGreen,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
+              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+              label: Text(
                 'Visit Now',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brandGreen,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
               ),
             ),
           ],
@@ -771,18 +827,43 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
         const SizedBox(height: 16),
         if (_pendingVerifications.isEmpty)
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Center(
-              child: Text(
-                'No pending verifications',
-                style: GoogleFonts.poppins(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandGreen.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.check_circle_outline,
+                      color: AppColors.brandGreen,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No pending verifications',
+                    style: GoogleFonts.poppins(
+                      color: AppColors.textSecondary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           )
@@ -814,92 +895,118 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 1),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FarmVerificationScreen(
-                assignment: assignment,
-              ),
-            ),
-          ).then((_) => _loadData());
-        },
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: AppColors.brandGreen.withOpacity(0.1),
-              child: Text(
-                _getInitials(farmerName),
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.brandGreen,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FarmVerificationScreen(
+                  assignment: assignment,
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    farmerName,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    village,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Row(
+            ).then((_) => _loadData());
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                Icon(
-                  Icons.location_on,
-                  size: 16,
-                  color: AppColors.brandGreen,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  timeStr,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.brandGreen,
+                        AppColors.brandGreen.withOpacity(0.8),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      _getInitials(farmerName),
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        farmerName,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              village,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        timeStr,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: AppColors.textSecondary,
+                  Icons.arrow_forward_ios_rounded,
+                  size: 18,
+                  color: AppColors.brandGreen,
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -916,19 +1023,48 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Priority Farm',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+            Flexible(
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF7043).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.priority_high,
+                      size: 18,
+                      color: Color(0xFFFF7043),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      'Priority Farm',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        letterSpacing: 0.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: const Color(0xFFFF7043).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFFFF7043).withOpacity(0.3),
+                  width: 1,
+                ),
               ),
               child: Text(
                 'High Priority',
@@ -941,101 +1077,131 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           '${_priorityFarms.length} Farms pending for over 4 days',
           style: GoogleFonts.poppins(
             fontSize: 14,
             color: AppColors.textSecondary,
+            fontWeight: FontWeight.w400,
           ),
         ),
         const SizedBox(height: 16),
         if (_priorityFarms.isNotEmpty)
           Container(
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 5,
-                  offset: const Offset(0, 1),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: InkWell(
-              onTap: () {
-                final firstPriority = _priorityFarms[0];
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FarmVerificationScreen(
-                      assignment: firstPriority['assignment'],
-                    ),
-                  ),
-                ).then((_) => _loadData());
-              },
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: AppColors.brandGreen.withOpacity(0.1),
-                    child: Text(
-                      _getInitials(_priorityFarms[0]['farmerName'] ?? ''),
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.brandGreen,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  final firstPriority = _priorityFarms[0];
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FarmVerificationScreen(
+                        assignment: firstPriority['assignment'],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _priorityFarms[0]['farmerName'] ?? 'Unknown',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${_priorityFarms[0]['village'] ?? ''}, ${_priorityFarms[0]['farm']?['cropName'] ?? 'Farm'}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Row(
+                  ).then((_) => _loadData());
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
                     children: [
                       Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFF7043),
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xFFFF7043),
+                              const Color(0xFFFF7043).withOpacity(0.8),
+                            ],
+                          ),
                           shape: BoxShape.circle,
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Pending for ${_priorityFarms[0]['daysPending']} days',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: const Color(0xFFFF7043),
-                          fontWeight: FontWeight.w600,
+                        child: Center(
+                          child: Text(
+                            _getInitials(_priorityFarms[0]['farmerName'] ?? ''),
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _priorityFarms[0]['farmerName'] ?? 'Unknown',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '${_priorityFarms[0]['village'] ?? ''}, ${_priorityFarms[0]['farm']?['cropName'] ?? 'Farm'}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFFF7043),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Pending for ${_priorityFarms[0]['daysPending']} days',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: const Color(0xFFFF7043),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 18,
+                        color: const Color(0xFFFF7043),
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -1047,35 +1213,71 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Additional Analytics',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.brandGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.analytics_outlined,
+                size: 18,
+                color: AppColors.brandGreen,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Additional Analytics',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 5,
-                offset: const Offset(0, 1),
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Center(
-            child: Text(
-              'Analytics content will be shown here',
-              style: GoogleFonts.poppins(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.brandGreen.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.analytics_outlined,
+                    color: AppColors.brandGreen,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Analytics content will be shown here',
+                  style: GoogleFonts.poppins(
+                    color: AppColors.textSecondary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -1148,18 +1350,32 @@ class _VillagesListScreenState extends State<VillagesListScreen> with TickerProv
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Assigned Villages',
           style: GoogleFonts.poppins(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
           ),
         ),
       ),
@@ -1382,18 +1598,32 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           villageName,
           style: GoogleFonts.poppins(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
           ),
         ),
       ),

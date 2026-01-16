@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
@@ -50,26 +51,44 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          l10n.contactDetails, 
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          l10n.contactDetails,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
         ),
         centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             // --- STEPPER (Step 2 of 3) ---
+            const SizedBox(height: 10),
+            // --- STEPPER (Step 2 of 3) ---
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -85,7 +104,7 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
                 const CircleAvatar(
                   radius: 14,
                   backgroundColor: AppColors.brandGreen,
-                  child: Text("2", style: TextStyle(color: Colors.white, fontSize: 12)),
+                  child: Text("2", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
                 Container(width: 30, height: 2, color: Colors.grey.shade300),
 
@@ -93,19 +112,19 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
                 CircleAvatar(
                   radius: 14,
                   backgroundColor: Colors.grey.shade300,
-                  child: const Text("3", style: TextStyle(color: Colors.white, fontSize: 12)),
+                  child: const Text("3", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
 
             // --- 1. EMAIL (Read Only) - First ---
             Text(l10n.emailLabel, style: _labelStyle()),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             _buildTextField(
               controller: _emailController,
               hint: "",
-              icon: Icons.email,
+              icon: Icons.email_outlined,
               enabled: false, // 🔒 LOCKED
               fillColor: Colors.grey.shade100,
             ),
@@ -113,11 +132,11 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
 
             // --- 2. PHONE (Read Only) - Second ---
             Text(l10n.phoneLabel, style: _labelStyle()),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             _buildTextField(
               controller: _phoneController,
               hint: "",
-              icon: Icons.phone_android,
+              icon: Icons.phone_android_outlined,
               enabled: false, // 🔒 LOCKED
               fillColor: Colors.grey.shade100,
             ),
@@ -126,29 +145,37 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
 
             // --- 3. ALTERNATE MOBILE (Editable) - Third ---
             Text(l10n.altPhone, style: _labelStyle()),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             _buildTextField(
               controller: _altPhoneController,
               hint: l10n.altPhoneHint,
-              icon: Icons.phone_in_talk,
+              icon: Icons.phone_in_talk_outlined,
               enabled: true, // User can type
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
 
             // --- SAVE BUTTON ---
             SizedBox(
               width: double.infinity,
               height: 50,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: () => _saveAndContinue(l10n),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.brandGreen,
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
                 ),
-                child: Text(
-                  l10n.continueBtn, 
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                label: Text(
+                  l10n.continueBtn,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
                 ),
               ),
             ),
@@ -158,7 +185,12 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
     );
   }
 
-  TextStyle _labelStyle() => const TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
+  TextStyle _labelStyle() => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+        letterSpacing: 0.2,
+      );
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -172,25 +204,51 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
       decoration: BoxDecoration(
         color: fillColor ?? Colors.white,
         border: Border.all(
-          // Grey border if disabled, Green if enabled
-          color: enabled ? AppColors.brandGreen : Colors.grey.shade400, 
-          width: 1
+          color: enabled ? Colors.grey.shade300 : Colors.grey.shade400,
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(12), 
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: TextField(
-        controller: controller,
-        readOnly: !enabled, // Prevents typing if false
-        keyboardType: TextInputType.phone,
-        style: TextStyle(color: enabled ? Colors.black : Colors.grey.shade700),
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-          suffixIcon: icon != null 
-            ? Icon(icon, color: enabled ? AppColors.brandGreen : Colors.grey) 
-            : null,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-        ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Container(
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: enabled
+                    ? AppColors.brandGreen.withOpacity(0.1)
+                    : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                size: 18,
+                color: enabled ? AppColors.brandGreen : Colors.grey.shade600,
+              ),
+            ),
+          ],
+          Expanded(
+            child: TextField(
+              controller: controller,
+              readOnly: !enabled,
+              keyboardType: TextInputType.phone,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: enabled ? Colors.black87 : Colors.grey.shade700,
+              ),
+              decoration: InputDecoration(
+                hintText: hint,
+                border: InputBorder.none,
+                hintStyle: GoogleFonts.poppins(
+                  color: Colors.grey.shade400,
+                  fontSize: 14,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
