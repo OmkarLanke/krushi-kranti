@@ -727,18 +727,32 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Verify Farm',
           style: GoogleFonts.poppins(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
           ),
         ),
       ),
@@ -763,25 +777,14 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                         child: Opacity(
                           opacity: value,
                           child: Container(
-                            padding: const EdgeInsets.all(18),
+                            padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.brandGreen.withOpacity(0.12),
-                                  AppColors.brandGreen.withOpacity(0.08),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.brandGreen.withOpacity(0.2),
-                                width: 1,
-                              ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.brandGreen.withOpacity(0.1),
-                                  blurRadius: 8,
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 10,
                                   offset: const Offset(0, 2),
                                 ),
                               ],
@@ -789,15 +792,21 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color:
-                                        AppColors.brandGreen.withOpacity(0.15),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        AppColors.brandGreen,
+                                        AppColors.brandGreen.withOpacity(0.8),
+                                      ],
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.person,
-                                    color: AppColors.brandGreen,
+                                    color: Colors.white,
                                     size: 24,
                                   ),
                                 ),
@@ -811,9 +820,9 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                         widget.assignment['farmerName'] ??
                                             'Farmer',
                                         style: GoogleFonts.poppins(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF212121),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
                                           letterSpacing: 0.2,
                                         ),
                                       ),
@@ -833,9 +842,9 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                               widget.assignment[
                                                   'farmerPhoneNumber'],
                                               style: GoogleFonts.poppins(
-                                                fontSize: 14,
+                                                fontSize: 13,
                                                 color: AppColors.textSecondary,
-                                                fontWeight: FontWeight.w500,
+                                                fontWeight: FontWeight.w400,
                                               ),
                                             ),
                                           ],
@@ -857,14 +866,31 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                 // Farms List
                 FadeTransition(
                   opacity: _fadeAnimation,
-                  child: Text(
-                    'Farms to Verify',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF212121),
-                      letterSpacing: 0.2,
-                    ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandGreen.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.agriculture,
+                          size: 18,
+                          color: AppColors.brandGreen,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Farms to Verify',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -975,18 +1001,18 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   color: state.isVerified
                       ? AppColors.success.withOpacity(0.15)
                       : Colors.black.withOpacity(0.08),
-                  blurRadius: state.isVerified ? 15 : 12,
-                  offset: const Offset(0, 4),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                   spreadRadius: 0,
                 ),
               ],
               border: state.isVerified
                   ? Border.all(
                       color: AppColors.success,
-                      width: 2.5,
+                      width: 2,
                     )
                   : Border.all(
-                      color: const Color(0xFFE8E8E8),
+                      color: Colors.grey.shade200,
                       width: 1,
                     ),
             ),
@@ -1004,20 +1030,22 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                                 colors: [
-                                  AppColors.brandGreen.withOpacity(0.2),
-                                  AppColors.brandGreen.withOpacity(0.1),
+                                  AppColors.brandGreen,
+                                  AppColors.brandGreen.withOpacity(0.8),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
                               Icons.agriculture,
-                              color: AppColors.brandGreen,
-                              size: 26,
+                              color: Colors.white,
+                              size: 22,
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -1025,9 +1053,9 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                             child: Text(
                               farm['farmName'] ?? 'Farm',
                               style: GoogleFonts.poppins(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF212121),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
                                 letterSpacing: 0.2,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -1163,11 +1191,11 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                               onTap: state.isSubmitting
                                   ? null
                                   : () => _submitVerification(farmId, farm),
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(12),
                               child: Container(
                                 width: double.infinity,
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
+                                    const EdgeInsets.symmetric(vertical: 14),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
@@ -1175,21 +1203,21 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                       AppColors.brandGreen.withOpacity(0.85),
                                     ],
                                   ),
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
                                       color:
-                                          AppColors.brandGreen.withOpacity(0.4),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
+                                          AppColors.brandGreen.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
                                     ),
                                   ],
                                 ),
                                 child: state.isSubmitting
                                     ? const Center(
                                         child: SizedBox(
-                                          width: 22,
-                                          height: 22,
+                                          width: 20,
+                                          height: 20,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2.5,
                                             valueColor:
@@ -1215,8 +1243,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                                 ? 'Submit Rejection'
                                                 : 'Submit Verification',
                                             style: GoogleFonts.poppins(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
                                               color: Colors.white,
                                               letterSpacing: 0.3,
                                             ),
@@ -1316,13 +1344,13 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
   Widget _buildInfoRow(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppColors.brandGreen.withOpacity(0.08),
+              color: AppColors.brandGreen.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -1336,9 +1364,9 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             child: Text(
               text,
               style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: const Color(0xFF424242),
-                fontWeight: FontWeight.w500,
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -1362,18 +1390,25 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.verified_user,
-                      size: 18,
-                      color: AppColors.brandGreen,
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.verified_user,
+                        size: 16,
+                        color: AppColors.brandGreen,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
                       'Verification Status *',
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF212121),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -1448,26 +1483,26 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeInOut,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
                   color: isSelected ? color.withOpacity(0.1) : Colors.white,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? color : const Color(0xFFE8E8E8),
-                    width: isSelected ? 2.5 : 1.5,
+                    color: isSelected ? color : Colors.grey.shade300,
+                    width: isSelected ? 2 : 1,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: color.withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                            color: color.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                             spreadRadius: 0,
                           ),
                         ]
                       : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
+                            color: Colors.black.withOpacity(0.04),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                             spreadRadius: 0,
@@ -1480,23 +1515,30 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: isSelected ? color : Colors.grey.shade200,
+                        gradient: isSelected
+                            ? LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [color, color.withOpacity(0.8)],
+                              )
+                            : null,
+                        color: isSelected ? null : Colors.grey.shade200,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         icon,
                         color: isSelected ? Colors.white : Colors.grey.shade600,
-                        size: 28,
+                        size: 24,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Text(
                       label,
                       style: GoogleFonts.poppins(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w600,
-                        color: isSelected ? color : const Color(0xFF616161),
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected ? color : AppColors.textSecondary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -1525,18 +1567,25 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.note,
-                      size: 18,
-                      color: AppColors.brandGreen,
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.note,
+                        size: 16,
+                        color: AppColors.brandGreen,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
                       'Feedback / Notes',
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF212121),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -1599,18 +1648,25 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      size: 18,
-                      color: AppColors.error,
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.warning_amber_rounded,
+                        size: 16,
+                        color: AppColors.error,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
                       'Rejection Reason *',
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF212121),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -1686,14 +1742,21 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       children: [
         Row(
           children: [
-            Icon(Icons.location_on, size: 18, color: AppColors.brandGreen),
-            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.brandGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.location_on, size: 16, color: AppColors.brandGreen),
+            ),
+            const SizedBox(width: 10),
             Text(
               'Location & Photo Verification',
               style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF212121),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
                 letterSpacing: 0.2,
               ),
             ),
@@ -1918,20 +1981,29 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.verified_user,
-                      size: 18,
-                      color: state.isOtpValidated
-                          ? AppColors.success
-                          : Colors.orange.shade700,
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: state.isOtpValidated
+                            ? AppColors.success.withOpacity(0.1)
+                            : Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.verified_user,
+                        size: 16,
+                        color: state.isOtpValidated
+                            ? AppColors.success
+                            : Colors.orange.shade700,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
                       'OTP Verification',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF212121),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const Spacer(),
