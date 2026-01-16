@@ -48,7 +48,7 @@ gateway:
     payment-service: http://127.0.0.1:4006
     profile-service: http://127.0.0.1:4007
     file-service: http://127.0.0.1:4008
-    notification-service: http://127.0.0.1:4009
+    notification-service: http://127.0.0.1:4016
     chat-service: http://127.0.0.1:4010
     advisory-service: http://127.0.0.1:4011
     support-service: http://127.0.0.1:4012

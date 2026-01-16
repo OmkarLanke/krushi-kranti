@@ -93,9 +93,10 @@ public interface FarmRepository extends JpaRepository<Farm, Long> {
     long countByFarmerId(Long farmerId);
     
     /**
-     * Count verified farms by farmer ID
+     * Count verified farms by farmer ID (only active farms)
      */
-    long countByFarmerIdAndIsVerifiedTrue(Long farmerId);
+    @Query("SELECT COUNT(f) FROM Farm f WHERE f.farmer.id = :farmerId AND f.isVerified = true AND f.isActive = true")
+    long countByFarmerIdAndIsVerifiedTrue(@Param("farmerId") Long farmerId);
     
     /**
      * Count all verified farms

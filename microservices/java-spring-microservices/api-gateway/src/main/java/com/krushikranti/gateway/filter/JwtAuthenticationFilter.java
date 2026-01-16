@@ -60,18 +60,23 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         
         if (!StringUtils.hasText(token)) {
             log.warn("Missing JWT token for path: {}", path);
+            log.warn("Request headers: {}", request.getHeaders().keySet());
             return handleUnauthorized(exchange, "Missing authentication token");
         }
+
+        log.debug("Extracted token for path: {} (token length: {})", path, token.length());
 
         // Validate token using JWKS
         return jwksService.validateToken(token)
                 .flatMap(result -> {
                     if (!result.valid()) {
                         log.warn("Token validation failed for path {}: {}", path, result.errorMessage());
+                        log.warn("Token preview: {}...", token.length() > 20 ? token.substring(0, 20) : token);
                         return handleUnauthorized(exchange, result.errorMessage());
                     }
 
-                    log.debug("Token validated for user: {} with roles: {}", result.username(), result.roles());
+                    log.info("Token validated for path: {}, user: {} (ID: {}), roles: {}", 
+                            path, result.username(), result.userId(), result.roles());
 
                     // Add user information headers for downstream services
                     ServerHttpRequest modifiedRequest = request.mutate()

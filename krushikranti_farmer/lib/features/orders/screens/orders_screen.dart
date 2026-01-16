@@ -43,8 +43,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black,size: 20),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: FutureBuilder<List<SalesOrderModel>>(

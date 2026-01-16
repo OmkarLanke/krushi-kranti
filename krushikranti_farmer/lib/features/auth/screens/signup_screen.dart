@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -125,6 +126,92 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return regex.hasMatch(password);
   }
 
+  // Helper method to generate user-friendly error messages
+  String _getUserFriendlyErrorMessage(dynamic error) {
+    final errorString = error.toString();
+    String actualMessage = errorString;
+    
+    // Try to extract JSON message from error string
+    try {
+      // Look for JSON in the error string (format: {...})
+      final jsonMatch = RegExp(r'\{[^}]+\}').firstMatch(errorString);
+      if (jsonMatch != null) {
+        final jsonString = jsonMatch.group(0);
+        if (jsonString != null) {
+          final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+          if (jsonData.containsKey('message')) {
+            actualMessage = jsonData['message'] as String;
+          }
+        }
+      }
+    } catch (e) {
+      // If JSON parsing fails, use the original error string
+    }
+    
+    final errorLower = actualMessage.toLowerCase();
+    
+    // Map common error messages to user-friendly text
+    if (errorLower.contains('phone number already exists') || 
+        errorLower.contains('phone already exists') ||
+        errorLower.contains('phone number is already registered')) {
+      return _getLocalizedError('phoneExists');
+    }
+    
+    if (errorLower.contains('email already exists') || 
+        errorLower.contains('email is already registered') ||
+        errorLower.contains('email already in use')) {
+      return _getLocalizedError('emailExists');
+    }
+    
+    if (errorLower.contains('username already exists') || 
+        errorLower.contains('username is already taken')) {
+      return _getLocalizedError('usernameExists');
+    }
+    
+    if (errorLower.contains('invalid') || errorLower.contains('validation')) {
+      return _getLocalizedError('invalidData');
+    }
+    
+    if (errorLower.contains('network') || errorLower.contains('connection')) {
+      return _getLocalizedError('networkError');
+    }
+    
+    // Return the actual message (cleaned up)
+    return actualMessage
+        .replaceFirst("Exception: ", "")
+        .replaceFirst("Network Error: ", "")
+        .replaceFirst("Error: ", "")
+        .replaceFirst("error: ", "");
+  }
+  
+  String _getLocalizedError(String key) {
+    final errorMessages = {
+      "en": {
+        "phoneExists": "This phone number is already registered. Please use a different number or try logging in.",
+        "emailExists": "This email address is already registered. Please use a different email or try logging in.",
+        "usernameExists": "This username is already taken. Please choose a different username.",
+        "invalidData": "Please check your information and try again.",
+        "networkError": "Network connection error. Please check your internet and try again.",
+      },
+      "hi": {
+        "phoneExists": "यह फोन नंबर पहले से पंजीकृत है। कृपया कोई अन्य नंबर उपयोग करें या लॉग इन करने का प्रयास करें।",
+        "emailExists": "यह ई-मेल पता पहले से पंजीकृत है। कृपया कोई अन्य ई-मेल उपयोग करें या लॉग इन करने का प्रयास करें।",
+        "usernameExists": "यह उपयोगकर्ता नाम पहले से लिया गया है। कृपया कोई अन्य नाम चुनें।",
+        "invalidData": "कृपया अपनी जानकारी जांचें और पुनः प्रयास करें।",
+        "networkError": "नेटवर्क कनेक्शन त्रुटि। कृपया अपना इंटरनेट जांचें और पुनः प्रयास करें।",
+      },
+      "mr": {
+        "phoneExists": "हा फोन नंबर आधीच नोंदणीकृत आहे. कृपया वेगळा नंबर वापरा किंवा लॉग इन करण्याचा प्रयत्न करा.",
+        "emailExists": "हा ई-मेल पत्ता आधीच नोंदणीकृत आहे. कृपया वेगळा ई-मेल वापरा किंवा लॉग इन करण्याचा प्रयत्न करा.",
+        "usernameExists": "हे वापरकर्तानाव आधीच घेतले आहे. कृपया वेगळे नाव निवडा.",
+        "invalidData": "कृपया आपली माहिती तपासा आणि पुन्हा प्रयत्न करा.",
+        "networkError": "नेटवर्क कनेक्शन त्रुटी. कृपया आपले इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.",
+      },
+    };
+    
+    return errorMessages[appLang]?[key] ?? errorMessages["en"]![key]!;
+  }
+
   // ✅ UPDATED: Async function to save data
   Future<void> validateForm() async {
     setState(() {
@@ -193,10 +280,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _isLoading = false;
         });
 
+        // Get user-friendly error message
+        final errorMessage = _getUserFriendlyErrorMessage(e);
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceFirst("Exception: ", "")),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    errorMessage,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
           ),
         );
       }

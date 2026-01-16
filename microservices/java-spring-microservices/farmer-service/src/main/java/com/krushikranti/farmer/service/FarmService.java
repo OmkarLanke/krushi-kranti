@@ -237,6 +237,33 @@ public class FarmService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Update farm verification status (called by field-officer-service after verification).
+     * This is an internal service method that updates the is_verified field in the farms table.
+     */
+    @Transactional
+    public void updateFarmVerificationStatus(Long farmId, boolean isVerified, Long verifiedByOfficerId, String verificationRemarks) {
+        Farm farm = farmRepository.findById(farmId)
+                .orElseThrow(() -> new IllegalArgumentException("Farm not found with ID: " + farmId));
+        
+        farm.setIsVerified(isVerified);
+        if (isVerified) {
+            farm.setVerifiedBy(verifiedByOfficerId);
+            farm.setVerifiedAt(LocalDateTime.now());
+            if (verificationRemarks != null) {
+                farm.setVerificationRemarks(verificationRemarks);
+            }
+        } else {
+            farm.setVerifiedBy(null);
+            farm.setVerifiedAt(null);
+            farm.setVerificationRemarks(null);
+        }
+        
+        farmRepository.save(farm);
+        log.info("Updated verification status for farm {}: isVerified={}, verifiedBy={}", 
+                farmId, isVerified, verifiedByOfficerId);
+    }
+
     // ========================================
     // HELPER METHODS
     // ========================================

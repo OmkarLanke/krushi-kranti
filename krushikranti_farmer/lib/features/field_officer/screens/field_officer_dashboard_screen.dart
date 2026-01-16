@@ -76,7 +76,7 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
                 _buildNavItem(
                   icon: Icons.person_outline,
                   activeIcon: Icons.person_rounded,
-                  label: l10n.profile,
+                  label: 'Profile',
                   index: 3,
                 ),
               ],
