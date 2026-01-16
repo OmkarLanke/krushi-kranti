@@ -28,8 +28,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Filter any existing notifications to ensure they belong to current user (safeguard)
+    // Note: We don't clear all notifications here because NotificationService is a singleton
+    // and we want to preserve notifications across screen rebuilds
+    _notificationService.filterNotificationsByCurrentUser();
     _checkFieldOfficerAssignments();
     _setupNotificationListener();
+    // Start polling for notifications from backend
+    _notificationService.startPolling(interval: const Duration(seconds: 10));
   }
 
   void _setupNotificationListener() {
@@ -45,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _notificationSubscription?.cancel();
+    _notificationService.stopPolling();
     super.dispose();
   }
 
@@ -55,10 +62,10 @@ class _HomeScreenState extends State<HomeScreen> {
     
     try {
       final assignments = await FieldOfficerAssignmentService.getAssignments();
-      // Filter out CANCELLED assignments
+      // Only show ASSIGNED field officers - filter out COMPLETED and CANCELLED
       final activeAssignments = assignments.where((assignment) {
         final status = assignment['status']?.toString().toUpperCase();
-        return status != 'CANCELLED';
+        return status == 'ASSIGNED';
       }).toList();
       
       if (mounted) {

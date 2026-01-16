@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io' show Platform, File;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'storage_service.dart'; // ✅ Import the new service
@@ -16,7 +16,7 @@ class HttpService {
       return "http://localhost:4004";
     } else if (Platform.isAndroid || Platform.isIOS) {
       // Mobile platforms (Android/iOS) - use your computer's local IP
-      return "http://192.168.1.65:4004"; // ✅ Your Wi-Fi IP address
+      return "http://192.168.1.84:4004"; // ✅ Your Wi-Fi IP address
     } else {
       // Desktop platforms (Windows, Mac, Linux)
       return "http://localhost:4004";
@@ -39,18 +39,39 @@ class HttpService {
     String? token = await StorageService.getToken();
     String language = await _getLanguageHeader();
     
+    // Debug logging for notification endpoints
+    if (endpoint.contains('notification')) {
+      debugPrint('=== HTTP GET REQUEST (Notification) ===');
+      debugPrint('URL: $uri');
+      debugPrint('Token exists: ${token != null && token.isNotEmpty}');
+      debugPrint('Token preview: ${token != null && token.length > 20 ? token.substring(0, 20) + "..." : token}');
+    }
+    
     try {
-      final response = await http.get(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Accept-Language": language, // ✅ Send language preference
-          // ✅ ACTION: Attach Token if it exists
-          if (token != null) "Authorization": "Bearer $token",
-        },
-      );
+      final headers = <String, String>{
+        "Content-Type": "application/json",
+        "Accept-Language": language,
+      };
+      
+      // ✅ ACTION: Attach Token if it exists
+      if (token != null && token.isNotEmpty) {
+        headers["Authorization"] = "Bearer $token";
+      } else {
+        debugPrint('WARNING: No token found for request to $endpoint');
+      }
+      
+      final response = await http.get(uri, headers: headers);
+      
+      if (endpoint.contains('notification')) {
+        debugPrint('Response Status: ${response.statusCode}');
+        debugPrint('Response Body: ${response.body}');
+      }
+      
       return _handleResponse(response);
     } catch (e) {
+      if (endpoint.contains('notification')) {
+        debugPrint('Error in GET request: $e');
+      }
       throw Exception('Network Error: $e');
     }
   }

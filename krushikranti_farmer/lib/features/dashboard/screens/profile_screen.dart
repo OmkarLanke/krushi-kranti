@@ -10,6 +10,7 @@ import '../../../core/services/http_service.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../kyc/services/kyc_service.dart';
 import '../../kyc/models/kyc_models.dart';
+import '../../dashboard/services/notification_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -941,6 +942,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       color: Colors.transparent,
       child: InkWell(
       onTap: () async {
+        // Clear notifications before logout to prevent cross-user data leakage
+        NotificationService().clearOnLogout();
         await StorageService.clearSession();
         if (!context.mounted) return;
         Navigator.pushNamedAndRemoveUntil(

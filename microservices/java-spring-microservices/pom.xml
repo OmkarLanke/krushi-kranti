@@ -51,6 +51,7 @@
         <module>subscription-service</module>
         <module>kyc-service</module>
         <module>file-service</module>
+        <module>notification-service</module>
     </modules>
 
     <dependencyManagement>

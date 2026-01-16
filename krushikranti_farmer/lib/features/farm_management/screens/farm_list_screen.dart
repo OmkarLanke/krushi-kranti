@@ -66,10 +66,10 @@ class _FarmListScreenState extends State<FarmListScreen> {
     try {
       final assignments = await FieldOfficerAssignmentService.getAssignments();
       
-      // Filter active assignments
+      // Filter active assignments - include only ASSIGNED and COMPLETED (exclude CANCELLED and others)
       final activeAssignments = assignments.where((assignment) {
         final status = assignment['status']?.toString().toUpperCase() ?? '';
-        return status == 'ASSIGNED' || status == 'ACTIVE';
+        return status == 'ASSIGNED' || status == 'COMPLETED';
       }).toList();
 
       // Create a map of farmId -> assignment
@@ -649,6 +649,8 @@ class _FarmListScreenState extends State<FarmListScreen> {
     final fieldOfficerPhone = assignment['fieldOfficerPhone']?.toString() ?? '';
     final fieldOfficerPincode = assignment['fieldOfficerPincode']?.toString() ?? '';
     final assignedAt = assignment['assignedAt'];
+    final completedAt = assignment['completedAt'];
+    final status = assignment['status']?.toString().toUpperCase() ?? 'ASSIGNED';
     
     // Format assigned date
     String assignedDateStr = '';
@@ -659,6 +661,29 @@ class _FarmListScreenState extends State<FarmListScreen> {
       } catch (e) {
         assignedDateStr = assignedAt.toString();
       }
+    }
+    
+    // Format completed date if available
+    String completedDateStr = '';
+    if (completedAt != null) {
+      try {
+        final dateTime = DateTime.parse(completedAt.toString());
+        completedDateStr = DateFormat('M/d/yyyy').format(dateTime);
+      } catch (e) {
+        completedDateStr = completedAt.toString();
+      }
+    }
+    
+    // Determine status badge color and text
+    Color statusColor;
+    String statusText;
+    if (status == 'COMPLETED') {
+      statusColor = AppColors.brandGreen;
+      statusText = 'VERIFIED';
+    } else {
+      // Default to ASSIGNED
+      statusColor = const Color(0xFF4FC3F7); // Light blue
+      statusText = 'ASSIGNED';
     }
 
     return Container(
@@ -726,7 +751,7 @@ class _FarmListScreenState extends State<FarmListScreen> {
                   borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'ASSIGNED',
+                          statusText,
                           style: GoogleFonts.poppins(
                             fontSize: 9,
                             fontWeight: FontWeight.w600,
@@ -786,6 +811,22 @@ class _FarmListScreenState extends State<FarmListScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                           color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (completedDateStr.isNotEmpty)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle, size: 12, color: AppColors.brandGreen),
+                            const SizedBox(width: 3),
+                            Text(
+                              'Completed: $completedDateStr',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: AppColors.brandGreen,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),

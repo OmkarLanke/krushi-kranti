@@ -21,7 +21,7 @@ public class ServiceUrlProperties {
     private String paymentService = "http://localhost:4006";
     private String profileService = "http://localhost:4007";
     private String fileService = "http://localhost:4008";
-    private String notificationService = "http://localhost:4009";
+    private String notificationService = "http://localhost:4016";
     private String chatService = "http://localhost:4010";
     private String advisoryService = "http://localhost:4011";
     private String supportService = "http://localhost:4012";
