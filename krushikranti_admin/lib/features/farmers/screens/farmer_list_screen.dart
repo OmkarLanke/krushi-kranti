@@ -9,6 +9,7 @@ import 'farmer_detail_screen.dart';
 import 'assign_field_officer_dialog.dart';
 
 enum SortColumn {
+  farmerId,
   userId,
   fullName,
   username,
@@ -47,6 +48,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   final int _pageSize = 100; // Show 100 farmers per page
   
   // Column-specific search queries
+  String? _farmerIdSearch;
   String? _userIdSearch;
   String? _fullNameSearch;
   String? _usernameSearch;
@@ -80,6 +82,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   String? _openDropdownLabel;
   
   // Search controllers for each column
+  final _farmerIdSearchController = TextEditingController();
   final _userIdSearchController = TextEditingController();
   final _fullNameSearchController = TextEditingController();
   final _usernameSearchController = TextEditingController();
@@ -87,6 +90,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   final _locationSearchController = TextEditingController();
   final _pincodeSearchController = TextEditingController();
   final _pincodeController = TextEditingController();
+  Timer? _farmerIdSearchDebounce;
   Timer? _userIdSearchDebounce;
   Timer? _fullNameSearchDebounce;
   Timer? _usernameSearchDebounce;
@@ -109,6 +113,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   @override
   void dispose() {
     _closeDropdown();
+    _farmerIdSearchController.dispose();
     _userIdSearchController.dispose();
     _fullNameSearchController.dispose();
     _usernameSearchController.dispose();
@@ -116,6 +121,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     _locationSearchController.dispose();
     _pincodeSearchController.dispose();
     _pincodeController.dispose();
+    _farmerIdSearchDebounce?.cancel();
     _userIdSearchDebounce?.cancel();
     _fullNameSearchDebounce?.cancel();
     _usernameSearchDebounce?.cancel();
@@ -380,8 +386,6 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     );
   }
 
-
-
   void _onKycFilterChanged(String? value) {
     setState(() {
       _kycFilter = value;
@@ -456,35 +460,40 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.background,
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(28.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          _buildHeader(),
-              const SizedBox(height: 28),
-          
-          // Stats Cards
-          _buildStatsSection(),
-              const SizedBox(height: 28),
-              
-              // Advanced Filters Panel
-              if (_showAdvancedFilters) ...[
-                _buildAdvancedFiltersPanel(),
-                const SizedBox(height: 20),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(28.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // Header
+                _buildHeader(),
+                const SizedBox(height: 28),
+                
+                // Stats Cards
+                _buildStatsSection(),
+                const SizedBox(height: 28),
+                
+                // Advanced Filters Panel
+                if (_showAdvancedFilters) ...[
+                  _buildAdvancedFiltersPanel(),
+                  const SizedBox(height: 20),
+                ],
+                
+                // Farmers Table with integrated filters
+                _buildFarmersTable(),
+                
+                // Pagination
+                if (_totalPages > 1) ...[
+                  const SizedBox(height: 20),
+                  _buildPagination(),
+                ],
               ],
-              
-              // Farmers Table with integrated filters
-              _buildFarmersTable(),
-          
-          // Pagination
-              if (_totalPages > 1) ...[
-                const SizedBox(height: 20),
-          _buildPagination(),
-              ],
-        ],
+            ),
           ),
         ),
       ),
@@ -1258,6 +1267,12 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     List<FarmerSummary> filtered = List.from(_allFarmers);
 
     // Apply column-specific search filters
+    if (_farmerIdSearch != null && _farmerIdSearch!.isNotEmpty) {
+      filtered = filtered.where((farmer) {
+        return farmer.farmerId.toString().contains(_farmerIdSearch!);
+      }).toList();
+    }
+
     if (_userIdSearch != null && _userIdSearch!.isNotEmpty) {
       filtered = filtered.where((farmer) {
         return farmer.userId.toString().contains(_userIdSearch!);
@@ -1401,6 +1416,9 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       filtered.sort((a, b) {
         int comparison = 0;
         switch (_sortColumn!) {
+          case SortColumn.farmerId:
+            comparison = a.farmerId.compareTo(b.farmerId);
+            break;
           case SortColumn.userId:
             comparison = a.userId.compareTo(b.userId);
             break;
@@ -1468,6 +1486,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
 
   void _clearAdvancedFilters() {
     // Clear all search controllers
+    _farmerIdSearchController.clear();
     _userIdSearchController.clear();
     _fullNameSearchController.clear();
     _usernameSearchController.clear();
@@ -1478,6 +1497,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     
     setState(() {
       // Clear all search queries
+      _farmerIdSearch = null;
       _userIdSearch = null;
       _fullNameSearch = null;
       _usernameSearch = null;
@@ -1551,135 +1571,162 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.errorBg,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.error_outline_rounded,
-                    size: 48,
-                    color: AppColors.error,
-                  ),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.errorBg,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 20),
+                child: Icon(
+                  Icons.error_outline_rounded,
+                  size: 48,
+                  color: AppColors.error,
+                ),
+              ),
+              const SizedBox(height: 20),
             Text(
-                  'Error Loading Data',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                'Error Loading Data',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _error!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
               onPressed: _loadFarmers,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Retry'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandGreen,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brandGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
-                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
         ),
       );
     }
 
     // Always show table structure, even when empty
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Scrollbar(
-              controller: _horizontalScrollController,
-              thumbVisibility: true,
-              thickness: 12,
-              radius: const Radius.circular(6),
-              child: SingleChildScrollView(
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Scrollbar(
                 controller: _horizontalScrollController,
-                scrollDirection: Axis.horizontal,
-                child: _buildCustomTable(
-                  constraints.maxWidth > 0 ? constraints.maxWidth : 1200,
+                thumbVisibility: true,
+                thickness: 12,
+                radius: const Radius.circular(6),
+                child: SingleChildScrollView(
+                  controller: _horizontalScrollController,
+                  scrollDirection: Axis.horizontal,
+                  child: _buildCustomTable(
+                    constraints.maxWidth > 0 ? constraints.maxWidth : 1200,
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCustomTable(double minWidth) {
+  // --- FIXED TABLE BUILDER WITH SCALING ---
+  Widget _buildCustomTable(double availableWidth) {
     const double rowHeight = 72.0;
     const double headerHeight = 56.0;
     const double filterHeight = 52.0;
-    
-    // Column widths - optimized for better layout
-    // Order: User ID, Username, Full Name, Phone No, Location, Pincode, KYC, Subscription, Field Officer, Verified Farms
-    const double userIdWidth = 110.0;
-    const double usernameWidth = 150.0;
-    const double fullNameWidth = 200.0;
-    const double phoneWidth = 140.0;
-    const double locationWidth = 280.0;
-    const double pincodeWidth = 120.0;
-    const double kycWidth = 130.0;
-    const double subscriptionWidth = 150.0;
-    const double fieldOfficerWidth = 160.0;
-    const double verifiedFarmsWidth = 130.0;
-    
-    final totalWidth = userIdWidth +
-        usernameWidth +
-        fullNameWidth +
-        phoneWidth +
-        locationWidth +
-        pincodeWidth +
-        kycWidth +
-        subscriptionWidth +
-        fieldOfficerWidth +
-        verifiedFarmsWidth;
+
+    // 1. Define Base Column widths (renamed from your constants)
+    const double baseFarmerIdWidth = 110.0;
+    const double baseUserIdWidth = 110.0;
+    const double baseUsernameWidth = 150.0;
+    const double baseFullNameWidth = 200.0;
+    const double basePhoneWidth = 140.0;
+    const double baseLocationWidth = 280.0;
+    const double basePincodeWidth = 120.0;
+    const double baseFarmsWidth = 100.0;
+    const double baseKycWidth = 130.0;
+    const double baseSubscriptionWidth = 150.0;
+    const double baseFieldOfficerWidth = 160.0;
+
+    final totalBaseWidth = baseFarmerIdWidth +
+        baseUserIdWidth +
+        baseUsernameWidth +
+        baseFullNameWidth +
+        basePhoneWidth +
+        baseLocationWidth +
+        basePincodeWidth +
+        baseFarmsWidth +
+        baseKycWidth +
+        baseSubscriptionWidth +
+        baseFieldOfficerWidth;
+
+    // 2. Calculate Scale Factor
+    // If available screen width > total fixed width, we scale up to fit the screen.
+    // If screen is smaller, we stick to 1.0 so scrolling still works.
+    double scaleFactor = 1.0;
+    if (availableWidth > totalBaseWidth) {
+      scaleFactor = availableWidth / totalBaseWidth;
+    }
+
+    // 3. Apply scale to get Effective Widths
+    final double farmerIdWidth = baseFarmerIdWidth * scaleFactor;
+    final double userIdWidth = baseUserIdWidth * scaleFactor;
+    final double usernameWidth = baseUsernameWidth * scaleFactor;
+    final double fullNameWidth = baseFullNameWidth * scaleFactor;
+    final double phoneWidth = basePhoneWidth * scaleFactor;
+    final double locationWidth = baseLocationWidth * scaleFactor;
+    final double pincodeWidth = basePincodeWidth * scaleFactor;
+    final double farmsWidth = baseFarmsWidth * scaleFactor;
+    final double kycWidth = baseKycWidth * scaleFactor;
+    final double subscriptionWidth = baseSubscriptionWidth * scaleFactor;
+    final double fieldOfficerWidth = baseFieldOfficerWidth * scaleFactor;
+
+    // The new total width is effectively the availableWidth (if scaled)
+    final totalWidth = totalBaseWidth * scaleFactor;
 
     // Calculate height for rows
-    // Set max height to show approximately 10-12 rows at a time, then scroll
-    const double maxVisibleHeight = 800.0; // Max height for visible area
-    // Calculate actual data height based on filtered farmers
-    // The Column will be as tall as needed, and the SizedBox will clip it to maxVisibleHeight
+    const double maxVisibleHeight = 800.0; 
     final actualDataHeight = _filteredFarmers.length * rowHeight;
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        minWidth: totalWidth, // Use actual table width, not viewport width
+        minWidth: totalWidth, // Use the calculated total width
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1696,7 +1743,9 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             ),
             child: Row(
               children: [
-                _buildHeaderCell('User ID', userIdWidth, SortColumn.userId, true),
+                _buildHeaderCell('Farmer ID', farmerIdWidth, SortColumn.farmerId, true),
+                _buildHeaderDivider(),
+                _buildHeaderCell('User ID', userIdWidth, SortColumn.userId, false),
                 _buildHeaderDivider(),
                 _buildHeaderCell('Username', usernameWidth, SortColumn.username, false),
                 _buildHeaderDivider(),
@@ -1729,6 +1778,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             ),
             child: Row(
               children: [
+                _buildFilterCell(farmerIdWidth, 'farmerId'),
+                _buildDivider(),
                 _buildFilterCell(userIdWidth, 'userId'),
                 _buildDivider(),
                 _buildFilterCell(usernameWidth, 'username'),
@@ -1764,30 +1815,31 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 child: _filteredFarmers.isEmpty
                     ? _buildEmptyState(totalWidth, actualDataHeight)
                     : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ..._filteredFarmers.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final farmer = entry.value;
-                              return _buildCustomFarmerRow(
-                                farmer,
-                                rowHeight,
-                                userIdWidth,
-                                usernameWidth,
-                                fullNameWidth,
-                                phoneWidth,
-                                locationWidth,
-                                pincodeWidth,
-                                kycWidth,
-                                subscriptionWidth,
-                                fieldOfficerWidth,
-                                verifiedFarmsWidth,
-                                index == _filteredFarmers.length - 1, // Last row
-                              );
-                            }),
-                          ],
-                        ),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ..._filteredFarmers.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final farmer = entry.value;
+                            return _buildCustomFarmerRow(
+                              farmer,
+                              rowHeight,
+                              farmerIdWidth,
+                              userIdWidth,
+                              usernameWidth,
+                              fullNameWidth,
+                              phoneWidth,
+                              locationWidth,
+                              pincodeWidth,
+                              farmsWidth,
+                              kycWidth,
+                              subscriptionWidth,
+                              fieldOfficerWidth,
+                              index == _filteredFarmers.length - 1, // Last row
+                            );
+                          }),
+                        ],
+                      ),
               ),
             ),
           ),
@@ -1935,17 +1987,28 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                     icon: Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey.shade600),
                   ),
                 )
-              : filterType == 'userId'
-                  ? _buildSearchInput(width, _userIdSearchController, 'Search ID...', (value) {
-                      _userIdSearchDebounce?.cancel();
-                      _userIdSearchDebounce = Timer(const Duration(milliseconds: 300), () {
+              : filterType == 'farmerId'
+                  ? _buildSearchInput(width, _farmerIdSearchController, 'Search Farmer ID...', (value) {
+                      _farmerIdSearchDebounce?.cancel();
+                      _farmerIdSearchDebounce = Timer(const Duration(milliseconds: 300), () {
                         setState(() {
-                          _userIdSearch = value.isEmpty ? null : value;
+                          _farmerIdSearch = value.isEmpty ? null : value;
                           _currentPage = 0;
                         });
                         _applyFiltersAndReload();
                       });
                     })
+                  : filterType == 'userId'
+                      ? _buildSearchInput(width, _userIdSearchController, 'Search User ID...', (value) {
+                          _userIdSearchDebounce?.cancel();
+                          _userIdSearchDebounce = Timer(const Duration(milliseconds: 300), () {
+                            setState(() {
+                              _userIdSearch = value.isEmpty ? null : value;
+                              _currentPage = 0;
+                            });
+                            _applyFiltersAndReload();
+                          });
+                        })
                   : filterType == 'fullName'
                       ? _buildSearchInput(width, _fullNameSearchController, 'Search name...', (value) {
                           _fullNameSearchDebounce?.cancel();
@@ -2169,6 +2232,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   Widget _buildCustomFarmerRow(
     FarmerSummary farmer,
     double height,
+    double farmerIdWidth,
     double userIdWidth,
     double usernameWidth,
     double fullNameWidth,
@@ -2200,6 +2264,16 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             hoverColor: AppColors.brandGreen.withOpacity(0.05),
             child: Row(
         children: [
+          // Farmer ID
+          _buildDataCell(farmerIdWidth, Text(
+            farmer.farmerId.toString(),
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+          ), true),
+          _buildDivider(),
           // User ID
           _buildDataCell(userIdWidth, Text(
             farmer.userId.toString(),
@@ -2208,7 +2282,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               fontWeight: FontWeight.w500,
               color: AppColors.textPrimary,
             ),
-          ), true),
+          ), false),
           _buildDivider(),
           // Username
           _buildDataCell(usernameWidth, Text(
@@ -2641,8 +2715,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-          Text(
-                  'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
+        Text(
+          'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -2715,8 +2789,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
           } else {
             return Column(
               children: [
-          Text(
-                  'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
+        Text(
+          'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -2782,9 +2856,9 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                             : null,
                         tooltip: 'Next page',
                       ),
-          ),
-        ],
-      ),
+                    ),
+                  ],
+                ),
               ],
             );
           }
@@ -3057,4 +3131,3 @@ class _DropdownOverlayState extends State<_DropdownOverlay> {
     );
   }
 }
-

@@ -260,16 +260,30 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 24,
         title: Text(
           'Farmers',
           style: GoogleFonts.poppins(
-            color: AppColors.textPrimary,
-            fontSize: 24,
+            color: Colors.white,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
           ),
         ),
       ),
@@ -653,9 +667,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-              Icons.assignment_outlined,
-              size: 80,
-                      color: AppColors.brandGreen.withOpacity(value),
+              Icons.people_outline,
+              size: 64,
+                      color: AppColors.brandGreen,
                     ),
                   ),
                 ),
@@ -667,7 +681,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
               style: GoogleFonts.poppins(
                       fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: Colors.black,
+                color: AppColors.textPrimary,
+                letterSpacing: 0.2,
               ),
             ),
                 ),
@@ -678,8 +693,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
               'You will see assigned farmers here once the admin assigns them to you.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 15,
                 color: AppColors.textSecondary,
+                fontWeight: FontWeight.w400,
                     ),
               ),
             ),
@@ -741,13 +757,13 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
           child: Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5DC), // Beige background like reference
+        color: Colors.white,
               borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-                  color: Colors.black.withOpacity(0.08 * value),
-                  blurRadius: 15,
-                  offset: Offset(0, 4 * value),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                   spreadRadius: 0,
           ),
         ],
@@ -804,27 +820,29 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                           return Transform.scale(
                             scale: value,
                             child: Container(
+                              width: 50,
+                              height: 50,
                               decoration: BoxDecoration(
-                                shape: BoxShape.circle,
                                 gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                   colors: [
-                                    AppColors.brandGreen.withOpacity(0.2),
-                                    AppColors.brandGreen.withOpacity(0.1),
+                                    AppColors.brandGreen,
+                                    AppColors.brandGreen.withOpacity(0.8),
                                   ],
                                 ),
+                                shape: BoxShape.circle,
                               ),
-                              child: CircleAvatar(
-                                radius: 36,
-                                backgroundColor: Colors.transparent,
-                  child: Text(
-                    initials,
-                    style: GoogleFonts.poppins(
-                                    fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.brandGreen,
-                    ),
-                  ),
-                ),
+                              child: Center(
+                                child: Text(
+                                  initials,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -839,9 +857,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       Text(
                         farmerName,
                         style: GoogleFonts.poppins(
-                                fontSize: 17,
+                                fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                          color: AppColors.textPrimary,
                                 letterSpacing: 0.2,
                         ),
                               maxLines: 1,
@@ -861,8 +879,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                   child: Text(
                         locationStr,
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: 13,
                           color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w400,
                         ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -885,6 +904,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w400,
                         ),
                                 ),
                               ],
@@ -893,10 +913,14 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       if (farms.length > 1) ...[
                               const SizedBox(height: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: AppColors.brandGreen.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: AppColors.brandGreen.withOpacity(0.3),
+                                    width: 1,
+                                  ),
                                 ),
                                 child: Text(
                           '${farms.length} farms assigned',
@@ -916,7 +940,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: AppColors.textSecondary,
-                            fontStyle: FontStyle.italic,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
@@ -934,7 +958,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                             child: Opacity(
                               opacity: value,
                               child: Icon(
-                  Icons.arrow_forward_ios,
+                  Icons.arrow_forward_ios_rounded,
                                 size: 18,
                                 color: AppColors.brandGreen,
                               ),
@@ -1854,8 +1878,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                     ),
                     child: Icon(
                       Icons.filter_alt_outlined,
-                      size: 80,
-                      color: AppColors.textSecondary.withOpacity(value),
+                      size: 64,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -1867,7 +1891,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: AppColors.textPrimary,
+                      letterSpacing: 0.2,
                     ),
                   ),
                 ),
@@ -1878,8 +1903,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                     'Try adjusting your filters to see more results.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 15,
                       color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 // ✅ 1. Import Localization
 import '../../../l10n/app_localizations.dart';
 
@@ -398,32 +399,67 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> with TickerProvider
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          l10n.emailLoginTitle,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.all(20),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                const SizedBox(height: 20),
 
                 // ✅ 3. Localized Header
                 Text(
                   l10n.welcomeBack, // "Welcome Back!"
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                    letterSpacing: 0.3,
+                  ),
                 ),
+                const SizedBox(height: 8),
                 Text(
                   l10n.emailLoginTitle, // "Log in with Email"
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.brandGreen),
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade600,
+                  ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
                 // Email Field with shake animation
                 AnimatedBuilder(
@@ -468,6 +504,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> with TickerProvider
                 if (_passwordFormatError != null) _errorText(_passwordFormatError!),
 
                 // ✅ NEW: FORGOT PASSWORD LINK ADDED HERE
+                const SizedBox(height: 4),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -476,16 +513,17 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> with TickerProvider
                       Navigator.pushNamed(context, AppRoutes.forgotPasswordPhone);
                     },
                     style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero, // Remove default padding to align perfectly
+                      padding: EdgeInsets.zero,
                       minimumSize: const Size(50, 30),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: Text(
-                      l10n.forgotPassword, // Uses the localization key
-                      style: const TextStyle(
+                      l10n.forgotPassword,
+                      style: GoogleFonts.poppins(
                         color: AppColors.brandGreen,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         fontSize: 14,
+                        decoration: TextDecoration.underline,
                       ),
                     ),
                   ),
@@ -496,20 +534,34 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> with TickerProvider
                 // Login Button
                 SizedBox(
                   width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
+                  height: 50,
+                  child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.black, // Ensure text is visible on primary color
+                      backgroundColor: AppColors.brandGreen,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
                     ),
                     onPressed: _isLoading ? null : _handleLogin,
-                    child: _isLoading 
-                      ? const CircularProgressIndicator(color: Colors.black)
-                      : Text(
-                          l10n.loginBtn, // ✅ "Log In"
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
-                        ),
+                    icon: _isLoading 
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.login_rounded, color: Colors.white, size: 20),
+                    label: Text(
+                      l10n.loginBtn, // ✅ "Log In"
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
                   ),
                 ),
                 
@@ -528,25 +580,39 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> with TickerProvider
 
   Widget _errorText(String message) {
     return Padding(
-      padding: const EdgeInsets.only(top: 6, left: 0),
+      padding: const EdgeInsets.only(top: 8, left: 0),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.red.shade200, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            Icon(Icons.error_outline, size: 16, color: Colors.red.shade700),
-            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.red.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.error_outline_rounded, size: 16, color: Colors.red.shade700),
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(
+                style: GoogleFonts.poppins(
                   color: Colors.red.shade700,
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -560,22 +626,36 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> with TickerProvider
   Widget _authErrorText(String message) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.red.shade200, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, size: 18, color: Colors.red.shade700),
-          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.red.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.error_outline_rounded, size: 18, color: Colors.red.shade700),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 color: Colors.red.shade700,
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
@@ -598,29 +678,56 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> with TickerProvider
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
+        color: Colors.white,
         border: Border.all(
-          color: hasError ? Colors.red : AppColors.brandGreen, 
+          color: hasError ? Colors.red.shade300 : Colors.grey.shade300, 
           width: hasError ? 1.5 : 1,
         ),
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: hasError
+            ? [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: AppColors.brandGreen),
-          const SizedBox(width: 10),
+          Container(
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: hasError
+                  ? Colors.red.shade50
+                  : AppColors.brandGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: hasError ? Colors.red.shade700 : AppColors.brandGreen,
+            ),
+          ),
           Expanded(
             child: TextField(
               controller: controller,
               obscureText: isPassword ? obscureText : false,
+              style: GoogleFonts.poppins(fontSize: 14),
               decoration: InputDecoration(
-                hintText: hint, // This hint is now localized when passed from build()
+                hintText: hint,
                 border: InputBorder.none,
-                hintStyle: const TextStyle(color: AppColors.textSecondary),
+                hintStyle: GoogleFonts.poppins(
+                  color: Colors.grey.shade400,
+                  fontSize: 14,
+                ),
                 suffixIcon: isPassword && onTogglePassword != null
                     ? IconButton(
                         icon: Icon(
-                          obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: AppColors.brandGreen,
+                          obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                          color: hasError ? Colors.red.shade700 : AppColors.brandGreen,
                           size: 20,
                         ),
                         onPressed: onTogglePassword,
