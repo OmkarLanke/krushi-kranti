@@ -23,7 +23,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get soonMsg => 'KrushiTadnya Soon !';
 
-  @override
+  @override  
   String get assignedMsg => 'Your assigned Krushi Tadnya';
 
   @override
