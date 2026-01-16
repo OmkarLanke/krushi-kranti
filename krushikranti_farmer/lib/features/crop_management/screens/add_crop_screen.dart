@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../l10n/app_localizations.dart'; // ✅ Relative Import
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
@@ -173,11 +174,36 @@ class _AddCropScreenState extends State<AddCropScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text(l10n.addNewCrop), // ✅ Translated
-        backgroundColor: AppColors.brandGreen,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          l10n.addNewCrop,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.brandGreen))
@@ -188,8 +214,8 @@ class _AddCropScreenState extends State<AddCropScreen> {
           children: [
                   // Farm Selection (if multiple farms)
                   if (farms.length > 1) ...[
-                    Text(l10n.selectFarm, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    const SizedBox(height: 8),
+              _buildSectionHeader(Icons.agriculture_rounded, l10n.selectFarm),
+              const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
                       decoration: _inputDecoration(l10n.farmLabel),
                       value: selectedFarmId,
@@ -202,10 +228,9 @@ class _AddCropScreenState extends State<AddCropScreen> {
                     const SizedBox(height: 20),
                   ],
                   
-                  Text(l10n.selectCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
-            
-                  // 1. CROP TYPE DROPDOWN
+            // Crop Type Section
+            _buildSectionHeader(Icons.category_rounded, l10n.selectCategory),
+            const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
                     key: ValueKey(selectedCropTypeId ?? 'type_reset'),
                     decoration: _inputDecoration(l10n.categoryLabel),
@@ -229,15 +254,20 @@ class _AddCropScreenState extends State<AddCropScreen> {
             ),
             const SizedBox(height: 20),
             
-                  Text(l10n.selectCropName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
-            
-            // 2. CROP NAME DROPDOWN
+            // Crop Name Section
+            _buildSectionHeader(Icons.grass_rounded, l10n.selectCropName),
+            const SizedBox(height: 12),
                   _isLoadingCropNames
-                      ? const Center(child: Padding(
-                          padding: EdgeInsets.all(20.0),
+                ? Container(
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Center(
                           child: CircularProgressIndicator(color: AppColors.brandGreen),
-                        ))
+                    ),
+                  )
                       : DropdownButtonFormField<int>(
                           key: ValueKey("${selectedCropTypeId}_${selectedCropNameId ?? 'name'}"),
                           decoration: _inputDecoration(l10n.cropNameLabel),
@@ -260,9 +290,9 @@ class _AddCropScreenState extends State<AddCropScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 3. ACRES INPUT
-                  Text(l10n.landArea, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
+            // Land Area Section
+            _buildSectionHeader(Icons.square_foot_rounded, l10n.landArea),
+            const SizedBox(height: 12),
             TextFormField(
               controller: acresController,
               keyboardType: TextInputType.number,
@@ -270,41 +300,41 @@ class _AddCropScreenState extends State<AddCropScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 4. SOWING DATE
-            Text(l10n.sowingDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
+            // Sowing Date Section
+            _buildSectionHeader(Icons.calendar_today_rounded, l10n.sowingDate),
+            const SizedBox(height: 12),
             GestureDetector(
               onTap: () => _selectDate(context, sowingDateController, l10n.sowingDate),
               child: AbsorbPointer(
                 child: TextFormField(
                   controller: sowingDateController,
                   decoration: _inputDecoration(l10n.selectSowingDate).copyWith(
-                    suffixIcon: const Icon(Icons.calendar_today, color: AppColors.brandGreen),
+                    suffixIcon: const Icon(Icons.calendar_today_rounded, color: AppColors.brandGreen),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
-            // 5. EXPECTED HARVESTING DATE
-            Text(l10n.harvestingDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
+            // Harvesting Date Section
+            _buildSectionHeader(Icons.event_rounded, l10n.harvestingDate),
+            const SizedBox(height: 12),
             GestureDetector(
               onTap: () => _selectDate(context, harvestingDateController, l10n.harvestingDate),
               child: AbsorbPointer(
                 child: TextFormField(
                   controller: harvestingDateController,
                   decoration: _inputDecoration(l10n.selectHarvestingDate).copyWith(
-                    suffixIcon: const Icon(Icons.calendar_today, color: AppColors.brandGreen),
+                    suffixIcon: const Icon(Icons.calendar_today_rounded, color: AppColors.brandGreen),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
-            // 6. CROP STATUS
-            Text(l10n.cropStatus, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
+            // Crop Status Section
+            _buildSectionHeader(Icons.info_outline_rounded, l10n.cropStatus),
+            const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               decoration: _inputDecoration(l10n.selectCropStatus),
               value: selectedCropStatus,
@@ -319,31 +349,41 @@ class _AddCropScreenState extends State<AddCropScreen> {
               },
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
 
-            // 4. SAVE BUTTON
+            // Save Button
             SizedBox(
               height: 50,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                       onPressed: (farms.isEmpty || _isLoading) ? null : () => _saveCrop(l10n),
+                icon: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.check_rounded, size: 20),
+                label: Text(
+                  l10n.saveCropBtn,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.brandGreen,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   disabledBackgroundColor: Colors.grey.shade300,
+                  elevation: 0,
                 ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : Text(l10n.saveCropBtn, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-            ),
+                ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -390,12 +430,64 @@ class _AddCropScreenState extends State<AddCropScreen> {
     }
   }
 
+  Widget _buildSectionHeader(IconData icon, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.brandGreen),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.grey.shade700,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
+      labelStyle: GoogleFonts.poppins(
+        color: Colors.grey.shade600,
+        fontSize: 14,
+      ),
       filled: true,
       fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.brandGreen, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
     );
   }
 

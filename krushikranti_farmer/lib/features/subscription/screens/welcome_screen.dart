@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
@@ -165,15 +166,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         title: Text(
           l10n.krushiKranti,
-          style: const TextStyle(
-            color: Color(0xFF1B5E20), // Dark Green
+          style: GoogleFonts.poppins(
+            color: Colors.white,
             fontSize: 24,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
           ),
         ),
         actions: [
@@ -181,14 +183,26 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             onPressed: _goToSubscribe,
             child: Text(
               l10n.skip,
-              style: const TextStyle(
-                color: Color(0xFF2E7D32), // Dark Green
+              style: GoogleFonts.poppins(
+                color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [

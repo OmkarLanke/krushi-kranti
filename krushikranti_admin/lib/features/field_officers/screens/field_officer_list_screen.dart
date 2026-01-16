@@ -8,6 +8,7 @@ import '../services/field_officer_service.dart';
 import '../services/assignment_service.dart';
 import 'add_field_officer_screen.dart';
 import 'field_officer_assignments_dialog.dart';
+import 'field_officer_detail_dialog.dart';
 
 enum SortColumn {
   fieldOfficerId,
@@ -644,35 +645,40 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.background,
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(28.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              _buildHeader(),
-              const SizedBox(height: 28),
-
-              // Stats Cards
-              _buildStatsSection(),
-              const SizedBox(height: 28),
-
-              // Advanced Filters Panel (toggled from header Filters button)
-              if (_showAdvancedFilters) ...[
-                _buildAdvancedFiltersPanel(),
-                const SizedBox(height: 20),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(28.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // Header
+                _buildHeader(),
+                const SizedBox(height: 28),
+                
+                // Stats Cards
+                _buildStatsSection(),
+                const SizedBox(height: 28),
+                
+                // Advanced Filters Panel
+                if (_showAdvancedFilters) ...[
+                  _buildAdvancedFiltersPanel(),
+                  const SizedBox(height: 20),
+                ],
+                
+                // Field Officers Table with integrated filters
+                _buildFieldOfficersTable(),
+                
+                // Pagination
+                if (_totalPages > 1) ...[
+                  const SizedBox(height: 20),
+                  _buildPagination(),
+                ],
               ],
-
-              // Field Officers Table with integrated filters
-              _buildFieldOfficersTable(),
-
-              // Pagination
-              if (_totalPages > 1) ...[
-                const SizedBox(height: 20),
-                _buildPagination(),
-              ],
-            ],
+            ),
           ),
         ),
       ),
@@ -686,13 +692,13 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Field Officer Management',
-          style: GoogleFonts.poppins(
+          children: [
+            Text(
+              'Field Officer Management',
+              style: GoogleFonts.poppins(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+                color: AppColors.textPrimary,
                 letterSpacing: -0.5,
               ),
             ),
@@ -733,8 +739,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 icon: Icon(
                   Icons.filter_list_rounded,
                   size: 20,
-                  color: _showAdvancedFilters
-                      ? AppColors.brandGreen
+                  color: _showAdvancedFilters 
+                      ? AppColors.brandGreen 
                       : Colors.grey.shade700,
                 ),
                 label: Text(
@@ -742,8 +748,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: _showAdvancedFilters
-                        ? AppColors.brandGreen
+                    color: _showAdvancedFilters 
+                        ? AppColors.brandGreen 
                         : Colors.grey.shade700,
                   ),
                 ),
@@ -754,8 +760,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(
-                      color: _showAdvancedFilters
-                          ? AppColors.brandGreen
+                      color: _showAdvancedFilters 
+                          ? AppColors.brandGreen 
                           : Colors.grey.shade300,
                       width: _showAdvancedFilters ? 1.5 : 1,
                     ),
@@ -947,145 +953,6 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-            child: StatefulBuilder(
-              builder: (context, setStateLocal) {
-                return TextField(
-              controller: _searchController,
-                  onChanged: (value) {
-                    setStateLocal(() {});
-                    _onSearchChanged(value);
-                  },
-                  style: GoogleFonts.poppins(fontSize: 14),
-              decoration: InputDecoration(
-                    hintText: 'Search by name, username, phone, email, or location...',
-                    hintStyle: GoogleFonts.poppins(
-                      color: Colors.grey.shade400,
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: Colors.grey.shade400,
-                      size: 22,
-                    ),
-                    suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                            icon: Icon(
-                              Icons.clear_rounded,
-                              color: Colors.grey.shade400,
-                              size: 20,
-                            ),
-                        onPressed: () {
-                          _searchController.clear();
-                              setStateLocal(() {});
-                              _onSearchChanged('');
-                        },
-                      )
-                    : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Advanced Filters Button
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _showAdvancedFilters = !_showAdvancedFilters;
-                });
-                if (_showAdvancedFilters) {
-                  _loadAllFieldOfficers(); // Load all field officers when opening filters
-                }
-              },
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.tune_rounded,
-                      color: _showAdvancedFilters 
-                          ? AppColors.brandGreen 
-                          : Colors.grey.shade600,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Filters',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: _showAdvancedFilters 
-                            ? AppColors.brandGreen 
-                            : Colors.grey.shade700,
-                      ),
-                    ),
-                    if (_showAdvancedFilters) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.brandGreen,
-                  borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          _getActiveFilterCount().toString(),
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-              ),
-            ),
-          ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildAdvancedFiltersPanel() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1256,12 +1123,10 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                   options: () {
                     Iterable<FieldOfficerSummary> source = _allFieldOfficers;
                     if (_selectedStates.isNotEmpty) {
-                      source =
-                          source.where((fo) => _selectedStates.contains(fo.state));
+                      source = source.where((fo) => _selectedStates.contains(fo.state));
                     }
                     if (_selectedDistricts.isNotEmpty) {
-                      source =
-                          source.where((fo) => _selectedDistricts.contains(fo.district));
+                      source = source.where((fo) => _selectedDistricts.contains(fo.district));
                     }
                     return source
                         .where((fo) => fo.pincode != null && fo.pincode!.isNotEmpty)
@@ -1457,119 +1322,151 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.errorBg,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.error_outline_rounded,
-                    size: 48,
-                    color: AppColors.error,
-                  ),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.errorBg,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'Error Loading Data',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                child: Icon(
+                  Icons.error_outline_rounded,
+                  size: 48,
+                  color: AppColors.error,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _error!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+            Text(
+                'Error Loading Data',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
               onPressed: _loadFieldOfficers,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Retry'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandGreen,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brandGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
         ),
       );
     }
 
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Scrollbar(
-              controller: _horizontalScrollController,
-              thumbVisibility: true,
-              thickness: 12,
-              radius: const Radius.circular(6),
-              child: SingleChildScrollView(
+    // Always show table structure, even when empty
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Scrollbar(
                 controller: _horizontalScrollController,
-                scrollDirection: Axis.horizontal,
-                child: _buildCustomTable(constraints.maxWidth > 0 ? constraints.maxWidth : 1200),
-              ),
-            );
-          },
+                thumbVisibility: true,
+                thickness: 12,
+                radius: const Radius.circular(6),
+                child: SingleChildScrollView(
+                  controller: _horizontalScrollController,
+                  scrollDirection: Axis.horizontal,
+                  child: _buildCustomTable(constraints.maxWidth > 0 ? constraints.maxWidth : 1200),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCustomTable(double minWidth) {
+  // --- FIXED TABLE BUILDER WITH SCALING LOGIC ---
+  Widget _buildCustomTable(double availableWidth) {
     const double rowHeight = 72.0;
     const double headerHeight = 56.0;
     const double filterHeight = 52.0;
     
-    // Column widths (tuned to match farmer table look & avoid overflow)
-    const double fieldOfficerIdWidth = 120.0;
-    const double fullNameWidth = 210.0;
-    const double usernameWidth = 150.0;
-    const double phoneWidth = 150.0;
-    const double emailWidth = 230.0;
-    const double pincodeWidth = 110.0;
-    const double locationWidth = 260.0;
-    const double statusWidth = 130.0;
-    const double farmAssignmentWidth = 170.0;
+    // Base column widths - used as ratios for responsive scaling
+    const double baseFieldOfficerIdWidth = 120.0;
+    const double baseFullNameWidth = 210.0;
+    const double baseUsernameWidth = 150.0;
+    const double basePhoneWidth = 150.0;
+    const double baseEmailWidth = 230.0;
+    const double basePincodeWidth = 110.0;
+    const double baseLocationWidth = 260.0;
+    const double baseStatusWidth = 130.0;
+    const double baseFarmAssignmentWidth = 170.0;
     
-    final totalWidth = fieldOfficerIdWidth +
-        fullNameWidth +
-        usernameWidth +
-        phoneWidth +
-        emailWidth +
-        pincodeWidth +
-        locationWidth +
-        statusWidth +
-        farmAssignmentWidth;
+    // Account for dividers: 9 columns = 8 dividers (1px each)
+    const int numberOfDividers = 8;
+    const double dividerWidth = 1.0;
+    const double totalDividerWidth = numberOfDividers * dividerWidth;
+    
+    final baseTotalWidth = baseFieldOfficerIdWidth +
+        baseFullNameWidth +
+        baseUsernameWidth +
+        basePhoneWidth +
+        baseEmailWidth +
+        basePincodeWidth +
+        baseLocationWidth +
+        baseStatusWidth +
+        baseFarmAssignmentWidth +
+        totalDividerWidth; // Include divider widths
+    
+    // Calculate scale factor: use available width if it's larger, otherwise use base widths
+    // This allows table to scale up when zoomed in but maintain readable sizes when zoomed out
+    double scaleFactor = 1.0;
+    if (availableWidth > baseTotalWidth) {
+      scaleFactor = availableWidth / baseTotalWidth;
+    }
+    
+    // Apply scale to get effective widths
+    final double fieldOfficerIdWidth = baseFieldOfficerIdWidth * scaleFactor;
+    final double fullNameWidth = baseFullNameWidth * scaleFactor;
+    final double usernameWidth = baseUsernameWidth * scaleFactor;
+    final double phoneWidth = basePhoneWidth * scaleFactor;
+    final double emailWidth = baseEmailWidth * scaleFactor;
+    final double pincodeWidth = basePincodeWidth * scaleFactor;
+    final double locationWidth = baseLocationWidth * scaleFactor;
+    final double statusWidth = baseStatusWidth * scaleFactor;
+    final double farmAssignmentWidth = baseFarmAssignmentWidth * scaleFactor;
+    
+    // The new total width includes scaled column widths and divider widths
+    final totalWidth = (baseTotalWidth - totalDividerWidth) * scaleFactor + totalDividerWidth;
     
     // Calculate minimum height for rows (page size)
     // Set max height to show approximately 15-20 rows at a time, then scroll
@@ -1581,7 +1478,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        minWidth: totalWidth, // Use actual table width, not viewport width
+        minWidth: totalWidth,
+        maxWidth: totalWidth, // Set maxWidth to avoid unbounded width issues
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2057,7 +1955,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => _showAssignmentsDialog(fieldOfficer),
+            onTap: () => _showDetailDialog(fieldOfficer),
             hoverColor: AppColors.brandGreen.withOpacity(0.05),
             child: Row(
             children: [
@@ -2217,7 +2115,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     
     return InkWell(
       onTap: count > 0
-          ? () => _showAssignmentsDialog(fieldOfficer)
+          ? () => _showDetailDialog(fieldOfficer)
           : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -2264,6 +2162,16 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     );
   }
 
+  void _showDetailDialog(FieldOfficerSummary fieldOfficer) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => FieldOfficerDetailDialog(
+        fieldOfficer: fieldOfficer,
+      ),
+    );
+  }
+
   void _showAssignmentsDialog(FieldOfficerSummary fieldOfficer) {
     showDialog(
       context: context,
@@ -2299,8 +2207,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-          Text(
-                  'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
+        Text(
+          'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -2373,8 +2281,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
           } else {
             return Column(
               children: [
-          Text(
-                  'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
+        Text(
+          'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -2440,9 +2348,9 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                             : null,
                         tooltip: 'Next page',
                       ),
-          ),
-        ],
-      ),
+                    ),
+                  ],
+                ),
               ],
             );
           }
