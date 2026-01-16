@@ -1,4 +1,4 @@
-// ignore: unused_import
+ // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
 import 'app_localizations.dart';
 
@@ -218,27 +218,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get validAcres => 'कृपया एकड़ में वैध क्षेत्र दर्ज करें';
-
-  @override
-  String errorCropAreaFullyUsed(String acres, String farmArea) {
-    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन आपका खेत क्षेत्र केवल $farmArea एकड़ है और यह पहले से ही पूरी तरह से उपयोग में है। कृपया फसल क्षेत्र कम करें या नए जोड़ने के लिए मौजूदा फसलें हटाएं।';
-  }
-
-  @override
-  String errorCropAreaAvailable(
-      String acres, String farmArea, String availableArea) {
-    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन आपका खेत क्षेत्र केवल $farmArea एकड़ है। केवल $availableArea एकड़ उपलब्ध हैं। कृपया फसल क्षेत्र को $availableArea एकड़ या उससे कम करें।';
-  }
-
-  @override
-  String errorCropAreaExceed(String acres, String farmArea) {
-    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन आपका खेत क्षेत्र केवल $farmArea एकड़ है। कुल फसल क्षेत्र खेत क्षेत्र से अधिक नहीं हो सकता। कृपया फसल क्षेत्र कम करें या मौजूदा फसलें हटाएं।';
-  }
-
-  @override
-  String errorCropAreaLimitReached(String acres) {
-    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन यह क्षेत्र पहले से ही उपयोग में है। आपकी फसल क्षेत्र सीमा पहुंच गई है। कृपया क्षेत्र कम करें या नए जोड़ने के लिए मौजूदा फसलें हटाएं।';
-  }
 
   @override
   String get profileRequired => 'प्रोफाइल आवश्यक';
@@ -1381,46 +1360,4 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get bankAlreadyVerifiedMessage =>
       'आपका बैंक खाता पहले से सत्यापित है। आप इसे दोबारा सत्यापित नहीं कर सकते।';
-
-  @override
-  String get otpVerification => 'OTP Verification';
-
-  @override
-  String get requestOtp => 'Request OTP';
-
-  @override
-  String get requestingOtp => 'Requesting OTP...';
-
-  @override
-  String get enterOtpFromFarmer =>
-      'Enter the 6-digit OTP received by the farmer:';
-
-  @override
-  String get validateOtp => 'Validate OTP';
-
-  @override
-  String get validatingOtp => 'Validating...';
-
-  @override
-  String get otpValidatedSuccess =>
-      'OTP validated successfully! You can now submit verification.';
-
-  @override
-  String otpExpiresIn(String time) {
-    return 'OTP expires in: $time';
-  }
-
-  @override
-  String get otpSentToFarmer =>
-      'OTP sent successfully to farmer. Please ask the farmer for the OTP.';
-
-  @override
-  String get otpRequiredForVerification =>
-      'Please request and validate OTP before submitting verification.';
-
-  @override
-  String get invalidOtp => 'Invalid OTP. Please try again.';
-
-  @override
-  String get enterValidOtp => 'Please enter a valid 6-digit OTP';
 }
