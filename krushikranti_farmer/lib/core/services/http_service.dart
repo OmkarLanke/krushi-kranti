@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io' show Platform, File;
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'dart:isolate';
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'storage_service.dart'; // ✅ Import the new service
@@ -39,13 +40,7 @@ class HttpService {
     String? token = await StorageService.getToken();
     String language = await _getLanguageHeader();
     
-    // Debug logging for notification endpoints
-    if (endpoint.contains('notification')) {
-      debugPrint('=== HTTP GET REQUEST (Notification) ===');
-      debugPrint('URL: $uri');
-      debugPrint('Token exists: ${token != null && token.isNotEmpty}');
-      debugPrint('Token preview: ${token != null && token.length > 20 ? token.substring(0, 20) + "..." : token}');
-    }
+    // Optimized: Removed debug logging that exposes sensitive token information
     
     try {
       final headers = <String, String>{
@@ -56,18 +51,16 @@ class HttpService {
       // ✅ ACTION: Attach Token if it exists
       if (token != null && token.isNotEmpty) {
         headers["Authorization"] = "Bearer $token";
-      } else {
-        debugPrint('WARNING: No token found for request to $endpoint');
       }
       
       final response = await http.get(uri, headers: headers);
       
-      if (endpoint.contains('notification')) {
+      // Optimized: Only log in debug mode and for specific endpoints
+      if (kDebugMode && endpoint.contains('notification')) {
         debugPrint('Response Status: ${response.statusCode}');
-        debugPrint('Response Body: ${response.body}');
       }
       
-      return _handleResponse(response);
+      return await _handleResponse(response);
     } catch (e) {
       if (endpoint.contains('notification')) {
         debugPrint('Error in GET request: $e');
@@ -97,7 +90,7 @@ class HttpService {
           if (token != null) "Authorization": "Bearer $token",
         },
       );
-      return _handleResponse(response);
+      return await _handleResponse(response);
     } catch (e) {
       throw Exception('Network Error: $e');
     }
@@ -124,7 +117,7 @@ class HttpService {
           if (token != null) "Authorization": "Bearer $token",
         },
       );
-      return _handleResponse(response);
+      return await _handleResponse(response);
     } catch (e) {
       throw Exception('Network Error: $e');
     }
@@ -144,16 +137,10 @@ class HttpService {
     String? token = await StorageService.getToken();
     String language = await _getLanguageHeader();
     
-    // Debug: Check if token exists
+    // Check if token exists
     if (token == null || token.isEmpty) {
       throw Exception('Authentication token is missing. Please login again.');
     }
-    
-    // Debug logging
-    print('File upload - URI: $uri');
-    print('File upload - Token exists: ${token.isNotEmpty}');
-    print('File upload - File path: ${file.path}');
-    print('File upload - File exists: ${await file.exists()}');
     
     try {
       // Create multipart request
@@ -165,8 +152,6 @@ class HttpService {
         'Accept-Language': language,
         'Authorization': 'Bearer $token',
       });
-      
-      print('File upload - Headers set: ${request.headers}');
       
       // Add file
       final fileStream = http.ByteStream(file.openRead());
@@ -194,10 +179,6 @@ class HttpService {
       );
       
       final response = await http.Response.fromStream(streamedResponse);
-      
-      // Debug: Log response for troubleshooting
-      print('File upload response status: ${response.statusCode}');
-      print('File upload response body: ${response.body}');
       
       // Handle response
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -259,14 +240,27 @@ class HttpService {
     }
   }
 
+  // --- HELPER: Parse JSON in isolate for large responses (prevents UI freezes) ---
+  static Future<dynamic> _parseJsonInIsolate(String jsonString) async {
+    // For small responses, parse on main thread (faster)
+    // For large responses (> 100KB), use isolate to prevent UI freezes
+    if (jsonString.length < 100000) {
+      return jsonDecode(jsonString);
+    }
+    
+    // Use isolate for large JSON parsing
+    return await Isolate.run(() => jsonDecode(jsonString));
+  }
+
   // --- HELPER: Handle Status Codes ---
-  static dynamic _handleResponse(http.Response response) {
+  static Future<dynamic> _handleResponse(http.Response response) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body);
+      // Optimized: Use isolate for large JSON responses to prevent UI freezes
+      return await _parseJsonInIsolate(response.body);
     } else {
       // Try to extract error message from ApiResponse format
       try {
-        final errorBody = jsonDecode(response.body);
+        final errorBody = await _parseJsonInIsolate(response.body);
         if (errorBody is Map && errorBody.containsKey('message')) {
           throw Exception(errorBody['message'] ?? 'An error occurred');
         }
@@ -277,7 +271,8 @@ class HttpService {
       if (response.statusCode == 401) {
         throw Exception('Unauthorized - Please login again');
       } else {
-        throw Exception('Error: ${response.statusCode} - ${response.body}');
+        // Don't include full response body in error (security: avoid exposing sensitive data)
+        throw Exception('Error: ${response.statusCode}');
       }
     }
   }
