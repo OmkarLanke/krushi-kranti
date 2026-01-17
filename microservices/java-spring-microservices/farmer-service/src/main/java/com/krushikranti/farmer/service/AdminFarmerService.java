@@ -334,6 +334,10 @@ public class AdminFarmerService {
                 .verifiedByOfficerId(farm.getVerifiedBy())
                 .verifiedAt(farm.getVerifiedAt())
                 .verificationRemarks(farm.getVerificationRemarks())
+                .farmLatitude(farm.getFarmLatitude())
+                .farmLongitude(farm.getFarmLongitude())
+                .farmLocationAccuracy(farm.getFarmLocationAccuracy())
+                .farmLocationCapturedAt(farm.getFarmLocationCapturedAt())
                 .createdAt(farm.getCreatedAt())
                 .build();
     }

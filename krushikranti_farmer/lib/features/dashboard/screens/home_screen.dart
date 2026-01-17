@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isAgentAssigned = false; 
   List<Map<String, dynamic>> fieldOfficerAssignments = [];
   Map<int, String> _farmNames = {}; // Map of farmId -> farmName
+  List<Map<String, dynamic>> _unassignedFarms = []; // Farms without field officer assignment
   bool isLoadingAssignments = true;
   bool isNavigating = false;
   bool _allFarmsVerified = false;
@@ -102,28 +103,69 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     
     try {
+      // Get all farms first
+      final farmsResponse = await HttpService.get("farmer/profile/farms");
+      final List<dynamic> allFarmsData = farmsResponse['data'] ?? [];
+      
+      // Filter only active farms
+      final activeFarms = allFarmsData.where((farm) {
+        return farm['isActive'] == true;
+      }).toList();
+      
+      // Get assignments
       final assignments = await FieldOfficerAssignmentService.getAssignments();
       // Only show ASSIGNED field officers - filter out COMPLETED and CANCELLED
       final activeAssignments = assignments.where((assignment) {
         final status = assignment['status']?.toString().toUpperCase();
-        return status == 'ASSIGNED';
+        return status == 'ASSIGNED' || status == 'IN_PROGRESS';
       }).toList();
       
-      // Extract unique farm IDs from assignments
-      final Set<int> farmIds = {};
+      // Check if there's an assignment with null farmId (all farms assigned)
+      bool allFarmsAssigned = activeAssignments.any((assignment) => assignment['farmId'] == null);
+      
+      // Extract assigned farm IDs from assignments
+      final Set<int> assignedFarmIds = {};
       for (var assignment in activeAssignments) {
         final farmId = assignment['farmId'];
         if (farmId != null) {
-          farmIds.add(farmId is int ? farmId : int.tryParse(farmId.toString()) ?? 0);
+          final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+          if (farmIdInt != null) {
+            assignedFarmIds.add(farmIdInt);
+          }
         }
       }
       
-      // Fetch farm names for all assigned farms
-      await _loadFarmNames(farmIds.toList());
+      // Find unassigned AND unverified farms (active farms without assignments and not verified)
+      // If allFarmsAssigned is true (null farmId assignment exists), no farms are unassigned
+      final List<Map<String, dynamic>> unassignedFarms = [];
+      if (!allFarmsAssigned) {
+        for (var farm in activeFarms) {
+          final farmId = farm['id'];
+          final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+          final isVerified = farm['isVerified'] == true;
+          
+          // Only include farms that are:
+          // 1. Not assigned to a field officer
+          // 2. Not verified yet
+          if (farmIdInt != null && 
+              !assignedFarmIds.contains(farmIdInt) && 
+              !isVerified) {
+            unassignedFarms.add({
+              'id': farmIdInt,
+              'farmName': farm['farmName'] ?? 'Farm ${farmIdInt}',
+            });
+          }
+        }
+      }
+      
+      // Fetch farm names for all farms (assigned and unassigned)
+      final allFarmIds = [...assignedFarmIds, ...unassignedFarms.map((f) => f['id'] as int)];
+      await _loadFarmNames(allFarmIds);
       
       if (mounted) {
         setState(() {
           fieldOfficerAssignments = activeAssignments;
+          _unassignedFarms = unassignedFarms;
           isAgentAssigned = activeAssignments.isNotEmpty;
           isLoadingAssignments = false;
         });
@@ -133,6 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           fieldOfficerAssignments = [];
+          _unassignedFarms = [];
           isAgentAssigned = false;
           isLoadingAssignments = false;
         });
@@ -292,13 +335,22 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
             ],
             
-            // D. Field Officer Banner
-            if (isLoadingAssignments)
-              _buildLoadingBanner(l10n)
-            else if (isAgentAssigned) 
-              _buildFieldOfficerAssignedCard(l10n)
-            else 
-              _buildFieldOfficerPendingBanner(l10n),
+            // D. Field Officer Banner (only show if not all farms are verified)
+            if (!_allFarmsVerified) ...[
+              if (isLoadingAssignments)
+                _buildLoadingBanner(l10n)
+              else ...[
+                // Show assigned field officer card if there are assignments
+                if (isAgentAssigned) ...[
+                  _buildFieldOfficerAssignedCard(l10n),
+                  const SizedBox(height: 16),
+                ],
+                // Show pending banner for unassigned farms
+                if (_unassignedFarms.isNotEmpty) ...[
+                  _buildFieldOfficerPendingBanner(l10n),
+                ],
+              ],
+            ],
             
             const SizedBox(height: 24),
 
@@ -518,6 +570,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFieldOfficerPendingBanner(AppLocalizations l10n) {
+    // Get farm names for unassigned farms
+    final List<String> unassignedFarmNames = [];
+    for (var farm in _unassignedFarms) {
+      final farmId = farm['id'];
+      final farmName = farm['farmName'] ?? 'Farm ${farmId}';
+      unassignedFarmNames.add(farmName.toString());
+    }
+    
+    final String farmNamesText = unassignedFarmNames.isEmpty
+        ? ''
+        : unassignedFarmNames.length == 1
+            ? unassignedFarmNames.first
+            : unassignedFarmNames.join(', ');
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -572,6 +638,43 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             textAlign: TextAlign.center,
           ),
+          if (farmNamesText.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.agriculture_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'For: $farmNamesText',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
