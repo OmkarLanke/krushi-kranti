@@ -226,6 +226,9 @@ public class FieldOfficerService {
         log.info("Building DTO for field officer ID: {}, pincode from DB: {}", 
                 fieldOfficer.getId(), pincode != null ? pincode : "NULL");
         
+        // Count verified farms for this field officer
+        Integer verifiedFarmsCount = countVerifiedFarms(fieldOfficer.getId());
+        
         FieldOfficerSummaryDto dto = FieldOfficerSummaryDto.builder()
                 .fieldOfficerId(fieldOfficer.getId())
                 .userId(fieldOfficer.getUserId())
@@ -239,19 +242,21 @@ public class FieldOfficerService {
                 .state(fieldOfficer.getState())
                 .isActive(fieldOfficer.getIsActive())
                 .assignedFarmsCount(assignedFarmsCount)
+                .verifiedFarmsCount(verifiedFarmsCount)
                 .createdAt(fieldOfficer.getCreatedAt())
                 .lastUpdatedAt(fieldOfficer.getUpdatedAt())
                 .build();
         
-        log.info("DTO created - FieldOfficerId: {}, Pincode in DTO: {}, Assigned Farms: {}", 
-                dto.getFieldOfficerId(), dto.getPincode() != null ? dto.getPincode() : "NULL", assignedFarmsCount);
+        log.info("DTO created - FieldOfficerId: {}, Pincode in DTO: {}, Assigned Farms: {}, Verified Farms: {}", 
+                dto.getFieldOfficerId(), dto.getPincode() != null ? dto.getPincode() : "NULL", 
+                assignedFarmsCount, verifiedFarmsCount);
         
         return dto;
     }
 
     /**
-     * Count the number of farms assigned to a field officer.
-     * Only counts assignments with farmId (not null) and status != CANCELLED.
+     * Count the number of farms assigned to a field officer (not yet verified).
+     * Only counts assignments with farmId (not null) and status = ASSIGNED.
      */
     private Integer countAssignedFarms(Long fieldOfficerId) {
         try {
@@ -260,17 +265,43 @@ public class FieldOfficerService {
                     org.springframework.data.domain.PageRequest.of(0, 10000)
             ).getContent();
             
-            // Count only assignments with farmId (specific farm assignments) and status != CANCELLED
+            // Count only assignments with farmId (specific farm assignments) and status = ASSIGNED (not verified yet)
             long count = assignments.stream()
                     .filter(assignment -> 
                             assignment.getFarmId() != null && 
-                            assignment.getStatus() != FieldOfficerAssignment.AssignmentStatus.CANCELLED
+                            assignment.getStatus() == FieldOfficerAssignment.AssignmentStatus.ASSIGNED
                     )
                     .count();
             
             return (int) count;
         } catch (Exception e) {
             log.warn("Failed to count assigned farms for field officer ID {}: {}", fieldOfficerId, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Count the number of farms verified by a field officer.
+     * Only counts assignments with farmId (not null) and status = COMPLETED.
+     */
+    private Integer countVerifiedFarms(Long fieldOfficerId) {
+        try {
+            List<FieldOfficerAssignment> assignments = assignmentRepository.findByFieldOfficerId(
+                    fieldOfficerId, 
+                    org.springframework.data.domain.PageRequest.of(0, 10000)
+            ).getContent();
+            
+            // Count only assignments with farmId (specific farm assignments) and status = COMPLETED (verified)
+            long count = assignments.stream()
+                    .filter(assignment -> 
+                            assignment.getFarmId() != null && 
+                            assignment.getStatus() == FieldOfficerAssignment.AssignmentStatus.COMPLETED
+                    )
+                    .count();
+            
+            return (int) count;
+        } catch (Exception e) {
+            log.warn("Failed to count verified farms for field officer ID {}: {}", fieldOfficerId, e.getMessage());
             return 0;
         }
     }

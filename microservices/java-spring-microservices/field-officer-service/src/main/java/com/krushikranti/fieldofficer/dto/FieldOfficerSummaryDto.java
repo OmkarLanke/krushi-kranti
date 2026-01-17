@@ -33,7 +33,8 @@ public class FieldOfficerSummaryDto {
     private Boolean isActive;
     
     // Assignment Summary
-    private Integer assignedFarmsCount; // Number of farms assigned to this field officer
+    private Integer assignedFarmsCount; // Number of farms assigned to this field officer (status = ASSIGNED)
+    private Integer verifiedFarmsCount; // Number of farms verified by this field officer (status = COMPLETED)
     
     // Timestamps
     private LocalDateTime createdAt;
