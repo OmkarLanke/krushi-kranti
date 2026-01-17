@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../models/field_officer_models.dart';
 import '../models/assignment_models.dart';
 import '../services/assignment_service.dart';
+import '../../shared/widgets/photo_viewer_dialog.dart';
 import 'field_officer_assignments_dialog.dart';
 
 class FieldOfficerDetailDialog extends StatefulWidget {
@@ -680,6 +681,11 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
               icon: Icons.check_circle_outline_rounded,
             ),
           ],
+          // View Geo Tagged Photo button for completed assignments
+          if (assignment.status.toUpperCase() == 'COMPLETED' && assignment.farmId != null) ...[
+            const SizedBox(height: 16),
+            _buildViewPhotoButton(assignment.farmId!, assignment.farmName ?? 'Farm'),
+          ],
           if (assignment.notes != null && assignment.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
             Container(
@@ -869,5 +875,93 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
     }
 
     return 'Failed to load assignments. Please try again.';
+  }
+
+  Widget _buildViewPhotoButton(int farmId, String farmName) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => _showVerificationPhotos(farmId, farmName),
+        icon: const Icon(Icons.photo_camera_rounded, size: 18),
+        label: const Text('View Geo Tagged Photo'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.brandGreen,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showVerificationPhotos(int farmId, String farmName) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading photos...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Fetch photos
+      final photos = await FieldOfficerAssignmentService.getVerificationPhotos(farmId);
+      
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Extract photo URLs
+      final photoUrls = photos
+          .map((photo) => photo['photoUrl'] as String?)
+          .whereType<String>()
+          .toList();
+
+      // Show photo viewer
+      if (mounted && photoUrls.isNotEmpty) {
+        showDialog(
+          context: context,
+          builder: (context) => PhotoViewerDialog(
+            photoUrls: photoUrls,
+            title: 'Verification Photos - $farmName',
+          ),
+        );
+      } else if (mounted) {
+        // Show error if no photos
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No verification photos found for this farm.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (mounted) Navigator.of(context).pop();
+      
+      // Show error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading photos: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

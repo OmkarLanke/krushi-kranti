@@ -95,6 +95,15 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
     }
   }
 
+  Widget _buildLoadingState() {
+    return const Center(
+      child: CircularProgressIndicator(
+        color: AppColors.brandGreen,
+        strokeWidth: 3,
+      ),
+    );
+  }
+
   String _getFullName() {
     final firstName = _profileData['firstName'] ?? '';
     final lastName = _profileData['lastName'] ?? '';
@@ -208,9 +217,7 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.brandGreen),
-            )
+          ? _buildLoadingState()
           : SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
               child: Column(

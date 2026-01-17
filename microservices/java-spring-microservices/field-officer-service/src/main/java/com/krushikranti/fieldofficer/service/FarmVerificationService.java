@@ -1,5 +1,6 @@
 package com.krushikranti.fieldofficer.service;
 
+import com.krushikranti.fieldofficer.dto.VerificationPhotoDto;
 import com.krushikranti.fieldofficer.dto.VerifyFarmRequest;
 import com.krushikranti.fieldofficer.dto.VerifyFarmResponse;
 import com.krushikranti.fieldofficer.model.FarmVerification;
@@ -484,6 +485,38 @@ public class FarmVerificationService {
             log.error("Farm ID: {}, Error: {}", farmId, e.getMessage(), e);
             // Don't throw - verification was successful, this is just a sync operation
         }
+    }
+
+    /**
+     * Get verification photos for a farm.
+     * Returns all photos from verifications with VERIFIED status for the given farm.
+     */
+    @Transactional(readOnly = true)
+    public List<VerificationPhotoDto> getVerificationPhotosByFarmId(Long farmId) {
+        log.info("Fetching verification photos for farm ID: {}", farmId);
+        
+        // Find all verifications for this farm with VERIFIED status
+        List<FarmVerification> verifications = verificationRepository.findByFarmId(farmId)
+                .stream()
+                .filter(v -> v.getVerificationStatus() == FarmVerification.VerificationStatus.VERIFIED)
+                .collect(Collectors.toList());
+        
+        if (verifications.isEmpty()) {
+            log.debug("No verified verifications found for farm ID: {}", farmId);
+            return Collections.emptyList();
+        }
+        
+        // Get all photos for these verifications
+        List<VerificationPhotoDto> photos = verifications.stream()
+                .flatMap(verification -> {
+                    List<VerificationPhoto> verificationPhotos = photoRepository.findByVerificationId(verification.getId());
+                    return verificationPhotos.stream()
+                            .map(VerificationPhotoDto::fromEntity);
+                })
+                .collect(Collectors.toList());
+        
+        log.info("Found {} verification photos for farm ID: {}", photos.size(), farmId);
+        return photos;
     }
 }
 

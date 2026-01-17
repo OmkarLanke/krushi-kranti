@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isAgentAssigned = false; 
   List<Map<String, dynamic>> fieldOfficerAssignments = [];
   Map<int, String> _farmNames = {}; // Map of farmId -> farmName
+  List<Map<String, dynamic>> _unassignedFarms = []; // Farms without field officer assignment
   bool isLoadingAssignments = true;
   bool isNavigating = false;
   bool _allFarmsVerified = false;
@@ -38,23 +39,29 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Filter any existing notifications to ensure they belong to current user (safeguard)
-    // Note: We don't clear all notifications here because NotificationService is a singleton
-    // and we want to preserve notifications across screen rebuilds
     _notificationService.filterNotificationsByCurrentUser();
-    // Store initial notification count
-    _previousNotificationCount = _notificationService.allOtpNotifications.length;
-    _checkFieldOfficerAssignments();
-    _checkAllFarmsVerified();
+    
+    // Load initial data in parallel
+    Future.wait([
+      _checkFieldOfficerAssignments(),
+      _checkAllFarmsVerified(),
+    ]);
+    
     _setupNotificationListener();
-    // Start polling for notifications from backend (reduced interval for faster response)
-    _notificationService.startPolling(interval: const Duration(seconds: 5));
-    // Start periodic cleanup of expired OTP notifications (every 30 seconds)
-    _expiredNotificationCleanupTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (mounted) {
-        _notificationService.removeExpiredOtpNotifications();
-        setState(() {}); // Refresh UI to remove expired notifications
+    // Start polling for notifications from backend
+    _notificationService.startPolling(interval: const Duration(seconds: 10));
+    
+    // Optimized: Combine cleanup and farm check into a single timer
+    // Reduces number of timers and improves battery efficiency
+    Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
       }
+      // Cleanup expired notifications
+      _notificationService.removeExpiredOtpNotifications();
     });
+    
     // Check farm verification status periodically (every 60 seconds)
     Timer.periodic(const Duration(seconds: 60), (timer) {
       if (mounted) {
@@ -97,38 +104,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _setupNotificationListener() {
+    // Optimized: Only update UI when relevant notifications change
     _notificationSubscription = _notificationService.notificationStream.listen(
       (notification) {
         if (mounted && notification.type == 'FARM_VERIFICATION_OTP') {
-          // Check if notification is not expired before refreshing UI
           final now = DateTime.now();
           final age = now.difference(notification.timestamp);
           if (age < const Duration(minutes: 10)) {
-            // Check if this is a new notification
-            final currentCount = _notificationService.allOtpNotifications.length;
-            if (currentCount > _previousNotificationCount) {
-              _previousNotificationCount = currentCount;
-              // Show popup immediately when new OTP is received
-              _showOtpReceivedPopup();
-            }
-            setState(() {}); // Refresh UI to show new notification
+            // Only update state if widget is still mounted
+            if (mounted) setState(() {});
           }
         }
       },
     );
     
-    // Also listen to notification service changes (when notifyListeners is called)
+    // Listen to notification service changes (when notifyListeners is called)
     _notificationServiceListener = () {
-      if (mounted) {
-        // Check if new notifications arrived
-        final currentCount = _notificationService.allOtpNotifications.length;
-        if (currentCount > _previousNotificationCount) {
-          _previousNotificationCount = currentCount;
-          // Show popup immediately when new OTP is received
-          _showOtpReceivedPopup();
-        }
-        setState(() {}); // Refresh UI when notifications change
-      }
+      if (mounted) setState(() {});
     };
     _notificationService.addListener(_notificationServiceListener!);
   }
@@ -144,35 +136,115 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  // Cache farms data to avoid duplicate API calls
+  List<dynamic>? _cachedFarmsData;
+  DateTime? _farmsDataCacheTime;
+  static const _farmsCacheDuration = Duration(minutes: 1);
+
+  /// Fetch farms data with caching to prevent duplicate API calls
+  Future<List<dynamic>?> _fetchFarmsData({bool forceRefresh = false}) async {
+    // Return cached data if still valid and not forcing refresh
+    if (!forceRefresh && 
+        _cachedFarmsData != null && 
+        _farmsDataCacheTime != null &&
+        DateTime.now().difference(_farmsDataCacheTime!) < _farmsCacheDuration) {
+      return _cachedFarmsData;
+    }
+
+    try {
+      final response = await HttpService.get("farmer/profile/farms");
+      final List<dynamic> farmsData = response['data'] ?? [];
+      _cachedFarmsData = farmsData;
+      _farmsDataCacheTime = DateTime.now();
+      return farmsData;
+    } catch (e) {
+      // Return cached data if available, even if expired
+      return _cachedFarmsData;
+    }
+  }
+
+  /// Optimized: Check field officer assignments and load all related data in parallel
   Future<void> _checkFieldOfficerAssignments() async {
+    if (!mounted) return;
+    
     setState(() {
       isLoadingAssignments = true;
     });
     
     try {
-      final assignments = await FieldOfficerAssignmentService.getAssignments();
+      // Run both operations in parallel
+      final results = await Future.wait([
+        FieldOfficerAssignmentService.getAssignments(),
+        _fetchFarmsData(),
+      ]);
+      
+      final assignments = results[0] as List<dynamic>;
+      final farmsData = results[1] as List<dynamic>? ?? [];
+      
       // Only show ASSIGNED field officers - filter out COMPLETED and CANCELLED
       final activeAssignments = assignments.where((assignment) {
         final status = assignment['status']?.toString().toUpperCase();
         return status == 'ASSIGNED';
-      }).toList();
+      }).map((assignment) => assignment as Map<String, dynamic>).toList();
       
-      // Extract unique farm IDs from assignments
-      final Set<int> farmIds = {};
+      // Check if there's an assignment with null farmId (all farms assigned)
+      bool allFarmsAssigned = activeAssignments.any((assignment) => assignment['farmId'] == null);
+      
+      // Extract assigned farm IDs from assignments
+      final Set<int> assignedFarmIds = {};
       for (var assignment in activeAssignments) {
         final farmId = assignment['farmId'];
         if (farmId != null) {
-          farmIds.add(farmId is int ? farmId : int.tryParse(farmId.toString()) ?? 0);
+          final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+          if (farmIdInt != null) {
+            assignedFarmIds.add(farmIdInt);
+          }
         }
       }
       
-      // Fetch farm names for all assigned farms
-      await _loadFarmNames(farmIds.toList());
+      // Build farm names map from cached farms data
+      final Map<int, String> farmNamesMap = {};
+      if (farmsData.isNotEmpty) {
+        for (var farmData in farmsData) {
+          final farmId = farmData['id'];
+          final farmName = farmData['farmName'] ?? 'Farm $farmId';
+          if (farmId != null) {
+            final id = farmId is int ? farmId : int.tryParse(farmId.toString());
+            if (id != null && assignedFarmIds.contains(id)) {
+              farmNamesMap[id] = farmName.toString();
+            }
+          }
+        }
+      }
+      
+      // Find unassigned farms (active farms without assignments)
+      // If allFarmsAssigned is true (null farmId assignment exists), no farms are unassigned
+      final List<Map<String, dynamic>> unassignedFarms = [];
+      if (!allFarmsAssigned) {
+        // Filter only active farms
+        final activeFarms = farmsData.where((farm) {
+          return farm['isActive'] == true;
+        }).toList();
+        
+        for (var farm in activeFarms) {
+          final farmId = farm['id'];
+          final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+          // Only add to unassigned if it's not already assigned AND not already verified
+          if (farmIdInt != null && !assignedFarmIds.contains(farmIdInt) && (farm['isVerified'] == false || farm['isVerified'] == null)) {
+            unassignedFarms.add({
+              'id': farmIdInt,
+              'farmName': farm['farmName'] ?? 'Farm ${farmIdInt}',
+            });
+          }
+        }
+      }
       
       if (mounted) {
         setState(() {
           fieldOfficerAssignments = activeAssignments;
+          _unassignedFarms = unassignedFarms;
           isAgentAssigned = activeAssignments.isNotEmpty;
+          _farmNames = farmNamesMap;
           isLoadingAssignments = false;
         });
       }
@@ -181,6 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           fieldOfficerAssignments = [];
+          _unassignedFarms = [];
           isAgentAssigned = false;
           isLoadingAssignments = false;
         });
@@ -188,50 +261,28 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadFarmNames(List<int> farmIds) async {
-    if (farmIds.isEmpty) {
-      _farmNames = {};
-      return;
-    }
-
-    try {
-      final response = await HttpService.get("farmer/profile/farms");
-      final List<dynamic> farmsData = response['data'] ?? [];
-      
-      final Map<int, String> farmNamesMap = {};
-      for (var farmData in farmsData) {
-        final farmId = farmData['id'];
-        final farmName = farmData['farmName'] ?? 'Farm ${farmId}';
-        if (farmId != null && farmIds.contains(farmId is int ? farmId : int.tryParse(farmId.toString()))) {
-          farmNamesMap[farmId is int ? farmId : int.tryParse(farmId.toString()) ?? 0] = farmName.toString();
-        }
-      }
-      
-      if (mounted) {
-        setState(() {
-          _farmNames = farmNamesMap;
-        });
-      }
-    } catch (e) {
-      // If error, keep existing farm names or set empty
-      if (mounted) {
-        setState(() {
-          _farmNames = {};
-        });
-      }
-    }
-  }
-
+  /// Optimized: Check all farms verified status using cached data
   Future<void> _checkAllFarmsVerified() async {
-    if (_isLoadingFarms) return; // Prevent concurrent calls
+    if (_isLoadingFarms || !mounted) return; // Prevent concurrent calls
     
     setState(() {
       _isLoadingFarms = true;
     });
 
     try {
-      final response = await HttpService.get("farmer/profile/farms");
-      final List<dynamic> farmsData = response['data'] ?? [];
+      final farmsData = await _fetchFarmsData();
+      
+      if (farmsData == null || farmsData.isEmpty) {
+      if (mounted) {
+        setState(() {
+            _allFarmsVerified = false;
+            _totalFarms = 0;
+            _verifiedFarms = 0;
+            _isLoadingFarms = false;
+    });
+        }
+        return;
+      }
       
       // Filter only active farms
       final activeFarms = farmsData.where((farm) {
@@ -239,7 +290,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList();
       
       if (activeFarms.isEmpty) {
-        // No farms, so not all verified
         if (mounted) {
           setState(() {
             _allFarmsVerified = false;
@@ -265,7 +315,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      // If error, assume not all verified
       if (mounted) {
         setState(() {
           _allFarmsVerified = false;
@@ -334,13 +383,22 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
             ],
             
-            // D. Field Officer Banner
-            if (isLoadingAssignments)
-              _buildLoadingBanner(l10n)
-            else if (isAgentAssigned) 
-              _buildFieldOfficerAssignedCard(l10n)
-            else 
-              _buildFieldOfficerPendingBanner(l10n),
+            // D. Field Officer Banner (only show if not all farms are verified)
+            if (!_allFarmsVerified) ...[
+              if (isLoadingAssignments)
+                _buildLoadingBanner(l10n)
+              else ...[
+                // Show assigned field officer card if there are assignments
+                if (isAgentAssigned) ...[
+                  _buildFieldOfficerAssignedCard(l10n),
+                  const SizedBox(height: 16),
+                ],
+                // Show pending banner for unassigned farms
+                if (_unassignedFarms.isNotEmpty) ...[
+                  _buildFieldOfficerPendingBanner(l10n),
+                ],
+              ],
+            ],
             
             const SizedBox(height: 24),
 
@@ -618,6 +676,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFieldOfficerPendingBanner(AppLocalizations l10n) {
+    // Get farm names for unassigned farms
+    final List<String> unassignedFarmNames = [];
+    for (var farm in _unassignedFarms) {
+      final farmId = farm['id'];
+      final farmName = farm['farmName'] ?? 'Farm ${farmId}';
+      unassignedFarmNames.add(farmName.toString());
+    }
+    
+    final String farmNamesText = unassignedFarmNames.isEmpty
+        ? ''
+        : unassignedFarmNames.length == 1
+            ? unassignedFarmNames.first
+            : unassignedFarmNames.join(', ');
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -672,6 +744,43 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             textAlign: TextAlign.center,
           ),
+          if (farmNamesText.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.agriculture_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'For: $farmNamesText',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
