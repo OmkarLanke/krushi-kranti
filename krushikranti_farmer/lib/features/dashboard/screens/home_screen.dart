@@ -21,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool isAgentAssigned = false; 
   List<Map<String, dynamic>> fieldOfficerAssignments = [];
+  Map<int, String> _farmNames = {}; // Map of farmId -> farmName
   bool isLoadingAssignments = true;
   bool isNavigating = false;
   bool _allFarmsVerified = false;
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final NotificationService _notificationService = NotificationService();
   StreamSubscription<NotificationModel>? _notificationSubscription;
   Timer? _expiredNotificationCleanupTimer;
+  VoidCallback? _notificationServiceListener;
 
   @override
   void initState() {
@@ -64,16 +66,32 @@ class _HomeScreenState extends State<HomeScreen> {
     _notificationSubscription = _notificationService.notificationStream.listen(
       (notification) {
         if (mounted && notification.type == 'FARM_VERIFICATION_OTP') {
-          setState(() {}); // Refresh UI to show new notification
+          // Check if notification is not expired before refreshing UI
+          final now = DateTime.now();
+          final age = now.difference(notification.timestamp);
+          if (age < const Duration(minutes: 10)) {
+            setState(() {}); // Refresh UI to show new notification
+          }
         }
       },
     );
+    
+    // Also listen to notification service changes (when notifyListeners is called)
+    _notificationServiceListener = () {
+      if (mounted) {
+        setState(() {}); // Refresh UI when notifications change
+      }
+    };
+    _notificationService.addListener(_notificationServiceListener!);
   }
 
   @override
   void dispose() {
     _notificationSubscription?.cancel();
     _expiredNotificationCleanupTimer?.cancel();
+    if (_notificationServiceListener != null) {
+      _notificationService.removeListener(_notificationServiceListener!);
+    }
     _notificationService.stopPolling();
     super.dispose();
   }
@@ -91,6 +109,18 @@ class _HomeScreenState extends State<HomeScreen> {
         return status == 'ASSIGNED';
       }).toList();
       
+      // Extract unique farm IDs from assignments
+      final Set<int> farmIds = {};
+      for (var assignment in activeAssignments) {
+        final farmId = assignment['farmId'];
+        if (farmId != null) {
+          farmIds.add(farmId is int ? farmId : int.tryParse(farmId.toString()) ?? 0);
+        }
+      }
+      
+      // Fetch farm names for all assigned farms
+      await _loadFarmNames(farmIds.toList());
+      
       if (mounted) {
         setState(() {
           fieldOfficerAssignments = activeAssignments;
@@ -105,6 +135,40 @@ class _HomeScreenState extends State<HomeScreen> {
           fieldOfficerAssignments = [];
           isAgentAssigned = false;
           isLoadingAssignments = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadFarmNames(List<int> farmIds) async {
+    if (farmIds.isEmpty) {
+      _farmNames = {};
+      return;
+    }
+
+    try {
+      final response = await HttpService.get("farmer/profile/farms");
+      final List<dynamic> farmsData = response['data'] ?? [];
+      
+      final Map<int, String> farmNamesMap = {};
+      for (var farmData in farmsData) {
+        final farmId = farmData['id'];
+        final farmName = farmData['farmName'] ?? 'Farm ${farmId}';
+        if (farmId != null && farmIds.contains(farmId is int ? farmId : int.tryParse(farmId.toString()))) {
+          farmNamesMap[farmId is int ? farmId : int.tryParse(farmId.toString()) ?? 0] = farmName.toString();
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _farmNames = farmNamesMap;
+        });
+      }
+    } catch (e) {
+      // If error, keep existing farm names or set empty
+      if (mounted) {
+        setState(() {
+          _farmNames = {};
         });
       }
     }
@@ -583,11 +647,25 @@ class _HomeScreenState extends State<HomeScreen> {
       return _buildFieldOfficerPendingBanner(l10n);
     }
 
-    // Get the first active assignment
+    // Get the first active assignment (all should have same field officer)
     final assignment = fieldOfficerAssignments.first;
     final fieldOfficerName = assignment['fieldOfficerName']?.toString() ?? 'Field Officer';
     final fieldOfficerPhone = assignment['fieldOfficerPhone']?.toString() ?? '';
     final fieldOfficerPincode = assignment['fieldOfficerPincode']?.toString() ?? '';
+    
+    // Get all farm IDs from assignments and their names
+    final List<String> assignedFarmNames = [];
+    for (var assign in fieldOfficerAssignments) {
+      final farmId = assign['farmId'];
+      if (farmId != null) {
+        final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+        if (farmIdInt != null && _farmNames.containsKey(farmIdInt)) {
+          assignedFarmNames.add(_farmNames[farmIdInt]!);
+        } else {
+          assignedFarmNames.add('Farm $farmId');
+        }
+      }
+    }
 
     return Material(
       color: Colors.transparent,
@@ -690,6 +768,32 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontWeight: FontWeight.w600,
                               color: Colors.black87,
                     ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (assignedFarmNames.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.agriculture_rounded,
+                            size: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              'Assigned to: ${assignedFarmNames.join(', ')}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),

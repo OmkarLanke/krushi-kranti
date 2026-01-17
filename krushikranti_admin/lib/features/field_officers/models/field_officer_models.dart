@@ -11,6 +11,7 @@ class FieldOfficerSummary {
   final String? state;
   final bool isActive;
   final int? assignedFarmsCount;
+  final int? verifiedFarmsCount;
   final DateTime? createdAt;
   final DateTime? lastUpdatedAt;
 
@@ -27,6 +28,7 @@ class FieldOfficerSummary {
     this.state,
     required this.isActive,
     this.assignedFarmsCount,
+    this.verifiedFarmsCount,
     this.createdAt,
     this.lastUpdatedAt,
   });
@@ -45,6 +47,7 @@ class FieldOfficerSummary {
       state: json['state'],
       isActive: json['isActive'] ?? true,
       assignedFarmsCount: json['assignedFarmsCount'],
+      verifiedFarmsCount: json['verifiedFarmsCount'],
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'])
           : null,

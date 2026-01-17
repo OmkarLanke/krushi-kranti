@@ -294,15 +294,32 @@ class NotificationService extends ChangeNotifier {
           debugPrint('Notification - ID: ${notification.id}, RecipientUserId: ${notification.recipientUserId}, OTP: ${notification.data?['otp']}, FarmId: ${notification.data?['farmId']}');
         }
 
+        // Filter out expired OTP notifications immediately when fetched
+        final now = DateTime.now();
+        const otpExpirationDuration = Duration(minutes: 10);
+        final validNotifications = userSpecificNotifications.where((n) {
+          // For OTP notifications, check if they're expired
+          if (n.type == 'FARM_VERIFICATION_OTP') {
+            final age = now.difference(n.timestamp);
+            if (age >= otpExpirationDuration) {
+              debugPrint('Skipping expired OTP notification: ID=${n.id}, Age=${age.inMinutes} minutes');
+              return false;
+            }
+          }
+          return true;
+        }).toList();
+        
+        debugPrint('Valid (non-expired) notifications count: ${validNotifications.length}');
+
         // Update local notifications - merge with existing, avoiding duplicates
         // Also update existing notifications if they're in the fetched list (to sync isRead status)
         final existingIds = _notifications.map((n) => n.id).toSet();
-        final newNotifications = userSpecificNotifications
+        final newNotifications = validNotifications
             .where((n) => !existingIds.contains(n.id))
             .toList();
         
         // Update existing notifications that were fetched (to sync any changes from backend)
-        for (var fetchedNotification in userSpecificNotifications) {
+        for (var fetchedNotification in validNotifications) {
           final existingIndex = _notifications.indexWhere((n) => n.id == fetchedNotification.id);
           if (existingIndex != -1) {
             // Update existing notification to sync with backend (especially isRead status)
@@ -314,10 +331,13 @@ class NotificationService extends ChangeNotifier {
         debugPrint('New notifications count: ${newNotifications.length}');
         debugPrint('Total notifications in list: ${_notifications.length}');
 
+        // Remove expired OTPs before adding new ones to ensure clean state
+        removeExpiredOtpNotifications();
+        
         if (newNotifications.isNotEmpty) {
           _notifications.insertAll(0, newNotifications);
           for (var notification in newNotifications) {
-            debugPrint('Adding notification: ID=${notification.id}, Type=${notification.type}, OTP=${notification.data?['otp']}, FarmId=${notification.data?['farmId']}, isRead=${notification.isRead}');
+            debugPrint('Adding notification: ID=${notification.id}, Type=${notification.type}, OTP=${notification.data?['otp']}, FarmId=${notification.data?['farmId']}, isRead=${notification.isRead}, Age=${now.difference(notification.timestamp).inMinutes} minutes');
             _notificationStreamController.add(notification);
           }
           notifyListeners();
