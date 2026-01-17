@@ -1683,6 +1683,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     const double baseKycWidth = 130.0;
     const double baseSubscriptionWidth = 150.0;
     const double baseFieldOfficerWidth = 160.0;
+    const double baseVerifiedFarmsWidth = 140.0;
 
     final totalBaseWidth = baseFarmerIdWidth +
         baseUserIdWidth +
@@ -1694,7 +1695,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         baseFarmsWidth +
         baseKycWidth +
         baseSubscriptionWidth +
-        baseFieldOfficerWidth;
+        baseFieldOfficerWidth +
+        baseVerifiedFarmsWidth;
 
     // 2. Calculate Scale Factor
     // If available screen width > total fixed width, we scale up to fit the screen.
@@ -1716,6 +1718,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     final double kycWidth = baseKycWidth * scaleFactor;
     final double subscriptionWidth = baseSubscriptionWidth * scaleFactor;
     final double fieldOfficerWidth = baseFieldOfficerWidth * scaleFactor;
+    final double verifiedFarmsWidth = baseVerifiedFarmsWidth * scaleFactor;
 
     // The new total width is effectively the availableWidth (if scaled)
     final totalWidth = totalBaseWidth * scaleFactor;
