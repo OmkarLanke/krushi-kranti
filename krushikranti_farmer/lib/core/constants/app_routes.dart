@@ -18,6 +18,7 @@ import '../../features/auth/screens/email_login_screen.dart';
 import '../../features/dashboard/screens/main_layout_screen.dart';
 import '../../features/dashboard/screens/profile_screen.dart'; // ✅ This import is now used below
 import '../../features/dashboard/screens/my_details_screen.dart';
+import '../../features/dashboard/screens/notifications_screen.dart';
 import '../../features/farm_management/screens/farm_list_screen.dart';
 import '../../features/farm_management/screens/add_farm_screen.dart';
 import '../../features/crop_management/screens/crop_list_screen.dart';
@@ -63,6 +64,7 @@ class AppRoutes {
   static const String dashboard = '/dashboard';
   static const String profile = '/profile'; // ✅ ADDED PROFILE ROUTE NAME
   static const String myDetails = '/my_details';
+  static const String notifications = '/notifications';
   static const String farmList = '/farm_list';
   static const String addFarm = '/add_farm';
   static const String cropList = '/crop_list';
@@ -104,6 +106,7 @@ class AppRoutes {
     dashboard: (context) => const MainLayoutScreen(),
     profile: (context) => const ProfileScreen(), // ✅ ADDED PROFILE WIDGET
     myDetails: (context) => const MyDetailsScreen(),
+    notifications: (context) => const NotificationsScreen(),
     farmList: (context) => const FarmListScreen(),
     addFarm: (context) => const AddFarmScreen(),
     cropList: (context) => const CropListScreen(),

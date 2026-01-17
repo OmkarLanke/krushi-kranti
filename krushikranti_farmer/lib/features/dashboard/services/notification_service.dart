@@ -156,6 +156,29 @@ class NotificationService extends ChangeNotifier {
         })
         .toList();
   }
+
+  /// Get all OTP notifications (read and unread) that are not expired
+  List<NotificationModel> get allOtpNotifications {
+    final now = DateTime.now();
+    const otpExpirationDuration = Duration(minutes: 10);
+    
+    return _notifications
+        .where((n) {
+          if (n.type != 'FARM_VERIFICATION_OTP') {
+            return false;
+          }
+          // Check if notification is expired (older than 10 minutes)
+          final age = now.difference(n.timestamp);
+          return age < otpExpirationDuration;
+        })
+        .toList()
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp)); // Sort by newest first
+  }
+
+  /// Get count of unread OTP notifications (for badge display)
+  int get unreadOtpNotificationsCount {
+    return otpNotifications.length;
+  }
   
   /// Remove expired OTP notifications (older than 10 minutes)
   void removeExpiredOtpNotifications() {
