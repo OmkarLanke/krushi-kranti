@@ -33,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<NotificationModel>? _notificationSubscription;
   Timer? _expiredNotificationCleanupTimer;
   VoidCallback? _notificationServiceListener;
+  int _previousNotificationCount = 0;
 
   @override
   void initState() {
@@ -69,6 +70,37 @@ class _HomeScreenState extends State<HomeScreen> {
         timer.cancel();
       }
     });
+  }
+
+  void _showOtpReceivedPopup() {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Text(
+            'You will get the OTP. Please check it at notification',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        backgroundColor: AppColors.brandGreen,
+        duration: const Duration(seconds: 6),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 6,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+    );
   }
 
   void _setupNotificationListener() {
@@ -318,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           _buildCircleIcon(Icons.search_rounded),
           const SizedBox(width: 12),
-          _buildCircleIcon(Icons.notifications_none_rounded),
+          _buildNotificationIcon(),
           const SizedBox(width: 20),
         ],
         flexibleSpace: Container(
@@ -344,14 +376,8 @@ class _HomeScreenState extends State<HomeScreen> {
             // A. Weather
             _buildWeatherHeader(l10n),
             const SizedBox(height: 20),
-
-            // B. OTP Notification Banner (if any)
-            if (_notificationService.otpNotifications.isNotEmpty) ...[
-              ..._buildOtpNotificationBanners(l10n),
-              const SizedBox(height: 20),
-            ],
             
-            // C. All Farms Verified Banner (if all farms are verified)
+            // B. All Farms Verified Banner (if all farms are verified)
             if (_allFarmsVerified) ...[
               _buildAllFarmsVerifiedCard(l10n),
               const SizedBox(height: 20),
@@ -442,6 +468,64 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
           ),
           child: Icon(icon, color: Colors.white, size: 22),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationIcon() {
+    final unreadCount = _notificationService.unreadOtpNotificationsCount;
+    final hasUnreadNotifications = unreadCount > 0;
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(context, AppRoutes.notifications);
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.notifications_none_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            // Red badge when unread OTP notifications exist
+            if (hasUnreadNotifications)
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red,
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
