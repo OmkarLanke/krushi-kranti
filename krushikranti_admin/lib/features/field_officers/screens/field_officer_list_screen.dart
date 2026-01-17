@@ -1430,9 +1430,10 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     const double baseLocationWidth = 260.0;
     const double baseStatusWidth = 130.0;
     const double baseFarmAssignmentWidth = 170.0;
+    const double baseFarmsVerifiedWidth = 150.0;
     
-    // Account for dividers: 9 columns = 8 dividers (1px each)
-    const int numberOfDividers = 8;
+    // Account for dividers: 10 columns = 9 dividers (1px each)
+    const int numberOfDividers = 9;
     const double dividerWidth = 1.0;
     const double totalDividerWidth = numberOfDividers * dividerWidth;
     
@@ -1445,6 +1446,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         baseLocationWidth +
         baseStatusWidth +
         baseFarmAssignmentWidth +
+        baseFarmsVerifiedWidth +
         totalDividerWidth; // Include divider widths
     
     // Calculate scale factor: use available width if it's larger, otherwise use base widths
@@ -1464,6 +1466,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     final double locationWidth = baseLocationWidth * scaleFactor;
     final double statusWidth = baseStatusWidth * scaleFactor;
     final double farmAssignmentWidth = baseFarmAssignmentWidth * scaleFactor;
+    final double farmsVerifiedWidth = baseFarmsVerifiedWidth * scaleFactor;
     
     // The new total width includes scaled column widths and divider widths
     final totalWidth = (baseTotalWidth - totalDividerWidth) * scaleFactor + totalDividerWidth;
@@ -1513,6 +1516,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 _buildHeaderCell('Status', statusWidth, SortColumn.status, false),
                 _buildHeaderDivider(),
                 _buildHeaderCell('Farm Assignment', farmAssignmentWidth, SortColumn.assignedFarmsCount, true),
+                _buildHeaderDivider(),
+                _buildHeaderCell('Farms Verified', farmsVerifiedWidth, null, false),
               ],
             ),
           ),
@@ -1544,6 +1549,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 _buildFilterCell(statusWidth, 'status'),
                 _buildDivider(),
                 _buildFilterCell(farmAssignmentWidth, null),
+                _buildDivider(),
+                _buildFilterCell(farmsVerifiedWidth, null),
               ],
             ),
           ),
@@ -1580,6 +1587,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                                 locationWidth,
                                 statusWidth,
                                 farmAssignmentWidth,
+                                farmsVerifiedWidth,
                                 index == _filteredFieldOfficers.length - 1, // Last row
                               );
                             }),
@@ -1938,6 +1946,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     double locationWidth,
     double statusWidth,
     double farmAssignmentWidth,
+    double farmsVerifiedWidth,
     bool isLastRow,
   ) {
     return MouseRegion(
@@ -2068,7 +2077,9 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 _buildDivider(),
                 _buildDataCell(statusWidth, _buildStatusChip(fieldOfficer.isActive), false),
                 _buildDivider(),
-                _buildDataCell(farmAssignmentWidth, _buildFarmAssignmentCell(fieldOfficer), true),
+                _buildDataCell(farmAssignmentWidth, _buildFarmAssignmentCell(fieldOfficer), false),
+                _buildDivider(),
+                _buildDataCell(farmsVerifiedWidth, _buildFarmsVerifiedCell(fieldOfficer), true),
               ],
             ),
           ),
@@ -2158,6 +2169,45 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFarmsVerifiedCell(FieldOfficerSummary fieldOfficer) {
+    final count = fieldOfficer.verifiedFarmsCount ?? 0;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: count > 0
+            ? AppColors.success.withOpacity(0.1)
+            : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: count > 0
+              ? AppColors.success.withOpacity(0.3)
+              : Colors.grey.shade300,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.verified_rounded,
+            size: 18,
+            color: count > 0 ? AppColors.success : Colors.grey.shade600,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            count.toString(),
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: count > 0 ? AppColors.success : Colors.grey.shade700,
+            ),
+          ),
+        ],
       ),
     );
   }
