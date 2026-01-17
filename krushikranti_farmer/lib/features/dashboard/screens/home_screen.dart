@@ -178,9 +178,31 @@ class _HomeScreenState extends State<HomeScreen> {
           final farmName = farmData['farmName'] ?? 'Farm $farmId';
           if (farmId != null) {
             final id = farmId is int ? farmId : int.tryParse(farmId.toString());
-            if (id != null && farmIds.contains(id)) {
+            if (id != null && assignedFarmIds.contains(id)) {
               farmNamesMap[id] = farmName.toString();
             }
+          }
+        }
+      }
+      
+      // Find unassigned farms (active farms without assignments)
+      // If allFarmsAssigned is true (null farmId assignment exists), no farms are unassigned
+      final List<Map<String, dynamic>> unassignedFarms = [];
+      if (!allFarmsAssigned) {
+        // Filter only active farms
+        final activeFarms = farmsData.where((farm) {
+          return farm['isActive'] == true;
+        }).toList();
+        
+        for (var farm in activeFarms) {
+          final farmId = farm['id'];
+          final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+          // Only add to unassigned if it's not already assigned AND not already verified
+          if (farmIdInt != null && !assignedFarmIds.contains(farmIdInt) && (farm['isVerified'] == false || farm['isVerified'] == null)) {
+            unassignedFarms.add({
+              'id': farmIdInt,
+              'farmName': farm['farmName'] ?? 'Farm ${farmIdInt}',
+            });
           }
         }
       }
