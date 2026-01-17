@@ -140,11 +140,46 @@ class NotificationService extends ChangeNotifier {
   Stream<NotificationModel> get notificationStream =>
       _notificationStreamController.stream;
 
-  /// Get unread OTP notifications
-  List<NotificationModel> get otpNotifications => _notifications
-      .where((n) =>
-          n.type == 'FARM_VERIFICATION_OTP' && !n.isRead)
-      .toList();
+  /// Get unread OTP notifications that are not expired (within 10 minutes)
+  List<NotificationModel> get otpNotifications {
+    final now = DateTime.now();
+    const otpExpirationDuration = Duration(minutes: 10);
+    
+    return _notifications
+        .where((n) {
+          if (n.type != 'FARM_VERIFICATION_OTP' || n.isRead) {
+            return false;
+          }
+          // Check if notification is expired (older than 10 minutes)
+          final age = now.difference(n.timestamp);
+          return age < otpExpirationDuration;
+        })
+        .toList();
+  }
+  
+  /// Remove expired OTP notifications (older than 10 minutes)
+  void removeExpiredOtpNotifications() {
+    final now = DateTime.now();
+    const otpExpirationDuration = Duration(minutes: 10);
+    
+    final initialCount = _notifications.length;
+    _notifications.removeWhere((n) {
+      if (n.type == 'FARM_VERIFICATION_OTP') {
+        final age = now.difference(n.timestamp);
+        if (age >= otpExpirationDuration) {
+          debugPrint('Removing expired OTP notification: ID=${n.id}, Age=${age.inMinutes} minutes');
+          return true;
+        }
+      }
+      return false;
+    });
+    
+    final removedCount = initialCount - _notifications.length;
+    if (removedCount > 0) {
+      debugPrint('Removed $removedCount expired OTP notification(s)');
+      notifyListeners();
+    }
+  }
 
   /// Start polling for notifications from backend
   void startPolling({Duration interval = const Duration(seconds: 10)}) {
