@@ -202,7 +202,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
   }
 
   Future<void> _loadFieldOfficers({bool forceReload = false}) async {
-      setState(() {
+    setState(() {
       _isLoading = true;
       _error = null;
     });
@@ -218,13 +218,14 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
           search: null,
           isActive: null,
         );
-        setState(() {
-          _allFieldOfficers = allResponse.fieldOfficers;
-        });
+        
+        // Apply filters and pagination immediately after loading
+        // This reduces the number of setState calls
+        _applyFiltersAndReloadInternal(allResponse.fieldOfficers);
+      } else {
+        // Apply filters and pagination without reloading
+        _applyFiltersAndReload();
       }
-
-      // Apply filters and pagination
-      _applyFiltersAndReload();
 
       setState(() {
         _isLoading = false;
@@ -235,6 +236,13 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         _isLoading = false;
       });
     }
+  }
+  
+  /// Internal method to apply filters without triggering setState for allFieldOfficers
+  void _applyFiltersAndReloadInternal(List<FieldOfficerSummary> newFieldOfficers) {
+    // Update all field officers in a single setState call
+    _allFieldOfficers = newFieldOfficers;
+    _applyFiltersAndReload();
   }
 
   void _onSearchChanged(String query) {

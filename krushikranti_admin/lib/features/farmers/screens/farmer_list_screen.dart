@@ -106,6 +106,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   @override
   void initState() {
     super.initState();
+    // Load farmers and stats in parallel for better performance
     _loadFarmers();
     _loadStats();
   }
@@ -286,13 +287,14 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
           subscriptionStatus: null,
           pincode: _pincodeFilter, // Use backend pincode filtering
         );
-        setState(() {
-          _allFarmers = allResponse.farmers;
-        });
+        
+        // Apply filters and pagination immediately after loading
+        // This reduces the number of setState calls
+        _applyFiltersAndReloadInternal(allResponse.farmers);
+      } else {
+        // Apply filters and pagination without reloading
+        _applyFiltersAndReload();
       }
-
-      // Apply filters and pagination
-      _applyFiltersAndReload();
 
       setState(() {
         _isLoading = false;
@@ -304,15 +306,22 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       });
     }
   }
+  
+  /// Internal method to apply filters without triggering setState for allFarmers
+  void _applyFiltersAndReloadInternal(List<FarmerSummary> newFarmers) {
+    // Update all farmers in a single setState call
+    _allFarmers = newFarmers;
+    _applyFiltersAndReload();
+  }
 
   Future<void> _loadStats() async {
     try {
-      // First try to get stats from the dedicated stats endpoint
+      // First try to get stats from the dedicated stats endpoint (faster)
       final stats = await AdminFarmerService.getDashboardStats();
       
       // If stats have real values (not all zeros), use them
       if (stats.verifiedKyc > 0 || stats.pendingKyc > 0 || stats.activeSubscriptions > 0) {
-    setState(() {
+        setState(() {
           _stats = stats;
         });
         return;
@@ -321,26 +330,37 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       // Stats endpoint failed, will calculate from farmers
     }
 
-    // Fallback: Fetch all farmers to calculate accurate stats
-    try {
-      final allFarmersResponse = await AdminFarmerService.getFarmers(
-        page: 0,
-        size: 10000, // Large size to get all farmers
-        search: null,
-        kycStatus: null,
-        subscriptionStatus: null,
-      );
+    // Fallback: Use already loaded farmers if available, otherwise fetch
+    if (_allFarmers.isNotEmpty) {
+      // Calculate stats from already loaded farmers (no extra API call)
+      final calculatedStats = _calculateStatsFromFarmers(_allFarmers);
+      setState(() {
+        _stats = calculatedStats;
+      });
+    } else {
+      // Only fetch if we don't have farmers loaded yet
+      try {
+        final allFarmersResponse = await AdminFarmerService.getFarmers(
+          page: 0,
+          size: 10000, // Large size to get all farmers
+          search: null,
+          kycStatus: null,
+          subscriptionStatus: null,
+        );
 
-      if (allFarmersResponse.farmers.isNotEmpty) {
-        final calculatedStats = _calculateStatsFromFarmers(allFarmersResponse.farmers);
-        setState(() {
-          _stats = calculatedStats;
-        });
-      }
-    } catch (e) {
-      // If that fails too, calculate from current page as last resort
-      if (_farmers.isNotEmpty) {
-        _stats = _calculateStatsFromFarmers(_farmers);
+        if (allFarmersResponse.farmers.isNotEmpty) {
+          final calculatedStats = _calculateStatsFromFarmers(allFarmersResponse.farmers);
+          setState(() {
+            _stats = calculatedStats;
+          });
+        }
+      } catch (e) {
+        // If that fails too, calculate from current page as last resort
+        if (_farmers.isNotEmpty) {
+          setState(() {
+            _stats = _calculateStatsFromFarmers(_farmers);
+          });
+        }
       }
     }
   }

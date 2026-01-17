@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../services/field_officer_service.dart';
+import '../services/field_officer_cache.dart';
 import 'farm_verification_screen.dart';
 
 class FieldOfficerFarmerScreen extends StatefulWidget {
@@ -37,11 +38,11 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
     super.initState();
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 250), // Even faster animation
     );
     _slideController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 200), // Even faster animation
     );
     _filterChipController = AnimationController(
       vsync: this,
@@ -60,6 +61,11 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       curve: Curves.easeOutCubic,
     ));
     
+    // Start animations immediately for better perceived performance
+    _fadeController.forward();
+    _slideController.forward();
+    
+    // Load data asynchronously
     _loadData();
   }
   
@@ -73,30 +79,51 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
 
   Future<void> _loadData() async {
     try {
-      final assignments = await FieldOfficerService.getAssignedFarms();
-      setState(() {
-        _assignments = assignments;
-        _extractDistricts();
-        _applyFilters();
-        _isLoading = false;
-      });
-      // Start animations after data loads
-      _fadeController.forward();
-      _slideController.forward();
+      // Check cache first for instant loading
+      List<dynamic> assignments = FieldOfficerCache.getCachedAssignments() ?? [];
+      
+      if (assignments.isEmpty) {
+        // Only fetch if not in cache
+        assignments = await FieldOfficerService.getAssignedFarms();
+        // Cache for next time
+        FieldOfficerCache.cacheAssignments(assignments);
+      }
+      
+      // Process data efficiently in a single setState
+      final districts = _extractDistrictsSync(assignments);
+      final filtered = _applyFiltersSync(assignments, districts);
+      
+      if (mounted) {
+        setState(() {
+          _assignments = assignments;
+          _availableDistricts = districts;
+          _filteredAssignments = filtered;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      print('Error loading assignments: $e');
-      setState(() {
-        _assignments = [];
-        _filteredAssignments = [];
-        _isLoading = false;
-      });
-      _fadeController.forward();
+      // Error logged by service
+      if (mounted) {
+        setState(() {
+          _assignments = [];
+          _filteredAssignments = [];
+          _isLoading = false;
+        });
+      }
     }
   }
-
-  void _extractDistricts() {
+  
+  /// Refresh data from server (used when returning from verification screen)
+  Future<void> refreshData() async {
+    // Clear cache to force fresh data
+    FieldOfficerCache.clearAssignmentsCache();
+    await _loadData();
+  }
+  
+  /// Extract districts synchronously (no setState)
+  List<String> _extractDistrictsSync(List<dynamic> assignments) {
     final districts = <String>{};
-    for (var assignment in _assignments) {
+    for (var assignment in assignments) {
       if (assignment is Map<String, dynamic>) {
         final farms = assignment['farms'] as List? ?? [];
         for (var farm in farms) {
@@ -109,11 +136,17 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
         }
       }
     }
-    _availableDistricts = districts.toList()..sort();
+    return districts.toList()..sort();
   }
-
-  void _applyFilters() {
-    List<dynamic> filtered = List.from(_assignments);
+  
+  /// Apply filters synchronously without setState (for use in _loadData)
+  List<dynamic> _applyFiltersSync(List<dynamic> assignments, List<String> districts) {
+    return _applyFiltersInternal(assignments);
+  }
+  
+  /// Internal filter logic without setState
+  List<dynamic> _applyFiltersInternal(List<dynamic> assignments) {
+    List<dynamic> filtered = List.from(assignments);
 
     // Filter by search query (farmer name)
     if (_searchQuery.isNotEmpty) {
@@ -225,9 +258,23 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       }
     }
 
+    return filtered;
+  }
+  
+  void _applyFilters() {
+    if (_assignments.isEmpty) {
+      setState(() {
+        _filteredAssignments = [];
+      });
+      return;
+    }
+    
+    final filtered = _applyFiltersInternal(_assignments);
+    
     setState(() {
       _filteredAssignments = filtered;
     });
+    
     // Animate filter chips when filters change
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_hasActiveFilters()) {
@@ -315,7 +362,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                       // Filter Button
                                       TweenAnimationBuilder<double>(
                                         tween: Tween(begin: 0.0, end: _hasActiveFilters() ? 1.0 : 0.0),
-                                        duration: const Duration(milliseconds: 300),
+                                        duration: const Duration(milliseconds: 200), // Faster animation
                                         curve: Curves.easeInOut,
                                         builder: (context, value, child) {
                                           return Transform.scale(
@@ -479,53 +526,10 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
   }
 
   Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeInOut,
-            builder: (context, value, child) {
-              return Transform.scale(
-                scale: value,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.brandGreen.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.brandGreen,
-                      strokeWidth: 3,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 600),
-            curve: Curves.easeIn,
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Text(
-                  'Loading farmers...',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+    return const Center(
+      child: CircularProgressIndicator(
+        color: AppColors.brandGreen,
+        strokeWidth: 3,
       ),
     );
   }
@@ -629,7 +633,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
   Widget _buildAnimatedFarmerCard(dynamic assignment, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (index * 50)),
+            duration: Duration(milliseconds: 200 + (index * 30)), // Faster staggered animation
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.translate(
@@ -801,8 +805,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       transitionDuration: const Duration(milliseconds: 300),
               ),
             ).then((result) {
-              // Always reload data when returning from verification screen
+              // Clear cache and reload data when returning from verification screen
               // to get updated verification status from database
+              FieldOfficerCache.clearAssignmentsCache();
               _loadData();
             });
           },
@@ -814,7 +819,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       // Profile Picture (Circular Avatar) with animation
                       TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0.0, end: 1.0),
-                        duration: const Duration(milliseconds: 500),
+                        duration: const Duration(milliseconds: 250),
                         curve: Curves.elasticOut,
                         builder: (context, value, child) {
                           return Transform.scale(
@@ -950,7 +955,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       // Arrow Icon with animation
                       TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0.0, end: 1.0),
-                        duration: const Duration(milliseconds: 400),
+                        duration: const Duration(milliseconds: 250), // Faster animation
                         curve: Curves.easeOut,
                         builder: (context, value, child) {
                           return Transform.translate(
@@ -1001,7 +1006,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
         builder: (context, setModalState) {
           return TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 400),
+            duration: const Duration(milliseconds: 250), // Faster animation
             curve: Curves.easeOutCubic,
             builder: (context, value, child) {
               return Transform.translate(
@@ -1026,7 +1031,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                   // Handle bar with animation
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 400),
+                    duration: const Duration(milliseconds: 250), // Faster animation
                     curve: Curves.easeOut,
                     builder: (context, value, child) {
                       return Transform.scale(
@@ -1046,7 +1051,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                   // Header with icon and animation
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 500),
+                    duration: const Duration(milliseconds: 250),
                     curve: Curves.easeOutCubic,
                     builder: (context, value, child) {
                       return Transform.translate(
@@ -1434,7 +1439,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                 if (tempDateFilter == 'CUSTOM')
                                   TweenAnimationBuilder<double>(
                                     tween: Tween(begin: 0.0, end: 1.0),
-                                    duration: const Duration(milliseconds: 400),
+                                    duration: const Duration(milliseconds: 250), // Faster animation
                                     curve: Curves.easeOutCubic,
                                     builder: (context, value, child) {
                                       return Transform.scale(
@@ -1503,7 +1508,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                   // Apply Button with animation
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 600),
+                    duration: const Duration(milliseconds: 200), // Faster animation
                     curve: Curves.easeOutCubic,
                     builder: (context, value, child) {
                       return Transform.translate(

@@ -1,6 +1,17 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StorageService {
+  // Secure storage for sensitive data (tokens, passwords)
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
+
   // --- SYSTEM KEYS ---
   static const String _tokenKey = 'auth_token';
   static const String _languageKey = 'app_language';
@@ -82,23 +93,24 @@ class StorageService {
   }
 
   // ===========================================================================
-  // 5. AUTH TOKEN MANAGEMENT
+  // 5. AUTH TOKEN MANAGEMENT (Secure Storage)
   // ===========================================================================
+  /// Save auth token securely using flutter_secure_storage
   static Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
+    await _secureStorage.write(key: _tokenKey, value: token);
   }
 
+  /// Get auth token from secure storage
   static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    return await _secureStorage.read(key: _tokenKey);
   }
 
   // ✅ CLEARS USER DATA BUT KEEPS LANGUAGE
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     
-    await prefs.remove(_tokenKey);
+    // Clear token from secure storage
+    await _secureStorage.delete(key: _tokenKey);
     await prefs.remove(_emailKey);
     await prefs.remove(_phoneKey);
     await prefs.remove(_firstNameKey);
