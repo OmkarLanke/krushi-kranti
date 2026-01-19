@@ -32,7 +32,6 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<NotificationModel>? _notificationSubscription;
   Timer? _expiredNotificationCleanupTimer;
   VoidCallback? _notificationServiceListener;
-  int _previousNotificationCount = 0;
 
   @override
   void initState() {
@@ -41,8 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // Note: We don't clear all notifications here because NotificationService is a singleton
     // and we want to preserve notifications across screen rebuilds
     _notificationService.filterNotificationsByCurrentUser();
-    // Store initial notification count
-    _previousNotificationCount = _notificationService.allOtpNotifications.length;
     _checkFieldOfficerAssignments();
     _checkAllFarmsVerified();
     _setupNotificationListener();
@@ -53,6 +50,15 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         _notificationService.removeExpiredOtpNotifications();
         setState(() {}); // Refresh UI to remove expired notifications
+      }
+    });
+    // After first frame, check if there are any OTPs that haven't shown popup yet
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final newForPopup = _notificationService.newOtpNotificationsForPopup;
+      if (newForPopup.isNotEmpty) {
+        _notificationService.markPopupShownForNotifications(newForPopup);
+        _showOtpReceivedPopup();
       }
     });
     // Check farm verification status periodically (every 60 seconds)
@@ -84,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         backgroundColor: AppColors.brandGreen,
-        duration: const Duration(seconds: 6),
+        duration: const Duration(seconds: 10),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
@@ -104,11 +110,10 @@ class _HomeScreenState extends State<HomeScreen> {
           final now = DateTime.now();
           final age = now.difference(notification.timestamp);
           if (age < const Duration(minutes: 10)) {
-            // Check if this is a new notification
-            final currentCount = _notificationService.allOtpNotifications.length;
-            if (currentCount > _previousNotificationCount) {
-              _previousNotificationCount = currentCount;
-              // Show popup immediately when new OTP is received
+            // Show popup only for notifications that haven't shown popup yet
+            final newForPopup = _notificationService.newOtpNotificationsForPopup;
+            if (newForPopup.isNotEmpty) {
+              _notificationService.markPopupShownForNotifications(newForPopup);
               _showOtpReceivedPopup();
             }
             setState(() {}); // Refresh UI to show new notification
@@ -120,11 +125,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // Also listen to notification service changes (when notifyListeners is called)
     _notificationServiceListener = () {
       if (mounted) {
-        // Check if new notifications arrived
-        final currentCount = _notificationService.allOtpNotifications.length;
-        if (currentCount > _previousNotificationCount) {
-          _previousNotificationCount = currentCount;
-          // Show popup immediately when new OTP is received
+        // Check if new notifications arrived that haven't shown popup yet
+        final newForPopup = _notificationService.newOtpNotificationsForPopup;
+        if (newForPopup.isNotEmpty) {
+          _notificationService.markPopupShownForNotifications(newForPopup);
           _showOtpReceivedPopup();
         }
         setState(() {}); // Refresh UI when notifications change
