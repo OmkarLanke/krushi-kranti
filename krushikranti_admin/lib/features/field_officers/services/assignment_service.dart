@@ -103,5 +103,21 @@ class FieldOfficerAssignmentService {
       throw Exception('Failed to get assignments for field officer: ${e.toString()}');
     }
   }
+
+  /// Get verification photos for a farm
+  static Future<List<Map<String, dynamic>>> getVerificationPhotos(int farmId) async {
+    try {
+      final response = await HttpService.get('admin/field-officers/verifications/farms/$farmId/photos');
+      
+      if (response is Map && response.containsKey('data')) {
+        final List<dynamic> photos = response['data'] as List<dynamic>;
+        return photos.map((photo) => photo as Map<String, dynamic>).toList();
+      }
+      
+      throw Exception('Invalid response format');
+    } catch (e) {
+      throw Exception('Failed to get verification photos: ${e.toString()}');
+    }
+  }
 }
 

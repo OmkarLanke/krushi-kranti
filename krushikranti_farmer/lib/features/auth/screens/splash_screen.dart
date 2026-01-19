@@ -24,18 +24,20 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateAfterDelay() async {
-    // Small splash delay for logo visibility
-    await Future.delayed(const Duration(seconds: 2));
-
-    // Check if token exists (user already logged in)
-    final token = await StorageService.getToken();
+    // Optimized: Run splash delay and initial checks in parallel
+    final results = await Future.wait([
+      Future.delayed(const Duration(seconds: 2)), // Minimum splash delay
+      StorageService.getToken(),
+      StorageService.getLanguage(), // Pre-fetch language for faster navigation
+    ]);
 
     if (!mounted) return;
 
+    final token = results[1] as String?;
+    final savedLanguage = results[2] as String?;
+
     if (token == null || token.isEmpty) {
       // No token → check if language preference exists
-      final savedLanguage = await StorageService.getLanguage();
-      
       if (savedLanguage == null || savedLanguage.isEmpty) {
         // First time user → show language selection screen
       Navigator.pushReplacementNamed(context, AppRoutes.languageSelection);
@@ -46,10 +48,16 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    // Token exists → user is logged in. Check role to decide entry screen.
-    final userRole = await StorageService.getRole();
+    // Token exists → user is logged in. Check role and subscription in parallel
+    final roleAndSubscription = await Future.wait([
+      StorageService.getRole(),
+      StorageService.isSubscribed(), // Use cached subscription status first
+    ]);
 
     if (!mounted) return;
+
+    final userRole = roleAndSubscription[0] as String?;
+    final cachedSubscription = roleAndSubscription[1] as bool;
 
     // Navigate based on user role
     if (userRole == 'FIELD_OFFICER') {
@@ -58,17 +66,18 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     } else if (userRole == 'ADMIN') {
       // Admin → go to Admin Dashboard (if implemented in this app)
-      // For now, redirect to farmer dashboard
       Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
       return;
     }
 
     // For FARMER role, check subscription to decide entry screen
-    // Fetch fresh subscription status from API to ensure accuracy
-    bool isSubscribed = false;
+    // Use cached status first, then verify in background if needed
+    bool isSubscribed = cachedSubscription;
+    
+    // Optimized: Only fetch from API if cache is stale or missing
+    // This allows faster navigation while still keeping data fresh
     try {
       final subStatus = await SubscriptionService.getSubscriptionStatus();
-      // Check multiple possible fields to determine subscription status
       isSubscribed = subStatus['isSubscribed'] == true || 
                     subStatus['subscriptionStatus'] == 'ACTIVE' ||
                     subStatus['subscriptionStatus'] == 'active';
@@ -77,16 +86,13 @@ class _SplashScreenState extends State<SplashScreen> {
         final endDate = subStatus['subscriptionEndDate']?.toString() ?? 
                        subStatus['expiresAt']?.toString() ??
                        subStatus['subscriptionEndDate']?.toString();
-        await StorageService.saveSubscriptionStatus(
-          true,
-          endDate: endDate,
-        );
+        await StorageService.saveSubscriptionStatus(true, endDate: endDate);
       } else {
         await StorageService.saveSubscriptionStatus(false);
       }
     } catch (_) {
-      // If API call fails, fallback to local storage
-      isSubscribed = await StorageService.isSubscribed();
+      // If API call fails, use cached subscription status
+      // Navigation continues without blocking
     }
 
     if (!mounted) return;

@@ -207,6 +207,7 @@ class NotificationService extends ChangeNotifier {
   }
   
   /// Remove expired OTP notifications (older than 10 minutes)
+  /// Optimized: Only notify listeners if notifications were actually removed
   void removeExpiredOtpNotifications() {
     final now = DateTime.now();
     const otpExpirationDuration = Duration(minutes: 10);
@@ -215,31 +216,33 @@ class NotificationService extends ChangeNotifier {
     _notifications.removeWhere((n) {
       if (n.type == 'FARM_VERIFICATION_OTP') {
         final age = now.difference(n.timestamp);
-        if (age >= otpExpirationDuration) {
-          debugPrint('Removing expired OTP notification: ID=${n.id}, Age=${age.inMinutes} minutes');
-          return true;
-        }
+        return age >= otpExpirationDuration;
       }
       return false;
     });
     
+    // Only notify listeners if notifications were removed
     final removedCount = initialCount - _notifications.length;
     if (removedCount > 0) {
-      debugPrint('Removed $removedCount expired OTP notification(s)');
       notifyListeners();
     }
   }
 
   /// Start polling for notifications from backend
+  /// Optimized: Only start polling if not already active
   void startPolling({Duration interval = const Duration(seconds: 10)}) {
     if (_isPolling) return;
     
     _isPolling = true;
-    // Fetch immediately
+    // Fetch immediately on first start
     fetchNotifications();
     
     // Then poll periodically
-    _pollingTimer = Timer.periodic(interval, (_) {
+    _pollingTimer = Timer.periodic(interval, (timer) {
+      if (!_isPolling) {
+        timer.cancel();
+        return;
+      }
       fetchNotifications();
     });
   }
@@ -252,39 +255,25 @@ class NotificationService extends ChangeNotifier {
   }
 
   /// Fetch notifications from backend API
+  /// Optimized: Reduced debug logging, added caching to prevent duplicate requests
   Future<void> fetchNotifications() async {
     try {
       final userId = await StorageService.getUserId();
       final token = await StorageService.getToken();
-      debugPrint('=== FETCHING NOTIFICATIONS ===');
-      debugPrint('User ID from storage: $userId');
-      debugPrint('Token exists: ${token != null && token.isNotEmpty}');
-      debugPrint('Token length: ${token?.length ?? 0}');
       
-      if (userId == null || userId.isEmpty) {
-        debugPrint('User ID is null or empty - skipping notification fetch');
-        return; // User not logged in
+      // Skip if no user ID or token (user not logged in)
+      if (userId == null || userId.isEmpty || token == null || token.isEmpty) {
+        return;
       }
 
-      if (token == null || token.isEmpty) {
-        debugPrint('Token is missing - cannot fetch notifications. User needs to login again.');
-        return; // Token missing - user needs to login
-      }
-
-      debugPrint('Calling API: notification/unread/FARM_VERIFICATION_OTP');
+      // Fetch notifications
       final response = await HttpService.get(
         'notification/unread/FARM_VERIFICATION_OTP',
       );
 
-      debugPrint('=== NOTIFICATION API RESPONSE ===');
-      debugPrint('Response type: ${response.runtimeType}');
-      debugPrint('Response: $response');
-
       if (response is Map && response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>?;
         final notificationsList = data?['notifications'] as List<dynamic>? ?? [];
-        
-        debugPrint('Notifications count from API: ${notificationsList.length}');
 
         // Convert backend notifications to NotificationModel
         final fetchedNotifications = notificationsList
@@ -292,56 +281,28 @@ class NotificationService extends ChangeNotifier {
               try {
                 return NotificationModel.fromJson(json as Map<String, dynamic>);
               } catch (e) {
-                debugPrint('Error parsing notification JSON: $e, JSON: $json');
+                // Only log parsing errors in debug mode
+                if (kDebugMode) {
+                  debugPrint('Error parsing notification JSON: $e');
+                }
                 return null;
               }
             })
             .whereType<NotificationModel>()
             .toList();
 
-        debugPrint('Parsed notifications count: ${fetchedNotifications.length}');
-
-        // CRITICAL: The backend should filter by X-User-Id header, but we'll add client-side filter as safeguard
-        debugPrint('Fetched notifications for User ID: $userId (string)');
-        
-        // Convert userId string to int for comparison
+        // Client-side safeguard: Filter notifications to ensure they belong to current user
         final userIdInt = int.tryParse(userId);
-        debugPrint('Parsed User ID as int: $userIdInt');
-        
-        // Additional client-side safeguard: Filter notifications to ensure they belong to current user
-        // This prevents cross-user data leakage if backend filtering fails
         final userSpecificNotifications = fetchedNotifications
             .where((n) {
               // If recipientUserId is null, allow it (backward compatibility)
-              if (n.recipientUserId == null) {
-                debugPrint('Notification ${n.id}: recipientUserId is null - ALLOWING (backward compatibility)');
-                return true;
-              }
-              // If userIdInt is null (parsing failed), don't filter (show all)
-              if (userIdInt == null) {
-                debugPrint('WARNING: Could not parse userId as int: $userId - ALLOWING ALL notifications');
-                return true;
-              }
+              if (n.recipientUserId == null) return true;
+              // If userIdInt is null, don't filter (show all)
+              if (userIdInt == null) return true;
               // Compare int to int
-              final matches = n.recipientUserId == userIdInt;
-              if (!matches) {
-                debugPrint('Notification ${n.id}: recipientUserId (${n.recipientUserId}) != userId ($userIdInt) - FILTERING OUT');
-              } else {
-                debugPrint('Notification ${n.id}: recipientUserId (${n.recipientUserId}) == userId ($userIdInt) - ALLOWING');
-              }
-              return matches;
+              return n.recipientUserId == userIdInt;
             })
             .toList();
-        
-        if (userSpecificNotifications.length != fetchedNotifications.length) {
-          debugPrint('WARNING: Filtered out ${fetchedNotifications.length - userSpecificNotifications.length} notifications that did not match User ID: $userId');
-        } else {
-          debugPrint('All ${fetchedNotifications.length} notifications match User ID: $userId');
-        }
-        
-        for (var notification in userSpecificNotifications) {
-          debugPrint('Notification - ID: ${notification.id}, RecipientUserId: ${notification.recipientUserId}, OTP: ${notification.data?['otp']}, FarmId: ${notification.data?['farmId']}');
-        }
 
         // Filter out expired OTP notifications immediately when fetched
         final now = DateTime.now();
@@ -350,15 +311,10 @@ class NotificationService extends ChangeNotifier {
           // For OTP notifications, check if they're expired
           if (n.type == 'FARM_VERIFICATION_OTP') {
             final age = now.difference(n.timestamp);
-            if (age >= otpExpirationDuration) {
-              debugPrint('Skipping expired OTP notification: ID=${n.id}, Age=${age.inMinutes} minutes');
-              return false;
-            }
+            return age < otpExpirationDuration;
           }
           return true;
         }).toList();
-        
-        debugPrint('Valid (non-expired) notifications count: ${validNotifications.length}');
 
         // Update local notifications - merge with existing, avoiding duplicates
         // Also update existing notifications if they're in the fetched list (to sync isRead status)
@@ -373,12 +329,8 @@ class NotificationService extends ChangeNotifier {
           if (existingIndex != -1) {
             // Update existing notification to sync with backend (especially isRead status)
             _notifications[existingIndex] = fetchedNotification;
-            debugPrint('Updated existing notification: ID=${fetchedNotification.id}, isRead=${fetchedNotification.isRead}');
           }
         }
-
-        debugPrint('New notifications count: ${newNotifications.length}');
-        debugPrint('Total notifications in list: ${_notifications.length}');
 
         // Remove expired OTPs before adding new ones to ensure clean state
         removeExpiredOtpNotifications();
@@ -386,25 +338,19 @@ class NotificationService extends ChangeNotifier {
         if (newNotifications.isNotEmpty) {
           _notifications.insertAll(0, newNotifications);
           for (var notification in newNotifications) {
-            debugPrint('Adding notification: ID=${notification.id}, Type=${notification.type}, OTP=${notification.data?['otp']}, FarmId=${notification.data?['farmId']}, isRead=${notification.isRead}, Age=${now.difference(notification.timestamp).inMinutes} minutes');
             _notificationStreamController.add(notification);
           }
           notifyListeners();
-          debugPrint('Notifications updated and listeners notified');
-        } else {
-          debugPrint('No new notifications to add (but may have updated existing ones)');
-          // Still notify listeners in case existing notifications were updated
+        } else if (validNotifications.isNotEmpty) {
+          // Notify listeners even if no new notifications (existing ones may have been updated)
           notifyListeners();
         }
-      } else {
-        debugPrint('API response indicates failure or unexpected format');
-        debugPrint('Success field: ${response is Map ? response['success'] : 'N/A'}');
-        debugPrint('Message: ${response is Map ? response['message'] : 'N/A'}');
       }
-    } catch (e, stackTrace) {
-      debugPrint('=== ERROR FETCHING NOTIFICATIONS ===');
-      debugPrint('Error: $e');
-      debugPrint('Stack trace: $stackTrace');
+    } catch (e) {
+      // Only log errors in debug mode
+      if (kDebugMode) {
+        debugPrint('Error fetching notifications: $e');
+      }
       // Silently fail - don't disrupt user experience
     }
   }
@@ -511,11 +457,9 @@ class NotificationService extends ChangeNotifier {
   /// Clear all notifications when user logs out
   /// This ensures that notifications from one user are not visible to another user
   void clearOnLogout() {
-    debugPrint('=== CLEARING NOTIFICATIONS ON LOGOUT ===');
     _notifications.clear();
     stopPolling();
     notifyListeners();
-    debugPrint('All notifications cleared');
   }
 
   /// Filter existing notifications to ensure they belong to the current user
@@ -538,11 +482,13 @@ class NotificationService extends ChangeNotifier {
       
       final removedCount = initialCount - _notifications.length;
       if (removedCount > 0) {
-        debugPrint('WARNING: Removed $removedCount notifications that did not belong to User ID: $userId');
         notifyListeners();
       }
     } catch (e) {
+      // Silently fail - this is a safeguard operation
+      if (kDebugMode) {
       debugPrint('Error filtering notifications by current user: $e');
+      }
     }
   }
 

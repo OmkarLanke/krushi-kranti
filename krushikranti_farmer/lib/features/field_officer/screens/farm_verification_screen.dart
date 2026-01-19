@@ -9,6 +9,7 @@ import '../../../core/services/geotagged_photo_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/http_service.dart';
 import '../services/field_officer_service.dart';
+import '../../shared/widgets/photo_viewer_dialog.dart';
 
 class FarmVerificationScreen extends StatefulWidget {
   final Map<String, dynamic>
@@ -137,13 +138,37 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
           state.isCapturingLocation = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Location captured successfully!'),
-            backgroundColor: AppColors.success,
-            duration: Duration(seconds: 2),
-          ),
+        // Validate GPS coordinates after capture and show feedback
+        final farms = widget.assignment['farms'] as List? ?? [];
+        final farm = farms.firstWhere(
+          (f) => (f['farmId'] ?? f['id']) == farmId,
+          orElse: () => <String, dynamic>{},
         );
+        final validationResult = _validateGpsCoordinates(farmId, farm);
+        
+        if (validationResult['isValid']) {
+          final distance = validationResult['distance'] as double?;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                distance != null
+                    ? 'Location captured! Distance from farm: ${distance.toStringAsFixed(0)}m (within 100m threshold)'
+                    : 'Location captured successfully!',
+              ),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } else {
+          // Show warning even after capture if validation fails
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(validationResult['errorMessage'] ?? 'GPS validation failed'),
+              backgroundColor: AppColors.error,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
       }
     } on LocationException catch (e) {
       if (mounted) {
@@ -202,13 +227,37 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             state.isCapturingPhoto = false;
           });
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Geotagged photo captured successfully!'),
-              backgroundColor: AppColors.success,
-              duration: Duration(seconds: 2),
-            ),
+          // Validate GPS coordinates after photo capture and show feedback
+          final farms = widget.assignment['farms'] as List? ?? [];
+          final farm = farms.firstWhere(
+            (f) => (f['farmId'] ?? f['id']) == farmId,
+            orElse: () => <String, dynamic>{},
           );
+          final validationResult = _validateGpsCoordinates(farmId, farm);
+          
+          if (validationResult['isValid']) {
+            final distance = validationResult['distance'] as double?;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  distance != null
+                      ? 'Photo captured! Distance from farm: ${distance.toStringAsFixed(0)}m (within 100m threshold)'
+                      : 'Geotagged photo captured successfully!',
+                ),
+                backgroundColor: AppColors.success,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          } else {
+            // Show warning even after photo capture if validation fails
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(validationResult['errorMessage'] ?? 'GPS validation failed. OTP request will be blocked.'),
+                backgroundColor: AppColors.error,
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
         } else {
           throw GeotaggedPhotoException(
             'Photo file was not saved properly. Please try again.',
@@ -267,6 +316,26 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
   Future<void> _requestOtp(int farmId) async {
     final state = _farmVerificationStates[farmId];
     if (state == null) {
+      return;
+    }
+
+    // Get farm data for validation
+    final farms = widget.assignment['farms'] as List? ?? [];
+    final farm = farms.firstWhere(
+      (f) => (f['farmId'] ?? f['id']) == farmId,
+      orElse: () => <String, dynamic>{},
+    );
+
+    // Validate GPS coordinates before allowing OTP request
+    final validationResult = _validateGpsCoordinates(farmId, farm);
+    if (!validationResult['isValid']) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(validationResult['errorMessage'] ?? 'GPS validation failed'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 5),
+        ),
+      );
       return;
     }
 
@@ -455,31 +524,81 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
   }
 
   /// Validate GPS coordinates match farm location (100m threshold)
-  bool _validateGpsCoordinates(int farmId, Map<String, dynamic> farm) {
+  /// Returns a map with 'isValid' boolean and 'errorMessage' string
+  Map<String, dynamic> _validateGpsCoordinates(int farmId, Map<String, dynamic> farm) {
     final state = _farmVerificationStates[farmId];
+    
+    // Check if field officer has captured GPS location
     if (state == null || state.verificationLatitude == null || state.verificationLongitude == null) {
-      return false;
+      return {
+        'isValid': false,
+        'errorMessage': 'Please capture GPS location first before requesting OTP.',
+      };
     }
 
-    // Get farm GPS coordinates
-    final farmLat = farm['farmLatitude']?.toDouble();
-    final farmLon = farm['farmLongitude']?.toDouble();
+    // Get farm GPS coordinates - try multiple field name variations
+    // Java BigDecimal might be serialized as number or string
+    dynamic farmLat = farm['farmLatitude'] ?? 
+                      farm['farm_latitude'] ?? 
+                      farm['latitude'];
+    dynamic farmLon = farm['farmLongitude'] ?? 
+                      farm['farm_longitude'] ?? 
+                      farm['longitude'];
+    
+    // Debug logging to help diagnose the issue
+    print('DEBUG: Farm GPS validation for farmId: $farmId');
+    print('DEBUG: Farm data keys: ${farm.keys.toList()}');
+    print('DEBUG: Checking farmLatitude variations:');
+    print('  - farmLatitude: ${farm['farmLatitude']} (type: ${farm['farmLatitude']?.runtimeType})');
+    print('  - farm_latitude: ${farm['farm_latitude']} (type: ${farm['farm_latitude']?.runtimeType})');
+    print('  - latitude: ${farm['latitude']} (type: ${farm['latitude']?.runtimeType})');
+    print('DEBUG: Checking farmLongitude variations:');
+    print('  - farmLongitude: ${farm['farmLongitude']} (type: ${farm['farmLongitude']?.runtimeType})');
+    print('  - farm_longitude: ${farm['farm_longitude']} (type: ${farm['farm_longitude']?.runtimeType})');
+    print('  - longitude: ${farm['longitude']} (type: ${farm['longitude']?.runtimeType})');
+    print('DEBUG: Final farmLat: $farmLat (type: ${farmLat?.runtimeType}), farmLon: $farmLon (type: ${farmLon?.runtimeType})');
 
+    // Check if farm has GPS coordinates
     if (farmLat == null || farmLon == null) {
-      // Farm doesn't have GPS coordinates, can't validate
-      return true; // Allow verification if farm has no GPS
+      print('DEBUG: GPS coordinates are null - farmLat: $farmLat, farmLon: $farmLon');
+      return {
+        'isValid': false,
+        'errorMessage': 'This farm does not have GPS coordinates. Please contact admin to add farm location before verification.',
+      };
+    }
+
+    final farmLatDouble = farmLat is double ? farmLat : (farmLat is int ? farmLat.toDouble() : double.tryParse(farmLat.toString()));
+    final farmLonDouble = farmLon is double ? farmLon : (farmLon is int ? farmLon.toDouble() : double.tryParse(farmLon.toString()));
+
+    if (farmLatDouble == null || farmLonDouble == null) {
+      return {
+        'isValid': false,
+        'errorMessage': 'Invalid farm GPS coordinates. Please contact admin.',
+      };
     }
 
     // Calculate distance between farm location and verification location
     final distance = Geolocator.distanceBetween(
-      farmLat,
-      farmLon,
+      farmLatDouble,
+      farmLonDouble,
       state.verificationLatitude!,
       state.verificationLongitude!,
     );
 
     // Check if within 100 meters threshold
-    return distance <= 100.0;
+    if (distance > 100.0) {
+      return {
+        'isValid': false,
+        'errorMessage': 'You are too far from the farm location. Distance: ${distance.toStringAsFixed(0)}m (required: within 100m). Please move closer to the farm location.',
+        'distance': distance,
+      };
+    }
+
+    return {
+      'isValid': true,
+      'errorMessage': null,
+      'distance': distance,
+    };
   }
 
   Future<void> _submitVerification(
@@ -522,12 +641,13 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       }
 
       // Validate GPS coordinates match farm location
-      if (!_validateGpsCoordinates(farmId, farm)) {
+      final validationResult = _validateGpsCoordinates(farmId, farm);
+      if (!validationResult['isValid']) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('GPS coordinates do not match farm location. Please ensure you are at the farm location (within 100m).'),
+          SnackBar(
+            content: Text(validationResult['errorMessage'] ?? 'GPS validation failed'),
             backgroundColor: AppColors.error,
-            duration: Duration(seconds: 5),
+            duration: const Duration(seconds: 5),
           ),
         );
         return;
@@ -1150,6 +1270,14 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   _buildInfoRow(Icons.pin, 'Pincode: $pincode'),
                 ],
 
+                // View Geo Tagged Photo button for verified farms
+                if (state.isVerified && state.selectedStatus == 'VERIFIED') ...[
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  _buildViewPhotoButton(farmId, farm['farmName'] ?? 'Farm'),
+                ],
+
                 if (!state.isVerified) ...[
                   const SizedBox(height: 24),
                   const Divider(),
@@ -1340,6 +1468,94 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         );
       },
     );
+  }
+
+  Widget _buildViewPhotoButton(int farmId, String farmName) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => _showVerificationPhotos(farmId, farmName),
+        icon: const Icon(Icons.photo_camera_rounded, size: 18),
+        label: const Text('View Geo Tagged Photo'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.brandGreen,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showVerificationPhotos(int farmId, String farmName) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading photos...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Fetch photos
+      final photos = await FieldOfficerService.getVerificationPhotos(farmId);
+      
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Extract photo URLs
+      final photoUrls = photos
+          .map((photo) => photo['photoUrl'] as String?)
+          .whereType<String>()
+          .toList();
+
+      // Show photo viewer
+      if (mounted && photoUrls.isNotEmpty) {
+        showDialog(
+          context: context,
+          builder: (context) => PhotoViewerDialog(
+            photoUrls: photoUrls,
+            title: 'Verification Photos - $farmName',
+          ),
+        );
+      } else if (mounted) {
+        // Show error if no photos
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No verification photos found for this farm.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (mounted) Navigator.of(context).pop();
+      
+      // Show error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading photos: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildInfoRow(IconData icon, String text) {
@@ -2015,28 +2231,87 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                 
                 // Request OTP Button
                 if (!state.isOtpRequested && !state.isOtpValidated) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: state.isRequestingOtp
-                          ? null
-                          : () => _requestOtp(farmId),
-                      icon: state.isRequestingOtp
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.send, size: 18),
-                      label: Text(
-                        state.isRequestingOtp ? 'Requesting OTP...' : 'Request OTP',
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      // Check GPS validation before showing button
+                      final farms = widget.assignment['farms'] as List? ?? [];
+                      final farm = farms.firstWhere(
+                        (f) => (f['farmId'] ?? f['id']) == farmId,
+                        orElse: () => <String, dynamic>{},
+                      );
+                      final validationResult = _validateGpsCoordinates(farmId, farm);
+                      final bool canRequestOtp = validationResult['isValid'] == true;
+                      final String? validationError = validationResult['errorMessage'];
+                      
+                      return Column(
+                        children: [
+                          // Show validation error/warning if GPS validation fails
+                          if (!canRequestOtp && validationError != null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppColors.error.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: AppColors.error,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      validationError,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: AppColors.error,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: (state.isRequestingOtp || !canRequestOtp)
+                                  ? null
+                                  : () => _requestOtp(farmId),
+                              icon: state.isRequestingOtp
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.send, size: 18),
+                              label: Text(
+                                state.isRequestingOtp 
+                                    ? 'Requesting OTP...' 
+                                    : (!canRequestOtp 
+                                        ? 'GPS Validation Required' 
+                                        : 'Request OTP'),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: canRequestOtp ? Colors.orange : Colors.grey,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                disabledBackgroundColor: Colors.grey.shade300,
+                                disabledForegroundColor: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
                 

@@ -160,5 +160,22 @@ class FieldOfficerService {
       rethrow;
     }
   }
+
+  /// Get verification photos for a farm
+  static Future<List<Map<String, dynamic>>> getVerificationPhotos(int farmId) async {
+    try {
+      final response = await HttpService.get('field-officer/verifications/farms/$farmId/photos');
+      
+      if (response is Map && response.containsKey('data')) {
+        final List<dynamic> photos = response['data'] as List<dynamic>;
+        return photos.map((photo) => photo as Map<String, dynamic>).toList();
+      }
+      
+      return [];
+    } catch (e) {
+      print('Error fetching verification photos: $e');
+      return [];
+    }
+  }
 }
 

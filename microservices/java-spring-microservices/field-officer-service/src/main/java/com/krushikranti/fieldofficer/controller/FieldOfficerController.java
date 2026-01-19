@@ -7,6 +7,7 @@ import com.krushikranti.fieldofficer.dto.RequestOtpRequest;
 import com.krushikranti.fieldofficer.dto.RequestOtpResponse;
 import com.krushikranti.fieldofficer.dto.ValidateOtpRequest;
 import com.krushikranti.fieldofficer.dto.ValidateOtpResponse;
+import com.krushikranti.fieldofficer.dto.VerificationPhotoDto;
 import com.krushikranti.fieldofficer.dto.VerifyFarmRequest;
 import com.krushikranti.fieldofficer.dto.VerifyFarmResponse;
 import com.krushikranti.fieldofficer.service.FarmVerificationService;
@@ -399,6 +400,37 @@ public class FieldOfficerController {
                     "OTP validation status checked", status));
         } catch (Exception e) {
             log.error("Error checking OTP validation status: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Get verification photos for a farm.
+     * Returns all geo-tagged photos taken during farm verification.
+     */
+    @GetMapping("/verifications/farms/{farmId}/photos")
+    public ResponseEntity<ApiResponse<List<VerificationPhotoDto>>> getVerificationPhotos(
+            @PathVariable Long farmId,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+        try {
+            if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
+                log.error("Missing X-User-Id header for verification photos request");
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
+            }
+            
+            Long userId = Long.parseLong(userIdHeader.trim());
+            log.info("Fetching verification photos for farm ID: {} by field officer userId: {}", farmId, userId);
+            
+            List<VerificationPhotoDto> photos = verificationService.getVerificationPhotosByFarmId(farmId);
+            return ResponseEntity.ok(new ApiResponse<>("Verification photos retrieved successfully", photos));
+        } catch (NumberFormatException e) {
+            log.error("Invalid user ID format: {}", userIdHeader);
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>("Invalid user ID format: " + userIdHeader, null));
+        } catch (Exception e) {
+            log.error("Error retrieving verification photos for farm ID {}: {}", farmId, e.getMessage(), e);
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
         }
