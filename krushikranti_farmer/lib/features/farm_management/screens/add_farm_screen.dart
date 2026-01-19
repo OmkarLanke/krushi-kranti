@@ -161,6 +161,21 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
       return;
     }
 
+    // Farm location is mandatory: ensure GPS coordinates are captured
+    if (_farmLatitude == null || _farmLongitude == null) {
+      setState(() {
+        _locationError = "Please capture farm location before saving the farm.";
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Farm location is required. Please tap '${l10n.captureFarmLocation}'."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (_selectedVillage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
