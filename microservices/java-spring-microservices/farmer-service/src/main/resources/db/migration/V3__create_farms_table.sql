@@ -1,10 +1,10 @@
 -- Create farms table for storing farm details (used as collateral for loans)
 CREATE TABLE IF NOT EXISTS farms (
     -- Primary Key
-    id BIGSERIAL PRIMARY KEY,
+    farm_id BIGSERIAL PRIMARY KEY,
     
     -- Relationship to farmer
-    farmer_id BIGINT NOT NULL REFERENCES farmers(id) ON DELETE CASCADE,
+    farmer_id BIGINT NOT NULL REFERENCES farmers(farmer_id) ON DELETE CASCADE,
     
     -- ========================================
     -- BASIC FARM INFORMATION (Farmer fills)
@@ -72,4 +72,3 @@ CREATE INDEX idx_farms_encumbrance_status ON farms(encumbrance_status);
 -- Composite index for loan-related queries
 CREATE INDEX idx_farms_farmer_verified ON farms(farmer_id, is_verified, encumbrance_status);
 CREATE INDEX idx_farms_active ON farms(farmer_id, is_active);
-
