@@ -220,6 +220,27 @@ class AppLocalizationsHi extends AppLocalizations {
   String get validAcres => 'कृपया एकड़ में वैध क्षेत्र दर्ज करें';
 
   @override
+  String errorCropAreaFullyUsed(String acres, String farmArea) {
+    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन आपका खेत क्षेत्र केवल $farmArea एकड़ है और यह पहले से ही पूरी तरह से उपयोग में है। कृपया फसल क्षेत्र कम करें या नए जोड़ने के लिए मौजूदा फसलें हटाएं।';
+  }
+
+  @override
+  String errorCropAreaAvailable(
+      String acres, String farmArea, String availableArea) {
+    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन आपका खेत क्षेत्र केवल $farmArea एकड़ है। केवल $availableArea एकड़ उपलब्ध हैं। कृपया फसल क्षेत्र को $availableArea एकड़ या उससे कम करें।';
+  }
+
+  @override
+  String errorCropAreaExceed(String acres, String farmArea) {
+    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन आपका खेत क्षेत्र केवल $farmArea एकड़ है। कुल फसल क्षेत्र खेत क्षेत्र से अधिक नहीं हो सकता। कृपया फसल क्षेत्र कम करें या मौजूदा फसलें हटाएं।';
+  }
+
+  @override
+  String errorCropAreaLimitReached(String acres) {
+    return 'आपने $acres एकड़ जोड़ने का प्रयास किया, लेकिन यह क्षेत्र पहले से ही उपयोग में है। आपकी फसल क्षेत्र सीमा पहुंच गई है। कृपया क्षेत्र कम करें या नए जोड़ने के लिए मौजूदा फसलें हटाएं।';
+  }
+
+  @override
   String get profileRequired => 'प्रोफाइल आवश्यक';
 
   @override
@@ -480,6 +501,29 @@ class AppLocalizationsHi extends AppLocalizations {
   String get passwordResetSuccess => 'पासवर्ड सफलतापूर्वक बदल दिया गया!';
 
   @override
+  String get phoneHint => 'मोबाइल नंबर दर्ज करें';
+
+  @override
+  String get phoneFormatError =>
+      'कृपया 10 अंकों का मान्य मोबाइल नंबर दर्ज करें';
+
+  @override
+  String get networkError =>
+      'नेटवर्क त्रुटि। कृपया अपना कनेक्शन जांचें और पुनः प्रयास करें।';
+
+  @override
+  String get incorrectPhoneError => 'गलत मोबाइल नंबर। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get emailRequired => 'ईमेल आवश्यक है';
+
+  @override
+  String get incorrectEmailFormat => 'गलत ईमेल प्रारूप';
+
+  @override
+  String get invalidEmailOrPassword => 'अमान्य ईमेल या पासवर्ड';
+
+  @override
   String get sellTitle => 'फसल विवरण';
 
   @override
@@ -722,6 +766,53 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get farmAddedSuccess => 'खेत सफलतापूर्वक जोड़ा गया';
+
+  @override
+  String get farmLocationGPS => 'Farm Location (GPS)';
+
+  @override
+  String get captureFarmLocationDesc =>
+      'Capture your farm\'s GPS coordinates. This helps field officers verify your farm location.';
+
+  @override
+  String get captureFarmLocation => 'Capture Farm Location';
+
+  @override
+  String get retakeLocation => 'Retake Location';
+
+  @override
+  String get locationCaptured => 'Location Captured';
+
+  @override
+  String get latitude => 'Latitude';
+
+  @override
+  String get longitude => 'Longitude';
+
+  @override
+  String get accuracy => 'Accuracy';
+
+  @override
+  String get meters => 'meters';
+
+  @override
+  String get locationPermissionRequired => 'Location Permission Required';
+
+  @override
+  String get locationPermissionMessage =>
+      'Please enable location services and grant location permission to capture farm GPS coordinates.';
+
+  @override
+  String get openSettings => 'Open Settings';
+
+  @override
+  String get locationCapturedSuccess => 'Farm location captured successfully!';
+
+  @override
+  String get capturedOn => 'Captured On';
+
+  @override
+  String get gpsCoordinates => 'GPS Coordinates';
 
   @override
   String get noFarmsAdded => 'अभी तक कोई खेत नहीं जोड़ा गया';

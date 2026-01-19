@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -99,6 +101,15 @@ public class FarmService {
                 .landDocumentUrl(request.getLandDocumentUrl())
                 .surveyMapUrl(request.getSurveyMapUrl())
                 .registrationCertificateUrl(request.getRegistrationCertificateUrl())
+                // GPS coordinates (optional)
+                .farmLatitude(request.getFarmLatitude())
+                .farmLongitude(request.getFarmLongitude())
+                .farmLocationAccuracy(request.getFarmLocationAccuracy() != null 
+                        ? request.getFarmLocationAccuracy().setScale(2, RoundingMode.HALF_UP)
+                        : null)
+                .farmLocationCapturedAt(request.getFarmLatitude() != null && request.getFarmLongitude() != null 
+                        ? LocalDateTime.now() 
+                        : null)
                 .isVerified(false)
                 .isActive(true)
                 .build();
@@ -160,6 +171,18 @@ public class FarmService {
         farm.setSurveyMapUrl(request.getSurveyMapUrl());
         farm.setRegistrationCertificateUrl(request.getRegistrationCertificateUrl());
         
+        // Update GPS coordinates (if provided)
+        farm.setFarmLatitude(request.getFarmLatitude());
+        farm.setFarmLongitude(request.getFarmLongitude());
+        // Round accuracy to 2 decimal places for consistency
+        farm.setFarmLocationAccuracy(request.getFarmLocationAccuracy() != null 
+                ? request.getFarmLocationAccuracy().setScale(2, RoundingMode.HALF_UP)
+                : null);
+        // Update captured timestamp if GPS coordinates are being set/updated
+        if (request.getFarmLatitude() != null && request.getFarmLongitude() != null) {
+            farm.setFarmLocationCapturedAt(LocalDateTime.now());
+        }
+        
         // Note: Verification status is not updated by farmer
         // If farm details change significantly, admin may need to re-verify
         if (farm.getIsVerified() && hasSignificantChanges(farm, request)) {
@@ -214,6 +237,33 @@ public class FarmService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Update farm verification status (called by field-officer-service after verification).
+     * This is an internal service method that updates the is_verified field in the farms table.
+     */
+    @Transactional
+    public void updateFarmVerificationStatus(Long farmId, boolean isVerified, Long verifiedByOfficerId, String verificationRemarks) {
+        Farm farm = farmRepository.findById(farmId)
+                .orElseThrow(() -> new IllegalArgumentException("Farm not found with ID: " + farmId));
+        
+        farm.setIsVerified(isVerified);
+        if (isVerified) {
+            farm.setVerifiedBy(verifiedByOfficerId);
+            farm.setVerifiedAt(LocalDateTime.now());
+            if (verificationRemarks != null) {
+                farm.setVerificationRemarks(verificationRemarks);
+            }
+        } else {
+            farm.setVerifiedBy(null);
+            farm.setVerifiedAt(null);
+            farm.setVerificationRemarks(null);
+        }
+        
+        farmRepository.save(farm);
+        log.info("Updated verification status for farm {}: isVerified={}, verifiedBy={}", 
+                farmId, isVerified, verifiedByOfficerId);
+    }
+
     // ========================================
     // HELPER METHODS
     // ========================================
@@ -260,6 +310,11 @@ public class FarmService {
                 .verifiedBy(farm.getVerifiedBy())
                 .verifiedAt(farm.getVerifiedAt())
                 .verificationRemarks(farm.getVerificationRemarks())
+                // GPS coordinates
+                .farmLatitude(farm.getFarmLatitude())
+                .farmLongitude(farm.getFarmLongitude())
+                .farmLocationAccuracy(farm.getFarmLocationAccuracy())
+                .farmLocationCapturedAt(farm.getFarmLocationCapturedAt())
                 .isActive(farm.getIsActive())
                 .createdAt(farm.getCreatedAt())
                 .updatedAt(farm.getUpdatedAt())

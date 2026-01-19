@@ -11,6 +11,7 @@ class AdminFarmerService {
     String? search,
     String? kycStatus,
     String? subscriptionStatus,
+    String? pincode,
   }) async {
     String endpoint = '$_basePath?page=$page&size=$size';
     
@@ -22,6 +23,9 @@ class AdminFarmerService {
     }
     if (subscriptionStatus != null && subscriptionStatus.isNotEmpty) {
       endpoint += '&subscriptionStatus=$subscriptionStatus';
+    }
+    if (pincode != null && pincode.isNotEmpty) {
+      endpoint += '&pincode=${Uri.encodeComponent(pincode)}';
     }
     
     final response = await HttpService.get(endpoint);
@@ -50,6 +54,18 @@ class AdminFarmerService {
     
     if (response is Map && response.containsKey('data')) {
       return DashboardStats.fromJson(response['data']);
+    }
+    
+    throw Exception('Invalid response format');
+  }
+
+  /// Fetch verification photos for a farm
+  static Future<List<Map<String, dynamic>>> getVerificationPhotos(int farmId) async {
+    final response = await HttpService.get('admin/field-officers/verifications/farms/$farmId/photos');
+    
+    if (response is Map && response.containsKey('data')) {
+      final List<dynamic> photos = response['data'] as List<dynamic>;
+      return photos.map((photo) => photo as Map<String, dynamic>).toList();
     }
     
     throw Exception('Invalid response format');

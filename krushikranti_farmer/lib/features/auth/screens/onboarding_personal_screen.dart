@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
@@ -160,30 +161,44 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          text[appLang]!["title"]!,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // BACK BUTTON
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new),
-                  onPressed: () => Navigator.pop(context),
-                ),
-
-                // TITLE
-                Center(
-                  child: Text(
-                    text[appLang]!["title"]!,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
 
                 const SizedBox(height: 10),
 
@@ -322,41 +337,107 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
 
                 // 4. GENDER (Dropdown)
                 Text(text[appLang]!["gender"]!, style: _labelStyle()),
-                const SizedBox(height: 5),
+                const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.brandGreen, width: 1),
-                    borderRadius: BorderRadius.circular(25),
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey.shade300, width: 1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedGender,
-                      hint: Text(
-                        text[appLang]!["genderHint"]!,
-                        style: TextStyle(color: Colors.grey.shade600),
+                  child: Row(
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(right: 10),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandGreen.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(Icons.person_outline_rounded, size: 18, color: AppColors.brandGreen),
                       ),
-                      isExpanded: true,
-                      icon: const Icon(
-                        Icons.arrow_drop_down,
-                        color: AppColors.brandGreen,
+                      Expanded(
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: selectedGender,
+                            hint: Text(
+                              text[appLang]!["genderHint"]!,
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey.shade400,
+                                fontSize: 14,
+                              ),
+                            ),
+                            isExpanded: true,
+                            icon: Icon(
+                              Icons.arrow_drop_down_rounded,
+                              color: AppColors.brandGreen,
+                            ),
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                            dropdownColor: Colors.white,
+                            items: [
+                              DropdownMenuItem(
+                                value: "Male",
+                                child: Text(
+                                  text[appLang]!["male"]!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: "Female",
+                                child: Text(
+                                  text[appLang]!["female"]!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: "Other",
+                                child: Text(
+                                  text[appLang]!["other"]!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            selectedItemBuilder: (BuildContext context) {
+                              return [
+                                "Male",
+                                "Female",
+                                "Other",
+                              ].map((val) {
+                                final displayText = val == "Male"
+                                    ? text[appLang]!["male"]!
+                                    : val == "Female"
+                                        ? text[appLang]!["female"]!
+                                        : text[appLang]!["other"]!;
+                                return Text(
+                                  displayText,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                );
+                              }).toList();
+                            },
+                            onChanged: (val) => setState(() => selectedGender = val),
+                          ),
+                        ),
                       ),
-                      items: [
-                        DropdownMenuItem(
-                          value: "Male",
-                          child: Text(text[appLang]!["male"]!),
-                        ),
-                        DropdownMenuItem(
-                          value: "Female",
-                          child: Text(text[appLang]!["female"]!),
-                        ),
-                        DropdownMenuItem(
-                          value: "Other",
-                          child: Text(text[appLang]!["other"]!),
-                        ),
-                      ],
-                      onChanged: (val) => setState(() => selectedGender = val),
-                    ),
+                    ],
                   ),
                 ),
 
@@ -365,23 +446,27 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
                 // SAVE BUTTON
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  height: 50,
+                  child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: AppColors.brandGreen,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 0,
                     ),
-                    onPressed: _saveAndContinue,
-                    child: Text(
+                    icon: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                    label: Text(
                       text[appLang]!["continue"]!,
-                      style: const TextStyle(
+                      style: GoogleFonts.poppins(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
                       ),
                     ),
+                    onPressed: _saveAndContinue,
                   ),
                 ),
 
@@ -394,8 +479,12 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
     );
   }
 
-  TextStyle _labelStyle() =>
-      const TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
+  TextStyle _labelStyle() => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+        letterSpacing: 0.2,
+      );
 
   Widget _inputField({
     required TextEditingController controller,
@@ -405,17 +494,38 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.brandGreen, width: 1),
-        borderRadius: BorderRadius.circular(25),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-          suffixIcon:
-              icon != null ? Icon(icon, color: AppColors.brandGreen) : null,
-        ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Container(
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.brandGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: AppColors.brandGreen),
+            ),
+          ],
+          Expanded(
+            child: TextField(
+              controller: controller,
+              style: GoogleFonts.poppins(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: hint,
+                border: InputBorder.none,
+                hintStyle: GoogleFonts.poppins(
+                  color: Colors.grey.shade400,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

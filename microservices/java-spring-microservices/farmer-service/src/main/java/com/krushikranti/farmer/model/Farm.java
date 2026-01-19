@@ -125,6 +125,37 @@ public class Farm {
     private String verificationRemarks;
 
     // ========================================
+    // GPS LOCATION COORDINATES
+    // ========================================
+    
+    /**
+     * GPS latitude of the farm location captured by farmer (decimal degrees).
+     * Range: -90 to 90
+     */
+    @Column(name = "farm_latitude", precision = 10, scale = 8)
+    private BigDecimal farmLatitude;
+
+    /**
+     * GPS longitude of the farm location captured by farmer (decimal degrees).
+     * Range: -180 to 180
+     */
+    @Column(name = "farm_longitude", precision = 11, scale = 8)
+    private BigDecimal farmLongitude;
+
+    /**
+     * GPS accuracy in meters when location was captured.
+     * Lower values indicate better accuracy.
+     */
+    @Column(name = "farm_location_accuracy", precision = 8, scale = 2)
+    private BigDecimal farmLocationAccuracy;
+
+    /**
+     * Timestamp when GPS coordinates were captured by farmer.
+     */
+    @Column(name = "farm_location_captured_at")
+    private LocalDateTime farmLocationCapturedAt;
+
+    // ========================================
     // STATUS & METADATA
     // ========================================
     

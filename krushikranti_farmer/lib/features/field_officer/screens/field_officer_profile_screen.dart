@@ -95,6 +95,15 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
     }
   }
 
+  Widget _buildLoadingState() {
+    return const Center(
+      child: CircularProgressIndicator(
+        color: AppColors.brandGreen,
+        strokeWidth: 3,
+      ),
+    );
+  }
+
   String _getFullName() {
     final firstName = _profileData['firstName'] ?? '';
     final lastName = _profileData['lastName'] ?? '';
@@ -179,25 +188,36 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB), 
+      backgroundColor: AppColors.background, 
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF9FAFB),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         automaticallyImplyLeading: false,
         title: Text(
           'Profile',
           style: GoogleFonts.poppins(
-            color: const Color(0xFF1F2937),
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
           ),
         ),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.brandGreen),
-            )
+          ? _buildLoadingState()
           : SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
               child: Column(
@@ -250,8 +270,9 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
 
                   Container(
                     width: double.infinity,
-                    height: 56,
+                    height: 50,
                     decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.red.withOpacity(0.2),
@@ -260,29 +281,23 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
                         ),
                       ],
                     ),
-                    child: ElevatedButton(
+                    child: ElevatedButton.icon(
                       onPressed: _handleLogout,
+                      icon: const Icon(Icons.logout_rounded, size: 20),
+                      label: Text(
+                        'Log Out',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.red,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.logout_rounded, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Log Out',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ),
@@ -293,107 +308,162 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
   }
 
   Widget _buildProfileHeader() {
-    return Column(
-      children: [
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: CircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.white,
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
                 child: CircleAvatar(
-                  radius: 56,
-                  backgroundColor: Colors.grey.shade100,
-                  backgroundImage: (_profileData['profilePic'] != null && _profileData['profilePic'].toString().isNotEmpty)
-                      ? NetworkImage(_profileData['profilePic'].toString())
-                      : null,
-                  child: (_profileData['profilePic'] == null || _profileData['profilePic'].toString().isEmpty)
-                      ? Icon(Icons.person, size: 50, color: Colors.grey.shade400)
-                      : null,
+                  radius: 60,
+                  backgroundColor: Colors.white,
+                  child: CircleAvatar(
+                    radius: 56,
+                    backgroundColor: Colors.grey.shade100,
+                    backgroundImage: (_profileData['profilePic'] != null && _profileData['profilePic'].toString().isNotEmpty)
+                        ? NetworkImage(_profileData['profilePic'].toString())
+                        : null,
+                    child: (_profileData['profilePic'] == null || _profileData['profilePic'].toString().isEmpty)
+                        ? Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppColors.brandGreen,
+                                  AppColors.brandGreen.withOpacity(0.8),
+                                ],
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                _getFullName().isNotEmpty ? _getFullName()[0].toUpperCase() : 'F',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
                 ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 5,
-                  )
-                ],
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 5,
+                    )
+                  ],
+                ),
+                child: const Icon(Icons.verified, color: Colors.orange, size: 24),
               ),
-              child: const Icon(Icons.verified, color: Colors.orange, size: 24),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Text(
-          _getFullName(),
-          style: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF1F2937),
-            height: 1.2,
+            ],
           ),
-        ),
-        const SizedBox(height: 4),
-        if (_getUsername().isNotEmpty)
+          const SizedBox(height: 16),
           Text(
-            _getUsername(),
+            _getFullName(),
             style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: const Color(0xFF1F2937),
-              fontWeight: FontWeight.w500,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+              height: 1.2,
+              letterSpacing: 0.2,
             ),
           ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.brandGreen.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            _getFieldOfficerId(),
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.brandGreen,
+          const SizedBox(height: 4),
+          if (_getUsername().isNotEmpty)
+            Text(
+              _getUsername(),
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.brandGreen.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              _getFieldOfficerId(),
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.brandGreen,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          title.toUpperCase(),
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade400,
-            letterSpacing: 1.2,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.info_outline,
+              size: 16,
+              color: AppColors.brandGreen,
+            ),
           ),
-        ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -407,16 +477,16 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
     final hasValue = value.isNotEmpty;
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.06),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -425,12 +495,19 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.brandGreen.withOpacity(0.08),
-              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.brandGreen.withOpacity(0.15),
+                  AppColors.brandGreen.withOpacity(0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.brandGreen, size: 22),
+            child: Icon(icon, color: AppColors.brandGreen, size: 20),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,17 +515,17 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
                 Text(
                   label,
                   style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   hasValue ? value : placeholder,
                   style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    color: hasValue ? const Color(0xFF1F2937) : Colors.grey.shade300,
+                    fontSize: 14,
+                    color: hasValue ? AppColors.textPrimary : Colors.grey.shade300,
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -467,12 +544,12 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.06),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -484,25 +561,33 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.orange.withOpacity(0.15),
+                      Colors.orange.withOpacity(0.08),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.location_on_rounded, color: Colors.orange, size: 22),
+                child: const Icon(Icons.location_on_rounded, color: Colors.orange, size: 20),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Text(
                 'Address Details',
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1F2937),
+                  color: AppColors.textPrimary,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],
           ),
           
           const SizedBox(height: 16),
-          Container(height: 1, color: Colors.grey.shade100, margin: const EdgeInsets.only(bottom: 16)),
+          Container(height: 1, color: Colors.grey.shade200, margin: const EdgeInsets.only(bottom: 16)),
           
           _buildAddressRow('Pincode', _profileData['pincode']),
           _buildAddressRow('District', _profileData['district']),
@@ -524,7 +609,7 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
             label,
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.grey.shade500,
+              color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -532,7 +617,7 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
             (value == null || value.isEmpty) ? '--' : value,
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: const Color(0xFF1F2937),
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),

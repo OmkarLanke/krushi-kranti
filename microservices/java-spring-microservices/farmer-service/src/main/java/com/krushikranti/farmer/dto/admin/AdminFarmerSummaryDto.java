@@ -27,6 +27,7 @@ public class AdminFarmerSummaryDto {
     private String village;
     private String district;
     private String state;
+    private String pincode;
     
     // Status flags
     private Boolean isProfileComplete;

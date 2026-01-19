@@ -34,11 +34,12 @@ public class AdminFarmerController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String kycStatus,
             @RequestParam(required = false) String subscriptionStatus,
+            @RequestParam(required = false) String pincode,
             @RequestHeader(value = "X-User-Id", required = false) String adminUserId,
             @RequestHeader(value = "X-User-Roles", required = false) String roles) {
         
-        log.info("Admin {} fetching farmers list - page: {}, size: {}, search: {}, kyc: {}, sub: {}",
-                adminUserId, page, size, search, kycStatus, subscriptionStatus);
+        log.info("Admin {} fetching farmers list - page: {}, size: {}, search: {}, kyc: {}, sub: {}, pincode: {}",
+                adminUserId, page, size, search, kycStatus, subscriptionStatus, pincode);
         
         // Role validation (backup - gateway should already enforce)
         if (roles == null || !roles.contains("ADMIN")) {
@@ -48,7 +49,7 @@ public class AdminFarmerController {
         
         try {
             AdminFarmerListResponse response = adminFarmerService.getAllFarmers(
-                    page, size, search, kycStatus, subscriptionStatus);
+                    page, size, search, kycStatus, subscriptionStatus, pincode);
             
             return ResponseEntity.ok(new ApiResponse<>("Farmers fetched successfully", response));
         } catch (Exception e) {

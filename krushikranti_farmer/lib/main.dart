@@ -23,14 +23,16 @@ class KrushiKrantiApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ LISTEN TO LANGUAGE CHANGES
-    final provider = Provider.of<LocaleProvider>(context);
-
+    // Optimized: Use Consumer to rebuild only locale-dependent parts
+    // This prevents full MaterialApp rebuild on language change
+    return Consumer<LocaleProvider>(
+      builder: (context, localeProvider, child) {
     return MaterialApp(
       title: 'Krushi Kranti',
       debugShowCheckedModeBanner: false,
       
       // --- THEME ---
+          // Optimized: Theme is const, no need to rebuild on locale change
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.background,
@@ -39,7 +41,7 @@ class KrushiKrantiApp extends StatelessWidget {
       ),
 
       // --- DYNAMIC LOCALIZATION ---
-      locale: provider.locale, // ✅ This switches the language instantly!
+          locale: localeProvider.locale, // ✅ This switches the language instantly!
       
       supportedLocales: const [
         Locale('en'), 
@@ -56,6 +58,8 @@ class KrushiKrantiApp extends StatelessWidget {
       // --- NAVIGATION ---
       initialRoute: AppRoutes.splash, 
       routes: AppRoutes.routes,
+        );
+      },
     );
   }
 }

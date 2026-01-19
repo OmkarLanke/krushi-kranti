@@ -24,7 +24,11 @@ class HttpService {
         },
       );
       return _handleResponse(response);
+    } on Exception {
+      // Re-throw exceptions from _handleResponse (these are already formatted)
+      rethrow;
     } catch (e) {
+      // Only wrap non-Exception errors (like network failures) as Network Error
       throw Exception('Network Error: $e');
     }
   }
@@ -47,7 +51,11 @@ class HttpService {
         },
       );
       return _handleResponse(response);
+    } on Exception {
+      // Re-throw exceptions from _handleResponse (these are already formatted)
+      rethrow;
     } catch (e) {
+      // Only wrap non-Exception errors (like network failures) as Network Error
       throw Exception('Network Error: $e');
     }
   }
@@ -70,7 +78,11 @@ class HttpService {
         },
       );
       return _handleResponse(response);
+    } on Exception {
+      // Re-throw exceptions from _handleResponse (these are already formatted)
+      rethrow;
     } catch (e) {
+      // Only wrap non-Exception errors (like network failures) as Network Error
       throw Exception('Network Error: $e');
     }
   }
@@ -80,19 +92,37 @@ class HttpService {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body);
     } else {
+      // Try to extract error message from response body
+      String errorMessage = 'An error occurred';
       try {
         final errorBody = jsonDecode(response.body);
         if (errorBody is Map && errorBody.containsKey('message')) {
-          throw Exception(errorBody['message'] ?? 'An error occurred');
+          errorMessage = errorBody['message'] ?? errorMessage;
+        } else if (errorBody is Map && errorBody.containsKey('error')) {
+          errorMessage = errorBody['error'] ?? errorMessage;
         }
-      } catch (_) {}
+      } catch (_) {
+        // If parsing fails, use default messages based on status code
+      }
       
+      // Use backend message if available, otherwise use default
       if (response.statusCode == 401) {
-        throw Exception('Unauthorized - Please login again');
+        // Preserve backend's specific error message (e.g., "Invalid email or password")
+        throw Exception(errorMessage.isNotEmpty && errorMessage != 'An error occurred' 
+            ? errorMessage 
+            : 'Invalid email or password. Please check your credentials and try again.');
       } else if (response.statusCode == 403) {
-        throw Exception('Access denied - Admin role required');
+        throw Exception(errorMessage.isNotEmpty && errorMessage != 'An error occurred'
+            ? errorMessage
+            : 'Access denied - Admin role required');
+      } else if (response.statusCode == 404) {
+        throw Exception('Service not found. Please try again later.');
+      } else if (response.statusCode >= 500) {
+        throw Exception('Server error. Please try again later.');
       } else {
-        throw Exception('Error: ${response.statusCode} - ${response.body}');
+        throw Exception(errorMessage.isNotEmpty && errorMessage != 'An error occurred'
+            ? errorMessage
+            : 'Error: ${response.statusCode}');
       }
     }
   }

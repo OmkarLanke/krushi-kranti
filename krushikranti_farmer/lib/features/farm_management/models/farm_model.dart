@@ -20,6 +20,11 @@ class Farm {
   final String? encumbranceRemarks;
   final bool? isVerified;
   final bool? isActive;
+  // GPS coordinates for farm location
+  final double? farmLatitude;
+  final double? farmLongitude;
+  final double? farmLocationAccuracy;
+  final DateTime? farmLocationCapturedAt;
 
   Farm({
     this.id,
@@ -43,6 +48,10 @@ class Farm {
     this.encumbranceRemarks,
     this.isVerified,
     this.isActive,
+    this.farmLatitude,
+    this.farmLongitude,
+    this.farmLocationAccuracy,
+    this.farmLocationCapturedAt,
   });
 
   factory Farm.fromJson(Map<String, dynamic> json) {
@@ -68,6 +77,12 @@ class Farm {
       encumbranceRemarks: json['encumbranceRemarks'],
       isVerified: json['isVerified'],
       isActive: json['isActive'],
+      farmLatitude: json['farmLatitude']?.toDouble(),
+      farmLongitude: json['farmLongitude']?.toDouble(),
+      farmLocationAccuracy: json['farmLocationAccuracy']?.toDouble(),
+      farmLocationCapturedAt: json['farmLocationCapturedAt'] != null
+          ? DateTime.parse(json['farmLocationCapturedAt'])
+          : null,
     );
   }
 
@@ -92,6 +107,10 @@ class Farm {
       if (estimatedLandValue != null) 'estimatedLandValue': estimatedLandValue,
       if (encumbranceStatus != null) 'encumbranceStatus': encumbranceStatus,
       if (encumbranceRemarks != null) 'encumbranceRemarks': encumbranceRemarks,
+      if (farmLatitude != null) 'farmLatitude': farmLatitude,
+      if (farmLongitude != null) 'farmLongitude': farmLongitude,
+      if (farmLocationAccuracy != null) 'farmLocationAccuracy': farmLocationAccuracy,
+      if (farmLocationCapturedAt != null) 'farmLocationCapturedAt': farmLocationCapturedAt!.toIso8601String(),
     };
   }
 }

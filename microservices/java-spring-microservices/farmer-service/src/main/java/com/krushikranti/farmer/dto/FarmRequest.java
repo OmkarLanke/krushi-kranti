@@ -78,5 +78,35 @@ public class FarmRequest {
     private String surveyMapUrl;
 
     private String registrationCertificateUrl;
+
+    // ========================================
+    // GPS LOCATION COORDINATES (Optional)
+    // ========================================
+    
+    /**
+     * GPS latitude of the farm location (decimal degrees).
+     * Range: -90 to 90
+     */
+    @DecimalMin(value = "-90.0", message = "Latitude must be between -90 and 90")
+    @DecimalMax(value = "90.0", message = "Latitude must be between -90 and 90")
+    @Digits(integer = 2, fraction = 8, message = "Latitude must have at most 2 digits before decimal and 8 after")
+    private BigDecimal farmLatitude;
+
+    /**
+     * GPS longitude of the farm location (decimal degrees).
+     * Range: -180 to 180
+     */
+    @DecimalMin(value = "-180.0", message = "Longitude must be between -180 and 180")
+    @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
+    @Digits(integer = 3, fraction = 8, message = "Longitude must have at most 3 digits before decimal and 8 after")
+    private BigDecimal farmLongitude;
+
+    /**
+     * GPS accuracy in meters when location was captured.
+     * Lower values indicate better accuracy.
+     */
+    @DecimalMin(value = "0.0", message = "Location accuracy cannot be negative")
+    @Digits(integer = 6, fraction = 4, message = "Location accuracy must have at most 6 digits before decimal and 4 after")
+    private BigDecimal farmLocationAccuracy;
 }
 

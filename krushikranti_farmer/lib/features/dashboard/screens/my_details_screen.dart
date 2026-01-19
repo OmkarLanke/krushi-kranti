@@ -119,51 +119,142 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
     
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l10n.myDetails,
           style: GoogleFonts.poppins(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 20,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
           ),
         ),
         centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.brandGreen,
+              ),
+            )
           : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Top "Complete Profile" banner if any critical field is missing
                   if (_isProfileIncomplete()) ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.only(bottom: 24),
+                    _buildIncompleteProfileBanner(l10n),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Personal Details Section
+                  _buildSectionTitle(l10n.personalDetails),
+                  const SizedBox(height: 12),
+                  _buildSectionCard(
+                    children: [
+                      _buildDetailField(l10n.firstName, _profileData['firstName'] ?? l10n.notProvided),
+                      _buildFieldDivider(),
+                      _buildDetailField(l10n.lastName, _profileData['lastName'] ?? l10n.notProvided),
+                      _buildFieldDivider(),
+                      _buildDetailField(l10n.dob, _formatDate(_profileData['dateOfBirth']?.toString(), l10n)),
+                      _buildFieldDivider(),
+                      _buildDetailField(l10n.gender, _formatGender(_profileData['gender']?.toString(), l10n)),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Contact Details Section
+                  _buildSectionTitle(l10n.contactDetails),
+                  const SizedBox(height: 12),
+                  _buildSectionCard(
+                    children: [
+                      _buildDetailField(l10n.email, _profileData['email'] ?? l10n.notProvided, icon: Icons.email_outlined),
+                      _buildFieldDivider(),
+                      _buildDetailField(l10n.phoneNumber, _profileData['phoneNumber'] ?? l10n.notProvided, icon: Icons.phone_outlined),
+                      _buildFieldDivider(),
+                      _buildDetailField(l10n.alternatePhone, _profileData['alternatePhone'] ?? l10n.notProvided, icon: Icons.phone_android_outlined),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Address Details Section
+                  _buildSectionTitle(l10n.addressDetails),
+                  const SizedBox(height: 12),
+                  _buildSectionCard(
+                    children: [
+                      _buildDetailField(l10n.pincode, _profileData['pincode'] ?? l10n.notProvided, icon: Icons.pin_outlined),
+                      _buildFieldDivider(),
+                      _buildDetailField(l10n.village, _profileData['village'] ?? l10n.notProvided, icon: Icons.location_on_outlined),
+                      _buildFieldDivider(),
+                      _buildDetailField(l10n.taluka, _profileData['taluka'] ?? l10n.notProvided, icon: Icons.location_city_outlined),
+                      _buildFieldDivider(),
+                      _buildDetailField(l10n.district, _profileData['district'] ?? l10n.notProvided, icon: Icons.map_outlined),
+                      _buildFieldDivider(),
+                      _buildDetailField(l10n.state, _profileData['state'] ?? l10n.notProvided, icon: Icons.public_outlined),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildIncompleteProfileBanner(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppColors.creamBackground,
-                        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.orange.shade400,
+            Colors.orange.shade600,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
                       ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(12),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
-                              Icons.person_add,
-                              color: AppColors.brandGreen,
+              Icons.person_add_alt_1,
+              color: Colors.white,
                               size: 28,
                             ),
                           ),
@@ -175,9 +266,10 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                                 Text(
                                   l10n.profileIncomplete,
                                   style: GoogleFonts.poppins(
-                                    fontSize: 16,
+                    fontSize: 17,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -185,28 +277,29 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                                   l10n.completeProfileDetails,
                                   style: GoogleFonts.poppins(
                                     fontSize: 13,
-                                    color: Colors.grey.shade700,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
+          const SizedBox(width: 12),
                           ElevatedButton(
                             onPressed: () {
-                              // Navigate to onboarding personal flow to edit details
                               Navigator.pushNamed(context, "/onboarding_personal");
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.brandGreen,
-                              foregroundColor: Colors.white,
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.orange.shade700,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
-                                vertical: 10,
+                vertical: 12,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
+              elevation: 0,
                             ),
                             child: Text(
                               l10n.completeProfile,
@@ -217,73 +310,68 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ],
-
-                  // Personal Details Section
-                  _buildSectionTitle(l10n.personalDetails),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.firstName, _profileData['firstName'] ?? l10n.notProvided),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.lastName, _profileData['lastName'] ?? l10n.notProvided),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.dob, _formatDate(_profileData['dateOfBirth']?.toString(), l10n)),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.gender, _formatGender(_profileData['gender']?.toString(), l10n)),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Contact Details Section
-                  _buildSectionTitle(l10n.contactDetails),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.email, _profileData['email'] ?? l10n.notProvided, icon: Icons.email),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.phoneNumber, _profileData['phoneNumber'] ?? l10n.notProvided, icon: Icons.phone),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.alternatePhone, _profileData['alternatePhone'] ?? l10n.notProvided, icon: Icons.phone_android),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Address Details Section
-                  _buildSectionTitle(l10n.addressDetails),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.pincode, _profileData['pincode'] ?? l10n.notProvided, icon: Icons.pin),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.village, _profileData['village'] ?? l10n.notProvided, icon: Icons.location_on),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.taluka, _profileData['taluka'] ?? l10n.notProvided, icon: Icons.location_city),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.district, _profileData['district'] ?? l10n.notProvided, icon: Icons.map),
-                  const SizedBox(height: 16),
-                  _buildDetailField(l10n.state, _profileData['state'] ?? l10n.notProvided, icon: Icons.public),
-                  
-                  const SizedBox(height: 40),
-                ],
-              ),
             ),
     );
   }
 
   Widget _buildSectionTitle(String title) {
-    return Text(
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
       title,
       style: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppColors.brandGreen,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade700,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: children,
       ),
     );
   }
 
   Widget _buildDetailField(String label, String value, {IconData? icon}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.brandGreen, width: 1),
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.grey.shade50,
+    final isEmpty = value == "Not Provided" || value.isEmpty;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (icon != null) ...[
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.brandGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: AppColors.brandGreen,
       ),
+            ),
+            const SizedBox(width: 16),
+          ],
+          Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -293,29 +381,34 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: Colors.grey.shade600,
+                    letterSpacing: 0.2,
             ),
           ),
           const SizedBox(height: 6),
-          Row(
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 18, color: AppColors.brandGreen),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: Text(
+                Text(
                   value,
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+                    color: isEmpty ? Colors.grey.shade400 : Colors.black87,
+                    letterSpacing: 0.2,
                   ),
                 ),
+              ],
               ),
-            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFieldDivider() {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      indent: 20,
+      endIndent: 20,
+      color: Colors.grey.shade100,
     );
   }
 

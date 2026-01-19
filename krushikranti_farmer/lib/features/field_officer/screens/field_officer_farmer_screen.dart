@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../services/field_officer_service.dart';
+import '../services/field_officer_cache.dart';
 import 'farm_verification_screen.dart';
 
 class FieldOfficerFarmerScreen extends StatefulWidget {
@@ -37,11 +38,11 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
     super.initState();
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 250), // Even faster animation
     );
     _slideController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 200), // Even faster animation
     );
     _filterChipController = AnimationController(
       vsync: this,
@@ -60,6 +61,11 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       curve: Curves.easeOutCubic,
     ));
     
+    // Start animations immediately for better perceived performance
+    _fadeController.forward();
+    _slideController.forward();
+    
+    // Load data asynchronously
     _loadData();
   }
   
@@ -73,30 +79,51 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
 
   Future<void> _loadData() async {
     try {
-      final assignments = await FieldOfficerService.getAssignedFarms();
-      setState(() {
-        _assignments = assignments;
-        _extractDistricts();
-        _applyFilters();
-        _isLoading = false;
-      });
-      // Start animations after data loads
-      _fadeController.forward();
-      _slideController.forward();
+      // Check cache first for instant loading
+      List<dynamic> assignments = FieldOfficerCache.getCachedAssignments() ?? [];
+      
+      if (assignments.isEmpty) {
+        // Only fetch if not in cache
+        assignments = await FieldOfficerService.getAssignedFarms();
+        // Cache for next time
+        FieldOfficerCache.cacheAssignments(assignments);
+      }
+      
+      // Process data efficiently in a single setState
+      final districts = _extractDistrictsSync(assignments);
+      final filtered = _applyFiltersSync(assignments, districts);
+      
+      if (mounted) {
+        setState(() {
+          _assignments = assignments;
+          _availableDistricts = districts;
+          _filteredAssignments = filtered;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      print('Error loading assignments: $e');
-      setState(() {
-        _assignments = [];
-        _filteredAssignments = [];
-        _isLoading = false;
-      });
-      _fadeController.forward();
+      // Error logged by service
+      if (mounted) {
+        setState(() {
+          _assignments = [];
+          _filteredAssignments = [];
+          _isLoading = false;
+        });
+      }
     }
   }
-
-  void _extractDistricts() {
+  
+  /// Refresh data from server (used when returning from verification screen)
+  Future<void> refreshData() async {
+    // Clear cache to force fresh data
+    FieldOfficerCache.clearAssignmentsCache();
+    await _loadData();
+  }
+  
+  /// Extract districts synchronously (no setState)
+  List<String> _extractDistrictsSync(List<dynamic> assignments) {
     final districts = <String>{};
-    for (var assignment in _assignments) {
+    for (var assignment in assignments) {
       if (assignment is Map<String, dynamic>) {
         final farms = assignment['farms'] as List? ?? [];
         for (var farm in farms) {
@@ -109,11 +136,17 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
         }
       }
     }
-    _availableDistricts = districts.toList()..sort();
+    return districts.toList()..sort();
   }
-
-  void _applyFilters() {
-    List<dynamic> filtered = List.from(_assignments);
+  
+  /// Apply filters synchronously without setState (for use in _loadData)
+  List<dynamic> _applyFiltersSync(List<dynamic> assignments, List<String> districts) {
+    return _applyFiltersInternal(assignments);
+  }
+  
+  /// Internal filter logic without setState
+  List<dynamic> _applyFiltersInternal(List<dynamic> assignments) {
+    List<dynamic> filtered = List.from(assignments);
 
     // Filter by search query (farmer name)
     if (_searchQuery.isNotEmpty) {
@@ -225,9 +258,23 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       }
     }
 
+    return filtered;
+  }
+  
+  void _applyFilters() {
+    if (_assignments.isEmpty) {
+      setState(() {
+        _filteredAssignments = [];
+      });
+      return;
+    }
+    
+    final filtered = _applyFiltersInternal(_assignments);
+    
     setState(() {
       _filteredAssignments = filtered;
     });
+    
     // Animate filter chips when filters change
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_hasActiveFilters()) {
@@ -260,16 +307,30 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 24,
         title: Text(
           'Farmers',
           style: GoogleFonts.poppins(
-            color: AppColors.textPrimary,
-            fontSize: 24,
+            color: Colors.white,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
           ),
         ),
       ),
@@ -301,7 +362,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                       // Filter Button
                                       TweenAnimationBuilder<double>(
                                         tween: Tween(begin: 0.0, end: _hasActiveFilters() ? 1.0 : 0.0),
-                                        duration: const Duration(milliseconds: 300),
+                                        duration: const Duration(milliseconds: 200), // Faster animation
                                         curve: Curves.easeInOut,
                                         builder: (context, value, child) {
                                           return Transform.scale(
@@ -465,53 +526,10 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
   }
 
   Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeInOut,
-            builder: (context, value, child) {
-              return Transform.scale(
-                scale: value,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.brandGreen.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.brandGreen,
-                      strokeWidth: 3,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 600),
-            curve: Curves.easeIn,
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Text(
-                  'Loading farmers...',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+    return const Center(
+      child: CircularProgressIndicator(
+        color: AppColors.brandGreen,
+        strokeWidth: 3,
       ),
     );
   }
@@ -615,7 +633,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
   Widget _buildAnimatedFarmerCard(dynamic assignment, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 400 + (index * 50)),
+            duration: Duration(milliseconds: 200 + (index * 30)), // Faster staggered animation
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.translate(
@@ -653,9 +671,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-              Icons.assignment_outlined,
-              size: 80,
-                      color: AppColors.brandGreen.withOpacity(value),
+              Icons.people_outline,
+              size: 64,
+                      color: AppColors.brandGreen,
                     ),
                   ),
                 ),
@@ -667,7 +685,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
               style: GoogleFonts.poppins(
                       fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: Colors.black,
+                color: AppColors.textPrimary,
+                letterSpacing: 0.2,
               ),
             ),
                 ),
@@ -678,8 +697,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
               'You will see assigned farmers here once the admin assigns them to you.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 15,
                 color: AppColors.textSecondary,
+                fontWeight: FontWeight.w400,
                     ),
               ),
             ),
@@ -741,13 +761,13 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
           child: Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5DC), // Beige background like reference
+        color: Colors.white,
               borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-                  color: Colors.black.withOpacity(0.08 * value),
-                  blurRadius: 15,
-                  offset: Offset(0, 4 * value),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                   spreadRadius: 0,
           ),
         ],
@@ -785,8 +805,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       transitionDuration: const Duration(milliseconds: 300),
               ),
             ).then((result) {
-              // Always reload data when returning from verification screen
+              // Clear cache and reload data when returning from verification screen
               // to get updated verification status from database
+              FieldOfficerCache.clearAssignmentsCache();
               _loadData();
             });
           },
@@ -798,33 +819,35 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       // Profile Picture (Circular Avatar) with animation
                       TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0.0, end: 1.0),
-                        duration: const Duration(milliseconds: 500),
+                        duration: const Duration(milliseconds: 250),
                         curve: Curves.elasticOut,
                         builder: (context, value, child) {
                           return Transform.scale(
                             scale: value,
                             child: Container(
+                              width: 50,
+                              height: 50,
                               decoration: BoxDecoration(
-                                shape: BoxShape.circle,
                                 gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                   colors: [
-                                    AppColors.brandGreen.withOpacity(0.2),
-                                    AppColors.brandGreen.withOpacity(0.1),
+                                    AppColors.brandGreen,
+                                    AppColors.brandGreen.withOpacity(0.8),
                                   ],
                                 ),
+                                shape: BoxShape.circle,
                               ),
-                              child: CircleAvatar(
-                                radius: 36,
-                                backgroundColor: Colors.transparent,
-                  child: Text(
-                    initials,
-                    style: GoogleFonts.poppins(
-                                    fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.brandGreen,
-                    ),
-                  ),
-                ),
+                              child: Center(
+                                child: Text(
+                                  initials,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -839,9 +862,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       Text(
                         farmerName,
                         style: GoogleFonts.poppins(
-                                fontSize: 17,
+                                fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                          color: AppColors.textPrimary,
                                 letterSpacing: 0.2,
                         ),
                               maxLines: 1,
@@ -861,8 +884,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                   child: Text(
                         locationStr,
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: 13,
                           color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w400,
                         ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -885,6 +909,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w400,
                         ),
                                 ),
                               ],
@@ -893,10 +918,14 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       if (farms.length > 1) ...[
                               const SizedBox(height: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: AppColors.brandGreen.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: AppColors.brandGreen.withOpacity(0.3),
+                                    width: 1,
+                                  ),
                                 ),
                                 child: Text(
                           '${farms.length} farms assigned',
@@ -916,7 +945,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: AppColors.textSecondary,
-                            fontStyle: FontStyle.italic,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
@@ -926,7 +955,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       // Arrow Icon with animation
                       TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0.0, end: 1.0),
-                        duration: const Duration(milliseconds: 400),
+                        duration: const Duration(milliseconds: 250), // Faster animation
                         curve: Curves.easeOut,
                         builder: (context, value, child) {
                           return Transform.translate(
@@ -934,7 +963,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                             child: Opacity(
                               opacity: value,
                               child: Icon(
-                  Icons.arrow_forward_ios,
+                  Icons.arrow_forward_ios_rounded,
                                 size: 18,
                                 color: AppColors.brandGreen,
                               ),
@@ -977,7 +1006,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
         builder: (context, setModalState) {
           return TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 400),
+            duration: const Duration(milliseconds: 250), // Faster animation
             curve: Curves.easeOutCubic,
             builder: (context, value, child) {
               return Transform.translate(
@@ -1002,7 +1031,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                   // Handle bar with animation
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 400),
+                    duration: const Duration(milliseconds: 250), // Faster animation
                     curve: Curves.easeOut,
                     builder: (context, value, child) {
                       return Transform.scale(
@@ -1022,7 +1051,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                   // Header with icon and animation
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 500),
+                    duration: const Duration(milliseconds: 250),
                     curve: Curves.easeOutCubic,
                     builder: (context, value, child) {
                       return Transform.translate(
@@ -1410,7 +1439,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                 if (tempDateFilter == 'CUSTOM')
                                   TweenAnimationBuilder<double>(
                                     tween: Tween(begin: 0.0, end: 1.0),
-                                    duration: const Duration(milliseconds: 400),
+                                    duration: const Duration(milliseconds: 250), // Faster animation
                                     curve: Curves.easeOutCubic,
                                     builder: (context, value, child) {
                                       return Transform.scale(
@@ -1479,7 +1508,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                   // Apply Button with animation
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 600),
+                    duration: const Duration(milliseconds: 200), // Faster animation
                     curve: Curves.easeOutCubic,
                     builder: (context, value, child) {
                       return Transform.translate(
@@ -1854,8 +1883,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                     ),
                     child: Icon(
                       Icons.filter_alt_outlined,
-                      size: 80,
-                      color: AppColors.textSecondary.withOpacity(value),
+                      size: 64,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -1867,7 +1896,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: AppColors.textPrimary,
+                      letterSpacing: 0.2,
                     ),
                   ),
                 ),
@@ -1878,8 +1908,9 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                     'Try adjusting your filters to see more results.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 15,
                       color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),

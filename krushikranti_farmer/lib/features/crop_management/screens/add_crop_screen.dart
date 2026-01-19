@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../l10n/app_localizations.dart'; // ✅ Relative Import
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
@@ -70,16 +72,11 @@ class _AddCropScreenState extends State<AddCropScreen> {
           if (farms.isNotEmpty) {
             selectedFarmId = farms[0]['id'] as int;
           } else {
-            // Show error if no farms - use delayed localization
+            // Show user-friendly error if no farms - use delayed localization
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 final l10n = AppLocalizations.of(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n?.noFarmsFound ?? "No farms found. Please add a farm first."),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                _showNoFarmsDialog(l10n);
               }
             });
           }
@@ -177,11 +174,36 @@ class _AddCropScreenState extends State<AddCropScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text(l10n.addNewCrop), // ✅ Translated
-        backgroundColor: AppColors.brandGreen,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          l10n.addNewCrop,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.brandGreen,
+                AppColors.brandGreen.withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.brandGreen))
@@ -192,8 +214,8 @@ class _AddCropScreenState extends State<AddCropScreen> {
           children: [
                   // Farm Selection (if multiple farms)
                   if (farms.length > 1) ...[
-                    Text(l10n.selectFarm, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    const SizedBox(height: 8),
+              _buildSectionHeader(Icons.agriculture_rounded, l10n.selectFarm),
+              const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
                       decoration: _inputDecoration(l10n.farmLabel),
                       value: selectedFarmId,
@@ -206,10 +228,9 @@ class _AddCropScreenState extends State<AddCropScreen> {
                     const SizedBox(height: 20),
                   ],
                   
-                  Text(l10n.selectCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
-            
-                  // 1. CROP TYPE DROPDOWN
+            // Crop Type Section
+            _buildSectionHeader(Icons.category_rounded, l10n.selectCategory),
+            const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
                     key: ValueKey(selectedCropTypeId ?? 'type_reset'),
                     decoration: _inputDecoration(l10n.categoryLabel),
@@ -233,15 +254,20 @@ class _AddCropScreenState extends State<AddCropScreen> {
             ),
             const SizedBox(height: 20),
             
-                  Text(l10n.selectCropName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
-            
-            // 2. CROP NAME DROPDOWN
+            // Crop Name Section
+            _buildSectionHeader(Icons.grass_rounded, l10n.selectCropName),
+            const SizedBox(height: 12),
                   _isLoadingCropNames
-                      ? const Center(child: Padding(
-                          padding: EdgeInsets.all(20.0),
+                ? Container(
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Center(
                           child: CircularProgressIndicator(color: AppColors.brandGreen),
-                        ))
+                    ),
+                  )
                       : DropdownButtonFormField<int>(
                           key: ValueKey("${selectedCropTypeId}_${selectedCropNameId ?? 'name'}"),
                           decoration: _inputDecoration(l10n.cropNameLabel),
@@ -264,9 +290,9 @@ class _AddCropScreenState extends State<AddCropScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 3. ACRES INPUT
-                  Text(l10n.landArea, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
+            // Land Area Section
+            _buildSectionHeader(Icons.square_foot_rounded, l10n.landArea),
+            const SizedBox(height: 12),
             TextFormField(
               controller: acresController,
               keyboardType: TextInputType.number,
@@ -274,41 +300,41 @@ class _AddCropScreenState extends State<AddCropScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 4. SOWING DATE
-            Text(l10n.sowingDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
+            // Sowing Date Section
+            _buildSectionHeader(Icons.calendar_today_rounded, l10n.sowingDate),
+            const SizedBox(height: 12),
             GestureDetector(
               onTap: () => _selectDate(context, sowingDateController, l10n.sowingDate),
               child: AbsorbPointer(
                 child: TextFormField(
                   controller: sowingDateController,
                   decoration: _inputDecoration(l10n.selectSowingDate).copyWith(
-                    suffixIcon: const Icon(Icons.calendar_today, color: AppColors.brandGreen),
+                    suffixIcon: const Icon(Icons.calendar_today_rounded, color: AppColors.brandGreen),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
-            // 5. EXPECTED HARVESTING DATE
-            Text(l10n.harvestingDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
+            // Harvesting Date Section
+            _buildSectionHeader(Icons.event_rounded, l10n.harvestingDate),
+            const SizedBox(height: 12),
             GestureDetector(
               onTap: () => _selectDate(context, harvestingDateController, l10n.harvestingDate),
               child: AbsorbPointer(
                 child: TextFormField(
                   controller: harvestingDateController,
                   decoration: _inputDecoration(l10n.selectHarvestingDate).copyWith(
-                    suffixIcon: const Icon(Icons.calendar_today, color: AppColors.brandGreen),
+                    suffixIcon: const Icon(Icons.calendar_today_rounded, color: AppColors.brandGreen),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
-            // 6. CROP STATUS
-            Text(l10n.cropStatus, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
+            // Crop Status Section
+            _buildSectionHeader(Icons.info_outline_rounded, l10n.cropStatus),
+            const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               decoration: _inputDecoration(l10n.selectCropStatus),
               value: selectedCropStatus,
@@ -322,31 +348,42 @@ class _AddCropScreenState extends State<AddCropScreen> {
                 setState(() => selectedCropStatus = val);
               },
             ),
-            
-            const SizedBox(height: 40),
-            
-            // 4. SAVE BUTTON
+
+            const SizedBox(height: 32),
+
+            // Save Button
             SizedBox(
               height: 50,
-              child: ElevatedButton(
-                      onPressed: _isLoading ? null : () => _saveCrop(l10n),
+              child: ElevatedButton.icon(
+                      onPressed: (farms.isEmpty || _isLoading) ? null : () => _saveCrop(l10n),
+                icon: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.check_rounded, size: 20),
+                label: Text(
+                  l10n.saveCropBtn,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.brandGreen,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  elevation: 0,
                 ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : Text(l10n.saveCropBtn, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-            ),
+                ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -393,12 +430,64 @@ class _AddCropScreenState extends State<AddCropScreen> {
     }
   }
 
+  Widget _buildSectionHeader(IconData icon, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.brandGreen),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.grey.shade700,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
+      labelStyle: GoogleFonts.poppins(
+        color: Colors.grey.shade600,
+        fontSize: 14,
+      ),
       filled: true,
       fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.brandGreen, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
     );
   }
 
@@ -418,6 +507,217 @@ class _AddCropScreenState extends State<AddCropScreen> {
       default:
         return status.replaceAll('_', ' ');
     }
+  }
+
+  void _showNoFarmsDialog(AppLocalizations? l10n) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final dialogL10n = AppLocalizations.of(dialogContext) ?? l10n;
+        return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.info_outline, color: AppColors.brandGreen, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: const Text(
+                "Farm Required",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "To add crops, you need to add a farm first. A farm is required to track your crop details.",
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.black87,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.brandGreen.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.brandGreen.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb_outline, color: AppColors.brandGreen, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Click 'Add Farm' below to create your first farm.",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.brandGreen,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext); // Close dialog
+              Navigator.pop(context); // Close add crop screen
+            },
+            child: Text(
+              dialogL10n?.cancel ?? "Cancel",
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext); // Close dialog
+              Navigator.pop(context); // Close add crop screen
+              Navigator.pushNamed(context, AppRoutes.addFarm).then((result) {
+                // If farm was added successfully, user can try adding crop again
+                if (result == true && mounted) {
+                  final snackL10n = AppLocalizations.of(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text("Farm added! You can now add crops."),
+                      backgroundColor: Colors.green,
+                      action: SnackBarAction(
+                        label: snackL10n?.addCropBtn ?? "Add Crop",
+                        textColor: Colors.white,
+                        onPressed: () {
+                          Navigator.pushNamed(context, AppRoutes.addCrop);
+                        },
+                      ),
+                    ),
+                  );
+                }
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brandGreen,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.add, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  dialogL10n?.addFarm ?? "Add Farm",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
+        );
+      },
+    );
+  }
+
+  // Helper method to generate user-friendly error messages
+  String _getUserFriendlyErrorMessage(dynamic error, double? acres, AppLocalizations l10n) {
+    final errorString = error.toString();
+    String actualMessage = errorString;
+    
+    // Try to extract JSON message from error string
+    try {
+      // Look for JSON in the error string (format: {...})
+      final jsonMatch = RegExp(r'\{[^}]+\}').firstMatch(errorString);
+      if (jsonMatch != null) {
+        final jsonString = jsonMatch.group(0);
+        if (jsonString != null) {
+          final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+          if (jsonData.containsKey('message')) {
+            actualMessage = jsonData['message'] as String;
+          }
+        }
+      }
+    } catch (e) {
+      // If JSON parsing fails, use the original error string
+    }
+    
+    final errorLower = actualMessage.toLowerCase();
+    
+    // Check for crop area exceed errors
+    if (errorLower.contains('cannot exceed') || 
+        errorLower.contains('exceed') ||
+        errorLower.contains('exceeds') ||
+        errorLower.contains('available area') ||
+        errorLower.contains('total crop area')) {
+      
+      // Extract numbers from the message
+      final numbers = RegExp(r'(\d+\.?\d*)').allMatches(actualMessage);
+      String? totalCropArea;
+      String? farmArea;
+      String? availableArea;
+      
+      if (numbers.length >= 3) {
+        totalCropArea = numbers.elementAt(0).group(0);
+        farmArea = numbers.elementAt(1).group(0);
+        availableArea = numbers.elementAt(2).group(0);
+      } else if (numbers.length >= 2) {
+        totalCropArea = numbers.elementAt(0).group(0);
+        farmArea = numbers.elementAt(1).group(0);
+      }
+      
+      final acresText = acres != null 
+          ? acres == acres.toInt() 
+              ? acres.toInt().toString() 
+              : acres.toStringAsFixed(2)
+          : 'the entered';
+      
+      if (farmArea != null && availableArea != null) {
+        final available = double.tryParse(availableArea) ?? 0;
+        if (available <= 0) {
+          return l10n.errorCropAreaFullyUsed(acresText, farmArea);
+        } else {
+          return l10n.errorCropAreaAvailable(acresText, farmArea, availableArea);
+        }
+      } else if (farmArea != null) {
+        return l10n.errorCropAreaExceed(acresText, farmArea);
+      } else {
+        return l10n.errorCropAreaLimitReached(acresText);
+      }
+    }
+    
+    // Check for other crop area limit errors
+    if (errorLower.contains('limit') || 
+        errorLower.contains('already used') ||
+        errorLower.contains('crop limit') ||
+        errorLower.contains('area limit') ||
+        errorLower.contains('maximum') ||
+        errorLower.contains('reached') ||
+        errorLower.contains('not available') ||
+        errorLower.contains('insufficient')) {
+      
+      final acresText = acres != null 
+          ? acres == acres.toInt() 
+              ? acres.toInt().toString() 
+              : acres.toStringAsFixed(2)
+          : 'the entered';
+      
+      return l10n.errorCropAreaLimitReached(acresText);
+    }
+    
+    // Return the actual message (cleaned up)
+    return actualMessage.replaceFirst("Exception: ", "").replaceFirst("Network Error: ", "").replaceFirst("Error: ", "");
   }
 
   Future<void> _saveCrop(AppLocalizations l10n) async {
@@ -481,10 +781,14 @@ class _AddCropScreenState extends State<AddCropScreen> {
           _isLoading = false;
         });
         
+        // Parse error message for user-friendly display
+        final errorMessage = _getUserFriendlyErrorMessage(e, acres, l10n);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceFirst("Exception: ", "")),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
