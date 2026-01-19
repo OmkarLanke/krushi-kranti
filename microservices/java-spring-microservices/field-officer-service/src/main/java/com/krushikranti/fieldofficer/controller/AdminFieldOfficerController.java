@@ -1,6 +1,7 @@
 package com.krushikranti.fieldofficer.controller;
 
 import com.krushikranti.fieldofficer.dto.*;
+import com.krushikranti.fieldofficer.service.FarmVerificationService;
 import com.krushikranti.fieldofficer.service.FieldOfficerAssignmentService;
 import com.krushikranti.fieldofficer.service.FieldOfficerService;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ public class AdminFieldOfficerController {
 
     private final FieldOfficerService fieldOfficerService;
     private final FieldOfficerAssignmentService assignmentService;
+    private final FarmVerificationService verificationService;
 
     /**
      * Create a new field officer
@@ -175,6 +177,25 @@ public class AdminFieldOfficerController {
             log.error("Error retrieving assignments: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Get verification photos for a farm (admin access).
+     * Returns all geo-tagged photos taken during farm verification.
+     */
+    @GetMapping("/verifications/farms/{farmId}/photos")
+    public ResponseEntity<ApiResponse<List<VerificationPhotoDto>>> getVerificationPhotos(
+            @PathVariable Long farmId) {
+        try {
+            log.info("Admin fetching verification photos for farm ID: {}", farmId);
+            
+            List<VerificationPhotoDto> photos = verificationService.getVerificationPhotosByFarmId(farmId);
+            return ResponseEntity.ok(new ApiResponse<>("Verification photos retrieved successfully", photos));
+        } catch (Exception e) {
+            log.error("Error retrieving verification photos for farm ID {}: {}", farmId, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>("Error retrieving verification photos: " + e.getMessage(), null));
         }
     }
 }

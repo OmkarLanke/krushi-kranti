@@ -132,6 +132,11 @@ public class AdminFarmerDetailDto {
         private String verifiedByOfficerName;
         private LocalDateTime verifiedAt;
         private String verificationRemarks;
+        // GPS Location Coordinates
+        private BigDecimal farmLatitude;
+        private BigDecimal farmLongitude;
+        private BigDecimal farmLocationAccuracy;
+        private LocalDateTime farmLocationCapturedAt;
         private LocalDateTime createdAt;
     }
 

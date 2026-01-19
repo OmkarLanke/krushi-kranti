@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isAgentAssigned = false; 
   List<Map<String, dynamic>> fieldOfficerAssignments = [];
   Map<int, String> _farmNames = {}; // Map of farmId -> farmName
+  List<Map<String, dynamic>> _unassignedFarms = []; // Farms without field officer assignment
   bool isLoadingAssignments = true;
   bool isNavigating = false;
   bool _allFarmsVerified = false;
@@ -32,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<NotificationModel>? _notificationSubscription;
   Timer? _expiredNotificationCleanupTimer;
   VoidCallback? _notificationServiceListener;
+  int _previousNotificationCount = 0;
 
   @override
   void initState() {
@@ -68,6 +70,37 @@ class _HomeScreenState extends State<HomeScreen> {
         timer.cancel();
       }
     });
+  }
+
+  void _showOtpReceivedPopup() {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Text(
+            'You will get the OTP. Please check it at notification',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        backgroundColor: AppColors.brandGreen,
+        duration: const Duration(seconds: 6),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 6,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+    );
   }
 
   void _setupNotificationListener() {
@@ -154,12 +187,18 @@ class _HomeScreenState extends State<HomeScreen> {
         return status == 'ASSIGNED';
       }).map((assignment) => assignment as Map<String, dynamic>).toList();
       
-      // Extract unique farm IDs from assignments
-      final Set<int> farmIds = {};
+      // Check if there's an assignment with null farmId (all farms assigned)
+      bool allFarmsAssigned = activeAssignments.any((assignment) => assignment['farmId'] == null);
+      
+      // Extract assigned farm IDs from assignments
+      final Set<int> assignedFarmIds = {};
       for (var assignment in activeAssignments) {
         final farmId = assignment['farmId'];
         if (farmId != null) {
-          farmIds.add(farmId is int ? farmId : int.tryParse(farmId.toString()) ?? 0);
+          final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+          if (farmIdInt != null) {
+            assignedFarmIds.add(farmIdInt);
+          }
         }
       }
       
@@ -171,9 +210,31 @@ class _HomeScreenState extends State<HomeScreen> {
           final farmName = farmData['farmName'] ?? 'Farm $farmId';
           if (farmId != null) {
             final id = farmId is int ? farmId : int.tryParse(farmId.toString());
-            if (id != null && farmIds.contains(id)) {
+            if (id != null && assignedFarmIds.contains(id)) {
               farmNamesMap[id] = farmName.toString();
             }
+          }
+        }
+      }
+      
+      // Find unassigned farms (active farms without assignments)
+      // If allFarmsAssigned is true (null farmId assignment exists), no farms are unassigned
+      final List<Map<String, dynamic>> unassignedFarms = [];
+      if (!allFarmsAssigned) {
+        // Filter only active farms
+        final activeFarms = farmsData.where((farm) {
+          return farm['isActive'] == true;
+        }).toList();
+        
+        for (var farm in activeFarms) {
+          final farmId = farm['id'];
+          final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+          // Only add to unassigned if it's not already assigned AND not already verified
+          if (farmIdInt != null && !assignedFarmIds.contains(farmIdInt) && (farm['isVerified'] == false || farm['isVerified'] == null)) {
+            unassignedFarms.add({
+              'id': farmIdInt,
+              'farmName': farm['farmName'] ?? 'Farm ${farmIdInt}',
+            });
           }
         }
       }
@@ -181,6 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           fieldOfficerAssignments = activeAssignments;
+          _unassignedFarms = unassignedFarms;
           isAgentAssigned = activeAssignments.isNotEmpty;
           _farmNames = farmNamesMap;
           isLoadingAssignments = false;
@@ -191,6 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           fieldOfficerAssignments = [];
+          _unassignedFarms = [];
           isAgentAssigned = false;
           isLoadingAssignments = false;
         });
@@ -287,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           _buildCircleIcon(Icons.search_rounded),
           const SizedBox(width: 12),
-          _buildCircleIcon(Icons.notifications_none_rounded),
+          _buildNotificationIcon(),
           const SizedBox(width: 20),
         ],
         flexibleSpace: Container(
@@ -313,26 +376,29 @@ class _HomeScreenState extends State<HomeScreen> {
             // A. Weather
             _buildWeatherHeader(l10n),
             const SizedBox(height: 20),
-
-            // B. OTP Notification Banner (if any)
-            if (_notificationService.otpNotifications.isNotEmpty) ...[
-              ..._buildOtpNotificationBanners(l10n),
-              const SizedBox(height: 20),
-            ],
             
-            // C. All Farms Verified Banner (if all farms are verified)
+            // B. All Farms Verified Banner (if all farms are verified)
             if (_allFarmsVerified) ...[
               _buildAllFarmsVerifiedCard(l10n),
               const SizedBox(height: 20),
             ],
             
-            // D. Field Officer Banner
-            if (isLoadingAssignments)
-              _buildLoadingBanner(l10n)
-            else if (isAgentAssigned) 
-              _buildFieldOfficerAssignedCard(l10n)
-            else 
-              _buildFieldOfficerPendingBanner(l10n),
+            // D. Field Officer Banner (only show if not all farms are verified)
+            if (!_allFarmsVerified) ...[
+              if (isLoadingAssignments)
+                _buildLoadingBanner(l10n)
+              else ...[
+                // Show assigned field officer card if there are assignments
+                if (isAgentAssigned) ...[
+                  _buildFieldOfficerAssignedCard(l10n),
+                  const SizedBox(height: 16),
+                ],
+                // Show pending banner for unassigned farms
+                if (_unassignedFarms.isNotEmpty) ...[
+                  _buildFieldOfficerPendingBanner(l10n),
+                ],
+              ],
+            ],
             
             const SizedBox(height: 24),
 
@@ -402,6 +468,64 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
           ),
           child: Icon(icon, color: Colors.white, size: 22),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationIcon() {
+    final unreadCount = _notificationService.unreadOtpNotificationsCount;
+    final hasUnreadNotifications = unreadCount > 0;
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(context, AppRoutes.notifications);
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.notifications_none_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            // Red badge when unread OTP notifications exist
+            if (hasUnreadNotifications)
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red,
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -552,6 +676,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFieldOfficerPendingBanner(AppLocalizations l10n) {
+    // Get farm names for unassigned farms
+    final List<String> unassignedFarmNames = [];
+    for (var farm in _unassignedFarms) {
+      final farmId = farm['id'];
+      final farmName = farm['farmName'] ?? 'Farm ${farmId}';
+      unassignedFarmNames.add(farmName.toString());
+    }
+    
+    final String farmNamesText = unassignedFarmNames.isEmpty
+        ? ''
+        : unassignedFarmNames.length == 1
+            ? unassignedFarmNames.first
+            : unassignedFarmNames.join(', ');
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -606,6 +744,43 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             textAlign: TextAlign.center,
           ),
+          if (farmNamesText.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.agriculture_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'For: $farmNamesText',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
