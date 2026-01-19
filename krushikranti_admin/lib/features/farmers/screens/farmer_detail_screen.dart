@@ -685,38 +685,66 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
     // 2. Or if this farm has verifiedByOfficerId (field officer assigned/verified this farm)
     // 3. Or if the farm is verified (isVerified = true means a field officer was assigned and verified)
     final hasFieldOfficer = _isFarmAssigned(farm.farmId) ||
-                            farm.verifiedByOfficerId != null ||
-                            farm.isVerified;
-    
+        farm.verifiedByOfficerId != null ||
+        farm.isVerified;
+
     // Get the assignment details for this farm
     final assignment = _getFarmAssignment(farm.farmId);
-    
+
+    // Determine farm verification/assignment status for color scheme
+    // - Green  : Field officer assigned AND farm verified
+    // - Orange : Field officer assigned BUT farm NOT verified yet
+    // - Red    : No field officer assigned
+    final bool isVerifiedFarm =
+        farm.isVerified == true ||
+        (assignment != null && assignment.status.toUpperCase() == 'COMPLETED');
+
+    late final String farmStatusLabel;
+    late final Color farmStatusColor;
+    late final List<Color> cardGradientColors;
+    late final Color cardBorderColor;
+
+    if (hasFieldOfficer && isVerifiedFarm) {
+      // Assigned + verified => GREEN
+      farmStatusLabel = 'Verified farm';
+      farmStatusColor = AppColors.success;
+      cardGradientColors = [
+        AppColors.successBg,
+        AppColors.success.withOpacity(0.1),
+      ];
+      cardBorderColor = AppColors.success.withOpacity(0.3);
+    } else if (hasFieldOfficer && !isVerifiedFarm) {
+      // Assigned but not verified => ORANGE
+      farmStatusLabel = 'Assigned · not verified';
+      farmStatusColor = AppColors.warning;
+      cardGradientColors = [
+        AppColors.warning.withOpacity(0.18),
+        AppColors.warning.withOpacity(0.06),
+      ];
+      cardBorderColor = AppColors.warning.withOpacity(0.4);
+    } else {
+      // No field officer => RED
+      farmStatusLabel = 'Not assigned';
+      farmStatusColor = AppColors.error;
+      cardGradientColors = [
+        AppColors.errorBg,
+        AppColors.error.withOpacity(0.1),
+      ];
+      cardBorderColor = AppColors.error.withOpacity(0.3);
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: hasFieldOfficer
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.successBg,
-                  AppColors.success.withOpacity(0.1),
-                ],
-              )
-            : LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.errorBg,
-                  AppColors.error.withOpacity(0.1),
-                ],
-              ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: cardGradientColors,
+        ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: hasFieldOfficer
-              ? AppColors.success.withOpacity(0.3)
-              : AppColors.error.withOpacity(0.3),
+          color: cardBorderColor,
           width: 1,
         ),
       ),
@@ -725,17 +753,17 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
           final isWide = constraints.maxWidth > 600;
           
           if (isWide) {
-            return Row(
+            // Desktop / wide layout:
+            // Top row: Farm name on the left, status chip neatly aligned on the right.
+            // Below: left column with farm details, right column with officer details & action button.
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left side: Farm name and details
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Farm name
-                      Text(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
                         farm.farmName,
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
@@ -744,98 +772,111 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
+                    ),
+                    const SizedBox(width: 16),
+                    _buildStatusChip(
+                      'Farm status',
+                      farmStatusLabel,
+                      farmStatusColor,
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
-                // Farm details
-                _buildInfoRow('Type', farm.farmType ?? '-'),
-                _buildInfoRow('Area', '${farm.totalAreaAcres?.toStringAsFixed(2) ?? '-'} acres'),
-                _buildInfoRow(
-                  'Location',
-                  '${farm.village ?? '-'}, ${farm.taluka ?? '-'}, ${farm.district ?? '-'}, ${farm.state ?? '-'}',
-                  maxLines: 2,
-                ),
-                if (farm.pincode != null && farm.pincode!.isNotEmpty)
-                  _buildInfoRow('Pincode', farm.pincode!),
-                _buildInfoRow('Soil Type', farm.soilType ?? '-'),
-                _buildInfoRow('Irrigation', farm.irrigationType ?? '-'),
-                _buildInfoRow('Ownership', farm.landOwnership ?? '-'),
-                if (farm.surveyNumber != null && farm.surveyNumber!.isNotEmpty)
-                  _buildInfoRow('Survey No', farm.surveyNumber!),
-                if (farm.pattaNumber != null && farm.pattaNumber!.isNotEmpty)
-                  _buildInfoRow('Patta No', farm.pattaNumber!),
-                if (farm.landRegistrationNumber != null && farm.landRegistrationNumber!.isNotEmpty)
-                  _buildInfoRow('Land Reg. No', farm.landRegistrationNumber!),
-                if (farm.estimatedLandValue != null)
-                  _buildInfoRow('Estimated Value', '₹${farm.estimatedLandValue!.toStringAsFixed(2)}'),
-                if (farm.encumbranceStatus != null && farm.encumbranceStatus!.isNotEmpty)
-                  _buildInfoRow('Encumbrance', farm.encumbranceStatus!),
-                if (farm.encumbranceRemarks != null && farm.encumbranceRemarks!.isNotEmpty)
-                  _buildInfoRow('Encumbrance Remarks', farm.encumbranceRemarks!),
-              ],
-            ),
-          ),
-          
-          // Right side: Status chip and Field officer details (aligned vertically)
-          const SizedBox(width: 24),
-          Flexible(
-            flex: 1,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Status chip at the top
-                _buildStatusChip(
-                  'Field Officer',
-                  hasFieldOfficer ? 'Assigned' : 'Not Assigned',
-                  hasFieldOfficer ? AppColors.success : AppColors.error,
-                ),
-                // Field officer details directly below
-                if (hasFieldOfficer && assignment != null) ...[
-                  const SizedBox(height: 12),
-                  _buildFieldOfficerDetails(assignment),
-                ] else if (hasFieldOfficer && farm.verifiedByOfficerName != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.success.withOpacity(0.2), width: 1),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          farm.verifiedByOfficerName!,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left side: Farm details
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildInfoRow('Type', farm.farmType ?? '-'),
+                          _buildInfoRow('Area', '${farm.totalAreaAcres?.toStringAsFixed(2) ?? '-'} acres'),
+                          _buildInfoRow(
+                            'Location',
+                            '${farm.village ?? '-'}, ${farm.taluka ?? '-'}, ${farm.district ?? '-'}, ${farm.state ?? '-'}',
+                            maxLines: 2,
                           ),
-                        ),
-                        if (farm.verifiedAt != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            'Verified: ${_formatDate(farm.verifiedAt)}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
+                          if (farm.pincode != null && farm.pincode!.isNotEmpty)
+                            _buildInfoRow('Pincode', farm.pincode!),
+                          _buildInfoRow('Soil Type', farm.soilType ?? '-'),
+                          _buildInfoRow('Irrigation', farm.irrigationType ?? '-'),
+                          _buildInfoRow('Ownership', farm.landOwnership ?? '-'),
+                          if (farm.surveyNumber != null && farm.surveyNumber!.isNotEmpty)
+                            _buildInfoRow('Survey No', farm.surveyNumber!),
+                          if (farm.pattaNumber != null && farm.pattaNumber!.isNotEmpty)
+                            _buildInfoRow('Patta No', farm.pattaNumber!),
+                          if (farm.landRegistrationNumber != null && farm.landRegistrationNumber!.isNotEmpty)
+                            _buildInfoRow('Land Reg. No', farm.landRegistrationNumber!),
+                          if (farm.estimatedLandValue != null)
+                            _buildInfoRow('Estimated Value', '₹${farm.estimatedLandValue!.toStringAsFixed(2)}'),
+                          if (farm.encumbranceStatus != null && farm.encumbranceStatus!.isNotEmpty)
+                            _buildInfoRow('Encumbrance', farm.encumbranceStatus!),
+                          if (farm.encumbranceRemarks != null && farm.encumbranceRemarks!.isNotEmpty)
+                            _buildInfoRow('Encumbrance Remarks', farm.encumbranceRemarks!),
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-                // View Geo Tagged Photo button for completed/verified farms
-                if ((assignment != null && assignment.status.toUpperCase() == 'COMPLETED') || 
-                    (farm.isVerified == true && farm.verifiedByOfficerId != null)) ...[
-                  const SizedBox(height: 12),
-                  _buildViewPhotoButton(farm.farmId, farm.farmName),
-                ],
+                    const SizedBox(width: 24),
+                    // Right side: Field officer details & actions
+                    Flexible(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (hasFieldOfficer && assignment != null) ...[
+                            _buildFieldOfficerDetails(assignment),
+                          ] else if (hasFieldOfficer && farm.verifiedByOfficerName != null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppColors.success.withOpacity(0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    farm.verifiedByOfficerName!,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  if (farm.verifiedAt != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Verified: ${_formatDate(farm.verifiedAt)}',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                          if ((assignment != null &&
+                                  assignment.status.toUpperCase() == 'COMPLETED') ||
+                              (farm.isVerified == true &&
+                                  farm.verifiedByOfficerId != null)) ...[
+                            const SizedBox(height: 12),
+                            _buildViewPhotoButton(farm.farmId, farm.farmName),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            ),
-          ),
-        ],
-      );
+            );
           } else {
             // Stack layout for narrow screens
             return Column(
@@ -852,14 +893,14 @@ class _FarmerDetailDialogState extends State<FarmerDetailDialog> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 16),
-                // Status chip at the top
+                // Status chip at the top (shows farm status with color scheme)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     _buildStatusChip(
-                      'Field Officer',
-                      hasFieldOfficer ? 'Assigned' : 'Not Assigned',
-                      hasFieldOfficer ? AppColors.success : AppColors.error,
+                      'Farm status',
+                      farmStatusLabel,
+                      farmStatusColor,
                     ),
                   ],
                 ),

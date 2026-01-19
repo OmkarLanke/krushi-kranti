@@ -1691,20 +1691,25 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     const double headerHeight = 56.0;
     const double filterHeight = 52.0;
 
-    // 1. Define Base Column widths (renamed from your constants)
-    const double baseFarmerIdWidth = 110.0;
+    // 1. Define Base Column widths (optimized to prevent truncation and improve layout)
+    const double baseFarmerIdWidth = 130.0;  // Increased to prevent "Farmer ID" truncation
     const double baseUserIdWidth = 110.0;
     const double baseUsernameWidth = 150.0;
-    const double baseFullNameWidth = 200.0;
+    const double baseFullNameWidth = 220.0;  // Increased for better name display
     const double basePhoneWidth = 140.0;
-    const double baseLocationWidth = 280.0;
+    const double baseLocationWidth = 300.0;  // Increased to prevent text wrapping
     const double basePincodeWidth = 120.0;
     const double baseFarmsWidth = 100.0;
     const double baseKycWidth = 130.0;
     const double baseSubscriptionWidth = 150.0;
-    const double baseFieldOfficerWidth = 160.0;
-    const double baseVerifiedFarmsWidth = 140.0;
+    const double baseFieldOfficerWidth = 180.0;  // Increased for better button display
+    const double baseVerifiedFarmsWidth = 150.0;  // Increased to prevent "Verified Farms" truncation
 
+    // Account for dividers: 12 columns = 11 dividers (1px each)
+    const int numberOfDividers = 11;
+    const double dividerWidth = 1.0;
+    const double totalDividerWidth = numberOfDividers * dividerWidth;
+    
     final totalBaseWidth = baseFarmerIdWidth +
         baseUserIdWidth +
         baseUsernameWidth +
@@ -1716,7 +1721,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         baseKycWidth +
         baseSubscriptionWidth +
         baseFieldOfficerWidth +
-        baseVerifiedFarmsWidth;
+        baseVerifiedFarmsWidth +
+        totalDividerWidth; // Include divider widths
 
     // 2. Calculate Scale Factor
     // If available screen width > total fixed width, we scale up to fit the screen.
@@ -1740,8 +1746,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     final double fieldOfficerWidth = baseFieldOfficerWidth * scaleFactor;
     final double verifiedFarmsWidth = baseVerifiedFarmsWidth * scaleFactor;
 
-    // The new total width is effectively the availableWidth (if scaled)
-    final totalWidth = totalBaseWidth * scaleFactor;
+    // The new total width includes scaled column widths and divider widths
+    final totalWidth = (totalBaseWidth - totalDividerWidth) * scaleFactor + totalDividerWidth;
 
     // Calculate height for rows
     const double maxVisibleHeight = 800.0; 
@@ -1749,7 +1755,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        minWidth: totalWidth, // Use the calculated total width
+        minWidth: totalWidth,
+        maxWidth: totalWidth, // Set maxWidth to avoid unbounded width issues
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1854,10 +1861,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                               phoneWidth,
                               locationWidth,
                               pincodeWidth,
-                              farmsWidth,
                               kycWidth,
                               subscriptionWidth,
                               fieldOfficerWidth,
+                              verifiedFarmsWidth,
                               index == _filteredFarmers.length - 1, // Last row
                             );
                           }),
@@ -1906,12 +1913,14 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               child: Text(
                 label,
                 style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w600,
                   fontSize: 13,
-              color: Colors.white,
+                  color: Colors.white,
                   letterSpacing: 0.2,
                 ),
                 overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                softWrap: false,
               ),
             ),
             if (sortColumn != null) ...[
@@ -2272,8 +2281,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       cursor: SystemMouseCursors.click,
       child: Container(
         height: height,
-      decoration: BoxDecoration(
-        color: Colors.white,
+        decoration: BoxDecoration(
+          color: Colors.white,
           border: Border(
             bottom: isLastRow 
                 ? BorderSide.none
@@ -2286,7 +2295,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             onTap: () => _viewFarmerDetail(farmer),
             hoverColor: AppColors.brandGreen.withOpacity(0.05),
             child: Row(
-        children: [
+              crossAxisAlignment: CrossAxisAlignment.center,  // Ensure vertical alignment
+              children: [
           // Farmer ID
           _buildDataCell(farmerIdWidth, Text(
             farmer.farmerId.toString(),
@@ -2315,6 +2325,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               color: AppColors.textPrimary,
             ),
             overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            softWrap: false,
           ), false),
           _buildDivider(),
           // Full Name with avatar
@@ -2346,11 +2358,13 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 child: Text(
                   farmer.fullName.isEmpty ? 'Not Set' : farmer.fullName,
                   style: GoogleFonts.poppins(
-              fontSize: 13,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
+                    color: AppColors.textPrimary,
+                  ),
                   overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  softWrap: false,
                 ),
               ),
             ],
@@ -2364,6 +2378,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               color: AppColors.textPrimary,
             ),
             overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            softWrap: false,
           ), false),
           _buildDivider(),
           // Location
@@ -2372,10 +2388,12 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             child: Text(
               '${farmer.village ?? '-'}, ${farmer.district ?? '-'}',
               style: GoogleFonts.poppins(
-              fontSize: 13,
+                fontSize: 13,
                 color: AppColors.textPrimary,
               ),
               overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              softWrap: false,
             ),
           ), false),
           _buildDivider(),
@@ -2425,6 +2443,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   Widget _buildDataCell(double width, Widget child, bool isFirstOrLast) {
     return Container(
       width: width,
+      height: double.infinity,  // Ensure consistent height
       padding: EdgeInsets.symmetric(
         horizontal: isFirstOrLast ? 16 : 12,
         vertical: 16,
