@@ -26,4 +26,5 @@ class AppColors {
   static const Color border = Color(0xFFEEEEEE);
   static const Color error = Color(0xFFD32F2F);
   static const Color success = Color(0xFF388E3C);
+  static const Color warning = Color(0xFFFF9800); // Orange for warning/assigned but not verified
 }
