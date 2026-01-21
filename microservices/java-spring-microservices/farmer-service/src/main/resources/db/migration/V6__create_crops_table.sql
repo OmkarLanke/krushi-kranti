@@ -2,11 +2,11 @@
 -- Links to farm and references crop_names master table
 CREATE TABLE IF NOT EXISTS crops (
     -- Primary Key
-    id BIGSERIAL PRIMARY KEY,
+    crop_id BIGSERIAL PRIMARY KEY,
     
     -- Relationships
-    farm_id BIGINT NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
-    crop_name_id BIGINT NOT NULL REFERENCES crop_names(id),
+    farm_id BIGINT NOT NULL REFERENCES farms(farm_id) ON DELETE CASCADE,
+    crop_name_id BIGINT NOT NULL REFERENCES crop_names(crop_name_id),
     
     -- Area
     area_acres DECIMAL(10, 2) NOT NULL,
@@ -26,4 +26,3 @@ CREATE INDEX idx_crops_active ON crops(is_active);
 
 -- Composite index for farm crops queries
 CREATE INDEX idx_crops_farm_active ON crops(farm_id, is_active);
-

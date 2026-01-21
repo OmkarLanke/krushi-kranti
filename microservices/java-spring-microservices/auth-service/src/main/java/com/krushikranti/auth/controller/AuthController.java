@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -208,6 +209,41 @@ public class AuthController {
 
             return ResponseEntity.ok(userInfo);
         } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Batch endpoint for other services to fetch multiple user details at once.
+     * Used for performance optimization to avoid N+1 query problems.
+     * 
+     * @param userIds Comma-separated list of user IDs, or request body with userIds array
+     */
+    @PostMapping("/users/batch")
+    public ResponseEntity<?> getUsersBatch(@RequestBody BatchUserRequest request) {
+        try {
+            if (request.getUserIds() == null || request.getUserIds().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>("User IDs list cannot be empty", null));
+            }
+
+            List<User> users = authService.findByIds(request.getUserIds());
+            
+            List<UserInfo> userInfos = users.stream()
+                    .map(user -> UserInfo.builder()
+                            .id(user.getId())
+                            .username(user.getUsername())
+                            .email(user.getEmail())
+                            .phoneNumber(user.getPhoneNumber())
+                            .role(user.getRole().name())
+                            .isVerified(user.getIsVerified())
+                            .build())
+                    .toList();
+
+            return ResponseEntity.ok(new ApiResponse<>("Users retrieved successfully", userInfos));
+        } catch (Exception e) {
+            log.error("Error fetching batch users: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(e.getMessage(), null));
         }

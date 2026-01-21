@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS field_officer_assignments (
     assignment_id BIGSERIAL PRIMARY KEY,
     field_officer_id BIGINT NOT NULL,
-    farmer_user_id BIGINT NOT NULL, -- Links to auth.users.id (farmer)
+    user_id BIGINT NOT NULL, -- Links to auth.users.user_id (farmer)
     status VARCHAR(20) DEFAULT 'ASSIGNED' CHECK (status IN ('ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')),
     assigned_by_user_id BIGINT, -- Admin who assigned
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS field_officer_assignments (
 
 -- Create indexes
 CREATE INDEX idx_assignments_field_officer_id ON field_officer_assignments(field_officer_id);
-CREATE INDEX idx_assignments_farmer_user_id ON field_officer_assignments(farmer_user_id);
+CREATE INDEX idx_assignments_user_id ON field_officer_assignments(user_id);
 CREATE INDEX idx_assignments_status ON field_officer_assignments(status);
-CREATE UNIQUE INDEX idx_assignments_unique ON field_officer_assignments(field_officer_id, farmer_user_id) WHERE status != 'CANCELLED';
-
+CREATE UNIQUE INDEX idx_assignments_unique ON field_officer_assignments(field_officer_id, user_id) WHERE status != 'CANCELLED';

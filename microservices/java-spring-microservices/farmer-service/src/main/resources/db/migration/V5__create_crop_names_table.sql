@@ -2,10 +2,10 @@
 -- Admin can add/edit/delete crop names which will reflect on farmer app
 CREATE TABLE IF NOT EXISTS crop_names (
     -- Primary Key
-    id BIGSERIAL PRIMARY KEY,
+    crop_name_id BIGSERIAL PRIMARY KEY,
     
     -- Relationship to crop_types
-    crop_type_id BIGINT NOT NULL REFERENCES crop_types(id) ON DELETE CASCADE,
+    crop_type_id BIGINT NOT NULL REFERENCES crop_types(crop_type_id) ON DELETE CASCADE,
     
     -- Name Information
     name VARCHAR(100) NOT NULL,
@@ -36,4 +36,3 @@ CREATE INDEX idx_crop_names_name ON crop_names(name);
 
 -- Composite index for dropdown queries
 CREATE INDEX idx_crop_names_type_active ON crop_names(crop_type_id, is_active, display_order);
-

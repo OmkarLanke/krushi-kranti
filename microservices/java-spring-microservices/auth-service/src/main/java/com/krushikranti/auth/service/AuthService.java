@@ -195,6 +195,17 @@ public class AuthService {
         return userRepository.findById(id);
     }
 
+    /**
+     * Batch fetch users by IDs for performance optimization.
+     * Used by other microservices to fetch multiple user details at once.
+     */
+    public List<User> findByIds(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return List.of();
+        }
+        return userRepository.findByIdIn(userIds);
+    }
+
     public String generateOtpForPhone(String phoneNumber) {
         return otpService.generateOtp(phoneNumber);
     }
