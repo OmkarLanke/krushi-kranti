@@ -40,10 +40,7 @@ public class FarmVerification {
     private LocalDateTime verifiedAt;
 
     @Column(name = "feedback", columnDefinition = "TEXT")
-    private String feedback; // Feedback for rejection or notes
-
-    @Column(name = "rejection_reason", length = 500)
-    private String rejectionReason; // Specific reason if rejected
+    private String feedback; // Notes/feedback for verification
 
     @Column(name = "latitude")
     private Double latitude; // GPS location where verification was done
@@ -71,7 +68,6 @@ public class FarmVerification {
     public enum VerificationStatus {
         PENDING,       // Not yet verified
         VERIFIED,      // Farm verified successfully
-        REJECTED,      // Farm verification rejected
         IN_PROGRESS    // Verification in progress
     }
 }

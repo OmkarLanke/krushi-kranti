@@ -49,6 +49,8 @@ services:
     url: http://localhost:4013
   auth-service:
     url: http://localhost:4005
+  field-officer-service:
+    url: http://localhost:4015
 
 logging:
   level:

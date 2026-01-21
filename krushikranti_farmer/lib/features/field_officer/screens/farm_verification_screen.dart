@@ -85,10 +85,6 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             state.isVerified = true;
             state.selectedStatus = 'VERIFIED';
             print('DEBUG: Farm $farmId marked as VERIFIED');
-          } else if (status == 'REJECTED') {
-            state.isVerified = true;
-            state.selectedStatus = 'REJECTED';
-            print('DEBUG: Farm $farmId marked as REJECTED');
           } else {
             print('DEBUG: Farm $farmId is NOT verified yet');
           }
@@ -107,7 +103,6 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     // Dispose all controllers
     for (var state in _farmVerificationStates.values) {
       state.feedbackController.dispose();
-      state.rejectionReasonController.dispose();
     }
     super.dispose();
   }
@@ -673,20 +668,6 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       print('OTP validation check passed. Proceeding with verification submission...');
     }
 
-    // If rejected, require feedback or rejection reason
-    if (state.selectedStatus == 'REJECTED') {
-      if (state.feedbackController.text.trim().isEmpty &&
-          state.rejectionReasonController.text.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Please provide feedback or rejection reason when rejecting a farm'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        return;
-      }
-    }
 
     setState(() {
       state.isSubmitting = true;
@@ -777,9 +758,6 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         feedback: state.feedbackController.text.trim().isNotEmpty
             ? state.feedbackController.text.trim()
             : null,
-        rejectionReason: state.rejectionReasonController.text.trim().isNotEmpty
-            ? state.rejectionReasonController.text.trim()
-            : null,
         latitude: state.verificationLatitude,
         longitude: state.verificationLongitude,
         photoUrls: photoUrls,
@@ -792,12 +770,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              state.selectedStatus == 'VERIFIED'
-                  ? 'Farm verified successfully!'
-                  : 'Farm rejection recorded successfully!',
-            ),
+          const SnackBar(
+            content: Text('Farm verified successfully!'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -1295,12 +1269,6 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   if (state.selectedStatus != null)
                     _buildFeedbackSection(farmId, state),
 
-                  // Rejection Reason Section
-                  if (state.selectedStatus == 'REJECTED') ...[
-                    const SizedBox(height: 16),
-                    _buildRejectionReasonSection(farmId, state),
-                  ],
-
                   const SizedBox(height: 16),
 
                   // Submit Button for this farm
@@ -1359,17 +1327,13 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                             MainAxisAlignment.center,
                                         children: [
                                           Icon(
-                                            state.selectedStatus == 'REJECTED'
-                                                ? Icons.cancel
-                                                : Icons.check_circle,
+                                            Icons.check_circle,
                                             color: Colors.white,
                                             size: 20,
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            state.selectedStatus == 'REJECTED'
-                                                ? 'Submit Rejection'
-                                                : 'Submit Verification',
+                                            'Submit Verification',
                                             style: GoogleFonts.poppins(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w600,
@@ -1431,25 +1395,19 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(
-                                    state.selectedStatus == 'REJECTED'
-                                        ? Icons.cancel
-                                        : Icons.check_circle,
-                                    color: state.selectedStatus == 'REJECTED'
-                                        ? AppColors.error
-                                        : AppColors.success,
+                                    Icons.check_circle,
+                                    color: AppColors.success,
                                     size: 22,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    'This farm has already been ${state.selectedStatus == 'REJECTED' ? 'rejected' : 'verified'}.',
+                                    'This farm has already been verified.',
                                     style: GoogleFonts.poppins(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: state.selectedStatus == 'REJECTED'
-                                          ? AppColors.error
-                                          : AppColors.success,
+                                      color: AppColors.success,
                                       letterSpacing: 0.1,
                                     ),
                                   ),
@@ -1631,32 +1589,15 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   ],
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatusOption(
-                        farmId,
-                        state,
-                        'VERIFIED',
-                        'Verify',
-                        Icons.check_circle,
-                        AppColors.success,
-                        state.selectedStatus == 'VERIFIED',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatusOption(
-                        farmId,
-                        state,
-                        'REJECTED',
-                        'Reject',
-                        Icons.cancel,
-                        AppColors.error,
-                        state.selectedStatus == 'REJECTED',
-                      ),
-                    ),
-                  ],
+                // Only show Verify option - field officer can only verify farms
+                _buildStatusOption(
+                  farmId,
+                  state,
+                  'VERIFIED',
+                  'Verify',
+                  Icons.check_circle,
+                  AppColors.success,
+                  state.selectedStatus == 'VERIFIED',
                 ),
               ],
             ),
@@ -1688,10 +1629,6 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
               onTap: () {
                 setState(() {
                   state.selectedStatus = value;
-                  // Clear rejection reason if switching to verified
-                  if (value == 'VERIFIED') {
-                    state.rejectionReasonController.clear();
-                  }
                 });
               },
               borderRadius: BorderRadius.circular(14),
@@ -1849,103 +1786,6 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     );
   }
 
-  Widget _buildRejectionReasonSection(int farmId, FarmVerificationState state) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.warning_amber_rounded,
-                        size: 16,
-                        color: AppColors.error,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Rejection Reason *',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Please provide a specific reason for rejection (or use the feedback field above)',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: AppColors.error,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: state.rejectionReasonController,
-                  maxLines: 3,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: const Color(0xFF424242),
-                  ),
-                  decoration: InputDecoration(
-                    hintText:
-                        'e.g., Farm details do not match, Location mismatch, Documents missing, etc.',
-                    hintStyle: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.error.withOpacity(0.03),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          BorderSide(color: AppColors.error.withOpacity(0.3)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          BorderSide(color: AppColors.error.withOpacity(0.3)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.error, width: 2),
-                    ),
-                    contentPadding: const EdgeInsets.all(16),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   /// Build GPS Location and Photo Capture Section
   Widget _buildGpsAndPhotoSection(
@@ -2519,8 +2359,6 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 class FarmVerificationState {
   String? selectedStatus;
   final TextEditingController feedbackController = TextEditingController();
-  final TextEditingController rejectionReasonController =
-      TextEditingController();
   bool isSubmitting = false;
   bool isVerified = false;
   

@@ -71,23 +71,20 @@ public class FarmVerificationService {
                     ". Only assigned field officers can verify farms.");
         }
 
-        // Validation 3: Validate status
+        // Validation 3: Validate status - only VERIFIED is allowed
         FarmVerification.VerificationStatus status;
         try {
             status = FarmVerification.VerificationStatus.valueOf(request.getStatus().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
                     "Invalid verification status: " + request.getStatus() + 
-                    ". Valid values are: VERIFIED, REJECTED, PENDING, IN_PROGRESS");
+                    ". Valid values are: VERIFIED, PENDING, IN_PROGRESS");
         }
-
-        // Validation 4: If rejected, rejection reason or feedback should be provided
-        if (status == FarmVerification.VerificationStatus.REJECTED) {
-            if ((request.getRejectionReason() == null || request.getRejectionReason().trim().isEmpty()) &&
-                (request.getFeedback() == null || request.getFeedback().trim().isEmpty())) {
-                throw new IllegalArgumentException(
-                        "Rejection reason or feedback is required when rejecting a farm.");
-            }
+        
+        // Only VERIFIED status is allowed for field officers
+        if (status != FarmVerification.VerificationStatus.VERIFIED) {
+            throw new IllegalArgumentException(
+                    "Field officers can only verify farms. Status must be VERIFIED.");
         }
 
         // Validation 5: If VERIFIED, photo URLs are required
@@ -126,11 +123,9 @@ public class FarmVerificationService {
             verification = existingVerification.get();
             verification.setVerificationStatus(status);
             verification.setFeedback(request.getFeedback());
-            verification.setRejectionReason(request.getRejectionReason());
             verification.setLatitude(request.getLatitude());
             verification.setLongitude(request.getLongitude());
-            if (status == FarmVerification.VerificationStatus.VERIFIED || 
-                status == FarmVerification.VerificationStatus.REJECTED) {
+            if (status == FarmVerification.VerificationStatus.VERIFIED) {
                 verification.setVerifiedAt(LocalDateTime.now());
             }
             log.info("Updating existing verification ID: {}", verification.getId());
@@ -141,11 +136,9 @@ public class FarmVerificationService {
                     .fieldOfficerId(fieldOfficer.getId())
                     .verificationStatus(status)
                     .feedback(request.getFeedback())
-                    .rejectionReason(request.getRejectionReason())
                     .latitude(request.getLatitude())
                     .longitude(request.getLongitude())
-                    .verifiedAt((status == FarmVerification.VerificationStatus.VERIFIED || 
-                                status == FarmVerification.VerificationStatus.REJECTED) 
+                    .verifiedAt(status == FarmVerification.VerificationStatus.VERIFIED 
                             ? LocalDateTime.now() 
                             : null)
                     .build();
@@ -180,9 +173,6 @@ public class FarmVerificationService {
             updateAssignmentStatusAfterVerification(assignmentOpt.get(), fieldOfficer.getId());
             // Update farm verification status in farmer-service
             updateFarmVerificationStatusInFarmerService(request.getFarmId(), true, fieldOfficer.getUserId(), request.getFeedback());
-        } else if (status == FarmVerification.VerificationStatus.REJECTED) {
-            // If rejected, mark as not verified in farmer-service
-            updateFarmVerificationStatusInFarmerService(request.getFarmId(), false, null, request.getRejectionReason());
         }
 
         return VerifyFarmResponse.builder()
@@ -191,7 +181,6 @@ public class FarmVerificationService {
                 .fieldOfficerId(saved.getFieldOfficerId())
                 .status(saved.getVerificationStatus().name())
                 .feedback(saved.getFeedback())
-                .rejectionReason(saved.getRejectionReason())
                 .latitude(saved.getLatitude())
                 .longitude(saved.getLongitude())
                 .verifiedAt(saved.getVerifiedAt())
@@ -217,7 +206,6 @@ public class FarmVerificationService {
                 .fieldOfficerId(v.getFieldOfficerId())
                 .status(v.getVerificationStatus().name())
                 .feedback(v.getFeedback())
-                .rejectionReason(v.getRejectionReason())
                 .latitude(v.getLatitude())
                 .longitude(v.getLongitude())
                 .verifiedAt(v.getVerifiedAt())
