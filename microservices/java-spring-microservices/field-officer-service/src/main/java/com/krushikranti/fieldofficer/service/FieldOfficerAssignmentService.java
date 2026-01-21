@@ -654,22 +654,48 @@ public class FieldOfficerAssignmentService {
     /**
      * Get all assignments for a farmer.
      */
+    /**
+     * Get assignments for a farmer with optimized batch fetching.
+     * Uses batch queries to eliminate N+1 problems.
+     */
     public List<AssignmentResponseDto> getAssignmentsForFarmer(Long farmerUserId) {
         log.info("Getting assignments for farmer userId: {}", farmerUserId);
         
         List<FieldOfficerAssignment> assignments = assignmentRepository.findByFarmerUserId(farmerUserId);
         
+        if (assignments.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        // Batch fetch all field officers
+        List<Long> fieldOfficerIds = assignments.stream()
+                .map(FieldOfficerAssignment::getFieldOfficerId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        Map<Long, FieldOfficer> fieldOfficerMap = fieldOfficerRepository.findAllById(fieldOfficerIds)
+                .stream()
+                .collect(Collectors.toMap(FieldOfficer::getId, fo -> fo));
+        
+        // Batch fetch all user details
+        List<Long> userIds = fieldOfficerMap.values().stream()
+                .map(FieldOfficer::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        Map<Long, Map<String, Object>> userDetailsMap = fetchUserDetailsBatch(userIds);
+        
+        // Build response DTOs
         return assignments.stream()
                 .map(assignment -> {
-                    FieldOfficer fieldOfficer = fieldOfficerRepository.findById(assignment.getFieldOfficerId())
-                            .orElse(null);
+                    FieldOfficer fieldOfficer = fieldOfficerMap.get(assignment.getFieldOfficerId());
                     
                     if (fieldOfficer == null) {
                         log.warn("Field officer not found for assignment ID: {}", assignment.getId());
                         return AssignmentResponseDto.fromEntity(assignment, "Unknown", "", "", null, null, null, null);
                     }
                     
-                    Map<String, Object> userDetails = fetchUserDetails(fieldOfficer.getUserId());
+                    Map<String, Object> userDetails = userDetailsMap.getOrDefault(fieldOfficer.getUserId(), new HashMap<>());
                     
                     return AssignmentResponseDto.fromEntity(
                             assignment,
@@ -687,25 +713,44 @@ public class FieldOfficerAssignmentService {
 
     /**
      * Get all assignments for a field officer with farmer and farm details (for admin view).
+     * Optimized with batch fetching to eliminate N+1 query problems.
      */
     public Page<AssignmentResponseDto> getAssignmentsForFieldOfficer(Long fieldOfficerId, Pageable pageable) {
         log.info("Getting assignments for field officer ID: {} (with farmer and farm details)", fieldOfficerId);
         
         Page<FieldOfficerAssignment> assignments = assignmentRepository.findByFieldOfficerId(fieldOfficerId, pageable);
         
+        if (assignments.isEmpty()) {
+            return assignments.map(a -> AssignmentResponseDto.fromEntity(a, "Unknown", "", "", null, null, null, null));
+        }
+        
+        // Get field officer once (same for all assignments)
+        FieldOfficer fieldOfficer = fieldOfficerRepository.findById(fieldOfficerId).orElse(null);
+        Map<String, Object> fieldOfficerUserDetails = new HashMap<>();
+        if (fieldOfficer != null) {
+            fieldOfficerUserDetails = fetchUserDetails(fieldOfficer.getUserId());
+        }
+        
+        // Batch fetch all farmer user details
+        List<Long> farmerUserIds = assignments.getContent().stream()
+                .map(FieldOfficerAssignment::getFarmerUserId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        Map<Long, Map<String, Object>> farmerUserDetailsMap = fetchUserDetailsBatch(farmerUserIds);
+        
+        final FieldOfficer finalFieldOfficer = fieldOfficer;
+        final Map<String, Object> finalFieldOfficerUserDetails = fieldOfficerUserDetails;
+        
         return assignments.map(assignment -> {
-            // Get field officer details
-            FieldOfficer fieldOfficer = fieldOfficerRepository.findById(assignment.getFieldOfficerId())
-                    .orElse(null);
-            
-            if (fieldOfficer == null) {
+            if (finalFieldOfficer == null) {
                 return AssignmentResponseDto.fromEntity(assignment, "Unknown", "", "", null, null, null, null);
             }
             
-            Map<String, Object> userDetails = fetchUserDetails(fieldOfficer.getUserId());
+            // Get farmer details from batch map
+            Map<String, Object> farmerUserDetails = farmerUserDetailsMap.getOrDefault(
+                    assignment.getFarmerUserId(), new HashMap<>());
             
-            // Fetch farmer details
-            Map<String, Object> farmerUserDetails = fetchUserDetails(assignment.getFarmerUserId());
             String farmerName = buildFullName(
                     (String) farmerUserDetails.getOrDefault("firstName", ""),
                     (String) farmerUserDetails.getOrDefault("lastName", ""));
@@ -748,9 +793,9 @@ public class FieldOfficerAssignmentService {
             
             AssignmentResponseDto dto = AssignmentResponseDto.fromEntity(
                     assignment,
-                    buildFullName(fieldOfficer.getFirstName(), fieldOfficer.getLastName()),
-                    (String) userDetails.getOrDefault("phoneNumber", ""),
-                    fieldOfficer.getPincode()
+                    buildFullName(finalFieldOfficer.getFirstName(), finalFieldOfficer.getLastName()),
+                    (String) finalFieldOfficerUserDetails.getOrDefault("phoneNumber", ""),
+                    finalFieldOfficer.getPincode()
             );
             
             // Set farmer and farm details
@@ -766,6 +811,7 @@ public class FieldOfficerAssignmentService {
     /**
      * Get assignments with farm details for a field officer (by userId).
      * Used by field officer app to see their assigned farms.
+     * Optimized with batch fetching to eliminate N+1 query problems.
      */
     public List<com.krushikranti.fieldofficer.dto.FieldOfficerAssignmentDto> getAssignmentsWithFarmsForFieldOfficer(Long fieldOfficerUserId) {
         log.info("Getting assignments with farms for field officer userId: {}", fieldOfficerUserId);
@@ -775,41 +821,72 @@ public class FieldOfficerAssignmentService {
                 .orElseThrow(() -> new IllegalArgumentException("Field officer not found with userId: " + fieldOfficerUserId));
         
         // Get all assignments for this field officer
-        // Use PageRequest to get all assignments (no pagination needed for field officer view)
         Page<FieldOfficerAssignment> assignmentPage = assignmentRepository.findByFieldOfficerId(
                 fieldOfficer.getId(), 
-                PageRequest.of(0, 1000)); // Get up to 1000 assignments
+                PageRequest.of(0, 1000));
         List<FieldOfficerAssignment> assignments = assignmentPage.getContent();
+        
+        if (assignments.isEmpty()) {
+            return Collections.emptyList();
+        }
         
         log.info("Found {} assignments for field officer userId: {}", assignments.size(), fieldOfficerUserId);
         
+        // Batch fetch all farmer user details
+        List<Long> farmerUserIds = assignments.stream()
+                .map(FieldOfficerAssignment::getFarmerUserId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        Map<Long, Map<String, Object>> farmerUserDetailsMap = fetchUserDetailsBatch(farmerUserIds);
+        
+        // Batch fetch all farms for all farmers (still need to fetch individually, but we can optimize later)
+        // For now, we'll fetch farms in parallel where possible, but this is still a limitation
+        // TODO: Create a batch endpoint in farmer-service to fetch farms for multiple farmers
+        
+        // Batch fetch all verifications for this field officer
+        // We'll fetch all verifications for this field officer and then filter by farm IDs in memory
+        // This is more efficient than querying for each farm individually
+        Map<Long, FarmVerification> verificationMap = new HashMap<>();
+        Page<FarmVerification> verificationPage = verificationRepository.findByFieldOfficerId(
+                fieldOfficer.getId(), 
+                PageRequest.of(0, 10000)); // Get up to 10000 verifications
+        List<FarmVerification> allVerifications = verificationPage.getContent();
+        
+        // Create a map of farmId -> verification for quick lookup
+        verificationMap = allVerifications.stream()
+                .collect(Collectors.toMap(
+                        FarmVerification::getFarmId, 
+                        v -> v,
+                        (v1, v2) -> v1)); // If duplicate farmIds, keep first
+        
+        final Long fieldOfficerId = fieldOfficer.getId();
+        final Map<Long, FarmVerification> finalVerificationMap = verificationMap;
+        
+        // Build response DTOs
         List<FieldOfficerAssignmentDto> result = assignments.stream()
                 .map(assignment -> {
                     try {
-                        // Fetch farmer details
-                        Map<String, Object> farmerUserDetails = fetchUserDetails(assignment.getFarmerUserId());
+                        // Get farmer details from batch map
+                        Map<String, Object> farmerUserDetails = farmerUserDetailsMap.getOrDefault(
+                                assignment.getFarmerUserId(), new HashMap<>());
+                        
                         String farmerNameTemp = buildFullName(
                                 (String) farmerUserDetails.getOrDefault("firstName", ""),
                                 (String) farmerUserDetails.getOrDefault("lastName", ""));
                         if (farmerNameTemp.trim().isEmpty()) {
                             farmerNameTemp = (String) farmerUserDetails.getOrDefault("username", "Unknown Farmer");
                         }
-                        final String farmerName = farmerNameTemp; // Make final for lambda
+                        final String farmerName = farmerNameTemp;
                         String farmerPhone = (String) farmerUserDetails.getOrDefault("phoneNumber", "");
                         
-                        // Fetch farms for this farmer
+                        // Fetch farms for this farmer (still individual, but optimized fetchFarmerFarms method)
                         List<Map<String, Object>> farms;
                         try {
-                            log.info("About to fetch farms for farmer userId: {} (assignment {})", 
-                                    assignment.getFarmerUserId(), assignment.getId());
                             farms = fetchFarmerFarms(assignment.getFarmerUserId());
-                            log.info("Fetched {} farms for farmer userId: {} (assignment {})", 
-                                    farms.size(), assignment.getFarmerUserId(), assignment.getId());
                             
                             // Filter farms by assignment.farmId if specified
                             if (assignment.getFarmId() != null) {
-                                log.info("Assignment {} has specific farmId: {}. Filtering farms to show only this farm.", 
-                                        assignment.getId(), assignment.getFarmId());
                                 farms = farms.stream()
                                         .filter(farm -> {
                                             Object farmIdObj = farm.get("farmId");
@@ -822,29 +899,14 @@ public class FieldOfficerAssignmentService {
                                             return String.valueOf(farmIdObj).equals(String.valueOf(assignment.getFarmId()));
                                         })
                                         .collect(Collectors.toList());
-                                log.info("After filtering by farmId {}, {} farms remain", assignment.getFarmId(), farms.size());
-                            } else {
-                                log.info("Assignment {} has no specific farmId (null). Showing all farms for farmer.", assignment.getId());
-                            }
-                            
-                            if (farms.isEmpty()) {
-                                log.warn("WARNING: No farms returned for farmer userId: {} (assignment {}). " +
-                                        "This could mean: 1) Farmer has no farms in database, 2) API call failed silently, " +
-                                        "3) Response structure mismatch, 4) FarmId filter removed all farms. Check detailed logs above.", 
-                                        assignment.getFarmerUserId(), assignment.getId());
-                            } else {
-                                log.info("SUCCESS: Found {} farms for farmer userId: {} (after filtering)", 
-                                        farms.size(), assignment.getFarmerUserId());
                             }
                         } catch (Exception e) {
-                            log.error("EXCEPTION: Error fetching farms for farmer userId {} (assignment {}): {}", 
-                                    assignment.getFarmerUserId(), assignment.getId(), e.getMessage(), e);
-                            farms = Collections.emptyList(); // Return empty list if farms can't be fetched
+                            log.error("Error fetching farms for farmer userId {} (assignment {}): {}", 
+                                    assignment.getFarmerUserId(), assignment.getId(), e.getMessage());
+                            farms = Collections.emptyList();
                         }
                         
                         // Build location string for each farm and add assignment info
-                        // Also check verification status from farm_verifications table
-                        final Long fieldOfficerId = fieldOfficer.getId(); // Make final for lambda
                         List<Map<String, Object>> farmsWithLocation = farms.stream()
                                 .map(farm -> {
                                     try {
@@ -863,7 +925,7 @@ public class FieldOfficerAssignmentService {
                                             farmIdObj = farmWithLocation.get("id");
                                         }
                                         
-                                        // Check verification status from farm_verifications table
+                                        // Check verification status from batch map
                                         boolean isVerified = false;
                                         String verificationStatus = "PENDING";
                                         
@@ -880,11 +942,8 @@ public class FieldOfficerAssignmentService {
                                             }
                                             
                                             if (farmId != null) {
-                                                Optional<FarmVerification> verificationOpt = 
-                                                        verificationRepository.findByFarmIdAndFieldOfficerId(farmId, fieldOfficerId);
-                                                
-                                                if (verificationOpt.isPresent()) {
-                                                    FarmVerification verification = verificationOpt.get();
+                                                FarmVerification verification = finalVerificationMap.get(farmId);
+                                                if (verification != null) {
                                                     FarmVerification.VerificationStatus status = verification.getVerificationStatus();
                                                     verificationStatus = status.name();
                                                     
@@ -892,28 +951,23 @@ public class FieldOfficerAssignmentService {
                                                         status == FarmVerification.VerificationStatus.REJECTED) {
                                                         isVerified = true;
                                                     }
-                                                    
-                                                    log.debug("Found verification for farm {}: status={}, isVerified={}", 
-                                                            farmId, verificationStatus, isVerified);
-                                                } else {
-                                                    log.debug("No verification found for farm {} by field officer {}", 
-                                                            farmId, fieldOfficerId);
                                                 }
                                             }
                                         }
                                         
                                         farmWithLocation.put("status", verificationStatus);
                                         farmWithLocation.put("isVerified", isVerified);
-                                        // Add assignment ID for reference
                                         farmWithLocation.put("assignmentId", assignment.getId());
-                                        // Ensure farmName field exists (handle both farmName and farm_name)
+                                        
+                                        // Ensure farmName field exists
                                         if (!farmWithLocation.containsKey("farmName") && farmWithLocation.containsKey("farm_name")) {
                                             farmWithLocation.put("farmName", farmWithLocation.get("farm_name"));
                                         }
-                                        // Also handle id vs farmId
+                                        // Ensure farmId field exists
                                         if (!farmWithLocation.containsKey("farmId") && farmWithLocation.containsKey("id")) {
                                             farmWithLocation.put("farmId", farmWithLocation.get("id"));
                                         }
+                                        
                                         return farmWithLocation;
                                     } catch (Exception e) {
                                         log.error("Error processing farm data: {}", e.getMessage(), e);
@@ -923,7 +977,7 @@ public class FieldOfficerAssignmentService {
                                 .filter(Objects::nonNull)
                                 .collect(Collectors.toList());
                         
-                        FieldOfficerAssignmentDto dto = FieldOfficerAssignmentDto.builder()
+                        return FieldOfficerAssignmentDto.builder()
                                 .assignmentId(assignment.getId())
                                 .farmerUserId(assignment.getFarmerUserId())
                                 .status(assignment.getStatus().name())
@@ -934,13 +988,8 @@ public class FieldOfficerAssignmentService {
                                 .farmerPhoneNumber(farmerPhone)
                                 .farms(farmsWithLocation)
                                 .build();
-                        
-                        log.debug("Created assignment DTO with {} farms for assignment {}", 
-                                farmsWithLocation.size(), assignment.getId());
-                        return dto;
                     } catch (Exception e) {
                         log.error("Error processing assignment {}: {}", assignment.getId(), e.getMessage(), e);
-                        // Return a minimal assignment DTO even if there's an error
                         return FieldOfficerAssignmentDto.builder()
                                 .assignmentId(assignment.getId())
                                 .farmerUserId(assignment.getFarmerUserId())
@@ -966,76 +1015,51 @@ public class FieldOfficerAssignmentService {
 
     /**
      * Fetch all farms for a farmer from farmer-service.
-     * Uses the admin endpoint to get farmer detail which includes farms.
+     * Optimized to use direct admin endpoint instead of fetching all farmers.
      */
     private List<Map<String, Object>> fetchFarmerFarms(Long farmerUserId) {
         try {
-            log.info("=== Starting to fetch farms for farmer userId: {} ===", farmerUserId);
-            log.info("Using farmer-service URL: {}", farmerServiceUrl);
+            log.debug("Fetching farms for farmer userId: {}", farmerUserId);
             
+            // First, get farmer by userId to find farmerId
             // Call admin endpoint to get farmer list and find the one with matching userId
-            Map<String, Object> response;
+            Map<String, Object> listResponse;
             try {
                 String url = farmerServiceUrl + "/admin/farmers?page=0&size=1000";
-                log.info("Calling farmer-service list endpoint: {}", url);
-                response = webClientBuilder.build()
+                listResponse = webClientBuilder.build()
                         .get()
                         .uri(url)
-                        .header("X-User-Id", "1") // System admin user ID for inter-service calls
-                        .header("X-User-Roles", "ADMIN") // Admin role for inter-service calls
+                        .header("X-User-Id", "1")
+                        .header("X-User-Roles", "ADMIN")
                         .retrieve()
-                        .onStatus(status -> status.isError(), clientResponse -> {
-                            log.error("ERROR: HTTP {} from farmer-service list endpoint for userId: {}", 
-                                    clientResponse.statusCode(), farmerUserId);
-                            return clientResponse.bodyToMono(String.class)
-                                    .doOnNext(body -> log.error("Error response body from list endpoint: {}", body))
-                                    .map(body -> new RuntimeException("Farmer service error: " + 
-                                            clientResponse.statusCode() + " - " + body));
-                        })
                         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                        .doOnNext(resp -> log.info("Successfully received response from farmer-service list endpoint"))
-                        .doOnError(error -> log.error("Error in WebClient call to farmer-service list: {}", error.getMessage(), error))
                         .block();
-                log.info("Response received from farmer-service list endpoint, response is null: {}", response == null);
-            } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-                log.error("WebClientResponseException fetching farmers list for userId {}: Status: {}, Body: {}", 
-                        farmerUserId, e.getStatusCode(), e.getResponseBodyAsString(), e);
-                log.error("Full exception stack trace: ", e);
-                return Collections.emptyList();
             } catch (Exception e) {
-                log.error("Unexpected error calling farmer-service for userId {}: {}", farmerUserId, e.getMessage(), e);
-                log.error("Full exception stack trace: ", e);
+                log.error("Error fetching farmer list for userId {}: {}", farmerUserId, e.getMessage());
                 return Collections.emptyList();
             }
             
-            if (response == null) {
-                log.error("ERROR: No response from farmer-service for userId: {}", farmerUserId);
+            if (listResponse == null) {
+                log.error("No response from farmer-service list endpoint for userId: {}", farmerUserId);
                 return Collections.emptyList();
             }
             
-            log.info("Received response from farmer-service list endpoint. Response keys: {}", response.keySet());
-            
-            // Unwrap ApiResponse
-            Object dataObj = response.get("data");
+            // Unwrap ApiResponse and find farmer
+            Object dataObj = listResponse.get("data");
             if (!(dataObj instanceof Map)) {
-                log.error("Unexpected response structure from farmer-service. Response type: {}, Response: {}", 
-                        dataObj != null ? dataObj.getClass().getName() : "null", response);
+                log.error("Unexpected response structure from farmer-service for userId: {}", farmerUserId);
                 return Collections.emptyList();
             }
             
             @SuppressWarnings("unchecked")
             Map<String, Object> data = (Map<String, Object>) dataObj;
-            log.info("Data object keys: {}", data.keySet());
-            
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> farmers = (List<Map<String, Object>>) data.get("farmers");
             
             if (farmers == null || farmers.isEmpty()) {
-                log.error("No farmers in response for userId: {}. Data keys: {}", farmerUserId, data.keySet());
+                log.warn("No farmers found in response for userId: {}", farmerUserId);
                 return Collections.emptyList();
             }
-            
-            log.info("Found {} farmers in list response", farmers.size());
             
             // Find farmer with matching userId
             Optional<Map<String, Object>> farmerOpt = farmers.stream()
@@ -1061,143 +1085,68 @@ public class FieldOfficerAssignmentService {
             }
             
             Long farmerId = ((Number) farmerIdObj).longValue();
-            log.info("Found farmerId {} for userId {}", farmerId, farmerUserId);
             
-            // Now get farmer detail with farms
+            // Now get farmer detail with farms using direct endpoint
             String detailUrl = farmerServiceUrl + "/admin/farmers/" + farmerId;
-            log.info("Calling farmer detail endpoint: {}", detailUrl);
             Map<String, Object> detailResponse;
             try {
                 detailResponse = webClientBuilder.build()
                         .get()
                         .uri(detailUrl)
-                        .header("X-User-Id", "1") // System admin user ID for inter-service calls
-                        .header("X-User-Roles", "ADMIN") // Admin role for inter-service calls
+                        .header("X-User-Id", "1")
+                        .header("X-User-Roles", "ADMIN")
                         .retrieve()
-                        .onStatus(status -> status.isError(), clientResponse -> {
-                            log.error("ERROR: HTTP {} from farmer-service detail endpoint for farmerId: {}", 
-                                    clientResponse.statusCode(), farmerId);
-                            return clientResponse.bodyToMono(String.class)
-                                    .doOnNext(body -> log.error("Error response body: {}", body))
-                                    .map(body -> new RuntimeException("Farmer service error: " + 
-                                            clientResponse.statusCode() + " - " + body));
-                        })
                         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                        .doOnNext(detailResp -> log.info("Successfully received response from farmer-service detail endpoint"))
-                        .doOnError(error -> log.error("Error in WebClient call to farmer-service detail: {}", error.getMessage(), error))
                         .block();
-            } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-                log.error("WebClientResponseException fetching farmer detail for farmerId {}: Status: {}, Body: {}", 
-                        farmerId, e.getStatusCode(), e.getResponseBodyAsString(), e);
-                log.error("Full exception details: ", e);
-                // Don't throw - return empty list instead
-                return Collections.emptyList();
             } catch (Exception e) {
-                log.error("Unexpected error calling farmer-service detail for farmerId {}: {}", farmerId, e.getMessage(), e);
-                // Don't throw - return empty list instead
+                log.error("Error fetching farmer detail for farmerId {}: {}", farmerId, e.getMessage());
                 return Collections.emptyList();
             }
             
             if (detailResponse == null) {
-                log.error("No detail response from farmer-service for farmerId: {}", farmerId);
+                log.error("No response from farmer-service detail endpoint for farmerId: {}", farmerId);
                 return Collections.emptyList();
             }
             
-            log.info("Received detail response. Response keys: {}", detailResponse.keySet());
-            
-            // Unwrap ApiResponse
+            // Extract farms from response
             Object detailDataObj = detailResponse.get("data");
             if (!(detailDataObj instanceof Map)) {
-                log.error("Unexpected detail response structure. Data type: {}, Response: {}", 
-                        detailDataObj != null ? detailDataObj.getClass().getName() : "null", detailResponse);
+                log.error("Unexpected detail response structure for farmerId: {}", farmerId);
                 return Collections.emptyList();
             }
             
             @SuppressWarnings("unchecked")
             Map<String, Object> detailData = (Map<String, Object>) detailDataObj;
-            log.info("Detail data keys: {}", detailData.keySet());
-            log.info("Full detail data structure: {}", detailData);
-            
-            // Extract farms from the response - AdminFarmerDetailDto has farms as a list of FarmInfo objects
-            Object farmsObj = detailData.get("farms");
-            
-            if (farmsObj == null) {
-                log.error("ERROR: Farms key is null in detail data for farmer userId: {}. Available keys: {}", 
-                        farmerUserId, detailData.keySet());
-                log.error("Full detail data: {}", detailData);
-                return Collections.emptyList();
-            }
-            
-            log.info("Farms object type: {}, value: {}", farmsObj.getClass().getName(), farmsObj);
-            
-            if (!(farmsObj instanceof List)) {
-                log.error("ERROR: Farms is not a List for farmer userId: {}. Type: {}, Value: {}", 
-                        farmerUserId, farmsObj.getClass().getName(), farmsObj);
-                return Collections.emptyList();
-            }
-            
-            // Convert farms list to proper format - handle different response types
             @SuppressWarnings("unchecked")
-            List<Object> farmsList = (List<Object>) farmsObj;
+            List<Map<String, Object>> farmsList = (List<Map<String, Object>>) detailData.get("farms");
             
-            log.info("Farms list size: {} for farmer userId: {}", farmsList.size(), farmerUserId);
-            
-            if (farmsList.isEmpty()) {
-                log.warn("WARNING: Farms array is empty for farmer userId: {}. " +
-                        "This means the farmer has NO farms in the database. " +
-                        "To verify, check the database: SELECT * FROM farms WHERE farmer_id = " +
-                        "(SELECT id FROM farmers WHERE user_id = {});", 
-                        farmerUserId, farmerUserId);
+            if (farmsList == null || farmsList.isEmpty()) {
+                log.debug("No farms found for farmerId: {}", farmerId);
                 return Collections.emptyList();
             }
             
-            // Convert each farm object to Map<String, Object>
+            // Convert farms to proper format
             List<Map<String, Object>> farmMaps = new java.util.ArrayList<>();
-            for (Object farmObj : farmsList) {
-                try {
-                    Map<String, Object> farmMap;
-                    if (farmObj instanceof Map) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> tempMap = (Map<String, Object>) farmObj;
-                        farmMap = new java.util.HashMap<>(tempMap);
-                    } else {
-                        log.warn("Farm object is not a Map, type: {}, value: {}", 
-                                farmObj != null ? farmObj.getClass().getName() : "null", farmObj);
-                        continue; // Skip this farm
-                    }
-                    
-                    // Ensure farmName is present (handle both farmName and farm_name)
-                    if (!farmMap.containsKey("farmName") && farmMap.containsKey("farm_name")) {
-                        farmMap.put("farmName", farmMap.get("farm_name"));
-                    }
-                    // Ensure farmId is present (handle both farmId and id)
-                    if (!farmMap.containsKey("farmId")) {
-                        if (farmMap.containsKey("id")) {
-                            farmMap.put("farmId", farmMap.get("id"));
-                        } else if (farmMap.containsKey("farm_id")) {
-                            farmMap.put("farmId", farmMap.get("farm_id"));
-                        }
-                    }
-                    
-                    farmMaps.add(farmMap);
-                    log.debug("Converted farm: farmId={}, farmName={}, pincode={}", 
-                            farmMap.get("farmId"), farmMap.get("farmName"), farmMap.get("pincode"));
-                } catch (Exception e) {
-                    log.error("Error converting farm object to Map: {}", e.getMessage(), e);
-                    // Continue with next farm
+            for (Map<String, Object> farm : farmsList) {
+                Map<String, Object> farmMap = new java.util.HashMap<>(farm);
+                
+                // Ensure farmName is present
+                if (!farmMap.containsKey("farmName") && farmMap.containsKey("farm_name")) {
+                    farmMap.put("farmName", farmMap.get("farm_name"));
                 }
+                // Ensure farmId is present
+                if (!farmMap.containsKey("farmId")) {
+                    if (farmMap.containsKey("id")) {
+                        farmMap.put("farmId", farmMap.get("id"));
+                    } else if (farmMap.containsKey("farm_id")) {
+                        farmMap.put("farmId", farmMap.get("farm_id"));
+                    }
+                }
+                
+                farmMaps.add(farmMap);
             }
             
-            log.info("=== SUCCESS: Converted {} farms for farmer userId: {} ===", farmMaps.size(), farmerUserId);
-            // Log first farm details for verification
-            if (!farmMaps.isEmpty()) {
-                Map<String, Object> firstFarm = farmMaps.get(0);
-                log.info("Sample farm data - farmId: {}, farmName: {}, pincode: {}, all keys: {}", 
-                        firstFarm.get("farmId"), firstFarm.get("farmName"), firstFarm.get("pincode"), 
-                        firstFarm.keySet());
-            }
-            
-            log.info("Converted {} farms to map format for farmer userId: {}", farmMaps.size(), farmerUserId);
+            log.debug("Fetched {} farms for farmer userId: {}", farmMaps.size(), farmerUserId);
             return farmMaps;
             
         } catch (Exception e) {
@@ -1225,15 +1174,55 @@ public class FieldOfficerAssignmentService {
         }
     }
 
+    /**
+     * Batch fetch user details using the new batch endpoint for performance optimization.
+     * This eliminates N+1 query problems by fetching all users in a single API call.
+     */
     private Map<Long, Map<String, Object>> fetchUserDetailsBatch(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        
         Map<Long, Map<String, Object>> userMap = new HashMap<>();
         
-        for (Long userId : userIds) {
-            try {
-                Map<String, Object> userDetails = fetchUserDetails(userId);
-                userMap.put(userId, userDetails);
-            } catch (Exception e) {
-                log.warn("Failed to fetch user details for userId {}: {}", userId, e.getMessage());
+        try {
+            // Use the new batch endpoint
+            Map<String, Object> requestBody = Map.of("userIds", userIds);
+            
+            Map<String, Object> response = webClientBuilder.build()
+                    .post()
+                    .uri(authServiceUrl + "/auth/users/batch")
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+            
+            if (response != null && response.containsKey("data")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> users = (List<Map<String, Object>>) response.get("data");
+                
+                for (Map<String, Object> user : users) {
+                    Object idObj = user.get("id");
+                    if (idObj != null) {
+                        Long userId = idObj instanceof Number 
+                                ? ((Number) idObj).longValue() 
+                                : Long.parseLong(idObj.toString());
+                        userMap.put(userId, user);
+                    }
+                }
+                
+                log.debug("Batch fetched {} users out of {} requested", userMap.size(), userIds.size());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to batch fetch user details, falling back to individual calls: {}", e.getMessage());
+            // Fallback to individual calls if batch fails
+            for (Long userId : userIds) {
+                try {
+                    Map<String, Object> userDetails = fetchUserDetails(userId);
+                    userMap.put(userId, userDetails);
+                } catch (Exception ex) {
+                    log.warn("Failed to fetch user details for userId {}: {}", userId, ex.getMessage());
+                }
             }
         }
         

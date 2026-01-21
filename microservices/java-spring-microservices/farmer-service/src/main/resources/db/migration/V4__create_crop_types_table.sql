@@ -2,7 +2,7 @@
 -- Admin can add/edit/delete crop types which will reflect on farmer app
 CREATE TABLE IF NOT EXISTS crop_types (
     -- Primary Key
-    id BIGSERIAL PRIMARY KEY,
+    crop_type_id BIGSERIAL PRIMARY KEY,
     
     -- Type Information
     type_name VARCHAR(50) NOT NULL UNIQUE,
@@ -25,4 +25,3 @@ CREATE TABLE IF NOT EXISTS crop_types (
 CREATE INDEX idx_crop_types_active ON crop_types(is_active);
 CREATE INDEX idx_crop_types_order ON crop_types(display_order);
 CREATE INDEX idx_crop_types_name ON crop_types(type_name);
-
