@@ -498,26 +498,48 @@ public class AdminFarmerService {
                 return AssignmentSummary.empty(0);
             }
             
-            // Count assigned farms (assignments with farmId and status != CANCELLED)
-            long assignedFarmsCount = assignments.stream()
-                    .filter(assignment -> {
-                        Object farmId = assignment.get("farmId");
-                        Object status = assignment.get("status");
-                        return farmId != null && 
-                               !"CANCELLED".equalsIgnoreCase(String.valueOf(status));
-                    })
-                    .count();
-            
-            // Get total farms count from farm repository
+            // Get total farms count from farm repository (needed to interpret "all farms" assignments)
             Optional<Farmer> farmerOpt = farmerRepository.findByUserId(farmerUserId);
             int totalFarmsCount = 0;
             if (farmerOpt.isPresent()) {
                 totalFarmsCount = (int) farmRepository.countByFarmerId(farmerOpt.get().getId());
             }
-            
-            boolean hasAllFarmsAssigned = totalFarmsCount > 0 && assignedFarmsCount == totalFarmsCount;
-            boolean hasPartialAssignment = assignedFarmsCount > 0 && assignedFarmsCount < totalFarmsCount;
-            
+
+            // Check if there is an "all farms" assignment (farmId == null and status != CANCELLED)
+            boolean hasGlobalAssignment = assignments.stream()
+                    .anyMatch(assignment -> {
+                        Object farmId = assignment.get("farmId");
+                        Object status = assignment.get("status");
+                        return farmId == null &&
+                               status != null &&
+                               !"CANCELLED".equalsIgnoreCase(String.valueOf(status));
+                    });
+
+            long assignedFarmsCount;
+            boolean hasAllFarmsAssigned;
+            boolean hasPartialAssignment;
+
+            if (hasGlobalAssignment) {
+                // At least one active assignment applies to all farms of this farmer
+                assignedFarmsCount = totalFarmsCount;
+                hasAllFarmsAssigned = totalFarmsCount > 0;
+                hasPartialAssignment = false;
+            } else {
+                // Count farm-specific assignments (assignments with farmId and status != CANCELLED)
+                assignedFarmsCount = assignments.stream()
+                        .filter(assignment -> {
+                            Object farmId = assignment.get("farmId");
+                            Object status = assignment.get("status");
+                            return farmId != null &&
+                                   status != null &&
+                                   !"CANCELLED".equalsIgnoreCase(String.valueOf(status));
+                        })
+                        .count();
+
+                hasAllFarmsAssigned = totalFarmsCount > 0 && assignedFarmsCount == totalFarmsCount;
+                hasPartialAssignment = assignedFarmsCount > 0 && assignedFarmsCount < totalFarmsCount;
+            }
+
             return new AssignmentSummary(
                     (int) assignedFarmsCount,
                     totalFarmsCount,

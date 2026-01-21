@@ -19,11 +19,9 @@ public class VerifyFarmRequest {
     private Long farmId;
     
     @NotNull(message = "Verification status is required")
-    private String status; // VERIFIED, REJECTED
+    private String status; // VERIFIED only
     
-    private String feedback; // Notes/feedback for verification or rejection
-    
-    private String rejectionReason; // Specific reason if rejected
+    private String feedback; // Notes/feedback for verification
     
     private Double latitude; // GPS latitude (optional)
     
