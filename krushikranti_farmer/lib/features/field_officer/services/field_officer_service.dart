@@ -36,9 +36,8 @@ class FieldOfficerService {
   /// Verify a farm
   static Future<Map<String, dynamic>> verifyFarm({
     required String farmId,
-    required String status, // VERIFIED, REJECTED
+    required String status, // VERIFIED only
     String? feedback,
-    String? rejectionReason,
     List<String>? photoUrls,
     double? latitude,
     double? longitude,
@@ -46,15 +45,11 @@ class FieldOfficerService {
     try {
       final requestBody = <String, dynamic>{
         'farmId': int.parse(farmId),
-        'status': status,
+        'status': status, // Only VERIFIED is allowed
       };
 
       if (feedback != null && feedback.isNotEmpty) {
         requestBody['feedback'] = feedback;
-      }
-
-      if (rejectionReason != null && rejectionReason.isNotEmpty) {
-        requestBody['rejectionReason'] = rejectionReason;
       }
 
       if (photoUrls != null && photoUrls.isNotEmpty) {

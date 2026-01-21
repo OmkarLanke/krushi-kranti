@@ -32,7 +32,7 @@ The Field Officer Service manages:
 ### farm_verifications table
 - Stores farm verification records
 - Links to farms in farmer-service (via `farm_id`)
-- Tracks verification status (PENDING, VERIFIED, REJECTED, IN_PROGRESS)
+- Tracks verification status (PENDING, VERIFIED, IN_PROGRESS)
 
 ### verification_photos table
 - Stores photo metadata for verifications

@@ -947,8 +947,7 @@ public class FieldOfficerAssignmentService {
                                                     FarmVerification.VerificationStatus status = verification.getVerificationStatus();
                                                     verificationStatus = status.name();
                                                     
-                                                    if (status == FarmVerification.VerificationStatus.VERIFIED || 
-                                                        status == FarmVerification.VerificationStatus.REJECTED) {
+                                                    if (status == FarmVerification.VerificationStatus.VERIFIED) {
                                                         isVerified = true;
                                                     }
                                                 }

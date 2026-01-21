@@ -18,7 +18,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
   List<dynamic> _filteredAssignments = [];
   
   // Filter states
-  String? _selectedVerificationStatus; // null = All, 'PENDING', 'VERIFIED', 'REJECTED'
+  String? _selectedVerificationStatus; // null = All, 'PENDING', 'VERIFIED'
   String? _selectedDistrict;
   String _searchQuery = '';
   List<String> _availableDistricts = [];
@@ -183,7 +183,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
             if (farm is Map<String, dynamic>) {
               final isVerified = farm['isVerified'] ?? false;
               final status = (farm['status'] ?? '').toString().toUpperCase();
-              return !isVerified && status != 'VERIFIED' && status != 'REJECTED';
+              return !isVerified && status != 'VERIFIED';
             }
             return false;
           });
@@ -195,15 +195,6 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
               final isVerified = farm['isVerified'] ?? false;
               final status = (farm['status'] ?? '').toString().toUpperCase();
               return isVerified || status == 'VERIFIED';
-            }
-            return false;
-          });
-        } else if (_selectedVerificationStatus == 'REJECTED') {
-          // Show if at least one farm is rejected
-          return farms.any((farm) {
-            if (farm is Map<String, dynamic>) {
-              final status = (farm['status'] ?? '').toString().toUpperCase();
-              return status == 'REJECTED';
             }
             return false;
           });
@@ -1221,16 +1212,6 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                         });
                                       },
                                     ),
-                                    _buildEnhancedFilterOption(
-                                      'Rejected',
-                                      Icons.cancel,
-                                      tempVerificationStatus == 'REJECTED',
-                                      () {
-                                        setModalState(() {
-                                          tempVerificationStatus = 'REJECTED';
-                                        });
-                                      },
-                                    ),
                                   ],
                                 ),
                               ],
@@ -1834,8 +1815,6 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
         return 'Pending';
       case 'VERIFIED':
         return 'Verified';
-      case 'REJECTED':
-        return 'Rejected';
       default:
         return status;
     }
