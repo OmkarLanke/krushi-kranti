@@ -1,7 +1,7 @@
 -- Create farmers table
 CREATE TABLE IF NOT EXISTS farmers (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL UNIQUE, -- Links to auth.users.id
+    farmer_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE, -- Links to auth.users.user_id
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     date_of_birth DATE,
@@ -16,13 +16,8 @@ CREATE TABLE IF NOT EXISTS farmers (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
-
-
-
 -- Create indexes
 CREATE INDEX idx_farmers_user_id ON farmers(user_id);
 CREATE INDEX idx_farmers_pincode ON farmers(pincode);
 CREATE INDEX idx_farmers_state ON farmers(state);
 CREATE INDEX idx_farmers_district ON farmers(district);
-

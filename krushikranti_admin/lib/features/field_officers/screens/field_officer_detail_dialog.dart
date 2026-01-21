@@ -547,35 +547,65 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
   }
 
   Widget _buildAssignmentCard(AssignmentResponse assignment) {
-    // Determine if assignment is active (not cancelled)
-    final isActive = assignment.status.toUpperCase() != 'CANCELLED';
+    // Determine farm assignment status for color scheme
+    // - Green  : COMPLETED (assigned and verified)
+    // - Orange : ASSIGNED or IN_PROGRESS (assigned but not verified yet)
+    // - Red    : CANCELLED (cancelled assignment)
+    final String statusUpper = assignment.status.toUpperCase();
+    final bool isCompleted = statusUpper == 'COMPLETED';
+    final bool isAssignedOrInProgress = statusUpper == 'ASSIGNED' || statusUpper == 'IN_PROGRESS';
+    final bool isCancelled = statusUpper == 'CANCELLED';
+    
+    late final String farmStatusLabel;
+    late final Color farmStatusColor;
+    late final List<Color> cardGradientColors;
+    late final Color cardBorderColor;
+    late final Color iconColor;
+    
+    if (isCompleted) {
+      // Completed/Verified => GREEN
+      farmStatusLabel = 'Verified farm';
+      farmStatusColor = AppColors.success;
+      cardGradientColors = [
+        AppColors.successBg,
+        AppColors.success.withOpacity(0.1),
+      ];
+      cardBorderColor = AppColors.success.withOpacity(0.3);
+      iconColor = AppColors.success;
+    } else if (isAssignedOrInProgress) {
+      // Assigned but not verified => ORANGE
+      farmStatusLabel = 'Assigned · not verified';
+      farmStatusColor = AppColors.warning;
+      cardGradientColors = [
+        AppColors.warning.withOpacity(0.18),
+        AppColors.warning.withOpacity(0.06),
+      ];
+      cardBorderColor = AppColors.warning.withOpacity(0.4);
+      iconColor = AppColors.warning;
+    } else {
+      // Cancelled => RED
+      farmStatusLabel = 'Cancelled';
+      farmStatusColor = AppColors.error;
+      cardGradientColors = [
+        AppColors.errorBg,
+        AppColors.error.withOpacity(0.1),
+      ];
+      cardBorderColor = AppColors.error.withOpacity(0.3);
+      iconColor = AppColors.error;
+    }
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: isActive
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.successBg,
-                  AppColors.success.withOpacity(0.1),
-                ],
-              )
-            : LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.errorBg,
-                  AppColors.error.withOpacity(0.1),
-                ],
-              ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: cardGradientColors,
+        ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isActive
-              ? AppColors.success.withOpacity(0.3)
-              : AppColors.error.withOpacity(0.3),
+          color: cardBorderColor,
           width: 1,
         ),
         boxShadow: [
@@ -600,14 +630,12 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: isActive
-                            ? AppColors.success.withOpacity(0.15)
-                            : AppColors.error.withOpacity(0.15),
+                        color: iconColor.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         Icons.agriculture_rounded,
-                        color: isActive ? AppColors.success : AppColors.error,
+                        color: iconColor,
                         size: 20,
                       ),
                     ),
@@ -644,7 +672,7 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
                   ],
                 ),
               ),
-              _buildAssignmentStatusChip(assignment.status),
+              _buildStatusChip('Farm status', farmStatusLabel, farmStatusColor),
             ],
           ),
           const SizedBox(height: 16),
@@ -694,9 +722,7 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
                 color: Colors.white.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isActive
-                      ? AppColors.success.withOpacity(0.2)
-                      : AppColors.error.withOpacity(0.2),
+                  color: cardBorderColor.withOpacity(0.5),
                   width: 1,
                 ),
               ),
