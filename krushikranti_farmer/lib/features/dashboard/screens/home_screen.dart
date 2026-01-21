@@ -119,7 +119,11 @@ class _HomeScreenState extends State<HomeScreen> {
           final age = now.difference(notification.timestamp);
           if (age < const Duration(minutes: 10)) {
             // Only update state if widget is still mounted
-            if (mounted) setState(() {});
+            if (mounted) {
+              setState(() {});
+              // Show a visual cue that an OTP has arrived
+              _showOtpReceivedPopup();
+            }
           }
         }
       },

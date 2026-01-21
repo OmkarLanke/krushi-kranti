@@ -19,9 +19,8 @@ public class VerifyFarmResponse {
     private Long verificationId;
     private Long farmId;
     private Long fieldOfficerId;
-    private String status; // VERIFIED, REJECTED, PENDING, IN_PROGRESS
+    private String status; // VERIFIED, PENDING, IN_PROGRESS
     private String feedback;
-    private String rejectionReason;
     private Double latitude;
     private Double longitude;
     private LocalDateTime verifiedAt;

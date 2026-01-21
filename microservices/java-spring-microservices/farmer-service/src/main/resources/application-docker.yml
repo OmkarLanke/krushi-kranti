@@ -49,6 +49,8 @@ services:
     url: http://subscription-service:4013
   auth-service:
     url: http://auth-service:4005
+  field-officer-service:
+    url: http://field-officer-service:4015
 
 logging:
   level:

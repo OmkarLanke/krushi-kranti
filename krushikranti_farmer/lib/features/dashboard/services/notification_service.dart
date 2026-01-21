@@ -43,15 +43,25 @@ class NotificationModel {
     }
 
     // Parse timestamp - handle ISO string, DateTime, or array format [year, month, day, hour, minute, second, nanosecond]
+    // IMPORTANT: Server sends UTC timestamps, so we must parse them as UTC and convert to local
     DateTime timestamp;
     if (json['createdAt'] != null) {
       final createdAtValue = json['createdAt'];
       if (createdAtValue is String) {
+        // ISO string - parse and ensure it's treated as UTC if no timezone info
         timestamp = DateTime.parse(createdAtValue);
+        if (!timestamp.isUtc && !createdAtValue.contains('Z') && !createdAtValue.contains('+')) {
+          // No timezone info means it's UTC from server - convert to local
+          timestamp = DateTime.utc(
+            timestamp.year, timestamp.month, timestamp.day,
+            timestamp.hour, timestamp.minute, timestamp.second, timestamp.millisecond
+          ).toLocal();
+        }
       } else if (createdAtValue is List && createdAtValue.length >= 6) {
         // Handle array format: [year, month, day, hour, minute, second, nanosecond?]
+        // Array format from server is always UTC
         try {
-          timestamp = DateTime(
+          timestamp = DateTime.utc(
             createdAtValue[0] as int,  // year
             createdAtValue[1] as int,  // month
             createdAtValue[2] as int,  // day
@@ -59,7 +69,7 @@ class NotificationModel {
             createdAtValue[4] as int,  // minute
             createdAtValue[5] as int,  // second
             createdAtValue.length > 6 ? (createdAtValue[6] as int) ~/ 1000000 : 0, // nanoseconds to milliseconds
-          );
+          ).toLocal();
         } catch (e) {
           debugPrint('Error parsing createdAt array: $e');
           timestamp = DateTime.now();
@@ -71,9 +81,16 @@ class NotificationModel {
       final timestampValue = json['timestamp'];
       if (timestampValue is String) {
         timestamp = DateTime.parse(timestampValue);
+        if (!timestamp.isUtc && !timestampValue.contains('Z') && !timestampValue.contains('+')) {
+          timestamp = DateTime.utc(
+            timestamp.year, timestamp.month, timestamp.day,
+            timestamp.hour, timestamp.minute, timestamp.second, timestamp.millisecond
+          ).toLocal();
+        }
       } else if (timestampValue is List && timestampValue.length >= 6) {
+        // Array format from server is always UTC
         try {
-          timestamp = DateTime(
+          timestamp = DateTime.utc(
             timestampValue[0] as int,
             timestampValue[1] as int,
             timestampValue[2] as int,
@@ -81,7 +98,7 @@ class NotificationModel {
             timestampValue[4] as int,
             timestampValue[5] as int,
             timestampValue.length > 6 ? (timestampValue[6] as int) ~/ 1000000 : 0,
-          );
+          ).toLocal();
         } catch (e) {
           debugPrint('Error parsing timestamp array: $e');
           timestamp = DateTime.now();
@@ -275,11 +292,19 @@ class NotificationService extends ChangeNotifier {
         final data = response['data'] as Map<String, dynamic>?;
         final notificationsList = data?['notifications'] as List<dynamic>? ?? [];
 
+        if (kDebugMode) {
+          debugPrint('NotificationService: Received ${notificationsList.length} notifications from API');
+        }
+
         // Convert backend notifications to NotificationModel
         final fetchedNotifications = notificationsList
             .map((json) {
               try {
-                return NotificationModel.fromJson(json as Map<String, dynamic>);
+                final notification = NotificationModel.fromJson(json as Map<String, dynamic>);
+                if (kDebugMode) {
+                  debugPrint('NotificationService: Parsed notification ID=${notification.id}, type=${notification.type}, timestamp=${notification.timestamp}, OTP=${notification.data?['otp']}');
+                }
+                return notification;
               } catch (e) {
                 // Only log parsing errors in debug mode
                 if (kDebugMode) {
@@ -311,10 +336,18 @@ class NotificationService extends ChangeNotifier {
           // For OTP notifications, check if they're expired
           if (n.type == 'FARM_VERIFICATION_OTP') {
             final age = now.difference(n.timestamp);
-            return age < otpExpirationDuration;
+            final isValid = age < otpExpirationDuration && !age.isNegative;
+            if (kDebugMode) {
+              debugPrint('NotificationService: OTP ID=${n.id}, timestamp=${n.timestamp}, now=$now, age=${age.inMinutes}m ${age.inSeconds % 60}s, valid=$isValid');
+            }
+            return isValid;
           }
           return true;
         }).toList();
+        
+        if (kDebugMode) {
+          debugPrint('NotificationService: ${validNotifications.length} valid (non-expired) notifications after filtering');
+        }
 
         // Update local notifications - merge with existing, avoiding duplicates
         // Also update existing notifications if they're in the fetched list (to sync isRead status)
