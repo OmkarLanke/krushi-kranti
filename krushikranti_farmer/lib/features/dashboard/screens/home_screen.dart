@@ -778,7 +778,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      'For: $farmNamesText',
+                      '${l10n.forFarm} $farmNamesText',
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 14,
@@ -961,7 +961,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 4),
                     Text(
-                      "Pincode: $fieldOfficerPincode",
+                      "${l10n.pincodeLabel} $fieldOfficerPincode",
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: Colors.grey.shade600,
@@ -1005,7 +1005,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              'Assigned to: ${assignedFarmNames.join(', ')}',
+                              '${l10n.assignedTo} ${assignedFarmNames.join(', ')}',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 color: Colors.grey.shade600,
@@ -1022,7 +1022,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Padding(
                         padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        "+ ${fieldOfficerAssignments.length - 1} more",
+                        l10n.moreAssignments(fieldOfficerAssignments.length - 1),
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             color: AppColors.brandGreen,
