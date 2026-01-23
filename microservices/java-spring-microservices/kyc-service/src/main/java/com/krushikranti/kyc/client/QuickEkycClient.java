@@ -94,10 +94,20 @@ public class QuickEkycClient {
                     .bodyToMono(AadhaarGenerateOtpResponse.class)
                     .block();
             
-            log.info("Aadhaar Generate OTP Response - Status: {}, OTP Sent: {}, RequestId: {}", 
+            log.info("Aadhaar Generate OTP Response - Status: {}, OTP Sent: {}, RequestId: {}, Message: {}", 
                     response != null ? response.getStatus() : "null",
                     response != null && response.getData() != null ? response.getData().getOtpSent() : "null",
-                    response != null ? response.getRequestIdAsString() : "null");
+                    response != null ? response.getRequestIdAsString() : "null",
+                    response != null ? response.getMessage() : "null");
+            
+            // Log warning if response indicates error
+            if (response != null && !response.isSuccess()) {
+                log.warn("Quick eKYC returned error response - Status: {}, StatusCode: {}, Message: {}, Data: {}", 
+                        response.getStatus(), 
+                        response.getStatusCode(),
+                        response.getMessage(),
+                        response.getData());
+            }
             
             return response;
         } catch (WebClientResponseException e) {
