@@ -223,6 +223,8 @@ services:
         condition: service_healthy
     networks:
       - krushi-kranti-network
+    env_file:
+      - .env
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     healthcheck:
@@ -346,6 +348,8 @@ services:
         condition: service_healthy
     networks:
       - krushi-kranti-network
+    env_file:
+      - .env
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     healthcheck:

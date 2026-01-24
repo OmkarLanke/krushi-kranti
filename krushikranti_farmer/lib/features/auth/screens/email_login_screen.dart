@@ -509,8 +509,8 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> with TickerProvider
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // ✅ UPDATED: Navigate to Forgot Password Phone Screen
-                      Navigator.pushNamed(context, AppRoutes.forgotPasswordPhone);
+                      // Navigate to Forgot Password Email Screen
+                      Navigator.pushNamed(context, AppRoutes.forgotPasswordEmail);
                     },
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,

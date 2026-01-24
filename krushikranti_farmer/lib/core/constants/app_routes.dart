@@ -6,6 +6,7 @@ import '../../features/auth/screens/language_selection_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/forgot_password_phone_screen.dart';
 import '../../features/auth/screens/forgot_password_otp_screen.dart';
+import '../../features/auth/screens/forgot_password_email_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/auth/screens/signup_screen.dart'; // Ensure Signup is here
 import '../../features/auth/screens/otp_screen.dart';
@@ -53,6 +54,7 @@ class AppRoutes {
   static const String emailLogin = '/email_login';
   static const String forgotPasswordPhone = '/forgot_password_phone';
   static const String forgotPasswordOtp = '/forgot_password_otp';
+  static const String forgotPasswordEmail = '/forgot_password_email';
   static const String resetPassword = '/reset_password';
   static const String signup = '/signup';
   static const String otp = '/otp';
@@ -96,7 +98,12 @@ class AppRoutes {
     emailLogin: (context) => const EmailLoginScreen(),
     forgotPasswordPhone: (context) => const ForgotPasswordPhoneScreen(),
     forgotPasswordOtp: (context) => const ForgotPasswordOtpScreen(),
-    resetPassword: (context) => const ResetPasswordScreen(),
+    forgotPasswordEmail: (context) => const ForgotPasswordEmailScreen(),
+    resetPassword: (context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      final token = args is String ? args : null;
+      return ResetPasswordScreen(token: token);
+    },
     signup: (context) => const SignUpScreen(),
     otp: (context) => const OtpScreen(),
     onboardingPersonal: (context) => const OnboardingPersonalScreen(),

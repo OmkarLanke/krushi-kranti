@@ -2,8 +2,10 @@ package com.krushikranti.auth.controller;
 
 import com.krushikranti.auth.dto.*;
 import com.krushikranti.auth.dto.AdminCreateUserRequest;
+import com.krushikranti.auth.dto.DeleteUserRequest;
 import com.krushikranti.auth.model.User;
 import com.krushikranti.auth.service.AuthService;
+import com.krushikranti.auth.service.UserDeletionService;
 import com.krushikranti.i18n.constants.MessageKeys;
 import com.krushikranti.i18n.service.MessageService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +27,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final MessageService messageService;
+    private final UserDeletionService userDeletionService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
@@ -334,6 +337,95 @@ public class AuthController {
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>("Invalid user ID format", null));
+        }
+    }
+
+    /**
+     * Admin endpoint to delete a user and cascade deletion to all services.
+     * Publishes USER_DELETION_EVENTS to Kafka for other services to clean up.
+     * 
+     * This endpoint should be protected and only accessible by admins.
+     */
+    @DeleteMapping("/admin/delete-user")
+    public ResponseEntity<?> deleteUser(
+            @RequestBody DeleteUserRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String adminUserId) {
+        
+        try {
+            Long deletedBy = null;
+            if (adminUserId != null && !adminUserId.isEmpty()) {
+                try {
+                    deletedBy = Long.parseLong(adminUserId);
+                } catch (NumberFormatException e) {
+                    // Ignore invalid admin user ID
+                }
+            }
+
+            boolean deleted = false;
+            String identifier = "";
+
+            if (request.getUserId() != null) {
+                deleted = userDeletionService.deleteUser(request.getUserId(), request.getReason(), deletedBy);
+                identifier = "userId: " + request.getUserId();
+            } else if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+                deleted = userDeletionService.deleteUserByEmail(request.getEmail(), request.getReason(), deletedBy);
+                identifier = "email: " + request.getEmail();
+            } else if (request.getPhoneNumber() != null && !request.getPhoneNumber().isEmpty()) {
+                deleted = userDeletionService.deleteUserByPhoneNumber(request.getPhoneNumber(), request.getReason(), deletedBy);
+                identifier = "phone: " + request.getPhoneNumber();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>("Must provide userId, email, or phoneNumber", null));
+            }
+
+            if (deleted) {
+                log.info("User deleted successfully - {}", identifier);
+                return ResponseEntity.ok(new ApiResponse<>(
+                        "User deleted successfully. Cleanup events published to all services.", null));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>("User not found", null));
+            }
+        } catch (Exception e) {
+            log.error("Error deleting user: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Error deleting user: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Delete user by ID (alternative endpoint for RESTful API style).
+     */
+    @DeleteMapping("/admin/user/{userId}")
+    public ResponseEntity<?> deleteUserById(
+            @PathVariable Long userId,
+            @RequestParam(required = false) String reason,
+            @RequestHeader(value = "X-User-Id", required = false) String adminUserId) {
+        
+        try {
+            Long deletedBy = null;
+            if (adminUserId != null && !adminUserId.isEmpty()) {
+                try {
+                    deletedBy = Long.parseLong(adminUserId);
+                } catch (NumberFormatException e) {
+                    // Ignore invalid admin user ID
+                }
+            }
+
+            boolean deleted = userDeletionService.deleteUser(userId, reason, deletedBy);
+
+            if (deleted) {
+                log.info("User deleted successfully - userId: {}", userId);
+                return ResponseEntity.ok(new ApiResponse<>(
+                        "User deleted successfully. Cleanup events published to all services.", null));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>("User not found", null));
+            }
+        } catch (Exception e) {
+            log.error("Error deleting user {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Error deleting user: " + e.getMessage(), null));
         }
     }
 }
