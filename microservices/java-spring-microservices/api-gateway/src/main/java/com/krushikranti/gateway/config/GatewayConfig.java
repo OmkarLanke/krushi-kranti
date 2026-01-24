@@ -41,6 +41,7 @@ public class GatewayConfig {
                 // Auth Service Routes
                 .route("auth-service", r -> r
                         .path("/auth/**")
+                        .filters(f -> f.rewritePath("/auth/(?<segment>.*)", "/auth/$\\{segment}"))
                         .uri(serviceUrls.getAuthService()))
                 
                 // Farmer Service Routes
@@ -81,6 +82,11 @@ public class GatewayConfig {
                 // Notification Service Routes
                 .route("notification-service", r -> r
                         .path("/notification/**")
+                        .uri(serviceUrls.getNotificationService()))
+                
+                // Email Redirect Routes (for password reset deep link)
+                .route("email-redirect", r -> r
+                        .path("/email/reset-password/**")
                         .uri(serviceUrls.getNotificationService()))
                 
                 // Chat/Tadnya Service Routes

@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart'; // ✅ REQUIRED: Provider Package
+import 'package:provider/provider.dart';
 
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_routes.dart';
-import 'core/providers/locale_provider.dart'; // ✅ Import Provider
+import 'core/providers/locale_provider.dart';
+import 'core/services/deep_link_service.dart';
 import 'l10n/app_localizations.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  
   runApp(
-    // ✅ WRAP APP WITH PROVIDER
     ChangeNotifierProvider(
       create: (context) => LocaleProvider()..loadSavedLocale(),
       child: const KrushiKrantiApp(),
@@ -18,46 +20,66 @@ void main() {
   );
 }
 
-class KrushiKrantiApp extends StatelessWidget {
+class KrushiKrantiApp extends StatefulWidget {
   const KrushiKrantiApp({super.key});
 
   @override
+  State<KrushiKrantiApp> createState() => _KrushiKrantiAppState();
+}
+
+class _KrushiKrantiAppState extends State<KrushiKrantiApp> {
+  final DeepLinkService _deepLinkService = DeepLinkService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize deep link handling
+    _deepLinkService.init();
+  }
+
+  @override
+  void dispose() {
+    _deepLinkService.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Optimized: Use Consumer to rebuild only locale-dependent parts
-    // This prevents full MaterialApp rebuild on language change
     return Consumer<LocaleProvider>(
       builder: (context, localeProvider, child) {
-    return MaterialApp(
-      title: 'Krushi Kranti',
-      debugShowCheckedModeBanner: false,
-      
-      // --- THEME ---
-          // Optimized: Theme is const, no need to rebuild on locale change
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: AppColors.background,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.brandGreen),
-        textTheme: GoogleFonts.poppinsTextTheme(), 
-      ),
+        return MaterialApp(
+          title: 'Krushi Kranti',
+          debugShowCheckedModeBanner: false,
+          
+          // Use the global navigator key for deep link navigation
+          navigatorKey: DeepLinkService.navigatorKey,
+          
+          // --- THEME ---
+          theme: ThemeData(
+            useMaterial3: true,
+            scaffoldBackgroundColor: AppColors.background,
+            colorScheme: ColorScheme.fromSeed(seedColor: AppColors.brandGreen),
+            textTheme: GoogleFonts.poppinsTextTheme(), 
+          ),
 
-      // --- DYNAMIC LOCALIZATION ---
-          locale: localeProvider.locale, // ✅ This switches the language instantly!
-      
-      supportedLocales: const [
-        Locale('en'), 
-        Locale('hi'), 
-        Locale('mr'), 
-      ],
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+          // --- DYNAMIC LOCALIZATION ---
+          locale: localeProvider.locale,
+          
+          supportedLocales: const [
+            Locale('en'), 
+            Locale('hi'), 
+            Locale('mr'), 
+          ],
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
 
-      // --- NAVIGATION ---
-      initialRoute: AppRoutes.splash, 
-      routes: AppRoutes.routes,
+          // --- NAVIGATION ---
+          initialRoute: AppRoutes.splash, 
+          routes: AppRoutes.routes,
         );
       },
     );

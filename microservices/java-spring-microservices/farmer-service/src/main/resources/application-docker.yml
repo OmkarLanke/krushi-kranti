@@ -25,6 +25,14 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+# Kafka Configuration
+spring.kafka:
+  bootstrap-servers: kafka:9092
+  consumer:
+    group-id: farmer-service-group
+    auto-offset-reset: earliest
+    enable-auto-commit: false
+
 # gRPC Client Configuration (to call Auth Service)
 grpc:
   client:
@@ -49,6 +57,8 @@ services:
     url: http://subscription-service:4013
   auth-service:
     url: http://auth-service:4005
+  field-officer-service:
+    url: http://field-officer-service:4015
 
 logging:
   level:

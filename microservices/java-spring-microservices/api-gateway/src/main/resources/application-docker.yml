@@ -34,6 +34,8 @@ gateway:
       - /auth/request-login-otp
       - /auth/get-otp
       - /auth/resend-otp
+      - /auth/forgot-password/**
+      - /email/reset-password/**
       - /.well-known
       - /actuator/health
     jwks-uri: http://auth-service:4005/.well-known/jwks.json

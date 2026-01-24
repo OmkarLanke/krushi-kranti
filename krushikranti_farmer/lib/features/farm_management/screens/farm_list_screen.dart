@@ -266,11 +266,54 @@ class _FarmListScreenState extends State<FarmListScreen> {
   Widget _buildFarmCard(Farm farm, AppLocalizations l10n) {
     final fieldOfficerAssignment = _getFieldOfficerAssignmentForFarm(farm);
     
+    // Determine farm verification/assignment status for color scheme
+    // - Green  : Field officer assigned AND farm verified
+    // - Orange : Field officer assigned BUT farm NOT verified yet
+    // - Red    : No field officer assigned
+    final bool hasFieldOfficer = fieldOfficerAssignment != null;
+    final bool isVerifiedFarm = farm.isVerified == true ||
+        (fieldOfficerAssignment != null &&
+            (fieldOfficerAssignment['status']?.toString().toUpperCase() ?? '') == 'COMPLETED');
+    
+    late final List<Color> cardGradientColors;
+    late final Color cardBorderColor;
+    
+    if (hasFieldOfficer && isVerifiedFarm) {
+      // Assigned + verified => GREEN
+      cardGradientColors = [
+        AppColors.success.withOpacity(0.08),
+        AppColors.success.withOpacity(0.02),
+      ];
+      cardBorderColor = AppColors.success.withOpacity(0.2);
+    } else if (hasFieldOfficer && !isVerifiedFarm) {
+      // Assigned but not verified => ORANGE
+      cardGradientColors = [
+        AppColors.warning.withOpacity(0.08),
+        AppColors.warning.withOpacity(0.02),
+      ];
+      cardBorderColor = AppColors.warning.withOpacity(0.2);
+    } else {
+      // No field officer => RED
+      cardGradientColors = [
+        AppColors.error.withOpacity(0.08),
+        AppColors.error.withOpacity(0.02),
+      ];
+      cardBorderColor = AppColors.error.withOpacity(0.2);
+    }
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: cardGradientColors,
+        ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: cardBorderColor,
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -295,14 +338,28 @@ class _FarmListScreenState extends State<FarmListScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppColors.brandGreen,
-                        AppColors.brandGreen.withOpacity(0.8),
+                        hasFieldOfficer && isVerifiedFarm
+                            ? AppColors.success
+                            : hasFieldOfficer && !isVerifiedFarm
+                                ? AppColors.warning
+                                : AppColors.error,
+                        (hasFieldOfficer && isVerifiedFarm
+                                ? AppColors.success
+                                : hasFieldOfficer && !isVerifiedFarm
+                                    ? AppColors.warning
+                                    : AppColors.error)
+                            .withOpacity(0.8),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.brandGreen.withOpacity(0.3),
+                        color: (hasFieldOfficer && isVerifiedFarm
+                                ? AppColors.success
+                                : hasFieldOfficer && !isVerifiedFarm
+                                    ? AppColors.warning
+                                    : AppColors.error)
+                            .withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -330,25 +387,29 @@ class _FarmListScreenState extends State<FarmListScreen> {
                 ),
                       if (farm.isVerified == true) ...[
                         const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.brandGreen.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                              Icon(Icons.verified, size: 12, color: AppColors.brandGreen),
-                        const SizedBox(width: 4),
-                        Text(
-                          l10n.verified,
-                          style: GoogleFonts.poppins(
-                                  fontSize: 11,
-                            color: AppColors.brandGreen,
-                                  fontWeight: FontWeight.w600,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppColors.success.withOpacity(0.3),
+                              width: 1,
+                            ),
                           ),
-                        ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.verified, size: 12, color: AppColors.success),
+                              const SizedBox(width: 4),
+                              Text(
+                                l10n.verified,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  color: AppColors.success,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -674,59 +735,71 @@ class _FarmListScreenState extends State<FarmListScreen> {
       }
     }
     
-    // Determine status badge color and text
+    // Determine status badge color and text based on color scheme
+    // - Green  : COMPLETED (assigned and verified)
+    // - Orange : ASSIGNED or IN_PROGRESS (assigned but not verified)
     Color statusColor;
     String statusText;
     if (status == 'COMPLETED') {
-      statusColor = AppColors.brandGreen;
+      statusColor = AppColors.success; // Green
       statusText = 'VERIFIED';
-    } else {
-      // Default to ASSIGNED
-      statusColor = const Color(0xFF4FC3F7); // Light blue
+    } else if (status == 'ASSIGNED' || status == 'IN_PROGRESS') {
+      statusColor = AppColors.warning; // Orange
       statusText = 'ASSIGNED';
+    } else {
+      // Fallback for other statuses
+      statusColor = AppColors.textSecondary;
+      statusText = status.replaceAll('_', ' ');
     }
 
     return Container(
       padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            statusColor.withOpacity(0.1),
+            statusColor.withOpacity(0.05),
+          ],
+        ),
         borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.brandGreen.withOpacity(0.2),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
+        border: Border.all(
+          color: statusColor.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
             color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
+            blurRadius: 8,
             offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.brandGreen.withOpacity(0.1),
+                  color: statusColor.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.person_rounded, size: 14, color: AppColors.brandGreen),
+                child: Icon(Icons.person_rounded, size: 14, color: statusColor),
               ),
               const SizedBox(width: 8),
-                  Text(
-                    'Field Officer Assign',
-                    style: GoogleFonts.poppins(
+              Text(
+                'Field Officer Assign',
+                style: GoogleFonts.poppins(
                   fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.brandGreen,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
+                  fontWeight: FontWeight.w600,
+                  color: statusColor,
+                  letterSpacing: 0.2,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -745,10 +818,10 @@ class _FarmListScreenState extends State<FarmListScreen> {
                       ),
                       const SizedBox(width: 6),
                       Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
-                  color: const Color(0xFF4FC3F7),
-                  borderRadius: BorderRadius.circular(8),
+                          color: statusColor,
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           statusText,
@@ -820,13 +893,13 @@ class _FarmListScreenState extends State<FarmListScreen> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.check_circle, size: 12, color: AppColors.brandGreen),
+                            Icon(Icons.check_circle, size: 12, color: statusColor),
                             const SizedBox(width: 3),
                             Text(
                               'Completed: $completedDateStr',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
-                                color: AppColors.brandGreen,
+                                color: statusColor,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -841,62 +914,72 @@ class _FarmListScreenState extends State<FarmListScreen> {
   }
 
   Widget _buildNoFieldOfficerCard(AppLocalizations l10n) {
+    // Red color scheme for "Not Assigned" status
+    final statusColor = AppColors.error;
+    
     return Container(
       padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            statusColor.withOpacity(0.1),
+            statusColor.withOpacity(0.05),
+          ],
+        ),
         borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.brandGreen.withOpacity(0.2),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
+        border: Border.all(
+          color: statusColor.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
             color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
+            blurRadius: 8,
             offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppColors.brandGreen.withOpacity(0.1),
+              color: statusColor.withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.person_rounded, size: 14, color: AppColors.brandGreen),
+            child: Icon(Icons.person_rounded, size: 14, color: statusColor),
           ),
           const SizedBox(width: 8),
           Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Field Officer Assign',
-                    style: GoogleFonts.poppins(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Field Officer Assign',
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.brandGreen,
-                      letterSpacing: 0.2,
-                    ),
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
+                    letterSpacing: 0.2,
                   ),
+                ),
                 const SizedBox(height: 4),
-                  Text(
-                    'Not Assigned',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade600,
-                    ),
+                Text(
+                  'Not Assigned',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: statusColor,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-        ],
           ),
-        );
+        ],
+      ),
+    );
   }
 
   Widget _buildEmptyState(AppLocalizations l10n) {
