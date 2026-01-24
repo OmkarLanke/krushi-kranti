@@ -12,6 +12,9 @@ class ApiEndpoints {
   static String get verifyOtp => "$baseUrl/auth/verify-otp";
   static String get requestLoginOtp => "$baseUrl/auth/request-login-otp";
   static String get resendOtp => "$baseUrl/auth/resend-otp";
+  static String get forgotPasswordRequest => "$baseUrl/auth/forgot-password/request";
+  static String get forgotPasswordVerifyToken => "$baseUrl/auth/forgot-password/verify-token";
+  static String get forgotPasswordReset => "$baseUrl/auth/forgot-password/reset";
   
   // Farmer Profile Endpoints
   static String get myDetails => "$baseUrl/farmer/profile/my-details";

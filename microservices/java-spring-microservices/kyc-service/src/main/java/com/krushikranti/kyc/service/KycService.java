@@ -184,9 +184,35 @@ public class KycService {
                         .message("OTP sent to Aadhaar linked mobile")
                         .build();
             } else {
+                // Extract error message from response
+                String errorMessage = "Failed to generate OTP";
+                
+                if (response.getMessage() != null && !response.getMessage().isEmpty()) {
+                    errorMessage = response.getMessage();
+                } else if ("error".equalsIgnoreCase(response.getStatus())) {
+                    // Check for common error scenarios
+                    if (response.getData() != null) {
+                        if (Boolean.FALSE.equals(response.getData().getValidAadhaar())) {
+                            errorMessage = "Invalid Aadhaar number. Please check and try again.";
+                        } else if (Boolean.FALSE.equals(response.getData().getIfNumber())) {
+                            errorMessage = "Aadhaar number is not linked to a mobile number. Please contact UIDAI.";
+                        } else {
+                            errorMessage = "Unable to send OTP. Please verify your Aadhaar number and try again.";
+                        }
+                    } else {
+                        errorMessage = "Aadhaar verification service is temporarily unavailable. Please try again later.";
+                    }
+                } else if (response.getStatusCode() != null && response.getStatusCode() != 200) {
+                    errorMessage = String.format("Verification service error (Code: %d). Please try again later.", 
+                            response.getStatusCode());
+                }
+                
+                log.warn("Aadhaar OTP generation failed for userId: {} - Status: {}, Message: {}, RequestId: {}", 
+                        userId, response.getStatus(), errorMessage, response.getRequestIdAsString());
+                
                 return AadhaarGenerateOtpResponse.builder()
                         .otpSent(false)
-                        .message(response.getMessage() != null ? response.getMessage() : "Failed to generate OTP")
+                        .message(errorMessage)
                         .build();
             }
         } catch (Exception e) {

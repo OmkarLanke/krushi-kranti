@@ -100,6 +100,12 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- Kafka for user deletion events -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
         <!-- javax.annotation for gRPC generated code -->
         <dependency>
             <groupId>javax.annotation</groupId>

@@ -196,6 +196,8 @@ services:
         condition: service_healthy
     networks:
       - krushi-kranti-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # For Linux compatibility
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     healthcheck:
@@ -221,6 +223,8 @@ services:
         condition: service_healthy
     networks:
       - krushi-kranti-network
+    env_file:
+      - .env
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     healthcheck:
@@ -344,6 +348,8 @@ services:
         condition: service_healthy
     networks:
       - krushi-kranti-network
+    env_file:
+      - .env
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     healthcheck:
