@@ -17,7 +17,7 @@ class HttpService {
       return "http://localhost:4004";
     } else if (Platform.isAndroid || Platform.isIOS) {
       // Mobile platforms (Android/iOS) - use your computer's local IP
-      return "http://192.168.0.200:4004"; // ✅ Your Wi-Fi IP address
+      return "http://192.168.1.45:4004"; // ✅ Your Wi-Fi IP address
     } else {
       // Desktop platforms (Windows, Mac, Linux)
       return "http://localhost:4004";

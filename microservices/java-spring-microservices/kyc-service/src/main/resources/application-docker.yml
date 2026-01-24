@@ -25,6 +25,12 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: kyc-service-group
+
 # Quick eKYC API Configuration
 quickekyc:
   api:
