@@ -36,18 +36,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldOfficerAssignedMsg => 'Your assigned Field Officer';
 
   @override
-  String get assignedTo => 'Assigned to:';
+  String get assignedTo => 'Assigned To:';
 
   @override
-  String get forFarm => 'For:';
+  String get forFarm => 'For Farm:';
+
+  @override
+  String get pincodeLabel => 'Pincode:';
 
   @override
   String moreAssignments(int count) {
     return '+ $count more';
   }
-
-  @override
-  String get pincodeLabel => 'Pincode:';
 
   @override
   String get viewFieldOfficerDetails => 'View Field Officer Details';

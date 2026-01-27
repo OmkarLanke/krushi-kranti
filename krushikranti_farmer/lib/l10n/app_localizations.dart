@@ -157,26 +157,26 @@ abstract class AppLocalizations {
   /// No description provided for @assignedTo.
   ///
   /// In en, this message translates to:
-  /// **'Assigned to:'**
+  /// **'Assigned To:'**
   String get assignedTo;
 
   /// No description provided for @forFarm.
   ///
   /// In en, this message translates to:
-  /// **'For:'**
+  /// **'For Farm:'**
   String get forFarm;
-
-  /// No description provided for @moreAssignments.
-  ///
-  /// In en, this message translates to:
-  /// **'+ {count} more'**
-  String moreAssignments(int count);
 
   /// No description provided for @pincodeLabel.
   ///
   /// In en, this message translates to:
   /// **'Pincode:'**
   String get pincodeLabel;
+
+  /// No description provided for @moreAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'+ {count} more'**
+  String moreAssignments(int count);
 
   /// No description provided for @viewFieldOfficerDetails.
   ///

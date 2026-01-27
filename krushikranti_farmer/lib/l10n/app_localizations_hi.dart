@@ -42,12 +42,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get forFarm => 'के लिए:';
 
   @override
+  String get pincodeLabel => 'पिनकोड:';
+
+  @override
   String moreAssignments(int count) {
     return '+ $count और';
   }
-
-  @override
-  String get pincodeLabel => 'पिनकोड:';
 
   @override
   String get viewFieldOfficerDetails => 'View Field Officer Details';
