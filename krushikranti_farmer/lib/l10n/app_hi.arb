@@ -5,6 +5,20 @@
   "assignMsg": "हम जल्द ही",
   "soonMsg": "कृषि विशेषज्ञ नियुक्त करेंगे !",
   "assignedMsg": "आपके नियुक्त कृषि विशेषज्ञ",
+  "fieldOfficerAssignMsg": "हम जल्द ही",
+  "fieldOfficerSoonMsg": "सत्यापन के लिए फील्ड ऑफिसर नियुक्त करेंगे",
+  "fieldOfficerAssignedMsg": "आपके नियुक्त फील्ड ऑफिसर",
+  "assignedTo": "नियुक्त किया गया:",
+  "forFarm": "के लिए:",
+  "moreAssignments": "+ {count} और",
+  "@moreAssignments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pincodeLabel": "पिनकोड:",
   "quickAction": "त्वरित कार्य",
   "alerts": "सूचनाएं",
   "pending": "लंबित",
@@ -17,10 +31,12 @@
   "account": "खाता शेष और निपटान",
   
   "home": "होम",
+  "task": "कार्य",
   "crops": "फसलें",
   "sell": "बेचें",
   "orders": "ऑर्डर",
   "profile": "प्रोफाइल",
+  "accountTab": "खाता",
   
   "myDetails": "मेरा विवरण",
   "farmDetails": "खेत का विवरण",
@@ -297,6 +313,10 @@
   "enterRemarks": "टिप्पणी दर्ज करें (यदि कोई हो)",
   "saveFarm": "खेत सहेजें",
   "farmAddedSuccess": "खेत सफलतापूर्वक जोड़ा गया",
+  "farmRequired": "खेत आवश्यक",
+  "farmRequiredMessage": "फसलें जोड़ने के लिए, आपको पहले एक खेत जोड़ना होगा। आपके फसल विवरण को ट्रैक करने के लिए खेत आवश्यक है।",
+  "farmRequiredInstruction": "अपना पहला खेत बनाने के लिए नीचे 'खेत जोड़ें' पर क्लिक करें।",
+  "farmAddedCanAddCrops": "खेत जोड़ा गया! अब आप फसलें जोड़ सकते हैं।",
   "noFarmsAdded": "अभी तक कोई खेत नहीं जोड़ा गया",
   "addYourFirstFarm": "शुरू करने के लिए अपना पहला खेत जोड़ें",
   "main": "मुख्य",

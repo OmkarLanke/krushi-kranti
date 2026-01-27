@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:postgresql://subscription-db:5432/subscription_db
     username: postgres
-    password: ....
+    password: postgres
     driver-class-name: org.postgresql.Driver
   
   jpa:

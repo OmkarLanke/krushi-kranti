@@ -140,7 +140,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               _buildNavItem(
                 icon: Icons.assignment_outlined,
                 activeIcon: Icons.assignment_rounded,
-                label: "Task", 
+                label: l10n.task, 
                 index: 1,
               ),
               _buildCenterSellButton(l10n),
@@ -153,7 +153,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               _buildNavItem(
                 icon: Icons.person_outline,
                 activeIcon: Icons.person_rounded,
-                label: "Account",
+                label: l10n.accountTab,
                 index: 4,
               ),
             ],

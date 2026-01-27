@@ -889,7 +889,7 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
     }
 
     if (lowerMessage.contains('not found') || lowerMessage.contains('404')) {
-      return 'Service unavailable. Please try again later.';
+      return 'The requested service is temporarily unavailable. Please try again later.';
     }
 
     if (lowerMessage.contains('timeout') || lowerMessage.contains('timed out')) {

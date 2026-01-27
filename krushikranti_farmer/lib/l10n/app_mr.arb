@@ -5,6 +5,20 @@
   "assignMsg": "आम्ही लवकरच",
   "soonMsg": "कृषी तज्ञाची नेमणूक करू !",
   "assignedMsg": "तुमचे नियुक्त कृषी तज्ञ",
+  "fieldOfficerAssignMsg": "आम्ही लवकरच",
+  "fieldOfficerSoonMsg": "पडताळणीसाठी फील्ड ऑफिसर नियुक्त करू",
+  "fieldOfficerAssignedMsg": "तुमचे नियुक्त फील्ड ऑफिसर",
+  "assignedTo": "नियुक्त केले:",
+  "forFarm": "साठी:",
+  "moreAssignments": "+ {count} अधिक",
+  "@moreAssignments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pincodeLabel": "पिनकोड:",
   "quickAction": "जलद कृती",
   "alerts": "सूचना",
   "pending": "प्रलंबित",
@@ -17,10 +31,12 @@
   "account": "खाते शिल्लक",
   
   "home": "होम",
+  "task": "कार्य",
   "crops": "पिके",
   "sell": "विक्री",
   "orders": "ऑर्डर",
   "profile": "प्रोफाइल",
+  "accountTab": "खाते",
   
   "myDetails": "माझी माहिती",
   "farmDetails": "शेतीचा तपशील",
@@ -297,6 +313,10 @@
   "enterRemarks": "टिप्पणी प्रविष्ट करा (असल्यास)",
   "saveFarm": "शेत जतन करा",
   "farmAddedSuccess": "शेत यशस्वीरित्या जोडले गेले",
+  "farmRequired": "शेत आवश्यक",
+  "farmRequiredMessage": "पिके जोडण्यासाठी, तुम्हाला प्रथम शेत जोडावे लागेल. तुमच्या पिकाच्या तपशीलांचा मागोवा घेण्यासाठी शेत आवश्यक आहे.",
+  "farmRequiredInstruction": "तुमचे पहिले शेत तयार करण्यासाठी खाली 'शेत जोडा' वर क्लिक करा.",
+  "farmAddedCanAddCrops": "शेत जोडले गेले! आता तुम्ही पिके जोडू शकता.",
   "noFarmsAdded": "अद्याप शेत जोडलेले नाही",
   "addYourFirstFarm": "सुरू करण्यासाठी तुमचे पहिले शेत जोडा",
   "main": "मुख्य",
