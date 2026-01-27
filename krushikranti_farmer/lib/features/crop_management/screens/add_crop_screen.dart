@@ -522,9 +522,9 @@ class _AddCropScreenState extends State<AddCropScreen> {
             Icon(Icons.info_outline, color: AppColors.brandGreen, size: 28),
             const SizedBox(width: 12),
             Expanded(
-              child: const Text(
-                "Farm Required",
-                style: TextStyle(
+              child: Text(
+                dialogL10n?.farmRequired ?? "Farm Required",
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -537,9 +537,9 @@ class _AddCropScreenState extends State<AddCropScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "To add crops, you need to add a farm first. A farm is required to track your crop details.",
-              style: TextStyle(
+            Text(
+              dialogL10n?.farmRequiredMessage ?? "To add crops, you need to add a farm first. A farm is required to track your crop details.",
+              style: const TextStyle(
                 fontSize: 15,
                 color: Colors.black87,
                 height: 1.5,
@@ -559,7 +559,7 @@ class _AddCropScreenState extends State<AddCropScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "Click 'Add Farm' below to create your first farm.",
+                      dialogL10n?.farmRequiredInstruction ?? "Click 'Add Farm' below to create your first farm.",
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.brandGreen,
@@ -593,7 +593,7 @@ class _AddCropScreenState extends State<AddCropScreen> {
                   final snackL10n = AppLocalizations.of(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text("Farm added! You can now add crops."),
+                      content: Text(snackL10n?.farmAddedCanAddCrops ?? "Farm added! You can now add crops."),
                       backgroundColor: Colors.green,
                       action: SnackBarAction(
                         label: snackL10n?.addCropBtn ?? "Add Crop",

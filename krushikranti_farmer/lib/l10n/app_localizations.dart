@@ -154,6 +154,30 @@ abstract class AppLocalizations {
   /// **'Your assigned Field Officer'**
   String get fieldOfficerAssignedMsg;
 
+  /// No description provided for @assignedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to:'**
+  String get assignedTo;
+
+  /// No description provided for @forFarm.
+  ///
+  /// In en, this message translates to:
+  /// **'For:'**
+  String get forFarm;
+
+  /// No description provided for @moreAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'+ {count} more'**
+  String moreAssignments(int count);
+
+  /// No description provided for @pincodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pincode:'**
+  String get pincodeLabel;
+
   /// No description provided for @viewFieldOfficerDetails.
   ///
   /// In en, this message translates to:
@@ -280,6 +304,12 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get home;
 
+  /// No description provided for @task.
+  ///
+  /// In en, this message translates to:
+  /// **'Task'**
+  String get task;
+
   /// No description provided for @crops.
   ///
   /// In en, this message translates to:
@@ -303,6 +333,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Profile'**
   String get profile;
+
+  /// No description provided for @accountTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get accountTab;
 
   /// No description provided for @myDetails.
   ///
@@ -1588,6 +1624,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Farm added successfully'**
   String get farmAddedSuccess;
+
+  /// No description provided for @farmRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm Required'**
+  String get farmRequired;
+
+  /// No description provided for @farmRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'To add crops, you need to add a farm first. A farm is required to track your crop details.'**
+  String get farmRequiredMessage;
+
+  /// No description provided for @farmRequiredInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Click \'Add Farm\' below to create your first farm.'**
+  String get farmRequiredInstruction;
+
+  /// No description provided for @farmAddedCanAddCrops.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm added! You can now add crops.'**
+  String get farmAddedCanAddCrops;
 
   /// No description provided for @farmLocationGPS.
   ///
