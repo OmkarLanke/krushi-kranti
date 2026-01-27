@@ -51,5 +51,19 @@
 	<string>We need location access to capture farm GPS coordinates and verify field officer visits</string>
 	<key>NSCameraUsageDescription</key>
 	<string>We need camera access to capture geotagged farm photos for verification</string>
+	<!-- Deep Link URL Scheme Configuration -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.krushikranti.farmer</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>krushikranti</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

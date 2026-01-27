@@ -259,19 +259,25 @@ class HttpService {
       return await _parseJsonInIsolate(response.body);
     } else {
       // Try to extract error message from ApiResponse format
+      String? errorMessage;
       try {
         final errorBody = await _parseJsonInIsolate(response.body);
         if (errorBody is Map && errorBody.containsKey('message')) {
-          throw Exception(errorBody['message'] ?? 'An error occurred');
+          errorMessage = errorBody['message'] as String?;
         }
-      } catch (_) {
-        // If parsing fails, use the raw response
+      } catch (e) {
+        // If parsing fails, errorMessage remains null
+        debugPrint('Failed to parse error response: $e');
       }
       
-      if (response.statusCode == 401) {
+      // Use extracted message or default based on status code
+      if (errorMessage != null && errorMessage.isNotEmpty) {
+        throw Exception(errorMessage);
+      } else if (response.statusCode == 401) {
         throw Exception('Unauthorized - Please login again');
+      } else if (response.statusCode == 404) {
+        throw Exception('Resource not found');
       } else {
-        // Don't include full response body in error (security: avoid exposing sensitive data)
         throw Exception('Error: ${response.statusCode}');
       }
     }
