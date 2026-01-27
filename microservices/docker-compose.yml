@@ -67,7 +67,7 @@ services:
     environment:
       POSTGRES_DB: subscription_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ....
     ports:
       - "5451:5432"
     volumes:
@@ -247,6 +247,8 @@ services:
         condition: service_healthy
       auth-service:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - krushi-kranti-network
     environment:
@@ -270,6 +272,8 @@ services:
       field-officer-db:
         condition: service_healthy
       auth-service:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - krushi-kranti-network
@@ -296,6 +300,8 @@ services:
         condition: service_healthy
       farmer-service:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     networks:
       - krushi-kranti-network
     environment:
@@ -320,6 +326,8 @@ services:
       kyc-db:
         condition: service_healthy
       auth-service:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - krushi-kranti-network

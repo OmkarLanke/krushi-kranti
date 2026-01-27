@@ -17,5 +17,10 @@ public interface KycVerificationLogRepository extends JpaRepository<KycVerificat
     
     List<KycVerificationLog> findByUserIdAndVerificationTypeOrderByCreatedAtDesc(
             Long userId, VerificationType verificationType);
+    
+    /**
+     * Delete all verification logs for a user (for user deletion cascade)
+     */
+    void deleteByUserId(Long userId);
 }
 

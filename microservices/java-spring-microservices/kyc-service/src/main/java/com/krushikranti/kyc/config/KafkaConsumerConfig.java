@@ -1,6 +1,6 @@
-package com.krushikranti.farmer.config;
+package com.krushikranti.kyc.config;
 
-import com.krushikranti.farmer.events.UserDeletionEvent;
+import com.krushikranti.kyc.events.UserDeletionEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +26,7 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
 
-    @Value("${spring.kafka.consumer.group-id:farmer-service-group}")
+    @Value("${spring.kafka.consumer.group-id:kyc-service-group}")
     private String groupId;
 
     @Bean
@@ -37,7 +37,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false); // Manual commit
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, UserDeletionEvent.class.getName());
         // Ignore type headers from producer - use our own class

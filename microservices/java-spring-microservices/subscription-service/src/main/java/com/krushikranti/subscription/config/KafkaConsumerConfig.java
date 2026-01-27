@@ -40,6 +40,8 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, UserDeletionEvent.class.getName());
+        // Ignore type headers from producer - use our own class
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         
         return new DefaultKafkaConsumerFactory<>(props);
     }
