@@ -48,6 +48,21 @@ otp:
   expiration: 300 # 5 minutes in seconds
   length: 6
 
+# Password Reset Configuration
+app:
+  password-reset:
+    token-expiration: 1800 # 30 minutes in seconds
+    rate-limit: 3 # Max requests per hour per email
+  services:
+    notification-service: ${NOTIFICATION_SERVICE_URL:http://notification-service:4016}
+
+# Kafka Configuration
+spring.kafka:
+  bootstrap-servers: kafka:9092
+  producer:
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 # gRPC Configuration
 grpc:
   server:

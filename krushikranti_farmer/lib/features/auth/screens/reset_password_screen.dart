@@ -1,11 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/constants/api_endpoints.dart';
+import '../../../core/services/http_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key});
+  final String? token; // Token from email link
+  
+  const ResetPasswordScreen({super.key, this.token});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -14,6 +19,10 @@ class ResetPasswordScreen extends StatefulWidget {
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _passController = TextEditingController();
   final _confirmController = TextEditingController();
+  bool _isLoading = false;
+  String? _error;
+  bool _passwordVisible = false;
+  bool _confirmPasswordVisible = false;
 
   @override
   Widget build(BuildContext context) {
@@ -80,9 +89,46 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             ),
             const SizedBox(height: 32),
 
-            _buildPasswordField(l10n.newPassword, _passController),
+            _buildPasswordField(l10n.newPassword, _passController, _passwordVisible, () {
+              setState(() {
+                _passwordVisible = !_passwordVisible;
+              });
+            }),
             const SizedBox(height: 16),
-            _buildPasswordField(l10n.confirmPassword, _confirmController),
+            _buildPasswordField(l10n.confirmPassword, _confirmController, _confirmPasswordVisible, () {
+              setState(() {
+                _confirmPasswordVisible = !_confirmPasswordVisible;
+              });
+            }),
+
+            // Error message
+            if (_error != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade200, width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline_rounded, size: 18, color: Colors.red.shade700),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: GoogleFonts.poppins(
+                          color: Colors.red.shade700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             const Spacer(),
 
@@ -95,9 +141,18 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                icon: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                icon: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
                 label: Text(
-                  l10n.submitBtn,
+                  _isLoading ? "Resetting..." : l10n.submitBtn,
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -105,27 +160,92 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     letterSpacing: 0.3,
                   ),
                 ),
-                onPressed: () {
-                  if (_passController.text == _confirmController.text) {
-                    // Success: Go back to Login
-                    ScaffoldMessenger.of(context).showSnackBar(
-                       SnackBar(
-                         content: Text(l10n.passwordResetSuccess),
-                         backgroundColor: AppColors.success,
-                         behavior: SnackBarBehavior.floating,
-                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                       ),
+                onPressed: _isLoading ? null : () async {
+                  final password = _passController.text.trim();
+                  final confirmPassword = _confirmController.text.trim();
+
+                  // Validation
+                  if (password.isEmpty || confirmPassword.isEmpty) {
+                    setState(() {
+                      _error = "Please fill in all fields";
+                    });
+                    return;
+                  }
+
+                  if (password.length < 8) {
+                    setState(() {
+                      _error = "Password must be at least 8 characters long";
+                    });
+                    return;
+                  }
+
+                  if (password != confirmPassword) {
+                    setState(() {
+                      _error = l10n.passwordsDoNotMatch;
+                    });
+                    return;
+                  }
+
+                  if (widget.token == null || widget.token!.isEmpty) {
+                    setState(() {
+                      _error = "Invalid reset link. Please request a new one.";
+                    });
+                    return;
+                  }
+
+                  setState(() {
+                    _isLoading = true;
+                    _error = null;
+                  });
+
+                  try {
+                    await HttpService.post(
+                      ApiEndpoints.forgotPasswordReset,
+                      {
+                        "token": widget.token,
+                        "newPassword": password,
+                      },
                     );
-                    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.emailLogin, (route) => false);
-                  } else {
+
+                    if (!mounted) return;
+
                     ScaffoldMessenger.of(context).showSnackBar(
-                       SnackBar(
-                         content: Text(l10n.passwordsDoNotMatch),
-                         backgroundColor: AppColors.error,
-                         behavior: SnackBarBehavior.floating,
-                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                       ),
+                      SnackBar(
+                        content: Text(l10n.passwordResetSuccess),
+                        backgroundColor: AppColors.success,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     );
+
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRoutes.emailLogin,
+                      (route) => false,
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+
+                    setState(() {
+                      _isLoading = false;
+                    });
+
+                    final errorString = e.toString();
+                    String errorMessage = "Failed to reset password. Please try again.";
+
+                    if (errorString.contains("Invalid or expired token") ||
+                        errorString.contains("expired")) {
+                      errorMessage = "This reset link has expired. Please request a new one.";
+                    } else if (errorString.contains("Invalid") || 
+                               errorString.contains("invalid")) {
+                      errorMessage = "Invalid reset link. Please request a new one.";
+                    } else if (e is SocketException) {
+                      errorMessage = "Network error. Please check your connection and try again.";
+                    }
+
+                    setState(() {
+                      _error = errorMessage;
+                    });
                   }
                 },
               ),
@@ -137,7 +257,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildPasswordField(String hint, TextEditingController controller) {
+  Widget _buildPasswordField(String hint, TextEditingController controller, bool isVisible, VoidCallback onToggleVisibility) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -172,7 +292,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               Expanded(
                 child: TextField(
                   controller: controller,
-                  obscureText: true,
+                  obscureText: !isVisible,
                   style: GoogleFonts.poppins(fontSize: 14),
                   decoration: InputDecoration(
                     hintText: hint,
@@ -182,7 +302,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       fontSize: 14,
                     ),
                   ),
+                  onChanged: (_) {
+                    if (_error != null) {
+                      setState(() {
+                        _error = null;
+                      });
+                    }
+                  },
                 ),
+              ),
+              IconButton(
+                icon: Icon(
+                  isVisible ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey.shade600,
+                ),
+                onPressed: onToggleVisibility,
               ),
             ],
           ),

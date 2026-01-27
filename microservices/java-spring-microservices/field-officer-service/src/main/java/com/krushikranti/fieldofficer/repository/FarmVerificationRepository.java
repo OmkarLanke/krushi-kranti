@@ -4,6 +4,7 @@ import com.krushikranti.fieldofficer.model.FarmVerification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -47,5 +48,12 @@ public interface FarmVerificationRepository extends JpaRepository<FarmVerificati
      */
     // TODO: Implement by calling farmer-service REST API to get farm IDs for assigned farmers
     // For now, use findByFieldOfficerId and filter in service layer
+
+    /**
+     * Delete all verifications by a field officer (for user deletion cascade)
+     */
+    @Modifying
+    @Query("DELETE FROM FarmVerification f WHERE f.fieldOfficerId = :fieldOfficerId")
+    int deleteByFieldOfficerId(@Param("fieldOfficerId") Long fieldOfficerId);
 }
 

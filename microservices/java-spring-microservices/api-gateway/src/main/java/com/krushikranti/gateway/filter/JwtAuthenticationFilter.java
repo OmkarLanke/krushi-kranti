@@ -96,7 +96,12 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private boolean shouldSkipPath(String path) {
         List<String> skipPaths = jwtProperties.getSkipPaths();
-        boolean shouldSkip = skipPaths.stream().anyMatch(skipPath -> path.startsWith(skipPath));
+        boolean shouldSkip = skipPaths.stream().anyMatch(skipPath -> {
+            // Remove wildcards (**) for matching - they're just for documentation
+            String normalizedSkipPath = skipPath.replace("/**", "");
+            // Match if path starts with the normalized skip path
+            return path.startsWith(normalizedSkipPath);
+        });
         if (shouldSkip) {
             log.debug("Path {} matches skip pattern", path);
         } else {
