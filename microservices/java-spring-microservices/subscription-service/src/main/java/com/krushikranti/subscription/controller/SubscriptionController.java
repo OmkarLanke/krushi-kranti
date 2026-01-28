@@ -21,12 +21,27 @@ public class SubscriptionController {
 
     /**
      * Get subscription status for the logged-in user.
+     * ADMIN users will receive a response indicating they don't have subscriptions.
      */
     @GetMapping("/status")
     public ResponseEntity<ApiResponse<SubscriptionStatusResponse>> getSubscriptionStatus(
-            @RequestHeader("X-User-Id") Long userId) {
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader) {
         
         log.debug("Getting subscription status for userId: {}", userId);
+        
+        // ADMIN users don't have subscriptions
+        if (rolesHeader != null && rolesHeader.contains("ADMIN")) {
+            SubscriptionStatusResponse adminResponse = SubscriptionStatusResponse.builder()
+                    .userId(userId)
+                    .isSubscribed(false)
+                    .subscriptionStatus("NONE")
+                    .paymentStatus("NONE")
+                    .daysRemaining(0)
+                    .message("ADMIN users do not have subscriptions")
+                    .build();
+            return ResponseEntity.ok(ApiResponse.success("Subscription status retrieved", adminResponse));
+        }
         
         SubscriptionStatusResponse status = subscriptionService.getSubscriptionStatus(userId);
         return ResponseEntity.ok(ApiResponse.success("Subscription status retrieved", status));
@@ -34,10 +49,17 @@ public class SubscriptionController {
 
     /**
      * Check if user is subscribed.
+     * ADMIN users always return false.
      */
     @GetMapping("/check")
     public ResponseEntity<ApiResponse<Boolean>> checkSubscription(
-            @RequestHeader("X-User-Id") Long userId) {
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader) {
+        
+        // ADMIN users don't have subscriptions
+        if (rolesHeader != null && rolesHeader.contains("ADMIN")) {
+            return ResponseEntity.ok(ApiResponse.success("ADMIN users do not have subscriptions", false));
+        }
         
         boolean isSubscribed = subscriptionService.isSubscribed(userId);
         String message = isSubscribed ? "User is subscribed" : "User is not subscribed";
@@ -46,14 +68,27 @@ public class SubscriptionController {
 
     /**
      * Check profile completion status before subscription.
+     * ADMIN users are not allowed to check profile completion for subscriptions.
      */
     @GetMapping("/profile-check")
     public ResponseEntity<ApiResponse<ProfileCompletionStatus>> checkProfileCompletion(
             @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
             @RequestHeader(value = "X-Farmer-Id", required = false) Long farmerId,
             @RequestParam(defaultValue = "false") boolean hasMyDetails,
             @RequestParam(defaultValue = "false") boolean hasFarmDetails,
             @RequestParam(defaultValue = "false") boolean hasCropDetails) {
+        
+        // ADMIN users cannot subscribe
+        if (rolesHeader != null && rolesHeader.contains("ADMIN")) {
+            ProfileCompletionStatus adminResponse = ProfileCompletionStatus.builder()
+                    .userId(userId)
+                    .profileCompleted(false)
+                    .canSubscribe(false)
+                    .message("ADMIN users cannot subscribe. This endpoint is for FARMER role only.")
+                    .build();
+            return ResponseEntity.ok(ApiResponse.success(adminResponse.getMessage(), adminResponse));
+        }
         
         ProfileCompletionStatus status = subscriptionService.checkProfileCompletion(
                 userId, farmerId, hasMyDetails, hasFarmDetails, hasCropDetails);
@@ -63,25 +98,31 @@ public class SubscriptionController {
 
     /**
      * Initiate subscription payment.
+     * The farmer_id is automatically fetched from farmer-service using the user_id.
+     * This ensures farmer_id is always consistent with farmer_db.
+     * ADMIN users are not allowed to subscribe.
      */
     @PostMapping("/payment/initiate")
     public ResponseEntity<ApiResponse<InitiatePaymentResponse>> initiatePayment(
             @RequestHeader("X-User-Id") Long userId,
-            @RequestHeader(value = "X-Farmer-Id", required = false, defaultValue = "0") Long farmerId,
+            @RequestHeader(value = "X-User-Roles", required = false) String rolesHeader,
             @RequestBody(required = false) InitiatePaymentRequest request) {
         
         log.info("Initiating payment for userId: {}", userId);
+        
+        // Check if user is ADMIN - admins cannot subscribe
+        if (rolesHeader != null && rolesHeader.contains("ADMIN")) {
+            log.warn("ADMIN user (userId: {}) attempted to initiate subscription. This is not allowed.", userId);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("ADMIN users cannot subscribe. Subscriptions are for FARMER role only."));
+        }
         
         if (request == null) {
             request = new InitiatePaymentRequest();
         }
         
-        // If farmerId not provided in header, use userId (they should be same for farmers)
-        if (farmerId == null || farmerId == 0) {
-            farmerId = userId;
-        }
-        
-        InitiatePaymentResponse response = subscriptionService.initiatePayment(userId, farmerId, request);
+        // farmer_id is now fetched automatically from farmer-service inside SubscriptionService
+        InitiatePaymentResponse response = subscriptionService.initiatePayment(userId, request);
         
         if ("FAILED".equals(response.getStatus())) {
             return ResponseEntity.badRequest()
