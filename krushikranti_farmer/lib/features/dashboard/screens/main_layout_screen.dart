@@ -89,31 +89,17 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         }
 
         final isSubscribed = snapshot.data ?? false;
-        final isAccountTab = _currentIndex == 4;
-        Widget body = _screens[_currentIndex];
-
-        // If not subscribed and not on Account tab, show subscription guard overlay
-        if (!isSubscribed && !isAccountTab) {
-          body = SubscriptionGuard(
-            child: body,
-            featureName: _featureNames[_currentIndex],
-            showOverlay: true,
-          );
-        }
-        // NOTE: We removed the automatic redirect to welcome.
-        // Unsubscribed users can still access dashboard but will see 
-        // subscription guard overlays on protected tabs.
-        // Account tab remains accessible for subscription navigation.
+        final body = _screens[_currentIndex];
 
         return Scaffold(
           body: body,
-          bottomNavigationBar: _buildModernBottomNavBar(l10n),
+          bottomNavigationBar: _buildModernBottomNavBar(l10n, isSubscribed),
         );
       },
     );
   }
 
-  Widget _buildModernBottomNavBar(AppLocalizations l10n) {
+  Widget _buildModernBottomNavBar(AppLocalizations l10n, bool isSubscribed) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -136,12 +122,16 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 activeIcon: Icons.home_rounded,
                 label: l10n.home, 
                 index: 0,
+                isSubscribed: isSubscribed,
+                isPremium: false,
               ),
               _buildNavItem(
                 icon: Icons.assignment_outlined,
                 activeIcon: Icons.assignment_rounded,
-                label: "Task", 
+                label: l10n.task, 
                 index: 1,
+                isSubscribed: isSubscribed,
+                isPremium: true,
               ),
               _buildCenterSellButton(l10n),
               _buildNavItem(
@@ -149,12 +139,16 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 activeIcon: Icons.account_balance_wallet_rounded,
                 label: l10n.finance,
                 index: 3,
+                isSubscribed: isSubscribed,
+                isPremium: true,
               ),
               _buildNavItem(
                 icon: Icons.person_outline,
                 activeIcon: Icons.person_rounded,
-                label: "Account",
+                label: l10n.accountTab,
                 index: 4,
+                isSubscribed: isSubscribed,
+                isPremium: false,
               ),
             ],
           ),
@@ -168,6 +162,8 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     required IconData activeIcon,
     required String label,
     required int index,
+    required bool isSubscribed,
+    required bool isPremium,
   }) {
     final isSelected = _currentIndex == index;
     
@@ -175,7 +171,17 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _onItemTapped(index),
+          onTap: () async {
+            // Premium tabs: show friendly upgrade dialog for free users
+            if (isPremium && !isSubscribed) {
+              await showSubscriptionRequiredDialog(
+                context,
+                featureName: label,
+              );
+              return;
+            }
+            _onItemTapped(index);
+          },
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -192,12 +198,27 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    isSelected ? activeIcon : icon,
-                    color: isSelected
-                        ? AppColors.brandGreen
-                        : Colors.grey.shade600,
-                    size: 22,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        isSelected ? activeIcon : icon,
+                        color: isSelected
+                            ? AppColors.brandGreen
+                            : Colors.grey.shade600,
+                        size: 22,
+                      ),
+                      if (isPremium && !isSubscribed)
+                        const Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Icon(
+                            Icons.lock,
+                            size: 12,
+                            color: Colors.orange,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 2),

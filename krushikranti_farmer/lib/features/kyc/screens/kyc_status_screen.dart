@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_routes.dart';
 import '../../../l10n/app_localizations.dart';
 import '../models/kyc_models.dart';
 import '../services/kyc_service.dart';
@@ -19,6 +20,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
   bool _isLoading = true;
   KycStatusResponse? _kycStatus;
   String? _errorMessage;
+  bool _fromOnboarding = false;
 
   @override
   void initState() {
@@ -144,6 +146,12 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
+    // Detect if this screen is part of the signup/onboarding flow
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && !_fromOnboarding) {
+      _fromOnboarding = args['fromOnboarding'] == true;
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
@@ -151,7 +159,18 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (_fromOnboarding) {
+              // When KYC is part of onboarding, back should take user into main app safely
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.dashboard,
+                (route) => false,
+              );
+            } else {
+              Navigator.pop(context);
+            }
+          },
         ),
         title: Text(
           l10n.kycVerification,
@@ -187,6 +206,116 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        // Step 1: Profile (done)
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.brandGreen,
+                          child: Icon(Icons.check, color: Colors.white, size: 16),
+                        ),
+                        SizedBox(width: 24, child: Divider(color: AppColors.brandGreen, thickness: 2)),
+                        // Step 2: Farm (done)
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.brandGreen,
+                          child: Icon(Icons.check, color: Colors.white, size: 16),
+                        ),
+                        SizedBox(width: 24, child: Divider(color: AppColors.brandGreen, thickness: 2)),
+                        // Step 3: Crop (done)
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.brandGreen,
+                          child: Icon(Icons.check, color: Colors.white, size: 16),
+                        ),
+                        SizedBox(width: 24, child: Divider(color: AppColors.brandGreen, thickness: 2)),
+                        // Step 4: Subscription (done)
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.brandGreen,
+                          child: Icon(Icons.check, color: Colors.white, size: 16),
+                        ),
+                        SizedBox(width: 24, child: Divider(color: Colors.grey, thickness: 2)),
+                        // Step 5: KYC (active)
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.brandGreen,
+                          child: Text(
+                            '5',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '1. Profile',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '2. Farm',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '3. Crop',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '4. Subscription',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '5. KYC',
+                            textAlign: TextAlign.right,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
                     // Progress Card
                     _buildProgressCard(l10n),
                     

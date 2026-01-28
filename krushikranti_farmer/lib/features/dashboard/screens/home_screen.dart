@@ -9,6 +9,8 @@ import '../../dashboard/services/crop_service.dart';
 import '../../dashboard/services/field_officer_assignment_service.dart';
 import '../../dashboard/services/notification_service.dart';
 import '../../../core/services/http_service.dart';
+import '../../../core/services/storage_service.dart';
+import '../../subscription/widgets/subscription_guard.dart' show showSubscriptionRequiredDialog;
 import 'field_officer_details_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,7 +35,10 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<NotificationModel>? _notificationSubscription;
   Timer? _expiredNotificationCleanupTimer;
   VoidCallback? _notificationServiceListener;
-  int _previousNotificationCount = 0;
+
+  // Onboarding/completion flags
+  bool _hasPersonalDetails = true;
+  bool _hasCrops = true;
 
   @override
   void initState() {
@@ -45,6 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
     Future.wait([
       _checkFieldOfficerAssignments(),
       _checkAllFarmsVerified(),
+      _checkPersonalDetailsCompletion(),
+      _checkHasCrops(),
     ]);
     
     _setupNotificationListener();
@@ -61,7 +68,15 @@ class _HomeScreenState extends State<HomeScreen> {
       // Cleanup expired notifications
       _notificationService.removeExpiredOtpNotifications();
     });
-    
+    // After first frame, check if there are any OTPs that haven't shown popup yet
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final newForPopup = _notificationService.newOtpNotificationsForPopup;
+      if (newForPopup.isNotEmpty) {
+        _notificationService.markPopupShownForNotifications(newForPopup);
+        _showOtpReceivedPopup();
+      }
+    });
     // Check farm verification status periodically (every 60 seconds)
     Timer.periodic(const Duration(seconds: 60), (timer) {
       if (mounted) {
@@ -91,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         backgroundColor: AppColors.brandGreen,
-        duration: const Duration(seconds: 6),
+        duration: const Duration(seconds: 10),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
@@ -328,6 +343,52 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Check if personal details look complete based on locally stored data.
+  Future<void> _checkPersonalDetailsCompletion() async {
+    try {
+      final userData = await StorageService.getUserDetails();
+      final firstName = (userData['firstName'] ?? '').toString().trim();
+      final lastName = (userData['lastName'] ?? '').toString().trim();
+      final dob = (userData['dob'] ?? '').toString().trim();
+      final gender = (userData['gender'] ?? '').toString().trim();
+
+      final hasPersonal = firstName.isNotEmpty &&
+          lastName.isNotEmpty &&
+          dob.isNotEmpty &&
+          gender.isNotEmpty;
+
+      if (mounted) {
+        setState(() {
+          _hasPersonalDetails = hasPersonal;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _hasPersonalDetails = false;
+        });
+      }
+    }
+  }
+
+  /// Check if user has added at least one crop.
+  Future<void> _checkHasCrops() async {
+    try {
+      final crops = await CropService.getCrops();
+      if (mounted) {
+        setState(() {
+          _hasCrops = crops.isNotEmpty;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _hasCrops = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -380,6 +441,41 @@ class _HomeScreenState extends State<HomeScreen> {
             // A. Weather
             _buildWeatherHeader(l10n),
             const SizedBox(height: 20),
+
+            // Profile completion nudges (non-blocking)
+            if (!_hasPersonalDetails) ...[
+              _buildCompletionCard(
+                icon: Icons.person_outline_rounded,
+                title: 'Complete your profile',
+                message:
+                    'Add your basic details so we can personalise Krushi Kranti for you.',
+                ctaLabel: 'Complete now',
+                onTap: () => Navigator.pushNamed(context, AppRoutes.myDetails),
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (_totalFarms == 0) ...[
+              _buildCompletionCard(
+                icon: Icons.agriculture_rounded,
+                title: 'Add your first farm',
+                message:
+                    'Add at least one farm to see farm-specific insights and crops.',
+                ctaLabel: 'Add farm',
+                onTap: () => Navigator.pushNamed(context, AppRoutes.addFarm),
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (_totalFarms > 0 && !_hasCrops) ...[
+              _buildCompletionCard(
+                icon: Icons.grass_rounded,
+                title: 'Add your first crop',
+                message:
+                    'Add at least one crop to start getting guidance and forecasts.',
+                ctaLabel: 'Add crop',
+                onTap: () => Navigator.pushNamed(context, AppRoutes.addCrop),
+              ),
+              const SizedBox(height: 16),
+            ],
             
             // B. All Farms Verified Banner (if all farms are verified)
             if (_allFarmsVerified) ...[
@@ -771,7 +867,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      'For: $farmNamesText',
+                      '${l10n.forFarm} $farmNamesText',
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 14,
@@ -954,7 +1050,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 4),
                     Text(
-                      "Pincode: $fieldOfficerPincode",
+                      "${l10n.pincodeLabel} $fieldOfficerPincode",
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: Colors.grey.shade600,
@@ -998,7 +1094,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              'Assigned to: ${assignedFarmNames.join(', ')}',
+                              '${l10n.assignedTo} ${assignedFarmNames.join(', ')}',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 color: Colors.grey.shade600,
@@ -1015,7 +1111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Padding(
                         padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        "+ ${fieldOfficerAssignments.length - 1} more",
+                        l10n.moreAssignments(fieldOfficerAssignments.length - 1),
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             color: AppColors.brandGreen,
@@ -1088,28 +1184,45 @@ class _HomeScreenState extends State<HomeScreen> {
         "title": l10n.cropDetail,
         "route": AppRoutes.cropList,
         "status": cropStatus, 
-        "statusColor": cropStatusColor 
+        "statusColor": cropStatusColor,
+        "isPremium": false,
+        "requiresPersonal": false,
+        "requiresFarm": true,
+        "requiresCrop": true,
       },
       {
         "icon": Icons.bar_chart, 
         "title": l10n.dailySale,
         "route": AppRoutes.sell,
         "status": l10n.pending,
-        "statusColor": AppColors.pendingStatus
+        "statusColor": AppColors.pendingStatus,
+        // Advanced sales workflow – treated as premium for free users
+        "isPremium": true,
+        "requiresPersonal": false,
+        "requiresFarm": true,
+        "requiresCrop": true,
       },
       {
         "icon": Icons.monetization_on_outlined, 
         "title": l10n.funding,
         "route": AppRoutes.requestFunds,
         "status": l10n.pending,
-        "statusColor": AppColors.pendingStatus
+        "statusColor": AppColors.pendingStatus,
+        "isPremium": true,
+        "requiresPersonal": false,
+        "requiresFarm": true,
+        "requiresCrop": false,
       },
       {
         "icon": Icons.account_balance_wallet_outlined, 
         "title": l10n.account,
         "route": null,
         "status": l10n.pending,
-        "statusColor": AppColors.pendingStatus
+        "statusColor": AppColors.pendingStatus,
+        "isPremium": true,
+        "requiresPersonal": true,
+        "requiresFarm": false,
+        "requiresCrop": false,
       },
     ];
 
@@ -1131,6 +1244,10 @@ class _HomeScreenState extends State<HomeScreen> {
           items[index]['route'] as String?,
           items[index]['status'] as String,
           items[index]['statusColor'] as Color,
+          items[index]['isPremium'] as bool,
+          items[index]['requiresPersonal'] as bool,
+          items[index]['requiresFarm'] as bool,
+          items[index]['requiresCrop'] as bool,
         );
       },
     );
@@ -1143,11 +1260,67 @@ class _HomeScreenState extends State<HomeScreen> {
     String? route, 
     String status, 
     Color statusColor,
+    bool isPremium,
+    bool requiresPersonal,
+    bool requiresFarm,
+    bool requiresCrop,
   ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () async {
+          // Onboarding locks: explain missing details before navigating
+          if (requiresPersonal && !_hasPersonalDetails) {
+            await _showOnboardingDialog(
+              context: context,
+              icon: Icons.person_outline_rounded,
+              title: 'Complete your profile',
+              message:
+                  'Before using this feature, please add your basic personal details.',
+              ctaLabel: 'Complete now',
+              routeName: AppRoutes.myDetails,
+            );
+            return;
+          }
+
+          if (requiresFarm && _totalFarms == 0) {
+            await _showOnboardingDialog(
+              context: context,
+              icon: Icons.agriculture_rounded,
+              title: 'Add your first farm',
+              message:
+                  'Add at least one farm to start using this feature for your land.',
+              ctaLabel: 'Add farm',
+              routeName: AppRoutes.addFarm,
+            );
+            return;
+          }
+
+          if (requiresCrop && !_hasCrops) {
+            await _showOnboardingDialog(
+              context: context,
+              icon: Icons.grass_rounded,
+              title: 'Add your first crop',
+              message:
+                  'Add at least one crop on your farm to start tracking it here.',
+              ctaLabel: 'Add crop',
+              routeName: AppRoutes.addCrop,
+            );
+            return;
+          }
+
+          // Premium quick actions: soft paywall for free users (after onboarding checks)
+          if (isPremium) {
+            final isSubscribed = await StorageService.isSubscribed();
+            if (!isSubscribed) {
+              await showSubscriptionRequiredDialog(
+                context,
+                featureName: title,
+              );
+              return;
+            }
+          }
+
           if (route != null && !isNavigating) {
             setState(() {
               isNavigating = true;
@@ -1260,10 +1433,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: AppColors.brandGreen.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.arrow_forward_rounded,
-                        color: AppColors.brandGreen,
-                        size: 18,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            color: AppColors.brandGreen,
+                            size: 18,
+                          ),
+                          if (isPremium)
+                            const Positioned(
+                              right: -1,
+                              top: -1,
+                              child: Icon(
+                                Icons.lock,
+                                size: 12,
+                                color: Colors.orange,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -1407,6 +1595,156 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  /// Compact card to nudge user to complete missing profile/farm/crop details.
+  Widget _buildCompletionCard({
+    required IconData icon,
+    required String title,
+    required String message,
+    required String ctaLabel,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.brandGreen, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: onTap,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.brandGreen,
+              textStyle: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            child: Text(ctaLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Friendly dialog used when a user taps a feature that requires
+  /// missing onboarding (personal, farm, or crop details).
+  Future<void> _showOnboardingDialog({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String message,
+    required String ctaLabel,
+    required String routeName,
+  }) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Icon(icon, color: AppColors.brandGreen),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.grey.shade800,
+              height: 1.4,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                AppLocalizations.of(context)!.later,
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.pushNamed(context, routeName);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brandGreen,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                ctaLabel,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
