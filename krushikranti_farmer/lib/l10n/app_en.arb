@@ -5,6 +5,17 @@
   "assignMsg": "We'll assign",
   "soonMsg": "KrushiTadnya Soon !",
   "assignedMsg": "Your assigned Krushi Tadnya",
+  "assignedTo": "Assigned to:",
+  "forFarm": "For:",
+  "moreAssignments": "+ {count} more",
+  "@moreAssignments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pincodeLabel": "Pincode:",
   "fieldOfficerAssignMsg": "We'll assign",
   "fieldOfficerSoonMsg": "Field Officer for verification soon",
   "fieldOfficerAssignedMsg": "Your assigned Field Officer",
@@ -33,10 +44,12 @@
   "account": "Account Balance & Settlement",
   
   "home": "Home",
+  "task": "Task",
   "crops": "Crops",
   "sell": "Sell",
   "orders": "Orders",
   "profile": "Profile",
+  "accountTab": "Account",
   
   "myDetails": "My Details",
   "farmDetails": "Farm Details",
@@ -313,6 +326,10 @@
   "enterRemarks": "Enter remarks (if any)",
   "saveFarm": "Save Farm",
   "farmAddedSuccess": "Farm added successfully",
+  "farmRequired": "Farm Required",
+  "farmRequiredMessage": "To add crops, you need to add a farm first. A farm is required to track your crop details.",
+  "farmRequiredInstruction": "Click 'Add Farm' below to create your first farm.",
+  "farmAddedCanAddCrops": "Farm added! You can now add crops.",
   "farmLocationGPS": "Farm Location (GPS)",
   "captureFarmLocationDesc": "Capture your farm's GPS coordinates. This helps field officers verify your farm location.",
   "captureFarmLocation": "Capture Farm Location",

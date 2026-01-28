@@ -27,6 +27,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assignedMsg => 'Your assigned Krushi Tadnya';
 
   @override
+  String get assignedTo => 'Assigned to:';
+
+  @override
+  String get forFarm => 'For:';
+
+  @override
+  String moreAssignments(int count) {
+    return '+ $count more';
+  }
+
+  @override
+  String get pincodeLabel => 'Pincode:';
+
+  @override
   String get fieldOfficerAssignMsg => 'We\'ll assign';
 
   @override
@@ -99,6 +113,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get home => 'Home';
 
   @override
+  String get task => 'Task';
+
+  @override
   String get crops => 'Crops';
 
   @override
@@ -109,6 +126,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile => 'Profile';
+
+  @override
+  String get accountTab => 'Account';
 
   @override
   String get myDetails => 'My Details';
@@ -764,6 +784,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get farmAddedSuccess => 'Farm added successfully';
+
+  @override
+  String get farmRequired => 'Farm Required';
+
+  @override
+  String get farmRequiredMessage =>
+      'To add crops, you need to add a farm first. A farm is required to track your crop details.';
+
+  @override
+  String get farmRequiredInstruction =>
+      'Click \'Add Farm\' below to create your first farm.';
+
+  @override
+  String get farmAddedCanAddCrops => 'Farm added! You can now add crops.';
 
   @override
   String get farmLocationGPS => 'Farm Location (GPS)';

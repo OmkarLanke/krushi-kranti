@@ -138,26 +138,14 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
 
       if (!mounted) return;
 
-      // Check subscription status - if not subscribed, go to welcome pages
-      final isSubscribed = await StorageService.isSubscribed();
-      
-      if (!mounted) return;
-
-      if (isSubscribed) {
-        // Already subscribed - go to dashboard
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.dashboard,
-          (route) => false,
-        );
-      } else {
-        // Not subscribed - show welcome pages
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.welcome,
-          (route) => false,
-        );
-      }
+      // Personal & contact details are now saved (Step 1 complete).
+      // Move to Step 2 (Add Farm). User can still skip there if they want.
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.addFarm,
+        (route) => false,
+        arguments: {'fromOnboarding': true},
+      );
     } catch (e) {
       if (!mounted) return;
 
@@ -223,6 +211,7 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -280,32 +269,76 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
 
               const SizedBox(height: 20),
 
-              // --- UPDATED STEPPER INDICATOR ---
+              // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Step 1 (Done)
-                  const CircleAvatar(
-                    radius: 14,
-                    backgroundColor: AppColors.brandGreen,
-                    child: Icon(Icons.check, color: Colors.white, size: 16),
-                  ),
-                  Container(height: 2, width: 40, color: AppColors.brandGreen),
-
-                  // Step 2 (Done)
-                  const CircleAvatar(
-                    radius: 14,
-                    backgroundColor: AppColors.brandGreen,
-                    child: Icon(Icons.check, color: Colors.white, size: 16),
-                  ),
-                  Container(height: 2, width: 40, color: AppColors.brandGreen),
-
-                  // Step 3 (Active)
+                  // Step 1: Active – Profile (Personal + Contact + Address)
                   const CircleAvatar(
                     radius: 14,
                     backgroundColor: AppColors.brandGreen,
                     child: Text(
+                      "1",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(height: 2, width: 20, color: Colors.grey.shade300),
+
+                  // Step 2: Inactive – Farm details
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.grey.shade300,
+                    child: const Text(
+                      "2",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(height: 2, width: 20, color: Colors.grey.shade300),
+
+                  // Step 3: Inactive – Crop details
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.grey.shade300,
+                    child: const Text(
                       "3",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(height: 2, width: 20, color: Colors.grey.shade300),
+
+                  // Step 4: Inactive – Subscription
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.grey.shade300,
+                    child: const Text(
+                      "4",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(height: 2, width: 20, color: Colors.grey.shade300),
+
+                  // Step 5: Inactive – KYC
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.grey.shade300,
+                    child: const Text(
+                      "5",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
