@@ -13,7 +13,7 @@ SELECT
     'admin1'                                   AS username,
     'admin1@krushikranti.com'                 AS email,
     '9999999999'                              AS phone_number,
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy' AS password_hash, -- BCrypt hash for "admin123"
+    '$2a$12$gLc1fU3qabZS/UakvqNjtO3SxlcLdLnC0gWTb9XQ75ft9L97SpnR2' AS password_hash, -- BCrypt hash for "admin123"
     'ADMIN'                                   AS role,
     true                                      AS is_active,
     true                                      AS is_verified,
