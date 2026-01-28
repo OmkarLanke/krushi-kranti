@@ -35,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<NotificationModel>? _notificationSubscription;
   Timer? _expiredNotificationCleanupTimer;
   VoidCallback? _notificationServiceListener;
-  int _previousNotificationCount = 0;
 
   // Onboarding/completion flags
   bool _hasPersonalDetails = true;
@@ -69,7 +68,15 @@ class _HomeScreenState extends State<HomeScreen> {
       // Cleanup expired notifications
       _notificationService.removeExpiredOtpNotifications();
     });
-    
+    // After first frame, check if there are any OTPs that haven't shown popup yet
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final newForPopup = _notificationService.newOtpNotificationsForPopup;
+      if (newForPopup.isNotEmpty) {
+        _notificationService.markPopupShownForNotifications(newForPopup);
+        _showOtpReceivedPopup();
+      }
+    });
     // Check farm verification status periodically (every 60 seconds)
     Timer.periodic(const Duration(seconds: 60), (timer) {
       if (mounted) {
@@ -99,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         backgroundColor: AppColors.brandGreen,
-        duration: const Duration(seconds: 6),
+        duration: const Duration(seconds: 10),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
@@ -860,7 +867,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      'For: $farmNamesText',
+                      '${l10n.forFarm} $farmNamesText',
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 14,
@@ -1043,7 +1050,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 4),
                     Text(
-                      "Pincode: $fieldOfficerPincode",
+                      "${l10n.pincodeLabel} $fieldOfficerPincode",
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: Colors.grey.shade600,
@@ -1087,7 +1094,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              'Assigned to: ${assignedFarmNames.join(', ')}',
+                              '${l10n.assignedTo} ${assignedFarmNames.join(', ')}',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 color: Colors.grey.shade600,
@@ -1104,7 +1111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Padding(
                         padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        "+ ${fieldOfficerAssignments.length - 1} more",
+                        l10n.moreAssignments(fieldOfficerAssignments.length - 1),
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             color: AppColors.brandGreen,

@@ -149,6 +149,7 @@ class NotificationService extends ChangeNotifier {
   final List<NotificationModel> _notifications = [];
   final StreamController<NotificationModel> _notificationStreamController =
       StreamController<NotificationModel>.broadcast();
+  final Set<String> _popupShownNotificationIds = {};
   
   Timer? _pollingTimer;
   bool _isPolling = false;
@@ -190,6 +191,31 @@ class NotificationService extends ChangeNotifier {
         })
         .toList()
         ..sort((a, b) => b.timestamp.compareTo(a.timestamp)); // Sort by newest first
+  }
+
+  /// Get OTP notifications for which popup has not been shown yet
+  List<NotificationModel> get newOtpNotificationsForPopup {
+    final now = DateTime.now();
+    const otpExpirationDuration = Duration(minutes: 10);
+    
+    return _notifications
+        .where((n) {
+          if (n.type != 'FARM_VERIFICATION_OTP') {
+            return false;
+          }
+          if (_popupShownNotificationIds.contains(n.id)) {
+            return false;
+          }
+          final age = now.difference(n.timestamp);
+          return age < otpExpirationDuration;
+        })
+        .toList();
+  }
+
+  void markPopupShownForNotifications(List<NotificationModel> notifications) {
+    for (var n in notifications) {
+      _popupShownNotificationIds.add(n.id);
+    }
   }
 
   /// Get count of unread OTP notifications (for badge display)

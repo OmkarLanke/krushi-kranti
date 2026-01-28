@@ -215,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // Handle service not found
     if (message.toLowerCase().contains('not found') ||
         message.toLowerCase().contains('404')) {
-      return 'Service unavailable. Please try again later.';
+      return 'The requested service is temporarily unavailable. Please try again later.';
     }
     
     // Handle timeout errors

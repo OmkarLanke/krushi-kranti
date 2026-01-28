@@ -254,7 +254,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     children: [
                       Text(
                         'Farm Verification OTP',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.poppins(    
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: Colors.black87,
