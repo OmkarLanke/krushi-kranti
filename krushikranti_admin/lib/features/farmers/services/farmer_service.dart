@@ -70,5 +70,18 @@ class AdminFarmerService {
     
     throw Exception('Invalid response format');
   }
+
+  /// Delete farmer user (cascade delete via Auth Service)
+  static Future<void> deleteFarmerUser(int userId, {String? reason}) async {
+    final payload = <String, dynamic>{
+      'userId': userId,
+      if (reason != null && reason.isNotEmpty) 'reason': reason,
+    };
+
+    await HttpService.delete(
+      'auth/admin/delete-user',
+      data: payload,
+    );
+  }
 }
 
