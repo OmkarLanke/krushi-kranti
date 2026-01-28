@@ -20,6 +20,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   Map<String, dynamic>? _subscriptionStatus;
   Map<String, dynamic>? _profileCompletion;
   int? _transactionId;
+  bool _fromOnboarding = false;
 
   @override
   void initState() {
@@ -277,17 +278,27 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               'Your subscription is now active until $endDateStr',
             );
             
-            // Wait a moment then navigate to dashboard
+            // Wait a moment then navigate to next step in flow
             await Future.delayed(const Duration(milliseconds: 500));
             
             if (!mounted) return;
             
-            // Navigate to dashboard
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              AppRoutes.dashboard,
-              (route) => false,
-            );
+            if (_fromOnboarding) {
+              // Onboarding flow: after subscription (step 4), go to KYC (step 5)
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.kycStatus,
+                (route) => false,
+                arguments: {'fromOnboarding': true},
+              );
+            } else {
+              // Existing users: go back to main dashboard
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.dashboard,
+                (route) => false,
+              );
+            }
           } else {
             // API says not subscribed, but payment succeeded - might be a delay
             // Save locally anyway and refresh
@@ -404,7 +415,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _skipForNow() {
-    // Allow user to explore app with subscription guard showing on protected tabs
+    // Allow user to explore app with subscription guard showing on protected tabs.
+    // If coming from onboarding, we still respect the skip but end the flow on dashboard.
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.dashboard,
@@ -414,6 +426,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Check if this screen is opened as part of the signup/onboarding flow
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && !_fromOnboarding) {
+      _fromOnboarding = args['fromOnboarding'] == true;
+    }
+
     // Double check subscription status - ensure it's properly set
     final isSubscribed = _subscriptionStatus?['isSubscribed'] == true || 
                          _subscriptionStatus?['subscriptionStatus'] == 'ACTIVE';
@@ -434,13 +452,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: !isSubscribed, // Show back button if not subscribed
-        leading: isSubscribed 
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-                onPressed: () => Navigator.pop(context),
-              )
-            : null,
+        automaticallyImplyLeading: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () {
+            if (_fromOnboarding) {
+              // During onboarding, going back from subscription should not lead to a blank screen
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.dashboard,
+                (route) => false,
+              );
+            } else {
+              Navigator.pop(context);
+            }
+          },
+        ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -487,6 +514,129 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Step 1: Personal & Contact (done)
+                      const CircleAvatar(
+                        radius: 14,
+                        backgroundColor: AppColors.brandGreen,
+                        child: Icon(Icons.check, color: Colors.white, size: 16),
+                      ),
+                      Container(width: 24, height: 2, color: AppColors.brandGreen),
+
+                      // Step 2: Farm details (done)
+                      const CircleAvatar(
+                        radius: 14,
+                        backgroundColor: AppColors.brandGreen,
+                        child: Icon(Icons.check, color: Colors.white, size: 16),
+                      ),
+                      Container(width: 24, height: 2, color: AppColors.brandGreen),
+
+                      // Step 3: Crop details (done)
+                      const CircleAvatar(
+                        radius: 14,
+                        backgroundColor: AppColors.brandGreen,
+                        child: Icon(Icons.check, color: Colors.white, size: 16),
+                      ),
+                      Container(width: 24, height: 2, color: AppColors.brandGreen),
+
+                      // Step 4: Subscription (active or done)
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: isSubscribed ? AppColors.brandGreen : AppColors.brandGreen,
+                        child: isSubscribed
+                            ? const Icon(Icons.check, color: Colors.white, size: 16)
+                            : const Text(
+                                '4',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                      Container(width: 24, height: 2, color: Colors.grey.shade300),
+
+                      // Step 5: KYC (upcoming)
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Colors.grey.shade300,
+                        child: const Text(
+                          '5',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '1. Profile',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '2. Farm',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '3. Crop',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '4. Subscription',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '5. KYC',
+                          textAlign: TextAlign.right,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
                   // Status Card
                   _buildStatusCard(),
                   

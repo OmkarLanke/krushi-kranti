@@ -34,6 +34,8 @@ class _AddCropScreenState extends State<AddCropScreen> {
   List<Map<String, dynamic>> farms = [];
   bool _isLoading = false;
   bool _isLoadingCropNames = false;
+  bool _fromOnboarding = false;
+  bool _cameFromOnboardingFlow = false; // used for next screens (subscription/kyc)
 
   @override
   void initState() {
@@ -173,6 +175,13 @@ class _AddCropScreenState extends State<AddCropScreen> {
     // ✅ Localization Shortcut
     final l10n = AppLocalizations.of(context)!;
 
+    // Read navigation arguments once to know if this is part of signup flow
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && !_fromOnboarding) {
+      _fromOnboarding = args['fromOnboarding'] == true;
+      _cameFromOnboardingFlow = _fromOnboarding;
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
@@ -190,7 +199,19 @@ class _AddCropScreenState extends State<AddCropScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (_fromOnboarding) {
+              // If user is in signup flow and presses back from Add Crop,
+              // take them safely to the main dashboard instead of exiting to a black screen.
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.dashboard,
+                (route) => false,
+              );
+            } else {
+              Navigator.pop(context);
+            }
+          },
         ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -212,7 +233,71 @@ class _AddCropScreenState extends State<AddCropScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-                  // Farm Selection (if multiple farms)
+            const SizedBox(height: 10),
+            // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Step 1: Done – Profile
+                const CircleAvatar(
+                  radius: 14,
+                  backgroundColor: AppColors.brandGreen,
+                  child: Icon(Icons.check, color: Colors.white, size: 16),
+                ),
+                Container(width: 20, height: 2, color: AppColors.brandGreen),
+                // Step 2: Done – Farm
+                const CircleAvatar(
+                  radius: 14,
+                  backgroundColor: AppColors.brandGreen,
+                  child: Icon(Icons.check, color: Colors.white, size: 16),
+                ),
+                Container(width: 20, height: 2, color: AppColors.brandGreen),
+                // Step 3: Active – Crop
+                const CircleAvatar(
+                  radius: 14,
+                  backgroundColor: AppColors.brandGreen,
+                  child: Text(
+                    "3",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Container(width: 20, height: 2, color: Colors.grey.shade300),
+                // Step 4: Inactive – Subscription
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.grey.shade300,
+                  child: const Text(
+                    "4",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Container(width: 20, height: 2, color: Colors.grey.shade300),
+                // Step 5: Inactive – KYC
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.grey.shade300,
+                  child: const Text(
+                    "5",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Farm Selection (if multiple farms)
                   if (farms.length > 1) ...[
               _buildSectionHeader(Icons.agriculture_rounded, l10n.selectFarm),
               const SizedBox(height: 12),
@@ -766,14 +851,26 @@ class _AddCropScreenState extends State<AddCropScreen> {
         cropStatus: selectedCropStatus,
       );
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
             content: Text(l10n.cropAddedSuccess),
-          backgroundColor: Colors.green,
-        ),
-      );
-        Navigator.pop(context, true); // Return true to indicate success
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        if (_fromOnboarding) {
+          // In signup flow, once crop is added (step 3),
+          // move user to step 4: Subscription screen.
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.subscription,
+            (route) => false,
+            arguments: {'fromOnboarding': true},
+          );
+        } else {
+          Navigator.pop(context, true); // Return true to indicate success
+        }
       }
     } catch (e) {
       if (mounted) {
