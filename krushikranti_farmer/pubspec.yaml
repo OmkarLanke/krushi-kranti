@@ -27,6 +27,7 @@ dependencies:
   
   # EXIF data extraction for geotagged photos
   exif: ^3.3.0
+  image: ^4.2.0
   
   # Storage & UI
   shared_preferences: ^2.2.2

@@ -1,5 +1,6 @@
 package com.krushikranti.subscription.service;
 
+import com.krushikranti.subscription.client.FarmerServiceClient;
 import com.krushikranti.subscription.config.SubscriptionConfig;
 import com.krushikranti.subscription.dto.*;
 import com.krushikranti.subscription.model.PaymentTransaction;
@@ -30,6 +31,7 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final PaymentTransactionRepository transactionRepository;
     private final SubscriptionConfig subscriptionConfig;
+    private final FarmerServiceClient farmerServiceClient;
 
     /**
      * Get subscription status for a user.
@@ -138,12 +140,24 @@ public class SubscriptionService {
 
     /**
      * Initiate subscription payment.
+     * Automatically fetches the correct farmer_id from farmer-service using user_id.
      */
     @Transactional
-    public InitiatePaymentResponse initiatePayment(Long userId, Long farmerId, 
-            InitiatePaymentRequest request) {
+    public InitiatePaymentResponse initiatePayment(Long userId, InitiatePaymentRequest request) {
         
-        log.info("Initiating payment for userId: {}, farmerId: {}", userId, farmerId);
+        log.info("Initiating payment for userId: {}", userId);
+
+        // Fetch the correct farmer_id from farmer-service
+        Long farmerId = farmerServiceClient.getFarmerIdByUserId(userId);
+        if (farmerId == null) {
+            log.error("Could not find farmer profile for userId: {}", userId);
+            return InitiatePaymentResponse.builder()
+                    .status("FAILED")
+                    .message("Farmer profile not found. Please complete your profile before subscribing.")
+                    .build();
+        }
+        
+        log.info("Resolved farmer_id={} for userId={}", farmerId, userId);
 
         // Check if already has active subscription
         Optional<Subscription> activeSubscription = subscriptionRepository

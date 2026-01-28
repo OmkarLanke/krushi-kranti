@@ -51,6 +51,11 @@ subscription:
   validity-days: 365
   trial-days: 0
 
+# Service URLs for inter-service HTTP communication
+services:
+  farmer-service:
+    url: http://farmer-service:4000
+
 management:
   endpoints:
     web:

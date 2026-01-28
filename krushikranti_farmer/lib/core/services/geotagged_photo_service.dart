@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:exif/exif.dart';
+import 'package:image/image.dart' as img;
 import 'location_service.dart';
 
 /// Service for capturing geotagged photos (camera only, no gallery)
@@ -72,26 +73,109 @@ class GeotaggedPhotoService {
       );
     }
 
-    // Step 4: Create photo file and return immediately
-    // EXIF reading is optional and non-critical - we have GPS from LocationService
+    // Step 4: Create photo file
     File photoFile = File(photo.path);
-    
-    // Return immediately with photo file and GPS coordinates
-    // EXIF data is optional and not required for verification
-    // The GPS coordinates from LocationService are sufficient
 
+    // Step 5: Create a geotagged (watermarked) copy with coordinates + timestamp
+    final DateTime now = DateTime.now();
+    final File watermarkedFile = await _addGpsWatermarkToPhoto(
+      originalFile: photoFile,
+      latitude: position.latitude,
+      longitude: position.longitude,
+      capturedAt: now,
+    );
+
+    // Return watermarked photo and GPS coordinates
     return GeotaggedPhotoResult(
-      photoFile: photoFile,
+      photoFile: watermarkedFile,
       gpsLatitude: position.latitude,
       gpsLongitude: position.longitude,
       gpsAccuracy: position.accuracy,
-      capturedAt: DateTime.now(),
+      capturedAt: now,
       // EXIF data is optional - not reading it to prevent blocking
       exifLatitude: null,
       exifLongitude: null,
       exifDateTime: null,
       exifData: null,
     );
+  }
+
+  /// Add visible GPS coordinates (and timestamp) as a watermark on the photo.
+  /// This does *not* modify the original file; it creates a new "_geo.jpg" file.
+  static Future<File> _addGpsWatermarkToPhoto({
+    required File originalFile,
+    required double latitude,
+    required double longitude,
+    required DateTime capturedAt,
+  }) async {
+    try {
+      final bytes = await originalFile.readAsBytes();
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) {
+        return originalFile;
+      }
+
+      final text = 'Lat: ${latitude.toStringAsFixed(6)}, '
+          'Lon: ${longitude.toStringAsFixed(6)}\n'
+          'Time: ${capturedAt.toIso8601String()}';
+
+      final image = img.copyResize(decoded, width: decoded.width); // ensure mutable
+
+      // Draw a semi-transparent dark band behind the text for readability
+      const int padding = 24;
+      // Use larger font so admin can comfortably read coordinates
+      final font = img.arial48;
+      final lines = text.split('\n');
+      final int textHeight = font.lineHeight * lines.length;
+
+      final int rectLeft = 0;
+      final int rectTop = image.height - padding - textHeight - 8;
+      final int rectRight = image.width;
+      final int rectBottom = image.height;
+
+      final bgColor = img.ColorUint8.rgba(0, 0, 0, 160); // semi-transparent black
+      img.fillRect(
+        image,
+        x1: rectLeft,
+        y1: rectTop,
+        x2: rectRight,
+        y2: rectBottom,
+        color: bgColor,
+      );
+
+      // Draw each line of text
+      int lineY = rectTop + 4;
+      for (final line in lines) {
+        img.drawString(
+          image,
+          line,
+          font: font,
+          x: padding,
+          y: lineY,
+          color: img.ColorUint8.rgba(255, 255, 255, 255),
+        );
+        lineY += font.lineHeight;
+      }
+
+      final updatedBytes = img.encodeJpg(image, quality: 85);
+      final String newPath = _buildGeoFilePath(originalFile.path);
+      final File watermarkedFile = File(newPath);
+      await watermarkedFile.writeAsBytes(updatedBytes, flush: true);
+      return watermarkedFile;
+    } catch (_) {
+      // If anything goes wrong, fall back to original file so capture still works
+      return originalFile;
+    }
+  }
+
+  /// Build a new file path with "_geo" suffix before the extension.
+  static String _buildGeoFilePath(String originalPath) {
+    final int dotIndex = originalPath.lastIndexOf('.');
+    if (dotIndex == -1) {
+      return '${originalPath}_geo.jpg';
+    }
+    final String base = originalPath.substring(0, dotIndex);
+    return '${base}_geo.jpg';
   }
 
   /// Read EXIF data asynchronously (non-blocking)
