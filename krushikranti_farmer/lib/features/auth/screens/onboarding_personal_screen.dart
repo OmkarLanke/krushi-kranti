@@ -179,6 +179,27 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Skip Step 1 (personal + contact + address) and go to Step 2 (Add Farm)
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.addFarm,
+                (route) => false,
+                arguments: {'fromOnboarding': true},
+              );
+            },
+            child: Text(
+              'Skip',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -202,11 +223,11 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
 
                 const SizedBox(height: 10),
 
-                // ✅ UPDATED STEPPER (1 Active, 2 & 3 Inactive)
+                // ✅ GLOBAL ONBOARDING STEPPER (Steps 1–5)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Step 1: Active (Green "1")
+                    // Step 1: Active – Profile (Personal + Contact + Address)
                     const CircleAvatar(
                       radius: 14,
                       backgroundColor: AppColors.brandGreen,
@@ -220,12 +241,12 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
                       ),
                     ),
                     Container(
-                      width: 30,
+                      width: 20,
                       height: 2,
                       color: Colors.grey.shade300,
-                    ), // Grey Line
+                    ),
 
-                    // Step 2: Inactive (Grey "2")
+                    // Step 2: Inactive – Farm details
                     CircleAvatar(
                       radius: 14,
                       backgroundColor: Colors.grey.shade300,
@@ -239,17 +260,55 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
                       ),
                     ),
                     Container(
-                      width: 30,
+                      width: 20,
                       height: 2,
                       color: Colors.grey.shade300,
-                    ), // Grey Line
+                    ),
 
-                    // Step 3: Inactive (Grey "3")
+                    // Step 3: Inactive – Crop details
                     CircleAvatar(
                       radius: 14,
                       backgroundColor: Colors.grey.shade300,
                       child: const Text(
                         "3",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: 20,
+                      height: 2,
+                      color: Colors.grey.shade300,
+                    ),
+
+                    // Step 4: Inactive – Subscription
+                    CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Colors.grey.shade300,
+                      child: const Text(
+                        "4",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: 20,
+                      height: 2,
+                      color: Colors.grey.shade300,
+                    ),
+
+                    // Step 5: Inactive – KYC
+                    CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Colors.grey.shade300,
+                      child: const Text(
+                        "5",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,

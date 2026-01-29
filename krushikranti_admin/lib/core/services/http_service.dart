@@ -126,5 +126,32 @@ class HttpService {
       }
     }
   }
+
+  // DELETE Request (with optional JSON body)
+  static Future<dynamic> delete(String endpoint, {Map<String, dynamic>? data}) async {
+    final uri = endpoint.startsWith('http')
+        ? Uri.parse(endpoint)
+        : Uri.parse('$baseUrl/$endpoint');
+
+    String? token = await StorageService.getToken();
+
+    try {
+      final response = await http.delete(
+        uri,
+        body: data != null ? jsonEncode(data) : null,
+        headers: {
+          "Content-Type": "application/json",
+          if (token != null) "Authorization": "Bearer $token",
+        },
+      );
+      return _handleResponse(response);
+    } on Exception {
+      // Re-throw exceptions from _handleResponse (these are already formatted)
+      rethrow;
+    } catch (e) {
+      // Only wrap non-Exception errors (like network failures) as Network Error
+      throw Exception('Network Error: $e');
+    }
+  }
 }
 

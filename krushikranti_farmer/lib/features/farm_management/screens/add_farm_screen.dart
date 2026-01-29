@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_routes.dart';
 import '../../../core/services/http_service.dart';
 import '../../../core/services/location_service.dart';
 
@@ -17,6 +18,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _isLookingUp = false;
+  bool _fromOnboarding = false;
 
   // Controllers
   final TextEditingController _farmNameController = TextEditingController();
@@ -232,7 +234,18 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context, true); // Return true to indicate success
+
+        if (_fromOnboarding) {
+          // Step 2 complete → go to Step 3 (Add Crop)
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.addCrop,
+            (route) => false,
+            arguments: {'fromOnboarding': true},
+          );
+        } else {
+          Navigator.pop(context, true); // Return true to indicate success
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -308,6 +321,12 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
+    // Read navigation arguments once to know if this is part of signup flow
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && !_fromOnboarding) {
+      _fromOnboarding = args['fromOnboarding'] == true;
+    }
     
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -326,8 +345,41 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (_fromOnboarding) {
+              // When Add Farm is opened as part of signup (often as root),
+              // popping would lead to a blank screen. Instead, send user to dashboard.
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.dashboard,
+                (route) => false,
+              );
+            } else {
+              Navigator.pop(context);
+            }
+          },
         ),
+        actions: [
+          if (_fromOnboarding)
+            TextButton(
+              onPressed: () {
+                // Skip Step 2 (Add Farm) and implicitly skip Step 3 (Crop) → Dashboard
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.dashboard,
+                  (route) => false,
+                );
+              },
+              child: Text(
+                'Skip',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -348,6 +400,81 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 10),
+              // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Step 1: Done – Profile
+                  const CircleAvatar(
+                    radius: 14,
+                    backgroundColor: AppColors.brandGreen,
+                    child: Icon(Icons.check, color: Colors.white, size: 16),
+                  ),
+                  Container(height: 2, width: 20, color: AppColors.brandGreen),
+
+                  // Step 2: Active – Farm
+                  const CircleAvatar(
+                    radius: 14,
+                    backgroundColor: AppColors.brandGreen,
+                    child: Text(
+                      "2",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(height: 2, width: 20, color: Colors.grey.shade300),
+
+                  // Step 3: Inactive – Crop
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.grey.shade300,
+                    child: const Text(
+                      "3",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(height: 2, width: 20, color: Colors.grey.shade300),
+
+                  // Step 4: Inactive – Subscription
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.grey.shade300,
+                    child: const Text(
+                      "4",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(height: 2, width: 20, color: Colors.grey.shade300),
+
+                  // Step 5: Inactive – KYC
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.grey.shade300,
+                    child: const Text(
+                      "5",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
               // Farm Name
               _buildSectionHeader(Icons.agriculture_rounded, "${l10n.farmName} *"),
               const SizedBox(height: 12),

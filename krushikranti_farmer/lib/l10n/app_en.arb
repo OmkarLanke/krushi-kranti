@@ -5,6 +5,17 @@
   "assignMsg": "We'll assign",
   "soonMsg": "KrushiTadnya Soon !",
   "assignedMsg": "Your assigned Krushi Tadnya",
+  "assignedTo": "Assigned to:",
+  "forFarm": "For:",
+  "moreAssignments": "+ {count} more",
+  "@moreAssignments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pincodeLabel": "Pincode:",
   "fieldOfficerAssignMsg": "We'll assign",
   "fieldOfficerSoonMsg": "Field Officer for verification soon",
   "fieldOfficerAssignedMsg": "Your assigned Field Officer",

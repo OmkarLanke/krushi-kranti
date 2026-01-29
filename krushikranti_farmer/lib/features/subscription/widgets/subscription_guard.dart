@@ -272,7 +272,13 @@ Future<void> showSubscriptionRequiredDialog(BuildContext context, {
         children: [
           Icon(Icons.lock_outline, color: Colors.orange.shade600),
           const SizedBox(width: 12),
-          Text(l10n.subscriptionRequired),
+          Expanded(
+            child: Text(
+              l10n.subscriptionRequired,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
         ],
       ),
       content: Column(

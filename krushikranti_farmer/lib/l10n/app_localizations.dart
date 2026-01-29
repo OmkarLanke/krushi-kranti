@@ -136,24 +136,6 @@ abstract class AppLocalizations {
   /// **'Your assigned Krushi Tadnya'**
   String get assignedMsg;
 
-  /// No description provided for @fieldOfficerAssignMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'We\'ll assign'**
-  String get fieldOfficerAssignMsg;
-
-  /// No description provided for @fieldOfficerSoonMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'Field Officer for verification soon'**
-  String get fieldOfficerSoonMsg;
-
-  /// No description provided for @fieldOfficerAssignedMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'Your assigned Field Officer'**
-  String get fieldOfficerAssignedMsg;
-
   /// No description provided for @assignedTo.
   ///
   /// In en, this message translates to:
@@ -172,11 +154,31 @@ abstract class AppLocalizations {
   /// **'Pincode:'**
   String get pincodeLabel;
 
+<<<<<<< HEAD
   /// No description provided for @moreAssignments.
   ///
   /// In en, this message translates to:
   /// **'+ {count} more'**
   String moreAssignments(int count);
+=======
+  /// No description provided for @fieldOfficerAssignMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll assign'**
+  String get fieldOfficerAssignMsg;
+
+  /// No description provided for @fieldOfficerSoonMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Field Officer for verification soon'**
+  String get fieldOfficerSoonMsg;
+
+  /// No description provided for @fieldOfficerAssignedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Your assigned Field Officer'**
+  String get fieldOfficerAssignedMsg;
+>>>>>>> 4c163e7d690caac30a84444a80c6f50aadd2e58f
 
   /// No description provided for @viewFieldOfficerDetails.
   ///

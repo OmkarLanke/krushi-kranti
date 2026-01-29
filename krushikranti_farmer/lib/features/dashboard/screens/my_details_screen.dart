@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/http_service.dart';
+import '../../../core/constants/app_routes.dart';
 
 class MyDetailsScreen extends StatefulWidget {
   const MyDetailsScreen({super.key});
@@ -14,11 +15,20 @@ class MyDetailsScreen extends StatefulWidget {
 class _MyDetailsScreenState extends State<MyDetailsScreen> {
   bool _isLoading = true;
   Map<String, dynamic> _profileData = {};
+  bool _hasFarm = false;
+  bool _hasCrop = false;
 
   @override
   void initState() {
     super.initState();
-    _loadProfileData();
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
+    await Future.wait([
+      _loadProfileData(),
+      _loadFarmAndCropStatus(),
+    ]);
   }
 
   Future<void> _loadProfileData() async {
@@ -82,6 +92,30 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    }
+  }
+
+  Future<void> _loadFarmAndCropStatus() async {
+    try {
+      final farmsResp = await HttpService.get("farmer/profile/farms");
+      final farmsData = farmsResp['data'] as List<dynamic>? ?? const [];
+
+      final cropsResp = await HttpService.get("farmer/profile/crops");
+      final cropsData = cropsResp['data'] as List<dynamic>? ?? const [];
+
+      if (mounted) {
+        setState(() {
+          _hasFarm = farmsData.isNotEmpty;
+          _hasCrop = cropsData.isNotEmpty;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _hasFarm = false;
+          _hasCrop = false;
+        });
       }
     }
   }
@@ -217,6 +251,12 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                   ),
                   
                   const SizedBox(height: 32),
+
+                  // Step 2 & 3 quick actions if missing
+                  if (!_hasFarm || !_hasCrop) ...[
+                    _buildStepActionCards(l10n),
+                    const SizedBox(height: 24),
+                  ],
                 ],
               ),
             ),
@@ -311,6 +351,109 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                           ),
                         ],
             ),
+    );
+  }
+
+  Widget _buildStepActionCards(AppLocalizations l10n) {
+    return Column(
+      children: [
+        if (!_hasFarm)
+          _buildStepActionCard(
+            icon: Icons.agriculture_rounded,
+            title: 'Add your farm (Step 2)',
+            message:
+                'Add at least one farm to unlock farm-specific insights and funding options.',
+            ctaLabel: 'Go to farms',
+            onTap: () {
+              Navigator.pushNamed(context, AppRoutes.farmList);
+            },
+          ),
+        if (_hasFarm && !_hasCrop) ...[
+          const SizedBox(height: 12),
+          _buildStepActionCard(
+            icon: Icons.grass_rounded,
+            title: 'Add your crops (Step 3)',
+            message:
+                'Add crops for your farms to start tracking growth, sales, and alerts.',
+            ctaLabel: 'Go to crops',
+            onTap: () {
+              Navigator.pushNamed(context, AppRoutes.cropList);
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStepActionCard({
+    required IconData icon,
+    required String title,
+    required String message,
+    required String ctaLabel,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.brandGreen, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: onTap,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.brandGreen,
+              textStyle: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            child: Text(ctaLabel),
+          ),
+        ],
+      ),
     );
   }
 

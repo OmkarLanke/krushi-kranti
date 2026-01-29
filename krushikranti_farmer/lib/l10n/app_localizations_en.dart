@@ -27,6 +27,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assignedMsg => 'Your assigned Krushi Tadnya';
 
   @override
+<<<<<<< HEAD
   String get fieldOfficerAssignMsg => 'We\'ll assign';
 
   @override
@@ -37,6 +38,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assignedTo => 'Assigned To:';
+=======
+  String get assignedTo => 'Assigned to:';
+>>>>>>> 4c163e7d690caac30a84444a80c6f50aadd2e58f
 
   @override
   String get forFarm => 'For Farm:';
@@ -50,6 +54,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+<<<<<<< HEAD
+=======
+  String get pincodeLabel => 'Pincode:';
+
+  @override
+  String get fieldOfficerAssignMsg => 'We\'ll assign';
+
+  @override
+  String get fieldOfficerSoonMsg => 'Field Officer for verification soon';
+
+  @override
+  String get fieldOfficerAssignedMsg => 'Your assigned Field Officer';
+
+  @override
+>>>>>>> 4c163e7d690caac30a84444a80c6f50aadd2e58f
   String get viewFieldOfficerDetails => 'View Field Officer Details';
 
   @override

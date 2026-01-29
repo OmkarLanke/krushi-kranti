@@ -28,25 +28,36 @@ public class FarmerProfileService {
     /**
      * Get farmer's "My Details" profile.
      * Fetches email and phone from Auth Service via gRPC.
+     * ADMIN users are not allowed to access farmer profiles.
      * 
      * @param userId The user ID from gateway header
      * @return MyDetailsResponse with all profile information
+     * @throws IllegalArgumentException if user is ADMIN
      */
     @Transactional(readOnly = true)
     public MyDetailsResponse getMyDetails(Long userId) {
-        // Get farmer profile from database
-        Optional<Farmer> farmerOpt = farmerRepository.findByUserId(userId);
-        
-        // Get user info (email, phone) from Auth Service via gRPC (gracefully handle failures)
+        // Get user info (email, phone, role) from Auth Service via gRPC
         String email = "";
         String phoneNumber = "";
+        boolean isAdmin = false;
         try {
             UserInfoResponse userInfo = authServiceClient.getUserById(String.valueOf(userId));
             email = userInfo.getEmail();
             phoneNumber = userInfo.getPhoneNumber();
+            // Check if user has ADMIN role
+            isAdmin = userInfo.getRolesList().contains("ADMIN");
         } catch (Exception e) {
             log.warn("Failed to retrieve user info from Auth Service for userId {}: {}. Continuing with empty email/phone.", userId, e.getMessage());
         }
+        
+        // ADMIN users should not have farmer profiles
+        if (isAdmin) {
+            log.warn("ADMIN user (userId: {}) attempted to access farmer profile. This is not allowed.", userId);
+            throw new IllegalArgumentException("ADMIN users cannot access farmer profiles. This endpoint is for FARMER role only.");
+        }
+        
+        // Get farmer profile from database
+        Optional<Farmer> farmerOpt = farmerRepository.findByUserId(userId);
         
         if (farmerOpt.isEmpty()) {
             // Return response with only auth service data (profile not created yet)
@@ -80,30 +91,41 @@ public class FarmerProfileService {
     /**
      * Create or update farmer's "My Details" profile.
      * Validates pincode and fetches address details.
+     * ADMIN users are not allowed to create farmer profiles.
      * 
      * @param userId The user ID from gateway header
      * @param request The profile data to save
      * @return Updated MyDetailsResponse
+     * @throws IllegalArgumentException if user is ADMIN
      */
     @Transactional
     public MyDetailsResponse saveMyDetails(Long userId, MyDetailsRequest request) {
+        // Get user info from Auth Service to check role
+        String email = "";
+        String phoneNumber = "";
+        boolean isAdmin = false;
+        try {
+            UserInfoResponse userInfo = authServiceClient.getUserById(String.valueOf(userId));
+            email = userInfo.getEmail();
+            phoneNumber = userInfo.getPhoneNumber();
+            // Check if user has ADMIN role
+            isAdmin = userInfo.getRolesList().contains("ADMIN");
+        } catch (Exception e) {
+            log.warn("Failed to retrieve user info from Auth Service for userId {}: {}. Profile will be saved without email/phone.", userId, e.getMessage());
+        }
+        
+        // ADMIN users should not create farmer profiles
+        if (isAdmin) {
+            log.warn("ADMIN user (userId: {}) attempted to create farmer profile. This is not allowed.", userId);
+            throw new IllegalArgumentException("ADMIN users cannot create farmer profiles. This endpoint is for FARMER role only.");
+        }
+        
         // Validate pincode and get address details
         AddressLookupResponse addressLookup = pincodeService.getAddressByPincode(request.getPincode());
         
         // Verify that the selected village exists for this pincode
         if (!addressLookup.getVillages().contains(request.getVillage())) {
             throw new IllegalArgumentException("Selected village does not exist for the given pincode");
-        }
-
-        // Get user info from Auth Service (gracefully handle failures)
-        String email = "";
-        String phoneNumber = "";
-        try {
-            UserInfoResponse userInfo = authServiceClient.getUserById(String.valueOf(userId));
-            email = userInfo.getEmail();
-            phoneNumber = userInfo.getPhoneNumber();
-        } catch (Exception e) {
-            log.warn("Failed to retrieve user info from Auth Service for userId {}: {}. Profile will be saved without email/phone.", userId, e.getMessage());
         }
 
         // Check if farmer profile already exists

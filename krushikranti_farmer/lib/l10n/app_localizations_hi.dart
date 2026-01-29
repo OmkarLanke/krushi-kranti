@@ -27,15 +27,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get assignedMsg => 'आपके नियुक्त कृषि विशेषज्ञ';
 
   @override
-  String get fieldOfficerAssignMsg => 'हम जल्द ही';
-
-  @override
-  String get fieldOfficerSoonMsg => 'सत्यापन के लिए फील्ड ऑफिसर नियुक्त करेंगे';
-
-  @override
-  String get fieldOfficerAssignedMsg => 'आपके नियुक्त फील्ड ऑफिसर';
-
-  @override
   String get assignedTo => 'नियुक्त किया गया:';
 
   @override
@@ -50,6 +41,21 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+<<<<<<< HEAD
+=======
+  String get pincodeLabel => 'पिनकोड:';
+
+  @override
+  String get fieldOfficerAssignMsg => 'हम जल्द ही';
+
+  @override
+  String get fieldOfficerSoonMsg => 'सत्यापन के लिए फील्ड ऑफिसर नियुक्त करेंगे';
+
+  @override
+  String get fieldOfficerAssignedMsg => 'आपके नियुक्त फील्ड ऑफिसर';
+
+  @override
+>>>>>>> 4c163e7d690caac30a84444a80c6f50aadd2e58f
   String get viewFieldOfficerDetails => 'View Field Officer Details';
 
   @override

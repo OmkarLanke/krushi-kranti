@@ -1,5 +1,6 @@
 package com.krushikranti.subscription.exception;
 
+import com.krushikranti.subscription.client.FarmerServiceClient;
 import com.krushikranti.subscription.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,14 @@ public class GlobalExceptionHandler {
         log.warn("IllegalArgumentException: {}", ex.getMessage());
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(FarmerServiceClient.FarmerServiceException.class)
+    public ResponseEntity<ApiResponse<Void>> handleFarmerServiceException(
+            FarmerServiceClient.FarmerServiceException ex) {
+        log.error("FarmerServiceException: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error("Unable to verify farmer profile. Please try again later."));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
