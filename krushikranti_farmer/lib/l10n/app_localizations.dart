@@ -148,19 +148,18 @@ abstract class AppLocalizations {
   /// **'For Farm:'**
   String get forFarm;
 
+  /// No description provided for @moreAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'+ {count} more'**
+  String moreAssignments(int count);
+
   /// No description provided for @pincodeLabel.
   ///
   /// In en, this message translates to:
   /// **'Pincode:'**
   String get pincodeLabel;
 
-<<<<<<< HEAD
-  /// No description provided for @moreAssignments.
-  ///
-  /// In en, this message translates to:
-  /// **'+ {count} more'**
-  String moreAssignments(int count);
-=======
   /// No description provided for @fieldOfficerAssignMsg.
   ///
   /// In en, this message translates to:
@@ -178,7 +177,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your assigned Field Officer'**
   String get fieldOfficerAssignedMsg;
->>>>>>> 4c163e7d690caac30a84444a80c6f50aadd2e58f
 
   /// No description provided for @viewFieldOfficerDetails.
   ///

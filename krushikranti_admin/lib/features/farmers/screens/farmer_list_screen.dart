@@ -1704,9 +1704,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     const double baseSubscriptionWidth = 150.0;
     const double baseFieldOfficerWidth = 180.0;  // Increased for better button display
     const double baseVerifiedFarmsWidth = 150.0;  // Increased to prevent "Verified Farms" truncation
+    const double baseActionsWidth = 100.0;  // Width for Actions column (Delete button)
 
-    // Account for dividers: 12 columns = 11 dividers (1px each)
-    const int numberOfDividers = 11;
+    // Account for dividers: 13 columns = 12 dividers (1px each)
+    const int numberOfDividers = 12;
     const double dividerWidth = 1.0;
     const double totalDividerWidth = numberOfDividers * dividerWidth;
     
@@ -1722,6 +1723,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         baseSubscriptionWidth +
         baseFieldOfficerWidth +
         baseVerifiedFarmsWidth +
+        baseActionsWidth +
         totalDividerWidth; // Include divider widths
 
     // 2. Calculate Scale Factor
@@ -1745,6 +1747,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     final double subscriptionWidth = baseSubscriptionWidth * scaleFactor;
     final double fieldOfficerWidth = baseFieldOfficerWidth * scaleFactor;
     final double verifiedFarmsWidth = baseVerifiedFarmsWidth * scaleFactor;
+    final double actionsWidth = baseActionsWidth * scaleFactor;
 
     // The new total width includes scaled column widths and divider widths
     final totalWidth = (totalBaseWidth - totalDividerWidth) * scaleFactor + totalDividerWidth;
@@ -1791,9 +1794,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 _buildHeaderDivider(),
                 _buildHeaderCell('Subscription', subscriptionWidth, SortColumn.subscriptionStatus, false),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Field Officer', fieldOfficerWidth, null, true),
+                _buildHeaderCell('Field Officer Assignment', fieldOfficerWidth, null, true),
                 _buildHeaderDivider(),
                 _buildHeaderCell('Verified Farms', verifiedFarmsWidth, SortColumn.farmCount, false),
+                _buildHeaderDivider(),
+                _buildHeaderCell('Actions', actionsWidth, null, false),
               ],
             ),
           ),
@@ -1829,6 +1834,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 _buildFilterCell(fieldOfficerWidth, 'fieldOfficer'),
                 _buildDivider(),
                 _buildFilterCell(verifiedFarmsWidth, null),
+                _buildDivider(),
+                _buildFilterCell(actionsWidth, null), // Actions column - no filter
               ],
             ),
           ),
@@ -1865,6 +1872,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                               subscriptionWidth,
                               fieldOfficerWidth,
                               verifiedFarmsWidth,
+                              actionsWidth,
                               index == _filteredFarmers.length - 1, // Last row
                             );
                           }),
@@ -2275,6 +2283,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     double subscriptionWidth,
     double fieldOfficerWidth,
     double verifiedFarmsWidth,
+    double actionsWidth,
     bool isLastRow,
   ) {
     return MouseRegion(
@@ -2415,46 +2424,46 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
           // Field Officer
           _buildDataCell(fieldOfficerWidth, _buildFieldOfficerCell(farmer), false),
           _buildDivider(),
-          // Verified Farms + Delete Farmer action
+          // Verified Farms
           _buildDataCell(
             verifiedFarmsWidth,
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.shade200),
-                  ),
-                  child: Text(
-                    '${farmer.verifiedFarmCount}/${farmer.farmCount}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Text(
+                '${farmer.verifiedFarmCount}/${farmer.farmCount}',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue.shade700,
                 ),
-                const SizedBox(width: 8),
-                Tooltip(
-                  message: 'Delete farmer (cascade across all services)',
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.delete_forever_rounded,
-                      size: 20,
-                      color: Colors.redAccent,
-                    ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () async {
-                      // Prevent row tap from triggering when clicking delete
-                      await _confirmAndDeleteFarmer(farmer);
-                    },
-                  ),
+              ),
+            ),
+            false,
+          ),
+          _buildDivider(),
+          // Actions - Delete Farmer
+          _buildDataCell(
+            actionsWidth,
+            Tooltip(
+              message: 'Delete farmer (cascade across all services)',
+              child: IconButton(
+                icon: const Icon(
+                  Icons.delete_forever_rounded,
+                  size: 20,
+                  color: Colors.redAccent,
                 ),
-              ],
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () async {
+                  // Prevent row tap from triggering when clicking delete
+                  await _confirmAndDeleteFarmer(farmer);
+                },
+              ),
             ),
             true,
           ),

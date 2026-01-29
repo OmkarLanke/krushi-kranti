@@ -33,16 +33,11 @@ class AppLocalizationsMr extends AppLocalizations {
   String get forFarm => 'साठी:';
 
   @override
-  String get pincodeLabel => 'पिनकोड:';
-
-  @override
   String moreAssignments(int count) {
     return '+ $count अधिक';
   }
 
   @override
-<<<<<<< HEAD
-=======
   String get pincodeLabel => 'पिनकोड:';
 
   @override
@@ -55,7 +50,6 @@ class AppLocalizationsMr extends AppLocalizations {
   String get fieldOfficerAssignedMsg => 'तुमचे नियुक्त फील्ड ऑफिसर';
 
   @override
->>>>>>> 4c163e7d690caac30a84444a80c6f50aadd2e58f
   String get viewFieldOfficerDetails => 'View Field Officer Details';
 
   @override
