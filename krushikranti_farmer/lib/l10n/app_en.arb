@@ -19,6 +19,17 @@
   "fieldOfficerAssignMsg": "We'll assign",
   "fieldOfficerSoonMsg": "Field Officer for verification soon",
   "fieldOfficerAssignedMsg": "Your assigned Field Officer",
+  "assignedTo": "Assigned To:",
+  "forFarm": "For Farm:",
+  "pincodeLabel": "Pincode:",
+  "moreAssignments": "+ {count} more",
+  "@moreAssignments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "viewFieldOfficerDetails": "View Field Officer Details",
   "fieldOfficerDetails": "Field Officer Details",
   "fieldOfficerName": "Field Officer Name",

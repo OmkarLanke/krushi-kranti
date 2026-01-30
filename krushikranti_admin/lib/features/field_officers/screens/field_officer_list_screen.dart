@@ -702,7 +702,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Field Officer Management',
+              'Field Officer Assignment',
               style: GoogleFonts.poppins(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,
@@ -712,7 +712,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Manage and monitor all field officers',
+              'Manage and monitor all field officer assignments',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: AppColors.textSecondary,

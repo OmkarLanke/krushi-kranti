@@ -95,7 +95,7 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
       if (mounted && data.isNotEmpty) {
         setState(() {
           _districtController.text = data['district'] ?? "";
-          _talukaController.text = data['taluka'] ?? "";
+          _talukaController.text = data['taluka'] ?? "";    
           _stateController.text = data['state'] ?? "";
           _villageList = List<String>.from(data['villages'] ?? []);
           _selectedVillage = null;
@@ -110,7 +110,7 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
           _isLookingUp = false;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(     
           SnackBar(
             content: Text(
               _parseErrorMessage(e.toString()),
