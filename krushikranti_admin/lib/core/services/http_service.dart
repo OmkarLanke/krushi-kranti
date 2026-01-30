@@ -3,9 +3,17 @@ import 'package:http/http.dart' as http;
 import 'storage_service.dart';
 
 class HttpService {
-  // Base URL - API Gateway
-  // For web: uses localhost or production URL
-  static const String baseUrl = "http://localhost:4004";
+  // Base URL: production from --dart-define=BASE_URL=...; dev = localhost
+  static String get baseUrl {
+    const String envBaseUrl = String.fromEnvironment(
+      'BASE_URL',
+      defaultValue: '',
+    );
+    if (envBaseUrl.isNotEmpty) {
+      return envBaseUrl.trim();
+    }
+    return "http://localhost:4004";
+  }
 
   // GET Request
   static Future<dynamic> get(String endpoint) async {
