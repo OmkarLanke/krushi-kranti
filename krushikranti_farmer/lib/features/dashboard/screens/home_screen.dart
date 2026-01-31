@@ -36,9 +36,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _expiredNotificationCleanupTimer;
   VoidCallback? _notificationServiceListener;
 
-  // Onboarding/completion flags
-  bool _hasPersonalDetails = true;
-  bool _hasCrops = true;
+  // Onboarding/completion flags - initialize as false to show cards until verified
+  bool _hasPersonalDetails = false;
+  bool _hasCrops = false;
+  bool _isInitialLoadComplete = false; // Track if initial data load is complete
 
   @override
   void initState() {
@@ -46,13 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Filter any existing notifications to ensure they belong to current user (safeguard)
     _notificationService.filterNotificationsByCurrentUser();
     
-    // Load initial data in parallel
-    Future.wait([
-      _checkFieldOfficerAssignments(),
-      _checkAllFarmsVerified(),
-      _checkPersonalDetailsCompletion(),
-      _checkHasCrops(),
-    ]);
+    // Load initial data and wait for it to complete before showing UI
+    _loadInitialData();
     
     _setupNotificationListener();
     // Start polling for notifications from backend
@@ -85,6 +81,54 @@ class _HomeScreenState extends State<HomeScreen> {
         timer.cancel();
       }
     });
+  }
+
+  /// Load initial data - called once on initState
+  Future<void> _loadInitialData() async {
+    if (!mounted) return;
+    
+    // Add a small delay to ensure any previous API calls have completed
+    // This is especially important when coming from onboarding
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    // Force refresh farms cache to get latest data
+    await _fetchFarmsData(forceRefresh: true);
+    
+    // Then check all statuses in parallel
+    await Future.wait([
+      _checkFieldOfficerAssignments(),
+      _checkAllFarmsVerified(),
+      _checkPersonalDetailsCompletion(),
+      _checkHasCrops(),
+    ]);
+    
+    // Mark initial load as complete and update UI
+    if (mounted) {
+      setState(() {
+        _isInitialLoadComplete = true;
+      });
+    }
+  }
+
+  /// Refresh all data checks - called when screen becomes visible or after navigation
+  Future<void> _refreshAllData() async {
+    if (!mounted) return;
+    
+    // Force refresh farms cache to get latest data
+    await _fetchFarmsData(forceRefresh: true);
+    
+    // Then check all statuses in parallel
+    await Future.wait([
+      _checkFieldOfficerAssignments(),
+      _checkAllFarmsVerified(),
+      _checkPersonalDetailsCompletion(),
+      _checkHasCrops(),
+    ]);
+    
+    // Ensure UI is updated after all checks complete
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _showOtpReceivedPopup() {
@@ -343,9 +387,47 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Check if personal details look complete based on locally stored data.
+  /// Check if personal details look complete - fetch from API first, fallback to local storage.
   Future<void> _checkPersonalDetailsCompletion() async {
     try {
+      // Try to fetch from API first to get the latest data
+      try {
+        final response = await HttpService.get("farmer/profile/my-details");
+        final data = response['data'] ?? {};
+        
+        final firstName = (data['firstName'] ?? '').toString().trim();
+        final lastName = (data['lastName'] ?? '').toString().trim();
+        final dob = data['dateOfBirth']?.toString() ?? '';
+        final gender = (data['gender'] ?? '').toString().trim();
+
+        final hasPersonal = firstName.isNotEmpty &&
+            lastName.isNotEmpty &&
+            dob.isNotEmpty &&
+            gender.isNotEmpty;
+
+        if (mounted) {
+          setState(() {
+            _hasPersonalDetails = hasPersonal;
+          });
+        }
+        
+        // Also update local storage with fresh data
+        if (hasPersonal) {
+          await StorageService.savePersonalDetails(
+            firstName: firstName,
+            lastName: lastName,
+            dob: dob,
+            gender: gender,
+            profilePicPath: null,
+          );
+        }
+        return;
+      } catch (apiError) {
+        // If API fails, fallback to local storage
+        print("API Error checking personal details: $apiError");
+      }
+
+      // Fallback to local storage
       final userData = await StorageService.getUserDetails();
       final firstName = (userData['firstName'] ?? '').toString().trim();
       final lastName = (userData['lastName'] ?? '').toString().trim();
@@ -433,46 +515,72 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       // --- 2. BODY ---
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // A. Weather
-            _buildWeatherHeader(l10n),
-            const SizedBox(height: 20),
+      body: _isInitialLoadComplete
+          ? SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // A. Weather
+                  _buildWeatherHeader(l10n),
+                  const SizedBox(height: 20),
 
-            // Profile completion nudges (non-blocking)
-            if (!_hasPersonalDetails) ...[
+                  // Profile completion nudges (non-blocking) - ONLY SHOW ON HOME SCREEN
+                  // These cards should only appear on the Home tab, not in Account or other sections
+                  if (!_hasPersonalDetails && _isInitialLoadComplete) ...[
               _buildCompletionCard(
                 icon: Icons.person_outline_rounded,
                 title: 'Complete your profile',
                 message:
                     'Add your basic details so we can personalise Krushi Kranti for you.',
                 ctaLabel: 'Complete now',
-                onTap: () => Navigator.pushNamed(context, AppRoutes.myDetails),
+                onTap: () async {
+                  final result = await Navigator.pushNamed(context, AppRoutes.myDetails);
+                  // Refresh data when returning from profile screen
+                  // Add small delay to ensure data is saved
+                  await Future.delayed(const Duration(milliseconds: 300));
+                  if (mounted) {
+                    await _refreshAllData();
+                  }
+                },
               ),
               const SizedBox(height: 16),
             ],
-            if (_totalFarms == 0) ...[
+            if (_totalFarms == 0 && _isInitialLoadComplete) ...[
               _buildCompletionCard(
                 icon: Icons.agriculture_rounded,
                 title: 'Add your first farm',
                 message:
                     'Add at least one farm to see farm-specific insights and crops.',
                 ctaLabel: 'Add farm',
-                onTap: () => Navigator.pushNamed(context, AppRoutes.addFarm),
+                onTap: () async {
+                  final result = await Navigator.pushNamed(context, AppRoutes.addFarm);
+                  // Refresh data when returning from add farm screen
+                  // Add small delay to ensure data is saved
+                  await Future.delayed(const Duration(milliseconds: 300));
+                  if (mounted) {
+                    await _refreshAllData();
+                  }
+                },
               ),
               const SizedBox(height: 16),
             ],
-            if (_totalFarms > 0 && !_hasCrops) ...[
+            if (_totalFarms > 0 && !_hasCrops && _isInitialLoadComplete) ...[
               _buildCompletionCard(
                 icon: Icons.grass_rounded,
                 title: 'Add your first crop',
                 message:
                     'Add at least one crop to start getting guidance and forecasts.',
                 ctaLabel: 'Add crop',
-                onTap: () => Navigator.pushNamed(context, AppRoutes.addCrop),
+                onTap: () async {
+                  final result = await Navigator.pushNamed(context, AppRoutes.addCrop);
+                  // Refresh data when returning from add crop screen
+                  // Add small delay to ensure data is saved
+                  await Future.delayed(const Duration(milliseconds: 300));
+                  if (mounted) {
+                    await _refreshAllData();
+                  }
+                },
               ),
               const SizedBox(height: 16),
             ],
@@ -538,9 +646,12 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             _buildAlertCard(context),
             const SizedBox(height: 32),
-          ],
-        ),
-      ),
+                ],
+              ),
+            )
+          : const Center(
+              child: CircularProgressIndicator(color: AppColors.brandGreen),
+            ),
     );
   }
 
@@ -1335,12 +1446,16 @@ class _HomeScreenState extends State<HomeScreen> {
             // Hide loading dialog and navigate
             if (mounted) {
               Navigator.pop(context); // Close loading dialog
-              await Navigator.pushNamed(context, route);
-              _checkFieldOfficerAssignments();
-              
-              setState(() {
-                isNavigating = false;
-              });
+              final result = await Navigator.pushNamed(context, route);
+              // Refresh all data when returning from navigation
+              // Add small delay to ensure data is saved
+              await Future.delayed(const Duration(milliseconds: 300));
+              if (mounted) {
+                await _refreshAllData();
+                setState(() {
+                  isNavigating = false;
+                });
+              }
             }
           }
         },
@@ -1428,27 +1543,45 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.all(6),
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         color: AppColors.brandGreen.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Stack(
                         alignment: Alignment.center,
+                        clipBehavior: Clip.none,
                         children: [
+                          // Arrow icon centered
                           const Icon(
                             Icons.arrow_forward_rounded,
                             color: AppColors.brandGreen,
                             size: 18,
                           ),
+                          // Lock icon positioned at bottom-right corner
                           if (isPremium)
-                            const Positioned(
-                              right: -1,
-                              top: -1,
-                              child: Icon(
-                                Icons.lock,
-                                size: 12,
-                                color: Colors.orange,
+                            Positioned(
+                              right: -2,
+                              bottom: -2,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.lock,
+                                  size: 10,
+                                  color: Colors.orange,
+                                ),
                               ),
                             ),
                         ],
@@ -1725,9 +1858,15 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(ctx);
-                Navigator.pushNamed(context, routeName);
+                final result = await Navigator.pushNamed(context, routeName);
+                // Refresh data when returning from onboarding screens
+                // Add small delay to ensure data is saved
+                await Future.delayed(const Duration(milliseconds: 300));
+                if (mounted) {
+                  await _refreshAllData();
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.brandGreen,

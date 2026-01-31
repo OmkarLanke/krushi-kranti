@@ -27,10 +27,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assignedMsg => 'Your assigned Krushi Tadnya';
 
   @override
-  String get assignedTo => 'Assigned to:';
+  String get assignedTo => 'Assigned To:';
 
   @override
-  String get forFarm => 'For:';
+  String get forFarm => 'For Farm:';
 
   @override
   String moreAssignments(int count) {

@@ -7,19 +7,21 @@ import 'package:http_parser/http_parser.dart';
 import 'storage_service.dart'; // ✅ Import the new service
 
 class HttpService {
-  // Base URL - API Gateway with platform detection
-  // ⚠️ IMPORTANT: 
-  // - Web/Desktop: uses 'http://localhost:4004'
-  // - Android/iOS: uses your local IP address (192.168.1.45)
+  // Base URL: production from --dart-define=BASE_URL=...; dev = localhost / local IP
   static String get baseUrl {
+    const String envBaseUrl = String.fromEnvironment(
+      'BASE_URL',
+      defaultValue: '',
+    );
+    if (envBaseUrl.isNotEmpty) {
+      return envBaseUrl.trim();
+    }
+    // Development: platform-based URLs
     if (kIsWeb) {
-      // Web platform (Chrome browser, etc.)
       return "http://localhost:4004";
     } else if (Platform.isAndroid || Platform.isIOS) {
-      // Mobile platforms (Android/iOS) - use your computer's local IP
-      return "http://192.168.1.149:4004"; // ✅ Your Wi-Fi IP address
+      return "http://192.168.1.39:4004"; // Your Wi-Fi IP for device testing
     } else {
-      // Desktop platforms (Windows, Mac, Linux)
       return "http://localhost:4004";
     }
   } 
