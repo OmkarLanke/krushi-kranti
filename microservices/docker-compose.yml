@@ -67,7 +67,7 @@ services:
     environment:
       POSTGRES_DB: subscription_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ....
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5451:5432"
     volumes:
