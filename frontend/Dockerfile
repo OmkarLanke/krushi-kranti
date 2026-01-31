@@ -31,6 +31,10 @@ COPY --from=admin-builder /app/krushikranti_admin/build/web /usr/share/nginx/htm
 # Copy landing page (static HTML/CSS/JS - no build step)
 COPY krushikranti-landing-page /usr/share/nginx/html/landing
 
+# Copy APK file to landing page downloads directory
+# NOTE: APK should be built and placed in krushikranti-landing-page/downloads/ before building this image
+COPY krushikranti-landing-page/downloads/krushi-kranti-farmer.apk /usr/share/nginx/html/landing/downloads/krushi-kranti-farmer.apk
+
 # Nginx config: landing (krushikranti.ltd, www), admin, API proxy
 # SSL cert paths expect host to mount: -v /etc/letsencrypt:/etc/letsencrypt:ro
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
