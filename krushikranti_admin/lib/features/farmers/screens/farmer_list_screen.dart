@@ -1704,9 +1704,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     const double baseSubscriptionWidth = 150.0;
     const double baseFieldOfficerWidth = 180.0;  // Increased for better button display
     const double baseVerifiedFarmsWidth = 150.0;  // Increased to prevent "Verified Farms" truncation
+    const double baseActionsWidth = 100.0;  // Width for Actions column (Delete button)
 
-    // Account for dividers: 12 columns = 11 dividers (1px each)
-    const int numberOfDividers = 11;
+    // Account for dividers: 13 columns = 12 dividers (1px each)
+    const int numberOfDividers = 12;
     const double dividerWidth = 1.0;
     const double totalDividerWidth = numberOfDividers * dividerWidth;
     
@@ -1722,6 +1723,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         baseSubscriptionWidth +
         baseFieldOfficerWidth +
         baseVerifiedFarmsWidth +
+        baseActionsWidth +
         totalDividerWidth; // Include divider widths
 
     // 2. Calculate Scale Factor
@@ -1745,6 +1747,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     final double subscriptionWidth = baseSubscriptionWidth * scaleFactor;
     final double fieldOfficerWidth = baseFieldOfficerWidth * scaleFactor;
     final double verifiedFarmsWidth = baseVerifiedFarmsWidth * scaleFactor;
+    final double actionsWidth = baseActionsWidth * scaleFactor;
 
     // The new total width includes scaled column widths and divider widths
     final totalWidth = (totalBaseWidth - totalDividerWidth) * scaleFactor + totalDividerWidth;
@@ -1791,9 +1794,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 _buildHeaderDivider(),
                 _buildHeaderCell('Subscription', subscriptionWidth, SortColumn.subscriptionStatus, false),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Field Officer', fieldOfficerWidth, null, true),
+                _buildHeaderCell('Field Officer Assignment', fieldOfficerWidth, null, true),
                 _buildHeaderDivider(),
                 _buildHeaderCell('Verified Farms', verifiedFarmsWidth, SortColumn.farmCount, false),
+                _buildHeaderDivider(),
+                _buildHeaderCell('Actions', actionsWidth, null, false),
               ],
             ),
           ),
@@ -1829,6 +1834,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 _buildFilterCell(fieldOfficerWidth, 'fieldOfficer'),
                 _buildDivider(),
                 _buildFilterCell(verifiedFarmsWidth, null),
+                _buildDivider(),
+                _buildFilterCell(actionsWidth, null), // Actions column - no filter
               ],
             ),
           ),
@@ -1865,6 +1872,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                               subscriptionWidth,
                               fieldOfficerWidth,
                               verifiedFarmsWidth,
+                              actionsWidth,
                               index == _filteredFarmers.length - 1, // Last row
                             );
                           }),
@@ -2275,6 +2283,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     double subscriptionWidth,
     double fieldOfficerWidth,
     double verifiedFarmsWidth,
+    double actionsWidth,
     bool isLastRow,
   ) {
     return MouseRegion(
@@ -2416,22 +2425,48 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
           _buildDataCell(fieldOfficerWidth, _buildFieldOfficerCell(farmer), false),
           _buildDivider(),
           // Verified Farms
-          _buildDataCell(verifiedFarmsWidth, Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.shade200),
-            ),
-            child: Text(
-              '${farmer.verifiedFarmCount}/${farmer.farmCount}',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.blue.shade700,
+          _buildDataCell(
+            verifiedFarmsWidth,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Text(
+                '${farmer.verifiedFarmCount}/${farmer.farmCount}',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue.shade700,
+                ),
               ),
             ),
-          ), true),
+            false,
+          ),
+          _buildDivider(),
+          // Actions - Delete Farmer
+          _buildDataCell(
+            actionsWidth,
+            Tooltip(
+              message: 'Delete farmer (cascade across all services)',
+              child: IconButton(
+                icon: const Icon(
+                  Icons.delete_forever_rounded,
+                  size: 20,
+                  color: Colors.redAccent,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () async {
+                  // Prevent row tap from triggering when clicking delete
+                  await _confirmAndDeleteFarmer(farmer);
+                },
+              ),
+            ),
+            true,
+          ),
         ],
             ),
           ),
@@ -2451,6 +2486,153 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       alignment: Alignment.centerLeft,
       child: child,
     );
+  }
+
+  /// Show confirmation dialog and call backend to cascade delete farmer user.
+  Future<void> _confirmAndDeleteFarmer(FarmerSummary farmer) async {
+    final theme = Theme.of(context);
+
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(
+            'Delete Farmer',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to permanently delete this farmer?',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Farmer: ${farmer.fullName.isNotEmpty ? farmer.fullName : farmer.username}\n'
+                'User ID: ${farmer.userId}\n'
+                'Phone: ${farmer.phoneNumber}',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.errorBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppColors.error,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'This will cascade delete the user and related data '
+                        'across all connected services (farmer, farms, KYC, etc.). '
+                        'This action cannot be undone.',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.poppins(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.delete_forever_rounded, size: 18),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              label: Text(
+                'Delete Farmer',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true) return;
+
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      await AdminFarmerService.deleteFarmerUser(
+        farmer.userId,
+        reason: 'Deleted from Farmer Management by admin UI',
+      );
+
+      // Reload current page of farmers
+      await _loadFarmers();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Farmer deleted successfully.',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to delete farmer: ${e.toString()}',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   DataRow _buildFarmerRow(FarmerSummary farmer) {

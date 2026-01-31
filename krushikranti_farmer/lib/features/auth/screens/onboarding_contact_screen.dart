@@ -88,31 +88,82 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
-            // --- STEPPER (Step 2 of 3) ---
+            // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Step 1: Done
+                // Step 1: Active – Profile (Personal + Contact + Address)
                 const CircleAvatar(
                   radius: 14,
                   backgroundColor: AppColors.brandGreen,
-                  child: Icon(Icons.check, color: Colors.white, size: 16),
+                  child: Text(
+                    "1",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                Container(width: 30, height: 2, color: AppColors.brandGreen),
-                
-                // Step 2: Active (Contact)
-                const CircleAvatar(
-                  radius: 14,
-                  backgroundColor: AppColors.brandGreen,
-                  child: Text("2", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
-                Container(width: 30, height: 2, color: Colors.grey.shade300),
+                Container(width: 20, height: 2, color: Colors.grey.shade300),
 
-                // Step 3: Inactive (Address)
+                // Step 2: Inactive – Farm details
                 CircleAvatar(
                   radius: 14,
                   backgroundColor: Colors.grey.shade300,
-                  child: const Text("3", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "2",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(width: 20, height: 2, color: Colors.grey.shade300),
+
+                // Step 3: Inactive – Crop details
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.grey.shade300,
+                  child: const Text(
+                    "3",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(width: 20, height: 2, color: Colors.grey.shade300),
+
+                // Step 4: Inactive – Subscription
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.grey.shade300,
+                  child: const Text(
+                    "4",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(width: 20, height: 2, color: Colors.grey.shade300),
+
+                // Step 5: Inactive – KYC
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.grey.shade300,
+                  child: const Text(
+                    "5",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),

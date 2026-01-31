@@ -9,6 +9,8 @@ import '../../dashboard/services/crop_service.dart';
 import '../../dashboard/services/field_officer_assignment_service.dart';
 import '../../dashboard/services/notification_service.dart';
 import '../../../core/services/http_service.dart';
+import '../../../core/services/storage_service.dart';
+import '../../subscription/widgets/subscription_guard.dart' show showSubscriptionRequiredDialog;
 import 'field_officer_details_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,7 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<NotificationModel>? _notificationSubscription;
   Timer? _expiredNotificationCleanupTimer;
   VoidCallback? _notificationServiceListener;
-  int _previousNotificationCount = 0;
+
+  // Onboarding/completion flags - initialize as false to show cards until verified
+  bool _hasPersonalDetails = false;
+  bool _hasCrops = false;
+  bool _isInitialLoadComplete = false; // Track if initial data load is complete
 
   @override
   void initState() {
@@ -41,11 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Filter any existing notifications to ensure they belong to current user (safeguard)
     _notificationService.filterNotificationsByCurrentUser();
     
-    // Load initial data in parallel
-    Future.wait([
-      _checkFieldOfficerAssignments(),
-      _checkAllFarmsVerified(),
-    ]);
+    // Load initial data and wait for it to complete before showing UI
+    _loadInitialData();
     
     _setupNotificationListener();
     // Start polling for notifications from backend
@@ -61,7 +64,15 @@ class _HomeScreenState extends State<HomeScreen> {
       // Cleanup expired notifications
       _notificationService.removeExpiredOtpNotifications();
     });
-    
+    // After first frame, check if there are any OTPs that haven't shown popup yet
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final newForPopup = _notificationService.newOtpNotificationsForPopup;
+      if (newForPopup.isNotEmpty) {
+        _notificationService.markPopupShownForNotifications(newForPopup);
+        _showOtpReceivedPopup();
+      }
+    });
     // Check farm verification status periodically (every 60 seconds)
     Timer.periodic(const Duration(seconds: 60), (timer) {
       if (mounted) {
@@ -70,6 +81,54 @@ class _HomeScreenState extends State<HomeScreen> {
         timer.cancel();
       }
     });
+  }
+
+  /// Load initial data - called once on initState
+  Future<void> _loadInitialData() async {
+    if (!mounted) return;
+    
+    // Add a small delay to ensure any previous API calls have completed
+    // This is especially important when coming from onboarding
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    // Force refresh farms cache to get latest data
+    await _fetchFarmsData(forceRefresh: true);
+    
+    // Then check all statuses in parallel
+    await Future.wait([
+      _checkFieldOfficerAssignments(),
+      _checkAllFarmsVerified(),
+      _checkPersonalDetailsCompletion(),
+      _checkHasCrops(),
+    ]);
+    
+    // Mark initial load as complete and update UI
+    if (mounted) {
+      setState(() {
+        _isInitialLoadComplete = true;
+      });
+    }
+  }
+
+  /// Refresh all data checks - called when screen becomes visible or after navigation
+  Future<void> _refreshAllData() async {
+    if (!mounted) return;
+    
+    // Force refresh farms cache to get latest data
+    await _fetchFarmsData(forceRefresh: true);
+    
+    // Then check all statuses in parallel
+    await Future.wait([
+      _checkFieldOfficerAssignments(),
+      _checkAllFarmsVerified(),
+      _checkPersonalDetailsCompletion(),
+      _checkHasCrops(),
+    ]);
+    
+    // Ensure UI is updated after all checks complete
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _showOtpReceivedPopup() {
@@ -91,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         backgroundColor: AppColors.brandGreen,
-        duration: const Duration(seconds: 6),
+        duration: const Duration(seconds: 10),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
@@ -328,6 +387,90 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Check if personal details look complete - fetch from API first, fallback to local storage.
+  Future<void> _checkPersonalDetailsCompletion() async {
+    try {
+      // Try to fetch from API first to get the latest data
+      try {
+        final response = await HttpService.get("farmer/profile/my-details");
+        final data = response['data'] ?? {};
+        
+        final firstName = (data['firstName'] ?? '').toString().trim();
+        final lastName = (data['lastName'] ?? '').toString().trim();
+        final dob = data['dateOfBirth']?.toString() ?? '';
+        final gender = (data['gender'] ?? '').toString().trim();
+
+        final hasPersonal = firstName.isNotEmpty &&
+            lastName.isNotEmpty &&
+            dob.isNotEmpty &&
+            gender.isNotEmpty;
+
+        if (mounted) {
+          setState(() {
+            _hasPersonalDetails = hasPersonal;
+          });
+        }
+        
+        // Also update local storage with fresh data
+        if (hasPersonal) {
+          await StorageService.savePersonalDetails(
+            firstName: firstName,
+            lastName: lastName,
+            dob: dob,
+            gender: gender,
+            profilePicPath: null,
+          );
+        }
+        return;
+      } catch (apiError) {
+        // If API fails, fallback to local storage
+        print("API Error checking personal details: $apiError");
+      }
+
+      // Fallback to local storage
+      final userData = await StorageService.getUserDetails();
+      final firstName = (userData['firstName'] ?? '').toString().trim();
+      final lastName = (userData['lastName'] ?? '').toString().trim();
+      final dob = (userData['dob'] ?? '').toString().trim();
+      final gender = (userData['gender'] ?? '').toString().trim();
+
+      final hasPersonal = firstName.isNotEmpty &&
+          lastName.isNotEmpty &&
+          dob.isNotEmpty &&
+          gender.isNotEmpty;
+
+      if (mounted) {
+        setState(() {
+          _hasPersonalDetails = hasPersonal;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _hasPersonalDetails = false;
+        });
+      }
+    }
+  }
+
+  /// Check if user has added at least one crop.
+  Future<void> _checkHasCrops() async {
+    try {
+      final crops = await CropService.getCrops();
+      if (mounted) {
+        setState(() {
+          _hasCrops = crops.isNotEmpty;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _hasCrops = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -372,14 +515,75 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       // --- 2. BODY ---
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // A. Weather
-            _buildWeatherHeader(l10n),
-            const SizedBox(height: 20),
+      body: _isInitialLoadComplete
+          ? SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // A. Weather
+                  _buildWeatherHeader(l10n),
+                  const SizedBox(height: 20),
+
+                  // Profile completion nudges (non-blocking) - ONLY SHOW ON HOME SCREEN
+                  // These cards should only appear on the Home tab, not in Account or other sections
+                  if (!_hasPersonalDetails && _isInitialLoadComplete) ...[
+              _buildCompletionCard(
+                icon: Icons.person_outline_rounded,
+                title: 'Complete your profile',
+                message:
+                    'Add your basic details so we can personalise Krushi Kranti for you.',
+                ctaLabel: 'Complete now',
+                onTap: () async {
+                  final result = await Navigator.pushNamed(context, AppRoutes.myDetails);
+                  // Refresh data when returning from profile screen
+                  // Add small delay to ensure data is saved
+                  await Future.delayed(const Duration(milliseconds: 300));
+                  if (mounted) {
+                    await _refreshAllData();
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (_totalFarms == 0 && _isInitialLoadComplete) ...[
+              _buildCompletionCard(
+                icon: Icons.agriculture_rounded,
+                title: 'Add your first farm',
+                message:
+                    'Add at least one farm to see farm-specific insights and crops.',
+                ctaLabel: 'Add farm',
+                onTap: () async {
+                  final result = await Navigator.pushNamed(context, AppRoutes.addFarm);
+                  // Refresh data when returning from add farm screen
+                  // Add small delay to ensure data is saved
+                  await Future.delayed(const Duration(milliseconds: 300));
+                  if (mounted) {
+                    await _refreshAllData();
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (_totalFarms > 0 && !_hasCrops && _isInitialLoadComplete) ...[
+              _buildCompletionCard(
+                icon: Icons.grass_rounded,
+                title: 'Add your first crop',
+                message:
+                    'Add at least one crop to start getting guidance and forecasts.',
+                ctaLabel: 'Add crop',
+                onTap: () async {
+                  final result = await Navigator.pushNamed(context, AppRoutes.addCrop);
+                  // Refresh data when returning from add crop screen
+                  // Add small delay to ensure data is saved
+                  await Future.delayed(const Duration(milliseconds: 300));
+                  if (mounted) {
+                    await _refreshAllData();
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
             
             // B. All Farms Verified Banner (if all farms are verified)
             if (_allFarmsVerified) ...[
@@ -442,9 +646,12 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             _buildAlertCard(context),
             const SizedBox(height: 32),
-          ],
-        ),
-      ),
+                ],
+              ),
+            )
+          : const Center(
+              child: CircularProgressIndicator(color: AppColors.brandGreen),
+            ),
     );
   }
 
@@ -771,7 +978,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      'For: $farmNamesText',
+                      '${l10n.forFarm} $farmNamesText',
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 14,
@@ -954,7 +1161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 4),
                     Text(
-                      "Pincode: $fieldOfficerPincode",
+                      "${l10n.pincodeLabel} $fieldOfficerPincode",
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: Colors.grey.shade600,
@@ -998,7 +1205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              'Assigned to: ${assignedFarmNames.join(', ')}',
+                              '${l10n.assignedTo} ${assignedFarmNames.join(', ')}',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 color: Colors.grey.shade600,
@@ -1015,7 +1222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Padding(
                         padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        "+ ${fieldOfficerAssignments.length - 1} more",
+                        l10n.moreAssignments(fieldOfficerAssignments.length - 1),
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             color: AppColors.brandGreen,
@@ -1088,28 +1295,45 @@ class _HomeScreenState extends State<HomeScreen> {
         "title": l10n.cropDetail,
         "route": AppRoutes.cropList,
         "status": cropStatus, 
-        "statusColor": cropStatusColor 
+        "statusColor": cropStatusColor,
+        "isPremium": false,
+        "requiresPersonal": false,
+        "requiresFarm": true,
+        "requiresCrop": true,
       },
       {
         "icon": Icons.bar_chart, 
         "title": l10n.dailySale,
         "route": AppRoutes.sell,
         "status": l10n.pending,
-        "statusColor": AppColors.pendingStatus
+        "statusColor": AppColors.pendingStatus,
+        // Advanced sales workflow – treated as premium for free users
+        "isPremium": true,
+        "requiresPersonal": false,
+        "requiresFarm": true,
+        "requiresCrop": true,
       },
       {
         "icon": Icons.monetization_on_outlined, 
         "title": l10n.funding,
         "route": AppRoutes.requestFunds,
         "status": l10n.pending,
-        "statusColor": AppColors.pendingStatus
+        "statusColor": AppColors.pendingStatus,
+        "isPremium": true,
+        "requiresPersonal": false,
+        "requiresFarm": true,
+        "requiresCrop": false,
       },
       {
         "icon": Icons.account_balance_wallet_outlined, 
         "title": l10n.account,
         "route": null,
         "status": l10n.pending,
-        "statusColor": AppColors.pendingStatus
+        "statusColor": AppColors.pendingStatus,
+        "isPremium": true,
+        "requiresPersonal": true,
+        "requiresFarm": false,
+        "requiresCrop": false,
       },
     ];
 
@@ -1131,6 +1355,10 @@ class _HomeScreenState extends State<HomeScreen> {
           items[index]['route'] as String?,
           items[index]['status'] as String,
           items[index]['statusColor'] as Color,
+          items[index]['isPremium'] as bool,
+          items[index]['requiresPersonal'] as bool,
+          items[index]['requiresFarm'] as bool,
+          items[index]['requiresCrop'] as bool,
         );
       },
     );
@@ -1143,11 +1371,67 @@ class _HomeScreenState extends State<HomeScreen> {
     String? route, 
     String status, 
     Color statusColor,
+    bool isPremium,
+    bool requiresPersonal,
+    bool requiresFarm,
+    bool requiresCrop,
   ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () async {
+          // Onboarding locks: explain missing details before navigating
+          if (requiresPersonal && !_hasPersonalDetails) {
+            await _showOnboardingDialog(
+              context: context,
+              icon: Icons.person_outline_rounded,
+              title: 'Complete your profile',
+              message:
+                  'Before using this feature, please add your basic personal details.',
+              ctaLabel: 'Complete now',
+              routeName: AppRoutes.myDetails,
+            );
+            return;
+          }
+
+          if (requiresFarm && _totalFarms == 0) {
+            await _showOnboardingDialog(
+              context: context,
+              icon: Icons.agriculture_rounded,
+              title: 'Add your first farm',
+              message:
+                  'Add at least one farm to start using this feature for your land.',
+              ctaLabel: 'Add farm',
+              routeName: AppRoutes.addFarm,
+            );
+            return;
+          }
+
+          if (requiresCrop && !_hasCrops) {
+            await _showOnboardingDialog(
+              context: context,
+              icon: Icons.grass_rounded,
+              title: 'Add your first crop',
+              message:
+                  'Add at least one crop on your farm to start tracking it here.',
+              ctaLabel: 'Add crop',
+              routeName: AppRoutes.addCrop,
+            );
+            return;
+          }
+
+          // Premium quick actions: soft paywall for free users (after onboarding checks)
+          if (isPremium) {
+            final isSubscribed = await StorageService.isSubscribed();
+            if (!isSubscribed) {
+              await showSubscriptionRequiredDialog(
+                context,
+                featureName: title,
+              );
+              return;
+            }
+          }
+
           if (route != null && !isNavigating) {
             setState(() {
               isNavigating = true;
@@ -1162,12 +1446,16 @@ class _HomeScreenState extends State<HomeScreen> {
             // Hide loading dialog and navigate
             if (mounted) {
               Navigator.pop(context); // Close loading dialog
-              await Navigator.pushNamed(context, route);
-              _checkFieldOfficerAssignments();
-              
-              setState(() {
-                isNavigating = false;
-              });
+              final result = await Navigator.pushNamed(context, route);
+              // Refresh all data when returning from navigation
+              // Add small delay to ensure data is saved
+              await Future.delayed(const Duration(milliseconds: 300));
+              if (mounted) {
+                await _refreshAllData();
+                setState(() {
+                  isNavigating = false;
+                });
+              }
             }
           }
         },
@@ -1255,15 +1543,48 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.all(6),
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         color: AppColors.brandGreen.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.arrow_forward_rounded,
-                        color: AppColors.brandGreen,
-                        size: 18,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        clipBehavior: Clip.none,
+                        children: [
+                          // Arrow icon centered
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            color: AppColors.brandGreen,
+                            size: 18,
+                          ),
+                          // Lock icon positioned at bottom-right corner
+                          if (isPremium)
+                            Positioned(
+                              right: -2,
+                              bottom: -2,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.lock,
+                                  size: 10,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -1407,6 +1728,162 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  /// Compact card to nudge user to complete missing profile/farm/crop details.
+  Widget _buildCompletionCard({
+    required IconData icon,
+    required String title,
+    required String message,
+    required String ctaLabel,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.brandGreen, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: onTap,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.brandGreen,
+              textStyle: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            child: Text(ctaLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Friendly dialog used when a user taps a feature that requires
+  /// missing onboarding (personal, farm, or crop details).
+  Future<void> _showOnboardingDialog({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String message,
+    required String ctaLabel,
+    required String routeName,
+  }) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Icon(icon, color: AppColors.brandGreen),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.grey.shade800,
+              height: 1.4,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                AppLocalizations.of(context)!.later,
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final result = await Navigator.pushNamed(context, routeName);
+                // Refresh data when returning from onboarding screens
+                // Add small delay to ensure data is saved
+                await Future.delayed(const Duration(milliseconds: 300));
+                if (mounted) {
+                  await _refreshAllData();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brandGreen,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                ctaLabel,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );

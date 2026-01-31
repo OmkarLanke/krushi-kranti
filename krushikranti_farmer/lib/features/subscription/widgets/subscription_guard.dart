@@ -268,46 +268,72 @@ Future<void> showSubscriptionRequiredDialog(BuildContext context, {
     context: context,
     builder: (context) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       title: Row(
         children: [
           Icon(Icons.lock_outline, color: Colors.orange.shade600),
           const SizedBox(width: 12),
-          Text(l10n.subscriptionRequired),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(l10n.toAccessFeature(localizedFeatureName)),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.brandGreen.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text("${l10n.annualSubscription} ", style: const TextStyle(fontSize: 14)),
-                const Text(
-                  "₹999",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.brandGreen,
-                  ),
-                ),
-              ],
+          Expanded(
+            child: Text(
+              l10n.subscriptionRequired,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
       ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.toAccessFeature(localizedFeatureName),
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.brandGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "${l10n.annualSubscription} ",
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  const Text(
+                    "₹999",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brandGreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      actionsAlignment: MainAxisAlignment.spaceBetween,
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(l10n.later),
+          child: Text(
+            l10n.later,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
         ),
         ElevatedButton(
           onPressed: () {
@@ -317,8 +343,18 @@ Future<void> showSubscriptionRequiredDialog(BuildContext context, {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.brandGreen,
             foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
           ),
-          child: Text(l10n.subscribeNow),
+          child: Text(
+            l10n.subscribeNow,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
     ),

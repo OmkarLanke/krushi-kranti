@@ -3,9 +3,17 @@ import 'package:http/http.dart' as http;
 import 'storage_service.dart';
 
 class HttpService {
-  // Base URL - API Gateway
-  // For web: uses localhost or production URL
-  static const String baseUrl = "http://localhost:4004";
+  // Base URL: production from --dart-define=BASE_URL=...; dev = localhost
+  static String get baseUrl {
+    const String envBaseUrl = String.fromEnvironment(
+      'BASE_URL',
+      defaultValue: '',
+    );
+    if (envBaseUrl.isNotEmpty) {
+      return envBaseUrl.trim();
+    }
+    return "http://localhost:4004";
+  }
 
   // GET Request
   static Future<dynamic> get(String endpoint) async {
@@ -124,6 +132,33 @@ class HttpService {
             ? errorMessage
             : 'Error: ${response.statusCode}');
       }
+    }
+  }
+
+  // DELETE Request (with optional JSON body)
+  static Future<dynamic> delete(String endpoint, {Map<String, dynamic>? data}) async {
+    final uri = endpoint.startsWith('http')
+        ? Uri.parse(endpoint)
+        : Uri.parse('$baseUrl/$endpoint');
+
+    String? token = await StorageService.getToken();
+
+    try {
+      final response = await http.delete(
+        uri,
+        body: data != null ? jsonEncode(data) : null,
+        headers: {
+          "Content-Type": "application/json",
+          if (token != null) "Authorization": "Bearer $token",
+        },
+      );
+      return _handleResponse(response);
+    } on Exception {
+      // Re-throw exceptions from _handleResponse (these are already formatted)
+      rethrow;
+    } catch (e) {
+      // Only wrap non-Exception errors (like network failures) as Network Error
+      throw Exception('Network Error: $e');
     }
   }
 }

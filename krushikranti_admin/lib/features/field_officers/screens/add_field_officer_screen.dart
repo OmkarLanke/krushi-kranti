@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
@@ -94,7 +95,7 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
       if (mounted && data.isNotEmpty) {
         setState(() {
           _districtController.text = data['district'] ?? "";
-          _talukaController.text = data['taluka'] ?? "";
+          _talukaController.text = data['taluka'] ?? "";    
           _stateController.text = data['state'] ?? "";
           _villageList = List<String>.from(data['villages'] ?? []);
           _selectedVillage = null;
@@ -109,7 +110,7 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
           _isLookingUp = false;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(     
           SnackBar(
             content: Text(
               _parseErrorMessage(e.toString()),
@@ -250,27 +251,56 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
     String message = error.replaceFirst("Exception: ", "").trim();
     String lowerMessage = message.toLowerCase();
     
+    // Check for pincode-specific errors first (most user-friendly)
+    if (lowerMessage.contains('no address found') ||
+        lowerMessage.contains('pincode not found') ||
+        lowerMessage.contains('address not found') ||
+        (lowerMessage.contains('not found') && lowerMessage.contains('pincode'))) {
+      return 'Pincode not found. Please check the 6-digit pincode and try again.';
+    }
+    
+    // Check for invalid pincode format
+    if (lowerMessage.contains('invalid pincode') ||
+        lowerMessage.contains('pincode must be') ||
+        lowerMessage.contains('pincode should be')) {
+      return 'Invalid pincode format. Please enter a valid 6-digit pincode.';
+    }
+    
+    // Network errors
     if (lowerMessage.contains('network error') || 
         lowerMessage.contains('socketexception') ||
-        lowerMessage.contains('failed host lookup')) {
+        lowerMessage.contains('failed host lookup') ||
+        lowerMessage.contains('connection refused') ||
+        lowerMessage.contains('connection reset')) {
       return 'Network connection failed. Please check your internet connection and try again.';
     }
     
+    // Server errors
     if (lowerMessage.contains('server error') ||
-        lowerMessage.contains('500')) {
-      return 'Server error. Please try again later.';
+        lowerMessage.contains('500') ||
+        lowerMessage.contains('internal server error')) {
+      return 'Server error occurred. Please try again in a few moments.';
     }
     
+    // Service not found (but not pincode-related)
     if (lowerMessage.contains('not found') ||
         lowerMessage.contains('404')) {
-      return 'Service unavailable. Please try again later.';
+      return 'The requested service is temporarily unavailable. Please try again later.';
     }
     
-    if (message.isNotEmpty && message.length < 100) {
+    // Timeout errors
+    if (lowerMessage.contains('timeout') ||
+        lowerMessage.contains('timed out')) {
+      return 'Request timed out. Please check your connection and try again.';
+    }
+    
+    // If the message is short and clear, use it directly
+    if (message.isNotEmpty && message.length < 100 && !lowerMessage.contains('exception')) {
       return message;
     }
     
-    return 'Failed to create field officer. Please try again.';
+    // Default fallback
+    return 'An error occurred. Please try again.';
   }
 
   @override
@@ -583,12 +613,20 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
             hint: 'Enter 10-digit phone number',
             isRequired: true,
             keyboardType: TextInputType.phone,
+            maxLength: 10,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Phone number is required';
               }
+              if (value.trim().length != 10) {
+                return 'Phone number must be exactly 10 digits';
+              }
               if (!RegExp(r'^[0-9]{10}$').hasMatch(value.trim())) {
-                return 'Phone number must be 10 digits';
+                return 'Phone number must contain only digits';
               }
               return null;
             },
@@ -599,10 +637,18 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
             label: 'Alternate Phone',
             hint: 'Enter alternate phone (optional)',
             keyboardType: TextInputType.phone,
+            maxLength: 10,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
             validator: (value) {
               if (value != null && value.trim().isNotEmpty) {
+                if (value.trim().length != 10) {
+                  return 'Phone number must be exactly 10 digits';
+                }
                 if (!RegExp(r'^[0-9]{10}$').hasMatch(value.trim())) {
-                  return 'Phone number must be 10 digits';
+                  return 'Phone number must contain only digits';
                 }
               }
               return null;
@@ -895,7 +941,7 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
             obscureText: _obscurePassword,
             suffixIcon: IconButton(
               icon: Icon(
-                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                 color: Colors.grey.shade400,
                 size: 20,
               ),
@@ -924,7 +970,7 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
             obscureText: _obscureConfirmPassword,
             suffixIcon: IconButton(
               icon: Icon(
-                _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                 color: Colors.grey.shade400,
                 size: 20,
               ),
@@ -1003,6 +1049,7 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
     Widget? suffixIcon,
     VoidCallback? onTap,
     String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: controller,
@@ -1012,6 +1059,7 @@ class _AddFieldOfficerScreenState extends State<AddFieldOfficerScreen> {
       obscureText: obscureText,
       onTap: onTap,
       validator: validator,
+      inputFormatters: inputFormatters,
       style: GoogleFonts.poppins(
         fontSize: 14,
         color: AppColors.textPrimary,

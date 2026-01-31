@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // ✅ Use the generated package import (Standard Flutter way)
@@ -7,6 +8,8 @@ import '../../subscription/widgets/subscription_guard.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
 import '../../subscription/services/subscription_service.dart';
+import '../../dashboard/services/notification_service.dart';
+import '../../../core/services/deep_link_service.dart';
 
 // --- IMPORT YOUR TABS ---
 import 'home_screen.dart';
@@ -24,6 +27,9 @@ class MainLayoutScreen extends StatefulWidget {
 
 class _MainLayoutScreenState extends State<MainLayoutScreen> {
   int _currentIndex = 0;
+  final NotificationService _notificationService = NotificationService();
+  StreamSubscription? _notificationSubscription;
+  final Set<String> _shownNotificationIds = {}; // Track which notifications we've shown
 
   final List<String> _featureNames = const [
     "Home",
@@ -47,6 +53,105 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     setState(() {
       _currentIndex = index;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _setupGlobalNotificationListener();
+    // Start polling for notifications
+    _notificationService.startPolling(interval: const Duration(seconds: 10));
+  }
+
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    _notificationService.stopPolling();
+    super.dispose();
+  }
+
+  /// Setup global notification listener to show OTP notifications on all screens
+  void _setupGlobalNotificationListener() {
+    // Listen to notification stream
+    _notificationSubscription = _notificationService.notificationStream.listen(
+      (notification) {
+        if (notification.type == 'FARM_VERIFICATION_OTP') {
+          final now = DateTime.now();
+          final age = now.difference(notification.timestamp);
+          
+          // Only show if notification is recent (within 10 minutes) and not already shown
+          if (age < const Duration(minutes: 10) && 
+              !_shownNotificationIds.contains(notification.id)) {
+            _showGlobalOtpNotification(notification);
+            _shownNotificationIds.add(notification.id);
+          }
+        }
+      },
+    );
+
+    // Also check for new notifications when service notifies listeners
+    _notificationService.addListener(_onNotificationServiceChanged);
+    
+    // Check for any existing notifications that haven't been shown
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final newNotifications = _notificationService.newOtpNotificationsForPopup;
+      for (var notification in newNotifications) {
+        if (!_shownNotificationIds.contains(notification.id)) {
+          _showGlobalOtpNotification(notification);
+          _shownNotificationIds.add(notification.id);
+        }
+      }
+      if (newNotifications.isNotEmpty) {
+        _notificationService.markPopupShownForNotifications(newNotifications);
+      }
+    });
+  }
+
+  void _onNotificationServiceChanged() {
+    // Check for new OTP notifications when service updates
+    final newNotifications = _notificationService.newOtpNotificationsForPopup;
+    for (var notification in newNotifications) {
+      if (!_shownNotificationIds.contains(notification.id)) {
+        _showGlobalOtpNotification(notification);
+        _shownNotificationIds.add(notification.id);
+      }
+    }
+    if (newNotifications.isNotEmpty) {
+      _notificationService.markPopupShownForNotifications(newNotifications);
+    }
+  }
+
+  /// Show global OTP notification using navigator key (works on all screens)
+  void _showGlobalOtpNotification(NotificationModel notification) {
+    final navigatorContext = DeepLinkService.navigatorKey.currentContext;
+    if (navigatorContext == null) return;
+
+    ScaffoldMessenger.of(navigatorContext).showSnackBar(
+      SnackBar(
+        content: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Text(
+            'You will get the OTP. Please check it at notification',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        backgroundColor: AppColors.brandGreen,
+        duration: const Duration(seconds: 10),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 6,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+    );
   }
 
   /// Check subscription status from API first, fallback to local storage
@@ -89,31 +194,17 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         }
 
         final isSubscribed = snapshot.data ?? false;
-        final isAccountTab = _currentIndex == 4;
-        Widget body = _screens[_currentIndex];
-
-        // If not subscribed and not on Account tab, show subscription guard overlay
-        if (!isSubscribed && !isAccountTab) {
-          body = SubscriptionGuard(
-            child: body,
-            featureName: _featureNames[_currentIndex],
-            showOverlay: true,
-          );
-        }
-        // NOTE: We removed the automatic redirect to welcome.
-        // Unsubscribed users can still access dashboard but will see 
-        // subscription guard overlays on protected tabs.
-        // Account tab remains accessible for subscription navigation.
+        final body = _screens[_currentIndex];
 
         return Scaffold(
           body: body,
-          bottomNavigationBar: _buildModernBottomNavBar(l10n),
+          bottomNavigationBar: _buildModernBottomNavBar(l10n, isSubscribed),
         );
       },
     );
   }
 
-  Widget _buildModernBottomNavBar(AppLocalizations l10n) {
+  Widget _buildModernBottomNavBar(AppLocalizations l10n, bool isSubscribed) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -136,12 +227,16 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 activeIcon: Icons.home_rounded,
                 label: l10n.home, 
                 index: 0,
+                isSubscribed: isSubscribed,
+                isPremium: false,
               ),
               _buildNavItem(
                 icon: Icons.assignment_outlined,
                 activeIcon: Icons.assignment_rounded,
-                label: "Task", 
+                label: l10n.task, 
                 index: 1,
+                isSubscribed: isSubscribed,
+                isPremium: true,
               ),
               _buildCenterSellButton(l10n),
               _buildNavItem(
@@ -149,12 +244,16 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 activeIcon: Icons.account_balance_wallet_rounded,
                 label: l10n.finance,
                 index: 3,
+                isSubscribed: isSubscribed,
+                isPremium: true,
               ),
               _buildNavItem(
                 icon: Icons.person_outline,
                 activeIcon: Icons.person_rounded,
-                label: "Account",
+                label: l10n.accountTab,
                 index: 4,
+                isSubscribed: isSubscribed,
+                isPremium: false,
               ),
             ],
           ),
@@ -168,6 +267,8 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     required IconData activeIcon,
     required String label,
     required int index,
+    required bool isSubscribed,
+    required bool isPremium,
   }) {
     final isSelected = _currentIndex == index;
     
@@ -175,7 +276,17 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _onItemTapped(index),
+          onTap: () async {
+            // Premium tabs: show friendly upgrade dialog for free users
+            if (isPremium && !isSubscribed) {
+              await showSubscriptionRequiredDialog(
+                context,
+                featureName: label,
+              );
+              return;
+            }
+            _onItemTapped(index);
+          },
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -192,12 +303,27 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    isSelected ? activeIcon : icon,
-                    color: isSelected
-                        ? AppColors.brandGreen
-                        : Colors.grey.shade600,
-                    size: 22,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        isSelected ? activeIcon : icon,
+                        color: isSelected
+                            ? AppColors.brandGreen
+                            : Colors.grey.shade600,
+                        size: 22,
+                      ),
+                      if (isPremium && !isSubscribed)
+                        const Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Icon(
+                            Icons.lock,
+                            size: 12,
+                            color: Colors.orange,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 2),

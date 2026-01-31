@@ -1,0 +1,15 @@
+# Used when building frontend from repo root: docker build -f frontend/Dockerfile .
+# Excludes backend and mobile app to speed up context and avoid sending unused files.
+
+.git
+.gitignore
+.git_backup
+*.md
+!frontend/README.md
+microservices
+krushikranti_farmer
+.cursor
+*.pdf
+*.docx
+*.xlsx
+.dockerignore

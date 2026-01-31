@@ -27,13 +27,27 @@ class AppLocalizationsHi extends AppLocalizations {
   String get assignedMsg => 'आपके नियुक्त कृषि विशेषज्ञ';
 
   @override
-  String get fieldOfficerAssignMsg => 'We\'ll assign';
+  String get assignedTo => 'नियुक्त किया गया:';
 
   @override
-  String get fieldOfficerSoonMsg => 'Field Officer for verification soon';
+  String get forFarm => 'के लिए:';
 
   @override
-  String get fieldOfficerAssignedMsg => 'Your assigned Field Officer';
+  String moreAssignments(int count) {
+    return '+ $count और';
+  }
+
+  @override
+  String get pincodeLabel => 'पिनकोड:';
+
+  @override
+  String get fieldOfficerAssignMsg => 'हम जल्द ही';
+
+  @override
+  String get fieldOfficerSoonMsg => 'सत्यापन के लिए फील्ड ऑफिसर नियुक्त करेंगे';
+
+  @override
+  String get fieldOfficerAssignedMsg => 'आपके नियुक्त फील्ड ऑफिसर';
 
   @override
   String get viewFieldOfficerDetails => 'View Field Officer Details';
@@ -99,6 +113,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get home => 'होम';
 
   @override
+  String get task => 'कार्य';
+
+  @override
   String get crops => 'फसलें';
 
   @override
@@ -109,6 +126,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get profile => 'प्रोफाइल';
+
+  @override
+  String get accountTab => 'खाता';
 
   @override
   String get myDetails => 'मेरा विवरण';
@@ -766,6 +786,21 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get farmAddedSuccess => 'खेत सफलतापूर्वक जोड़ा गया';
+
+  @override
+  String get farmRequired => 'खेत आवश्यक';
+
+  @override
+  String get farmRequiredMessage =>
+      'फसलें जोड़ने के लिए, आपको पहले एक खेत जोड़ना होगा। आपके फसल विवरण को ट्रैक करने के लिए खेत आवश्यक है।';
+
+  @override
+  String get farmRequiredInstruction =>
+      'अपना पहला खेत बनाने के लिए नीचे \'खेत जोड़ें\' पर क्लिक करें।';
+
+  @override
+  String get farmAddedCanAddCrops =>
+      'खेत जोड़ा गया! अब आप फसलें जोड़ सकते हैं।';
 
   @override
   String get farmLocationGPS => 'Farm Location (GPS)';
