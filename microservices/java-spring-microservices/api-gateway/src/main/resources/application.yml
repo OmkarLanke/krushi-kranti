@@ -23,6 +23,8 @@ spring:
       httpclient:
         connect-timeout: 10000
         response-timeout: 30s
+      codec:
+        max-in-memory-size: 20MB
 
 gateway:
   jwt:
