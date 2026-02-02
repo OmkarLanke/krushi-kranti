@@ -251,6 +251,10 @@ services:
         condition: service_healthy
     networks:
       - krushi-kranti-network
+    volumes:
+      # Pincode import: host data folder -> /data in container (filePath=/data/Maharashtra.xlsx).
+      # If mount fails (e.g. path with space), override in docker-compose.override.yml with absolute path.
+      - ./data:/data:ro  
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     healthcheck:
