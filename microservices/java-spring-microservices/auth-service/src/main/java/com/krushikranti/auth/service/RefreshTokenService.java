@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -41,9 +40,6 @@ public class RefreshTokenService {
      */
     @Transactional
     public String createRefreshToken(Long userId) {
-        // Fail fast if userId is null
-        Objects.requireNonNull(userId, "userId must not be null");
-        
         // Revoke existing tokens for this user (optional: can allow multiple tokens)
         refreshTokenRepository.revokeAllUserTokens(userId);
 
@@ -138,75 +134,17 @@ public class RefreshTokenService {
     }
 
     /**
-     * Rotate refresh token: create a new token (which implicitly revokes all old ones).
+     * Rotate refresh token: revoke the old one and create a new one.
      * This provides additional security by limiting token lifetime.
-     * Note: createRefreshToken already calls revokeAllUserTokens, so explicit
-     * revokeToken(oldToken) is not needed and would be redundant.
      */
     @Transactional
     public String rotateRefreshToken(String oldToken, Long userId) {
-        // Create a new token (this automatically revokes all existing tokens for the user)
+        // Revoke the old token
+        revokeToken(oldToken);
+        
+        // Create a new token
         return createRefreshToken(userId);
     }
-
-    /**
-     * Atomically validate and rotate a refresh token.
-     * This method prevents TOCTOU race conditions by performing validation and rotation
-     * in a single transaction. If two parallel requests use the same token, only one
-     * will succeed (the first one to execute will revoke the token, causing the second to fail).
-     * 
-     * @param token The refresh token to validate and rotate
-     * @return RefreshTokenResult containing the user and new token if successful, empty otherwise
-     */
-    @Transactional
-    public Optional<RefreshTokenResult> validateAndRotateRefreshToken(String token) {
-        Optional<RefreshToken> refreshTokenOpt = refreshTokenRepository.findByToken(token);
-
-        if (refreshTokenOpt.isEmpty()) {
-            log.warn("Refresh token not found");
-            return Optional.empty();
-        }
-
-        RefreshToken refreshToken = refreshTokenOpt.get();
-
-        // Check if token is revoked (handles race condition - second request will see revoked token)
-        if (refreshToken.getIsRevoked()) {
-            log.warn("Refresh token is revoked for user: {}", refreshToken.getUserId());
-            return Optional.empty();
-        }
-
-        // Check if token is expired
-        if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            log.warn("Refresh token is expired for user: {}", refreshToken.getUserId());
-            return Optional.empty();
-        }
-
-        // Find the associated user
-        Optional<User> userOpt = userRepository.findById(refreshToken.getUserId());
-        if (userOpt.isEmpty()) {
-            log.warn("User not found for refresh token: {}", refreshToken.getUserId());
-            return Optional.empty();
-        }
-
-        User user = userOpt.get();
-
-        // Check if user is still active
-        if (!user.getIsActive()) {
-            log.warn("User account is inactive: {}", user.getId());
-            return Optional.empty();
-        }
-
-        // Atomically create new token (this revokes all existing tokens including the current one)
-        String newToken = createRefreshToken(user.getId());
-        
-        log.debug("Refresh token validated and rotated successfully for user: {}", user.getId());
-        return Optional.of(new RefreshTokenResult(user, newToken));
-    }
-
-    /**
-     * Result class for validateAndRotateRefreshToken operation.
-     */
-    public record RefreshTokenResult(User user, String newRefreshToken) {}
 
     /**
      * Scheduled task to clean up expired and revoked tokens.

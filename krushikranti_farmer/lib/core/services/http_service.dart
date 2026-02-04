@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform, File;
 import 'dart:isolate';
@@ -8,10 +7,10 @@ import 'package:http_parser/http_parser.dart';
 import 'storage_service.dart'; // ✅ Import the new service
 
 class HttpService {
-  // Completer to coordinate concurrent refresh requests
-  static Completer<bool>? _refreshCompleter;
+  // Flag to prevent refresh token loops
+  static bool _isRefreshing = false;
   // Callback for when refresh fails (e.g., redirect to login)
-  static void Function()? onAuthenticationFailed;
+  static Function? onAuthenticationFailed;
   // Base URL: production from --dart-define=BASE_URL=...; dev = localhost / local IP
   static String get baseUrl {
     const String envBaseUrl = String.fromEnvironment(
@@ -39,21 +38,16 @@ class HttpService {
 
   /// Attempt to refresh the access token using the refresh token.
   /// Returns true if successful, false otherwise.
-  /// Concurrent callers will await the same refresh operation.
   static Future<bool> _refreshToken() async {
-    // If a refresh is already in progress, wait for its result
-    if (_refreshCompleter != null) {
-      return _refreshCompleter!.future;
+    if (_isRefreshing) {
+      return false; // Prevent concurrent refresh attempts
     }
 
-    // Create a new completer for this refresh operation
-    _refreshCompleter = Completer<bool>();
-    
+    _isRefreshing = true;
     try {
       final refreshToken = await StorageService.getRefreshToken();
       if (refreshToken == null || refreshToken.isEmpty) {
         debugPrint('No refresh token available');
-        _refreshCompleter!.complete(false);
         return false;
       }
 
@@ -75,20 +69,17 @@ class HttpService {
             await StorageService.saveRefreshToken(newRefreshToken);
           }
           debugPrint('Token refreshed successfully');
-          _refreshCompleter!.complete(true);
           return true;
         }
       }
       
       debugPrint('Token refresh failed with status: ${response.statusCode}');
-      _refreshCompleter!.complete(false);
       return false;
     } catch (e) {
       debugPrint('Error refreshing token: $e');
-      _refreshCompleter!.complete(false);
       return false;
     } finally {
-      _refreshCompleter = null;
+      _isRefreshing = false;
     }
   }
 
@@ -130,8 +121,8 @@ class HttpService {
         debugPrint('Response Status: ${response.statusCode}');
       }
       
-      // Handle 401 with token refresh (only on first attempt, skip for auth endpoints)
-      if (response.statusCode == 401 && !isRetry && !endpoint.contains('auth/')) {
+      // Handle 401 with token refresh (only on first attempt)
+      if (response.statusCode == 401 && !isRetry) {
         final refreshed = await _refreshToken();
         if (refreshed) {
           return await get(endpoint, isRetry: true);
@@ -213,8 +204,8 @@ class HttpService {
         },
       );
       
-      // Handle 401 with token refresh (only on first attempt, skip for auth endpoints)
-      if (response.statusCode == 401 && !isRetry && !endpoint.contains('auth/')) {
+      // Handle 401 with token refresh (only on first attempt)
+      if (response.statusCode == 401 && !isRetry) {
         final refreshed = await _refreshToken();
         if (refreshed) {
           return await put(endpoint, data, isRetry: true);

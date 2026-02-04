@@ -5,6 +5,7 @@ import com.krushikranti.auth.dto.AdminCreateUserRequest;
 import com.krushikranti.auth.dto.DeleteUserRequest;
 import com.krushikranti.auth.model.User;
 import com.krushikranti.auth.service.AuthService;
+import com.krushikranti.auth.service.JwtService;
 import com.krushikranti.auth.service.RefreshTokenService;
 import com.krushikranti.auth.service.UserDeletionService;
 import com.krushikranti.i18n.constants.MessageKeys;
@@ -30,6 +31,7 @@ public class AuthController {
     private final MessageService messageService;
     private final UserDeletionService userDeletionService;
     private final RefreshTokenService refreshTokenService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
@@ -97,7 +99,7 @@ public class AuthController {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType("Bearer")
-                .expiresIn(86400L) // 24 hours in seconds
+                .expiresIn(jwtService.getExpirationSeconds())
                 .refreshExpiresIn(refreshTokenService.getRefreshExpirationSeconds())
                 .user(userInfo)
                 .build();
@@ -107,28 +109,26 @@ public class AuthController {
 
     /**
      * Refresh access token using a valid refresh token.
-     * Returns a new access token and rotates the refresh token atomically.
-     * This atomic operation prevents TOCTOU race conditions where parallel requests
-     * could both succeed with the same refresh token.
+     * Returns a new access token and optionally rotates the refresh token.
      */
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request, HttpServletRequest httpRequest) {
         try {
-            // Atomically validate and rotate refresh token to prevent TOCTOU race conditions
-            Optional<RefreshTokenService.RefreshTokenResult> resultOpt = 
-                    refreshTokenService.validateAndRotateRefreshToken(request.getRefreshToken());
+            // Validate refresh token and get associated user
+            Optional<User> userOpt = refreshTokenService.validateRefreshToken(request.getRefreshToken());
 
-            if (resultOpt.isEmpty()) {
+            if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>(messageService.getMessage(MessageKeys.AUTH_REFRESH_TOKEN_INVALID, httpRequest), null));
             }
 
-            RefreshTokenService.RefreshTokenResult result = resultOpt.get();
-            User user = result.user();
-            String newRefreshToken = result.newRefreshToken();
+            User user = userOpt.get();
 
             // Generate new access token
             String newAccessToken = authService.generateToken(user);
+
+            // Rotate refresh token for additional security
+            String newRefreshToken = refreshTokenService.rotateRefreshToken(request.getRefreshToken(), user.getId());
 
             UserInfo userInfo = UserInfo.builder()
                     .id(user.getId())
@@ -143,7 +143,7 @@ public class AuthController {
                     .accessToken(newAccessToken)
                     .refreshToken(newRefreshToken)
                     .tokenType("Bearer")
-                    .expiresIn(86400L) // 24 hours in seconds
+                    .expiresIn(jwtService.getExpirationSeconds())
                     .refreshExpiresIn(refreshTokenService.getRefreshExpirationSeconds())
                     .user(userInfo)
                     .build();
