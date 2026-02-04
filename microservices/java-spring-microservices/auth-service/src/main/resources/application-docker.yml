@@ -39,7 +39,7 @@ spring:
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:KrushiKrantiSecretKeyForJWTTokenGeneration2024!@#$%^&*}
-  expiration: 86400000 # 24 hours in milliseconds
+  expiration: 3600000 # 1 hour in milliseconds
   refresh-expiration: 604800000 # 7 days in milliseconds
   issuer: krushi-kranti-auth-service
 

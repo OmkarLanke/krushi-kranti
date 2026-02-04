@@ -14,7 +14,8 @@ public class AuthResponse {
     private String refreshToken;
     @Builder.Default
     private String tokenType = "Bearer";
-    private Long expiresIn;
+    private Long expiresIn;        // Access token expiration in seconds
+    private Long refreshExpiresIn; // Refresh token expiration in seconds
     private UserInfo user;
 }
 

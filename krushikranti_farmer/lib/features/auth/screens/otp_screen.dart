@@ -184,14 +184,18 @@ class _OtpScreenState extends State<OtpScreen> {
 
         // Extract token and user info from response
         final String accessToken = response['accessToken'] ?? '';
+        final String refreshToken = response['refreshToken'] ?? '';
         final userInfo = response['user'] ?? {};
 
         if (accessToken.isEmpty) {
           throw Exception("Login failed. Please try again.");
         }
 
-        // Save token and user details
+        // Save tokens and user details
         await StorageService.saveToken(accessToken);
+        if (refreshToken.isNotEmpty) {
+          await StorageService.saveRefreshToken(refreshToken);
+        }
         await StorageService.saveAuthDetails(
           email: userInfo['email'] ?? '',
           phone: userInfo['phoneNumber'] ?? phoneNumber,
@@ -319,12 +323,16 @@ class _OtpScreenState extends State<OtpScreen> {
           },
         );
         final String accessToken = loginResp['accessToken'] ?? '';
+        final String refreshToken = loginResp['refreshToken'] ?? '';
         final userInfo = loginResp['user'] ?? {};
         if (accessToken.isEmpty) {
           throw Exception("Login failed after signup. Please try again.");
         }
 
         await StorageService.saveToken(accessToken);
+        if (refreshToken.isNotEmpty) {
+          await StorageService.saveRefreshToken(refreshToken);
+        }
         await StorageService.saveAuthDetails(
           email: userInfo['email'] ?? data['email'] ?? '',
           phone: userInfo['phoneNumber'] ?? phoneNumber,

@@ -15,7 +15,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/auth/login", "/auth/register", "/auth/verify-otp", "/auth/request-login-otp", "/.well-known/**", "/actuator/**")
+                        .pathMatchers("/auth/login", "/auth/register", "/auth/verify-otp", "/auth/request-login-otp", "/auth/refresh", "/auth/logout", "/.well-known/**", "/actuator/**")
                         .permitAll()
                         .anyExchange()
                         .permitAll() // Allow all for now - JWT validation handled in filter
