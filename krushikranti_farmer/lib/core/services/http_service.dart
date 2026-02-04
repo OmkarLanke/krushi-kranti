@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform, File;
 import 'dart:isolate';
@@ -7,6 +8,10 @@ import 'package:http_parser/http_parser.dart';
 import 'storage_service.dart'; // ✅ Import the new service
 
 class HttpService {
+  // Completer to coordinate concurrent refresh requests
+  static Completer<bool>? _refreshCompleter;
+  // Callback for when refresh fails (e.g., redirect to login)
+  static void Function()? onAuthenticationFailed;
   // Base URL: production from --dart-define=BASE_URL=...; dev = localhost / local IP
   static String get baseUrl {
     const String envBaseUrl = String.fromEnvironment(
@@ -32,8 +37,71 @@ class HttpService {
     return savedLang ?? 'en'; // Default to English
   }
 
+  /// Attempt to refresh the access token using the refresh token.
+  /// Returns true if successful, false otherwise.
+  /// Concurrent callers will await the same refresh operation.
+  static Future<bool> _refreshToken() async {
+    // If a refresh is already in progress, wait for its result
+    if (_refreshCompleter != null) {
+      return _refreshCompleter!.future;
+    }
+
+    // Create a new completer for this refresh operation
+    _refreshCompleter = Completer<bool>();
+    
+    try {
+      final refreshToken = await StorageService.getRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        debugPrint('No refresh token available');
+        _refreshCompleter!.complete(false);
+        return false;
+      }
+
+      final uri = Uri.parse('$baseUrl/auth/refresh');
+      final response = await http.post(
+        uri,
+        body: jsonEncode({'refreshToken': refreshToken}),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final responseBody = jsonDecode(response.body);
+        final newAccessToken = responseBody['accessToken'] as String?;
+        final newRefreshToken = responseBody['refreshToken'] as String?;
+
+        if (newAccessToken != null && newAccessToken.isNotEmpty) {
+          await StorageService.saveToken(newAccessToken);
+          if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
+            await StorageService.saveRefreshToken(newRefreshToken);
+          }
+          debugPrint('Token refreshed successfully');
+          _refreshCompleter!.complete(true);
+          return true;
+        }
+      }
+      
+      debugPrint('Token refresh failed with status: ${response.statusCode}');
+      _refreshCompleter!.complete(false);
+      return false;
+    } catch (e) {
+      debugPrint('Error refreshing token: $e');
+      _refreshCompleter!.complete(false);
+      return false;
+    } finally {
+      _refreshCompleter = null;
+    }
+  }
+
+  /// Handle authentication failure - clear session and notify
+  static Future<void> _handleAuthenticationFailure() async {
+    await StorageService.clearSession();
+    if (onAuthenticationFailed != null) {
+      onAuthenticationFailed!();
+    }
+  }
+
   // --- GET REQUEST ---
-  static Future<dynamic> get(String endpoint) async {
+  static Future<dynamic> get(String endpoint, {bool isRetry = false}) async {
     final uri = endpoint.startsWith('http')
         ? Uri.parse(endpoint)
         : Uri.parse('$baseUrl/$endpoint');
@@ -62,17 +130,29 @@ class HttpService {
         debugPrint('Response Status: ${response.statusCode}');
       }
       
+      // Handle 401 with token refresh (only on first attempt, skip for auth endpoints)
+      if (response.statusCode == 401 && !isRetry && !endpoint.contains('auth/')) {
+        final refreshed = await _refreshToken();
+        if (refreshed) {
+          return await get(endpoint, isRetry: true);
+        } else {
+          await _handleAuthenticationFailure();
+          throw Exception('Session expired. Please login again.');
+        }
+      }
+      
       return await _handleResponse(response);
     } catch (e) {
       if (endpoint.contains('notification')) {
         debugPrint('Error in GET request: $e');
       }
+      if (e is Exception) rethrow;
       throw Exception('Network Error: $e');
     }
   }
 
   // --- POST REQUEST ---
-  static Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
+  static Future<dynamic> post(String endpoint, Map<String, dynamic> data, {bool isRetry = false}) async {
     final uri = endpoint.startsWith('http')
         ? Uri.parse(endpoint)
         : Uri.parse('$baseUrl/$endpoint');
@@ -92,14 +172,27 @@ class HttpService {
           if (token != null) "Authorization": "Bearer $token",
         },
       );
+      
+      // Handle 401 with token refresh (only on first attempt, skip for auth endpoints)
+      if (response.statusCode == 401 && !isRetry && !endpoint.contains('auth/')) {
+        final refreshed = await _refreshToken();
+        if (refreshed) {
+          return await post(endpoint, data, isRetry: true);
+        } else {
+          await _handleAuthenticationFailure();
+          throw Exception('Session expired. Please login again.');
+        }
+      }
+      
       return await _handleResponse(response);
     } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('Network Error: $e');
     }
   }
 
   // --- PUT REQUEST ---
-  static Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
+  static Future<dynamic> put(String endpoint, Map<String, dynamic> data, {bool isRetry = false}) async {
     final uri = endpoint.startsWith('http')
         ? Uri.parse(endpoint)
         : Uri.parse('$baseUrl/$endpoint');
@@ -119,8 +212,21 @@ class HttpService {
           if (token != null) "Authorization": "Bearer $token",
         },
       );
+      
+      // Handle 401 with token refresh (only on first attempt, skip for auth endpoints)
+      if (response.statusCode == 401 && !isRetry && !endpoint.contains('auth/')) {
+        final refreshed = await _refreshToken();
+        if (refreshed) {
+          return await put(endpoint, data, isRetry: true);
+        } else {
+          await _handleAuthenticationFailure();
+          throw Exception('Session expired. Please login again.');
+        }
+      }
+      
       return await _handleResponse(response);
     } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('Network Error: $e');
     }
   }
@@ -132,6 +238,7 @@ class HttpService {
     File file, {
     String? folder,
     String? fileName,
+    bool isRetry = false,
   }) async {
     final uri = Uri.parse('$baseUrl/file/upload');
     
@@ -227,6 +334,16 @@ class HttpService {
         }
         
         if (response.statusCode == 401) {
+          // Handle 401 with token refresh (only on first attempt)
+          if (!isRetry) {
+            final refreshed = await _refreshToken();
+            if (refreshed) {
+              return await uploadFile(file, folder: folder, fileName: fileName, isRetry: true);
+            } else {
+              await _handleAuthenticationFailure();
+              throw Exception('Session expired. Please login again.');
+            }
+          }
           throw Exception('Unauthorized - Please login again. Token may have expired.');
         } else if (response.statusCode == 404) {
           throw Exception('File upload endpoint not found. Please contact support.');

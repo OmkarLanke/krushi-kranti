@@ -19,8 +19,12 @@ class AuthService {
       throw Exception('Access denied - Admin role required');
     }
 
-    // Save token and user details
+    // Save tokens and user details
     await StorageService.saveToken(response['accessToken']);
+    final refreshToken = response['refreshToken'];
+    if (refreshToken != null && refreshToken.toString().isNotEmpty) {
+      await StorageService.saveRefreshToken(refreshToken);
+    }
     await StorageService.saveUserDetails(
       userId: user['id'].toString(),
       username: user['username'] ?? '',
@@ -31,8 +35,17 @@ class AuthService {
     return response;
   }
 
-  /// Logout
+  /// Logout - also revokes refresh token on server
   static Future<void> logout() async {
+    try {
+      // Try to revoke refresh token on server
+      final refreshToken = await StorageService.getRefreshToken();
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await HttpService.post('auth/logout', {'refreshToken': refreshToken});
+      }
+    } catch (_) {
+      // Ignore errors - clear session anyway
+    }
     await StorageService.clearSession();
   }
 

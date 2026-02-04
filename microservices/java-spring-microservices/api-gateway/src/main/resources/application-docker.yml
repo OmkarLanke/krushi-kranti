@@ -37,6 +37,8 @@ gateway:
       - /auth/get-otp
       - /auth/resend-otp
       - /auth/forgot-password/**
+      - /auth/refresh
+      - /auth/logout
       - /email/reset-password/**
       - /.well-known
       - /actuator/health
