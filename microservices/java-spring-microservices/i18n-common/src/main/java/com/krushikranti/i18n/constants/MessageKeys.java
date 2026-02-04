@@ -34,6 +34,7 @@ public final class MessageKeys {
     public static final String AUTH_TOKEN_INVALID = "auth.token.invalid";
     public static final String AUTH_TOKEN_EXPIRED = "auth.token.expired";
     public static final String AUTH_TOKEN_REFRESHED = "auth.token.refreshed";
+    public static final String AUTH_REFRESH_TOKEN_INVALID = "auth.refresh.token.invalid";
 
     // Auth - User
     public static final String AUTH_USER_NOT_FOUND = "auth.user.not.found";

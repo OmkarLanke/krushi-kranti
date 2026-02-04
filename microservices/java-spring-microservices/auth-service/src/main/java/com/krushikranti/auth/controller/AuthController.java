@@ -5,6 +5,8 @@ import com.krushikranti.auth.dto.AdminCreateUserRequest;
 import com.krushikranti.auth.dto.DeleteUserRequest;
 import com.krushikranti.auth.model.User;
 import com.krushikranti.auth.service.AuthService;
+import com.krushikranti.auth.service.JwtService;
+import com.krushikranti.auth.service.RefreshTokenService;
 import com.krushikranti.auth.service.UserDeletionService;
 import com.krushikranti.i18n.constants.MessageKeys;
 import com.krushikranti.i18n.service.MessageService;
@@ -28,6 +30,8 @@ public class AuthController {
     private final AuthService authService;
     private final MessageService messageService;
     private final UserDeletionService userDeletionService;
+    private final RefreshTokenService refreshTokenService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
@@ -79,7 +83,8 @@ public class AuthController {
         }
 
         User user = userOpt.get();
-        String token = authService.generateToken(user);
+        String accessToken = authService.generateToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         UserInfo userInfo = UserInfo.builder()
                 .id(user.getId())
@@ -91,13 +96,83 @@ public class AuthController {
                 .build();
 
         AuthResponse authResponse = AuthResponse.builder()
-                .accessToken(token)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .tokenType("Bearer")
-                .expiresIn(86400L) // 24 hours in seconds
+                .expiresIn(jwtService.getExpirationSeconds())
+                .refreshExpiresIn(refreshTokenService.getRefreshExpirationSeconds())
                 .user(userInfo)
                 .build();
 
         return ResponseEntity.ok(authResponse);
+    }
+
+    /**
+     * Refresh access token using a valid refresh token.
+     * Returns a new access token and optionally rotates the refresh token.
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request, HttpServletRequest httpRequest) {
+        try {
+            // Validate refresh token and get associated user
+            Optional<User> userOpt = refreshTokenService.validateRefreshToken(request.getRefreshToken());
+
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(messageService.getMessage(MessageKeys.AUTH_REFRESH_TOKEN_INVALID, httpRequest), null));
+            }
+
+            User user = userOpt.get();
+
+            // Generate new access token
+            String newAccessToken = authService.generateToken(user);
+
+            // Rotate refresh token for additional security
+            String newRefreshToken = refreshTokenService.rotateRefreshToken(request.getRefreshToken(), user.getId());
+
+            UserInfo userInfo = UserInfo.builder()
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .phoneNumber(user.getPhoneNumber())
+                    .role(user.getRole().name())
+                    .isVerified(user.getIsVerified())
+                    .build();
+
+            AuthResponse authResponse = AuthResponse.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(newRefreshToken)
+                    .tokenType("Bearer")
+                    .expiresIn(jwtService.getExpirationSeconds())
+                    .refreshExpiresIn(refreshTokenService.getRefreshExpirationSeconds())
+                    .user(userInfo)
+                    .build();
+
+            log.info("Token refreshed successfully for user: {}", user.getId());
+            return ResponseEntity.ok(authResponse);
+        } catch (Exception e) {
+            log.error("Error refreshing token: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>("Invalid or expired refresh token", null));
+        }
+    }
+
+    /**
+     * Logout endpoint - revokes the refresh token.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody(required = false) RefreshTokenRequest request, HttpServletRequest httpRequest) {
+        try {
+            if (request != null && request.getRefreshToken() != null && !request.getRefreshToken().isEmpty()) {
+                refreshTokenService.revokeToken(request.getRefreshToken());
+                log.info("User logged out, refresh token revoked");
+            }
+            return ResponseEntity.ok(new ApiResponse<>("Logged out successfully", null));
+        } catch (Exception e) {
+            log.error("Error during logout: {}", e.getMessage());
+            // Still return success - logout should not fail
+            return ResponseEntity.ok(new ApiResponse<>("Logged out successfully", null));
+        }
     }
 
     @PostMapping("/request-login-otp")

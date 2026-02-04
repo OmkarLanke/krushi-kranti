@@ -153,4 +153,11 @@ public class JwtService {
     public String getIssuer() {
         return issuer;
     }
+
+    /**
+     * Get the token expiration time in seconds (for response metadata)
+     */
+    public long getExpirationSeconds() {
+        return expiration / 1000;
+    }
 }

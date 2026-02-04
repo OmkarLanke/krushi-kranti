@@ -1,8 +1,14 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import 'storage_service.dart';
 
 class HttpService {
+  // Flag to prevent refresh token loops
+  static bool _isRefreshing = false;
+  // Callback for when refresh fails (e.g., redirect to login)
+  static Function? onAuthenticationFailed;
+
   // Base URL: production from --dart-define=BASE_URL=...; dev = localhost
   static String get baseUrl {
     const String envBaseUrl = String.fromEnvironment(
@@ -15,8 +21,63 @@ class HttpService {
     return "http://localhost:4004";
   }
 
+  /// Attempt to refresh the access token using the refresh token.
+  /// Returns true if successful, false otherwise.
+  static Future<bool> _refreshToken() async {
+    if (_isRefreshing) {
+      return false; // Prevent concurrent refresh attempts
+    }
+
+    _isRefreshing = true;
+    try {
+      final refreshToken = await StorageService.getRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        debugPrint('No refresh token available');
+        return false;
+      }
+
+      final uri = Uri.parse('$baseUrl/auth/refresh');
+      final response = await http.post(
+        uri,
+        body: jsonEncode({'refreshToken': refreshToken}),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final responseBody = jsonDecode(response.body);
+        final newAccessToken = responseBody['accessToken'] as String?;
+        final newRefreshToken = responseBody['refreshToken'] as String?;
+
+        if (newAccessToken != null && newAccessToken.isNotEmpty) {
+          await StorageService.saveToken(newAccessToken);
+          if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
+            await StorageService.saveRefreshToken(newRefreshToken);
+          }
+          debugPrint('Token refreshed successfully');
+          return true;
+        }
+      }
+      
+      debugPrint('Token refresh failed with status: ${response.statusCode}');
+      return false;
+    } catch (e) {
+      debugPrint('Error refreshing token: $e');
+      return false;
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+
+  /// Handle authentication failure - clear session and notify
+  static Future<void> _handleAuthenticationFailure() async {
+    await StorageService.clearSession();
+    if (onAuthenticationFailed != null) {
+      onAuthenticationFailed!();
+    }
+  }
+
   // GET Request
-  static Future<dynamic> get(String endpoint) async {
+  static Future<dynamic> get(String endpoint, {bool isRetry = false}) async {
     final uri = endpoint.startsWith('http')
         ? Uri.parse(endpoint)
         : Uri.parse('$baseUrl/$endpoint');
@@ -31,6 +92,18 @@ class HttpService {
           if (token != null) "Authorization": "Bearer $token",
         },
       );
+      
+      // Handle 401 with token refresh (only on first attempt)
+      if (response.statusCode == 401 && !isRetry) {
+        final refreshed = await _refreshToken();
+        if (refreshed) {
+          return await get(endpoint, isRetry: true);
+        } else {
+          await _handleAuthenticationFailure();
+          throw Exception('Session expired. Please login again.');
+        }
+      }
+      
       return _handleResponse(response);
     } on Exception {
       // Re-throw exceptions from _handleResponse (these are already formatted)
@@ -42,7 +115,7 @@ class HttpService {
   }
 
   // POST Request
-  static Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
+  static Future<dynamic> post(String endpoint, Map<String, dynamic> data, {bool isRetry = false}) async {
     final uri = endpoint.startsWith('http')
         ? Uri.parse(endpoint)
         : Uri.parse('$baseUrl/$endpoint');
@@ -58,6 +131,18 @@ class HttpService {
           if (token != null) "Authorization": "Bearer $token",
         },
       );
+      
+      // Handle 401 with token refresh (only on first attempt, skip for auth endpoints)
+      if (response.statusCode == 401 && !isRetry && !endpoint.contains('auth/')) {
+        final refreshed = await _refreshToken();
+        if (refreshed) {
+          return await post(endpoint, data, isRetry: true);
+        } else {
+          await _handleAuthenticationFailure();
+          throw Exception('Session expired. Please login again.');
+        }
+      }
+      
       return _handleResponse(response);
     } on Exception {
       // Re-throw exceptions from _handleResponse (these are already formatted)
@@ -69,7 +154,7 @@ class HttpService {
   }
 
   // PUT Request
-  static Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
+  static Future<dynamic> put(String endpoint, Map<String, dynamic> data, {bool isRetry = false}) async {
     final uri = endpoint.startsWith('http')
         ? Uri.parse(endpoint)
         : Uri.parse('$baseUrl/$endpoint');
@@ -85,6 +170,18 @@ class HttpService {
           if (token != null) "Authorization": "Bearer $token",
         },
       );
+      
+      // Handle 401 with token refresh (only on first attempt)
+      if (response.statusCode == 401 && !isRetry) {
+        final refreshed = await _refreshToken();
+        if (refreshed) {
+          return await put(endpoint, data, isRetry: true);
+        } else {
+          await _handleAuthenticationFailure();
+          throw Exception('Session expired. Please login again.');
+        }
+      }
+      
       return _handleResponse(response);
     } on Exception {
       // Re-throw exceptions from _handleResponse (these are already formatted)
@@ -136,7 +233,7 @@ class HttpService {
   }
 
   // DELETE Request (with optional JSON body)
-  static Future<dynamic> delete(String endpoint, {Map<String, dynamic>? data}) async {
+  static Future<dynamic> delete(String endpoint, {Map<String, dynamic>? data, bool isRetry = false}) async {
     final uri = endpoint.startsWith('http')
         ? Uri.parse(endpoint)
         : Uri.parse('$baseUrl/$endpoint');
@@ -152,6 +249,18 @@ class HttpService {
           if (token != null) "Authorization": "Bearer $token",
         },
       );
+      
+      // Handle 401 with token refresh (only on first attempt)
+      if (response.statusCode == 401 && !isRetry) {
+        final refreshed = await _refreshToken();
+        if (refreshed) {
+          return await delete(endpoint, data: data, isRetry: true);
+        } else {
+          await _handleAuthenticationFailure();
+          throw Exception('Session expired. Please login again.');
+        }
+      }
+      
       return _handleResponse(response);
     } on Exception {
       // Re-throw exceptions from _handleResponse (these are already formatted)

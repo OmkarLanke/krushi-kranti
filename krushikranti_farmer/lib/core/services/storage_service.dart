@@ -14,6 +14,7 @@ class StorageService {
 
   // --- SYSTEM KEYS ---
   static const String _tokenKey = 'auth_token';
+  static const String _refreshTokenKey = 'refresh_token';
   static const String _languageKey = 'app_language';
   
   // --- USER DATA KEYS ---
@@ -105,12 +106,23 @@ class StorageService {
     return await _secureStorage.read(key: _tokenKey);
   }
 
+  /// Save refresh token securely using flutter_secure_storage
+  static Future<void> saveRefreshToken(String token) async {
+    await _secureStorage.write(key: _refreshTokenKey, value: token);
+  }
+
+  /// Get refresh token from secure storage
+  static Future<String?> getRefreshToken() async {
+    return await _secureStorage.read(key: _refreshTokenKey);
+  }
+
   // ✅ CLEARS USER DATA BUT KEEPS LANGUAGE
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     
-    // Clear token from secure storage
+    // Clear tokens from secure storage
     await _secureStorage.delete(key: _tokenKey);
+    await _secureStorage.delete(key: _refreshTokenKey);
     await prefs.remove(_emailKey);
     await prefs.remove(_phoneKey);
     await prefs.remove(_firstNameKey);

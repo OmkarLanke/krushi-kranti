@@ -243,14 +243,18 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> with TickerProvider
 
       // Extract token and user info from response
       final String accessToken = response['accessToken'] ?? '';
+      final String refreshToken = response['refreshToken'] ?? '';
       final userInfo = response['user'] ?? {};
 
       if (accessToken.isEmpty) {
         throw Exception("Login failed. Please try again.");
       }
 
-      // Save token and user details
+      // Save tokens and user details
       await StorageService.saveToken(accessToken);
+      if (refreshToken.isNotEmpty) {
+        await StorageService.saveRefreshToken(refreshToken);
+      }
       await StorageService.saveAuthDetails(
         email: userInfo['email'] ?? _emailController.text.trim(),
         phone: userInfo['phoneNumber'] ?? "",
