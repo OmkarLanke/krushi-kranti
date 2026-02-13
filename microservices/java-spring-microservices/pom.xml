@@ -52,6 +52,7 @@
         <module>kyc-service</module>
         <module>file-service</module>
         <module>notification-service</module>
+        <module>job-application-service</module>
     </modules>
 
     <dependencyManagement>

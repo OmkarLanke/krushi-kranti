@@ -4,6 +4,8 @@ import '../../../core/constants/app_colors.dart';
 import '../widgets/sidebar.dart';
 import '../../farmers/screens/farmer_list_screen.dart';
 import '../../field_officers/screens/field_officer_list_screen.dart';
+import '../../job_applications/screens/job_applications_list_screen.dart';
+import '../../job_applications/screens/job_application_detail_screen.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/screens/login_screen.dart';
 
@@ -25,6 +27,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return const FarmerListScreen();
       case 'field-officers':
         return const FieldOfficerListScreen();
+      case 'job-applications':
+        return const JobApplicationsListScreen();
       case 'products':
       case 'inventory':
       case 'orders':
@@ -95,7 +99,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             currentRoute: _currentRoute,
             onItemSelected: _handleNavigation,
           ),
-          
+
           // Main Content
           Expanded(
             child: Container(
@@ -145,4 +149,3 @@ class _DashboardOverview extends StatelessWidget {
     );
   }
 }
-

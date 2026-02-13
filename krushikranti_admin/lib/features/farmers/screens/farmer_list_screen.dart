@@ -21,10 +21,7 @@ enum SortColumn {
   registeredAt,
 }
 
-enum SortDirection {
-  ascending,
-  descending,
-}
+enum SortDirection { ascending, descending }
 
 class FarmerListScreen extends StatefulWidget {
   const FarmerListScreen({super.key});
@@ -36,17 +33,18 @@ class FarmerListScreen extends StatefulWidget {
 class _FarmerListScreenState extends State<FarmerListScreen> {
   List<FarmerSummary> _farmers = [];
   List<FarmerSummary> _filteredFarmers = [];
-  List<FarmerSummary> _allFarmers = []; // All farmers for filtering and dropdowns
+  List<FarmerSummary> _allFarmers =
+      []; // All farmers for filtering and dropdowns
   DashboardStats? _stats;
   bool _isLoading = true;
   bool _isLoadingAllFarmers = false;
   String? _error;
-  
+
   int _currentPage = 0;
   int _totalPages = 0;
   int _totalElements = 0;
   final int _pageSize = 100; // Show 100 farmers per page
-  
+
   // Column-specific search queries
   String? _farmerIdSearch;
   String? _userIdSearch;
@@ -55,11 +53,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   String? _phoneSearch;
   String? _locationSearch;
   String? _pincodeSearch;
-  
+
   String? _kycFilter;
   String? _subscriptionFilter;
   String? _fieldOfficerFilter; // All, Assign, View, Manage
-  
+
   // Advanced filters - Multi-select
   List<String> _selectedPincodes = [];
   List<String> _selectedVillages = [];
@@ -68,19 +66,19 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   bool _showAdvancedFilters = false;
-  
+
   // Legacy single filters (for backward compatibility with existing code)
   String? _pincodeFilter;
-  
+
   // Sort state
   SortColumn? _sortColumn;
   SortDirection _sortDirection = SortDirection.descending;
-  
+
   // Dropdown overlay state
   OverlayEntry? _dropdownOverlay;
   final Map<String, GlobalKey> _filterKeys = {};
   String? _openDropdownLabel;
-  
+
   // Search controllers for each column
   final _farmerIdSearchController = TextEditingController();
   final _userIdSearchController = TextEditingController();
@@ -98,7 +96,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   Timer? _locationSearchDebounce;
   Timer? _pincodeSearchDebounce;
   Timer? _pincodeDebounce;
-  
+
   // Scroll controllers for table scrolling
   final _horizontalScrollController = ScrollController();
   final _verticalScrollController = ScrollController();
@@ -143,7 +141,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
 
   Future<void> _loadAllFarmers() async {
     if (_allFarmers.isNotEmpty) return; // Already loaded
-    
+
     setState(() {
       _isLoadingAllFarmers = true;
     });
@@ -211,21 +209,21 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
 
   List<String> _getFilteredVillages() {
     List<FarmerSummary> filteredFarmers = _allFarmers;
-    
+
     // Filter by selected states
     if (_selectedStates.isNotEmpty) {
       filteredFarmers = filteredFarmers
           .where((f) => _selectedStates.contains(f.state))
           .toList();
     }
-    
+
     // Filter by selected districts
     if (_selectedDistricts.isNotEmpty) {
       filteredFarmers = filteredFarmers
           .where((f) => _selectedDistricts.contains(f.district))
           .toList();
     }
-    
+
     final villages = filteredFarmers
         .where((f) => f.village != null && f.village!.isNotEmpty)
         .map((f) => f.village!)
@@ -237,28 +235,28 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
 
   List<String> _getFilteredPincodes() {
     List<FarmerSummary> filteredFarmers = _allFarmers;
-    
+
     // Filter by selected states
     if (_selectedStates.isNotEmpty) {
       filteredFarmers = filteredFarmers
           .where((f) => _selectedStates.contains(f.state))
           .toList();
     }
-    
+
     // Filter by selected districts
     if (_selectedDistricts.isNotEmpty) {
       filteredFarmers = filteredFarmers
           .where((f) => _selectedDistricts.contains(f.district))
           .toList();
     }
-    
+
     // Filter by selected villages
     if (_selectedVillages.isNotEmpty) {
       filteredFarmers = filteredFarmers
           .where((f) => _selectedVillages.contains(f.village))
           .toList();
     }
-    
+
     final pincodes = filteredFarmers
         .where((f) => f.pincode != null && f.pincode!.isNotEmpty)
         .map((f) => f.pincode!)
@@ -287,7 +285,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
           subscriptionStatus: null,
           pincode: _pincodeFilter, // Use backend pincode filtering
         );
-        
+
         // Apply filters and pagination immediately after loading
         // This reduces the number of setState calls
         _applyFiltersAndReloadInternal(allResponse.farmers);
@@ -296,17 +294,21 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         _applyFiltersAndReload();
       }
 
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString().replaceFirst('Exception: ', '');
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceFirst('Exception: ', '');
+          _isLoading = false;
+        });
+      }
     }
   }
-  
+
   /// Internal method to apply filters without triggering setState for allFarmers
   void _applyFiltersAndReloadInternal(List<FarmerSummary> newFarmers) {
     // Update all farmers in a single setState call
@@ -318,12 +320,16 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     try {
       // First try to get stats from the dedicated stats endpoint (faster)
       final stats = await AdminFarmerService.getDashboardStats();
-      
+
       // If stats have real values (not all zeros), use them
-      if (stats.verifiedKyc > 0 || stats.pendingKyc > 0 || stats.activeSubscriptions > 0) {
-        setState(() {
-          _stats = stats;
-        });
+      if (stats.verifiedKyc > 0 ||
+          stats.pendingKyc > 0 ||
+          stats.activeSubscriptions > 0) {
+        if (mounted) {
+          setState(() {
+            _stats = stats;
+          });
+        }
         return;
       }
     } catch (e) {
@@ -334,9 +340,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     if (_allFarmers.isNotEmpty) {
       // Calculate stats from already loaded farmers (no extra API call)
       final calculatedStats = _calculateStatsFromFarmers(_allFarmers);
-      setState(() {
-        _stats = calculatedStats;
-      });
+      if (mounted) {
+        setState(() {
+          _stats = calculatedStats;
+        });
+      }
     } else {
       // Only fetch if we don't have farmers loaded yet
       try {
@@ -349,14 +357,18 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         );
 
         if (allFarmersResponse.farmers.isNotEmpty) {
-          final calculatedStats = _calculateStatsFromFarmers(allFarmersResponse.farmers);
-          setState(() {
-            _stats = calculatedStats;
-          });
+          final calculatedStats = _calculateStatsFromFarmers(
+            allFarmersResponse.farmers,
+          );
+          if (mounted) {
+            setState(() {
+              _stats = calculatedStats;
+            });
+          }
         }
       } catch (e) {
         // If that fails too, calculate from current page as last resort
-        if (_farmers.isNotEmpty) {
+        if (_farmers.isNotEmpty && mounted) {
           setState(() {
             _stats = _calculateStatsFromFarmers(_farmers);
           });
@@ -493,20 +505,20 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 // Header
                 _buildHeader(),
                 const SizedBox(height: 28),
-                
+
                 // Stats Cards
                 _buildStatsSection(),
                 const SizedBox(height: 28),
-                
+
                 // Advanced Filters Panel
                 if (_showAdvancedFilters) ...[
                   _buildAdvancedFiltersPanel(),
                   const SizedBox(height: 20),
                 ],
-                
+
                 // Farmers Table with integrated filters
                 _buildFarmersTable(),
-                
+
                 // Pagination
                 if (_totalPages > 1) ...[
                   const SizedBox(height: 20),
@@ -527,13 +539,13 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Farmer Management',
-          style: GoogleFonts.poppins(
+          children: [
+            Text(
+              'Farmer Management',
+              style: GoogleFonts.poppins(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+                color: AppColors.textPrimary,
                 letterSpacing: -0.5,
               ),
             ),
@@ -574,8 +586,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 icon: Icon(
                   Icons.filter_list_rounded,
                   size: 20,
-                  color: _showAdvancedFilters 
-                      ? AppColors.brandGreen 
+                  color: _showAdvancedFilters
+                      ? AppColors.brandGreen
                       : Colors.grey.shade700,
                 ),
                 label: Text(
@@ -583,20 +595,23 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: _showAdvancedFilters 
-                        ? AppColors.brandGreen 
+                    color: _showAdvancedFilters
+                        ? AppColors.brandGreen
                         : Colors.grey.shade700,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.grey.shade700,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(
-                      color: _showAdvancedFilters 
-                          ? AppColors.brandGreen 
+                      color: _showAdvancedFilters
+                          ? AppColors.brandGreen
                           : Colors.grey.shade300,
                       width: _showAdvancedFilters ? 1.5 : 1,
                     ),
@@ -619,9 +634,9 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 ],
               ),
               child: ElevatedButton.icon(
-          onPressed: () {
-            // Export functionality
-            ScaffoldMessenger.of(context).showSnackBar(
+                onPressed: () {
+                  // Export functionality
+                  ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('Export feature coming soon'),
                       backgroundColor: AppColors.brandGreen,
@@ -640,13 +655,16 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                     fontSize: 14,
                   ),
                 ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.brandGreen,
-            foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brandGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-          ),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -663,50 +681,50 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       builder: (context, constraints) {
         final isWide = constraints.maxWidth > 1200;
         final isMedium = constraints.maxWidth > 800;
-        
+
         if (isWide) {
-    return Row(
-      children: [
-        Expanded(
-          child: StatCard(
+          return Row(
+            children: [
+              Expanded(
+                child: StatCard(
                   title: 'Total Farmers',
-            value: stats?.totalFarmers.toString() ?? '0',
-            subtitle: '+12% this Month',
-            icon: Icons.people,
-            color: AppColors.brandGreen,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: StatCard(
+                  value: stats?.totalFarmers.toString() ?? '0',
+                  subtitle: '+12% this Month',
+                  icon: Icons.people,
+                  color: AppColors.brandGreen,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: StatCard(
                   title: 'KYC Pending',
-            value: stats?.pendingKyc.toString() ?? '0',
-            subtitle: '+8% this Month',
-            icon: Icons.pending_actions,
-            color: AppColors.warning,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: StatCard(
+                  value: stats?.pendingKyc.toString() ?? '0',
+                  subtitle: '+8% this Month',
+                  icon: Icons.pending_actions,
+                  color: AppColors.warning,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: StatCard(
                   title: 'KYC Verified',
-            value: stats?.verifiedKyc.toString() ?? '0',
-            subtitle: '+8% this Month',
-            icon: Icons.verified_user,
-            color: AppColors.success,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: StatCard(
+                  value: stats?.verifiedKyc.toString() ?? '0',
+                  subtitle: '+8% this Month',
+                  icon: Icons.verified_user,
+                  color: AppColors.success,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: StatCard(
                   title: 'Active Subscription',
-            value: stats?.activeSubscriptions.toString() ?? '0',
-            subtitle: '+6% this Month',
-            icon: Icons.card_membership,
-            color: AppColors.info,
-          ),
-        ),
-      ],
+                  value: stats?.activeSubscriptions.toString() ?? '0',
+                  subtitle: '+6% this Month',
+                  icon: Icons.card_membership,
+                  color: AppColors.info,
+                ),
+              ),
+            ],
           );
         } else if (isMedium) {
           return Column(
@@ -822,8 +840,9 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     required GlobalKey key,
   }) {
     _closeDropdown();
-    
-    final RenderBox? renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+
+    final RenderBox? renderBox =
+        key.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
     final position = renderBox.localToGlobal(Offset.zero);
@@ -901,8 +920,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                     selectedValues.isEmpty
                         ? 'All $label'
                         : selectedValues.length == 1
-                            ? selectedValues.first
-                            : '${selectedValues.length} selected',
+                        ? selectedValues.first
+                        : '${selectedValues.length} selected',
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: selectedValues.isEmpty
@@ -972,7 +991,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               ),
               TextButton.icon(
                 onPressed: _clearAdvancedFilters,
-                icon: Icon(Icons.clear_all_rounded, size: 18, color: Colors.grey.shade600),
+                icon: Icon(
+                  Icons.clear_all_rounded,
+                  size: 18,
+                  color: Colors.grey.shade600,
+                ),
                 label: Text(
                   'Clear All',
                   style: GoogleFonts.poppins(
@@ -999,25 +1022,35 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                       // Clear districts, villages, and pincodes if state changes
                       if (values.isNotEmpty) {
                         final districtsInStates = _allFarmers
-                            .where((f) => values.contains(f.state) && f.district != null)
+                            .where(
+                              (f) =>
+                                  values.contains(f.state) &&
+                                  f.district != null,
+                            )
                             .map((f) => f.district!)
                             .toSet()
                             .toList();
                         _selectedDistricts = _selectedDistricts
                             .where((d) => districtsInStates.contains(d))
                             .toList();
-                        
+
                         final villagesInStates = _allFarmers
-                            .where((f) => values.contains(f.state) && f.village != null)
+                            .where(
+                              (f) =>
+                                  values.contains(f.state) && f.village != null,
+                            )
                             .map((f) => f.village!)
                             .toSet()
                             .toList();
                         _selectedVillages = _selectedVillages
                             .where((v) => villagesInStates.contains(v))
                             .toList();
-                        
+
                         final pincodesInStates = _allFarmers
-                            .where((f) => values.contains(f.state) && f.pincode != null)
+                            .where(
+                              (f) =>
+                                  values.contains(f.state) && f.pincode != null,
+                            )
                             .map((f) => f.pincode!)
                             .toSet()
                             .toList();
@@ -1043,10 +1076,14 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                   icon: Icons.location_city_outlined,
                   options: _selectedStates.isNotEmpty
                       ? _getUniqueDistricts()
-                          .where((d) => _allFarmers
-                              .where((f) => _selectedStates.contains(f.state))
-                              .any((f) => f.district == d))
-                          .toList()
+                            .where(
+                              (d) => _allFarmers
+                                  .where(
+                                    (f) => _selectedStates.contains(f.state),
+                                  )
+                                  .any((f) => f.district == d),
+                            )
+                            .toList()
                       : _getUniqueDistricts(),
                   selectedValues: _selectedDistricts,
                   onChanged: (values) {
@@ -1055,16 +1092,24 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                       // Clear villages and pincodes that don't belong to selected districts
                       if (values.isNotEmpty) {
                         final villagesInDistricts = _allFarmers
-                            .where((f) => values.contains(f.district) && f.village != null)
+                            .where(
+                              (f) =>
+                                  values.contains(f.district) &&
+                                  f.village != null,
+                            )
                             .map((f) => f.village!)
                             .toSet()
                             .toList();
                         _selectedVillages = _selectedVillages
                             .where((v) => villagesInDistricts.contains(v))
                             .toList();
-                        
+
                         final pincodesInDistricts = _allFarmers
-                            .where((f) => values.contains(f.district) && f.pincode != null)
+                            .where(
+                              (f) =>
+                                  values.contains(f.district) &&
+                                  f.pincode != null,
+                            )
                             .map((f) => f.pincode!)
                             .toSet()
                             .toList();
@@ -1075,16 +1120,24 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                         // If no districts selected, filter villages and pincodes by states only
                         if (_selectedStates.isNotEmpty) {
                           final villagesInStates = _allFarmers
-                              .where((f) => _selectedStates.contains(f.state) && f.village != null)
+                              .where(
+                                (f) =>
+                                    _selectedStates.contains(f.state) &&
+                                    f.village != null,
+                              )
                               .map((f) => f.village!)
                               .toSet()
                               .toList();
                           _selectedVillages = _selectedVillages
                               .where((v) => villagesInStates.contains(v))
                               .toList();
-                          
+
                           final pincodesInStates = _allFarmers
-                              .where((f) => _selectedStates.contains(f.state) && f.pincode != null)
+                              .where(
+                                (f) =>
+                                    _selectedStates.contains(f.state) &&
+                                    f.pincode != null,
+                              )
                               .map((f) => f.pincode!)
                               .toSet()
                               .toList();
@@ -1139,11 +1192,17 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                         }
                         if (_selectedDistricts.isNotEmpty) {
                           filteredFarmers = filteredFarmers
-                              .where((f) => _selectedDistricts.contains(f.district))
+                              .where(
+                                (f) => _selectedDistricts.contains(f.district),
+                              )
                               .toList();
                         }
                         final pincodesInVillages = filteredFarmers
-                            .where((f) => values.contains(f.village) && f.pincode != null)
+                            .where(
+                              (f) =>
+                                  values.contains(f.village) &&
+                                  f.pincode != null,
+                            )
                             .map((f) => f.pincode!)
                             .toSet()
                             .toList();
@@ -1176,14 +1235,21 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today_outlined, size: 18, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 18,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -1200,7 +1266,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                         ),
                         if (_startDate != null)
                           IconButton(
-                            icon: Icon(Icons.clear_rounded, size: 16, color: Colors.grey.shade400),
+                            icon: Icon(
+                              Icons.clear_rounded,
+                              size: 16,
+                              color: Colors.grey.shade400,
+                            ),
                             onPressed: () {
                               setState(() {
                                 _startDate = null;
@@ -1235,14 +1305,21 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today_outlined, size: 18, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 18,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -1259,7 +1336,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                         ),
                         if (_endDate != null)
                           IconButton(
-                            icon: Icon(Icons.clear_rounded, size: 16, color: Colors.grey.shade400),
+                            icon: Icon(
+                              Icons.clear_rounded,
+                              size: 16,
+                              color: Colors.grey.shade400,
+                            ),
                             onPressed: () {
                               setState(() {
                                 _endDate = null;
@@ -1345,21 +1426,24 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     // Apply multi-select District filter
     if (_selectedDistricts.isNotEmpty) {
       filtered = filtered.where((farmer) {
-        return farmer.district != null && _selectedDistricts.contains(farmer.district);
+        return farmer.district != null &&
+            _selectedDistricts.contains(farmer.district);
       }).toList();
     }
 
     // Apply multi-select Village filter
     if (_selectedVillages.isNotEmpty) {
       filtered = filtered.where((farmer) {
-        return farmer.village != null && _selectedVillages.contains(farmer.village);
+        return farmer.village != null &&
+            _selectedVillages.contains(farmer.village);
       }).toList();
     }
 
     // Apply multi-select Pincode filter
     if (_selectedPincodes.isNotEmpty) {
       filtered = filtered.where((farmer) {
-        return farmer.pincode != null && _selectedPincodes.contains(farmer.pincode);
+        return farmer.pincode != null &&
+            _selectedPincodes.contains(farmer.pincode);
       }).toList();
     }
 
@@ -1373,7 +1457,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     // Apply Subscription filter
     if (_subscriptionFilter != null && _subscriptionFilter!.isNotEmpty) {
       filtered = filtered.where((farmer) {
-        return farmer.subscriptionStatus.toUpperCase() == _subscriptionFilter!.toUpperCase();
+        return farmer.subscriptionStatus.toUpperCase() ==
+            _subscriptionFilter!.toUpperCase();
       }).toList();
     }
 
@@ -1409,24 +1494,39 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       filtered = filtered.where((farmer) {
         final registeredDate = farmer.registeredAt;
         if (registeredDate == null) return false;
-        
+
         // Check start date: exclude dates before start date (at start of day)
         if (_startDate != null) {
-          final startOfStartDate = DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
-          final startOfRegisteredDate = DateTime(registeredDate.year, registeredDate.month, registeredDate.day);
+          final startOfStartDate = DateTime(
+            _startDate!.year,
+            _startDate!.month,
+            _startDate!.day,
+          );
+          final startOfRegisteredDate = DateTime(
+            registeredDate.year,
+            registeredDate.month,
+            registeredDate.day,
+          );
           if (startOfRegisteredDate.isBefore(startOfStartDate)) {
             return false;
           }
         }
-        
+
         // Check end date: include dates up to and including end date (at end of day)
         if (_endDate != null) {
-          final endOfEndDate = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
+          final endOfEndDate = DateTime(
+            _endDate!.year,
+            _endDate!.month,
+            _endDate!.day,
+            23,
+            59,
+            59,
+          );
           if (registeredDate.isAfter(endOfEndDate)) {
             return false;
           }
         }
-        
+
         return true;
       }).toList();
     }
@@ -1471,23 +1571,27 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             comparison = aDate.compareTo(bDate);
             break;
         }
-        return _sortDirection == SortDirection.ascending ? comparison : -comparison;
+        return _sortDirection == SortDirection.ascending
+            ? comparison
+            : -comparison;
       });
     }
 
     // Calculate pagination
     final totalFiltered = filtered.length;
-    final totalPages = totalFiltered > 0 ? (totalFiltered / _pageSize).ceil() : 1;
-    
+    final totalPages = totalFiltered > 0
+        ? (totalFiltered / _pageSize).ceil()
+        : 1;
+
     // Ensure current page is valid before calculating indices
-    final validCurrentPage = totalPages > 0 
-        ? _currentPage.clamp(0, totalPages - 1) 
+    final validCurrentPage = totalPages > 0
+        ? _currentPage.clamp(0, totalPages - 1)
         : 0;
-    
+
     // Get current page data with proper bounds checking
     final startIndex = (validCurrentPage * _pageSize).clamp(0, totalFiltered);
     final endIndex = (startIndex + _pageSize).clamp(0, totalFiltered);
-    
+
     final pageData = totalFiltered > 0 && startIndex < endIndex
         ? filtered.sublist(startIndex, endIndex)
         : <FarmerSummary>[];
@@ -1514,7 +1618,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     _locationSearchController.clear();
     _pincodeSearchController.clear();
     _pincodeController.clear();
-    
+
     setState(() {
       // Clear all search queries
       _farmerIdSearch = null;
@@ -1524,18 +1628,18 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       _phoneSearch = null;
       _locationSearch = null;
       _pincodeSearch = null;
-      
+
       // Clear table filters
       _kycFilter = null;
       _subscriptionFilter = null;
       _fieldOfficerFilter = null;
-      
+
       // Clear advanced filters (multi-select)
       _selectedPincodes = [];
       _selectedVillages = [];
       _selectedDistricts = [];
       _selectedStates = [];
-      
+
       // Clear legacy advanced filters
       _pincodeFilter = null;
       _startDate = null;
@@ -1544,7 +1648,9 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       // Clear all farmers to force reload from backend without filters
       _allFarmers = [];
     });
-    _loadFarmers(forceReload: true); // Force reload from backend without filters
+    _loadFarmers(
+      forceReload: true,
+    ); // Force reload from backend without filters
   }
 
   Widget _buildFarmersTable() {
@@ -1588,59 +1694,59 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.errorBg,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.error_outline_rounded,
-                  size: 48,
-                  color: AppColors.error,
-                ),
-              ),
-              const SizedBox(height: 20),
-            Text(
-                'Error Loading Data',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-              onPressed: _loadFarmers,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Retry'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brandGreen,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.errorBg,
+                    shape: BoxShape.circle,
                   ),
-                  shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: AppColors.error,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                Text(
+                  'Error Loading Data',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _error!,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _loadFarmers,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
         ),
       );
     }
@@ -1692,26 +1798,32 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     const double filterHeight = 52.0;
 
     // 1. Define Base Column widths (optimized to prevent truncation and improve layout)
-    const double baseFarmerIdWidth = 130.0;  // Increased to prevent "Farmer ID" truncation
+    const double baseFarmerIdWidth =
+        130.0; // Increased to prevent "Farmer ID" truncation
     const double baseUserIdWidth = 110.0;
     const double baseUsernameWidth = 150.0;
-    const double baseFullNameWidth = 220.0;  // Increased for better name display
+    const double baseFullNameWidth = 220.0; // Increased for better name display
     const double basePhoneWidth = 140.0;
-    const double baseLocationWidth = 300.0;  // Increased to prevent text wrapping
+    const double baseLocationWidth =
+        300.0; // Increased to prevent text wrapping
     const double basePincodeWidth = 120.0;
     const double baseFarmsWidth = 100.0;
     const double baseKycWidth = 130.0;
     const double baseSubscriptionWidth = 150.0;
-    const double baseFieldOfficerWidth = 180.0;  // Increased for better button display
-    const double baseVerifiedFarmsWidth = 150.0;  // Increased to prevent "Verified Farms" truncation
-    const double baseActionsWidth = 100.0;  // Width for Actions column (Delete button)
+    const double baseFieldOfficerWidth =
+        180.0; // Increased for better button display
+    const double baseVerifiedFarmsWidth =
+        150.0; // Increased to prevent "Verified Farms" truncation
+    const double baseActionsWidth =
+        100.0; // Width for Actions column (Delete button)
 
     // Account for dividers: 13 columns = 12 dividers (1px each)
     const int numberOfDividers = 12;
     const double dividerWidth = 1.0;
     const double totalDividerWidth = numberOfDividers * dividerWidth;
-    
-    final totalBaseWidth = baseFarmerIdWidth +
+
+    final totalBaseWidth =
+        baseFarmerIdWidth +
         baseUserIdWidth +
         baseUsernameWidth +
         baseFullNameWidth +
@@ -1750,10 +1862,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     final double actionsWidth = baseActionsWidth * scaleFactor;
 
     // The new total width includes scaled column widths and divider widths
-    final totalWidth = (totalBaseWidth - totalDividerWidth) * scaleFactor + totalDividerWidth;
+    final totalWidth =
+        (totalBaseWidth - totalDividerWidth) * scaleFactor + totalDividerWidth;
 
     // Calculate height for rows
-    const double maxVisibleHeight = 800.0; 
+    const double maxVisibleHeight = 800.0;
     final actualDataHeight = _filteredFarmers.length * rowHeight;
 
     return ConstrainedBox(
@@ -1776,27 +1889,72 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             ),
             child: Row(
               children: [
-                _buildHeaderCell('Farmer ID', farmerIdWidth, SortColumn.farmerId, true),
+                _buildHeaderCell(
+                  'Farmer ID',
+                  farmerIdWidth,
+                  SortColumn.farmerId,
+                  true,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('User ID', userIdWidth, SortColumn.userId, false),
+                _buildHeaderCell(
+                  'User ID',
+                  userIdWidth,
+                  SortColumn.userId,
+                  false,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Username', usernameWidth, SortColumn.username, false),
+                _buildHeaderCell(
+                  'Username',
+                  usernameWidth,
+                  SortColumn.username,
+                  false,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Full Name', fullNameWidth, SortColumn.fullName, false),
+                _buildHeaderCell(
+                  'Full Name',
+                  fullNameWidth,
+                  SortColumn.fullName,
+                  false,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Phone No', phoneWidth, SortColumn.phoneNumber, false),
+                _buildHeaderCell(
+                  'Phone No',
+                  phoneWidth,
+                  SortColumn.phoneNumber,
+                  false,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Location', locationWidth, SortColumn.location, false),
+                _buildHeaderCell(
+                  'Location',
+                  locationWidth,
+                  SortColumn.location,
+                  false,
+                ),
                 _buildHeaderDivider(),
                 _buildHeaderCell('Pincode', pincodeWidth, null, false),
                 _buildHeaderDivider(),
                 _buildHeaderCell('KYC', kycWidth, SortColumn.kycStatus, false),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Subscription', subscriptionWidth, SortColumn.subscriptionStatus, false),
+                _buildHeaderCell(
+                  'Subscription',
+                  subscriptionWidth,
+                  SortColumn.subscriptionStatus,
+                  false,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Field Officer Assignment', fieldOfficerWidth, null, true),
+                _buildHeaderCell(
+                  'Field Officer Assignment',
+                  fieldOfficerWidth,
+                  null,
+                  true,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Verified Farms', verifiedFarmsWidth, SortColumn.farmCount, false),
+                _buildHeaderCell(
+                  'Verified Farms',
+                  verifiedFarmsWidth,
+                  SortColumn.farmCount,
+                  false,
+                ),
                 _buildHeaderDivider(),
                 _buildHeaderCell('Actions', actionsWidth, null, false),
               ],
@@ -1835,7 +1993,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 _buildDivider(),
                 _buildFilterCell(verifiedFarmsWidth, null),
                 _buildDivider(),
-                _buildFilterCell(actionsWidth, null), // Actions column - no filter
+                _buildFilterCell(
+                  actionsWidth,
+                  null,
+                ), // Actions column - no filter
               ],
             ),
           ),
@@ -1902,7 +2063,12 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     );
   }
 
-  Widget _buildHeaderCell(String label, double width, SortColumn? sortColumn, bool isFirstOrLast) {
+  Widget _buildHeaderCell(
+    String label,
+    double width,
+    SortColumn? sortColumn,
+    bool isFirstOrLast,
+  ) {
     final isSorted = _sortColumn == sortColumn;
     return InkWell(
       onTap: sortColumn != null ? () => _onSortChanged(sortColumn) : null,
@@ -1962,191 +2128,309 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       child: filterType == 'kyc'
           ? SizedBox(
               width: width - 24,
-            child: DropdownButtonFormField<String>(
-              value: _kycFilter,
-              decoration: InputDecoration(
+              child: DropdownButtonFormField<String>(
+                value: _kycFilter,
+                decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppColors.brandGreen, width: 1.5),
+                    borderSide: BorderSide(
+                      color: AppColors.brandGreen,
+                      width: 1.5,
+                    ),
                   ),
                   filled: true,
                   fillColor: Colors.white,
                 ),
-                style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textPrimary),
-              items: const [
-                DropdownMenuItem(value: null, child: Text('All')),
-                DropdownMenuItem(value: 'PENDING', child: Text('Pending')),
-                DropdownMenuItem(value: 'PARTIAL', child: Text('Partial')),
-                DropdownMenuItem(value: 'VERIFIED', child: Text('Verified')),
-              ],
-              onChanged: _onKycFilterChanged,
-                icon: Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey.shade600),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppColors.textPrimary,
+                ),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('All')),
+                  DropdownMenuItem(value: 'PENDING', child: Text('Pending')),
+                  DropdownMenuItem(value: 'PARTIAL', child: Text('Partial')),
+                  DropdownMenuItem(value: 'VERIFIED', child: Text('Verified')),
+                ],
+                onChanged: _onKycFilterChanged,
+                icon: Icon(
+                  Icons.arrow_drop_down,
+                  size: 20,
+                  color: Colors.grey.shade600,
+                ),
               ),
             )
           : filterType == 'subscription'
-              ? SizedBox(
-                  width: width - 24,
-            child: DropdownButtonFormField<String>(
-              value: _subscriptionFilter,
-              decoration: InputDecoration(
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: AppColors.brandGreen, width: 1.5),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textPrimary),
-              items: const [
-                DropdownMenuItem(value: null, child: Text('All')),
-                DropdownMenuItem(value: 'PENDING', child: Text('Pending')),
-                DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
-                DropdownMenuItem(value: 'EXPIRED', child: Text('Expired')),
-              ],
-              onChanged: _onSubscriptionFilterChanged,
-                    icon: Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey.shade600),
+          ? SizedBox(
+              width: width - 24,
+              child: DropdownButtonFormField<String>(
+                value: _subscriptionFilter,
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
                   ),
-                )
-              : filterType == 'farmerId'
-                  ? _buildSearchInput(width, _farmerIdSearchController, 'Search Farmer ID...', (value) {
-                      _farmerIdSearchDebounce?.cancel();
-                      _farmerIdSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                        setState(() {
-                          _farmerIdSearch = value.isEmpty ? null : value;
-                          _currentPage = 0;
-                        });
-                        _applyFiltersAndReload();
-                      });
-                    })
-                  : filterType == 'userId'
-                      ? _buildSearchInput(width, _userIdSearchController, 'Search User ID...', (value) {
-                          _userIdSearchDebounce?.cancel();
-                          _userIdSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                            setState(() {
-                              _userIdSearch = value.isEmpty ? null : value;
-                              _currentPage = 0;
-                            });
-                            _applyFiltersAndReload();
-                          });
-                        })
-                  : filterType == 'fullName'
-                      ? _buildSearchInput(width, _fullNameSearchController, 'Search name...', (value) {
-                          _fullNameSearchDebounce?.cancel();
-                          _fullNameSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                            setState(() {
-                              _fullNameSearch = value.isEmpty ? null : value;
-                              _currentPage = 0;
-                            });
-                            _applyFiltersAndReload();
-                          });
-                        })
-                      : filterType == 'username'
-                          ? _buildSearchInput(width, _usernameSearchController, 'Search username...', (value) {
-                              _usernameSearchDebounce?.cancel();
-                              _usernameSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                                setState(() {
-                                  _usernameSearch = value.isEmpty ? null : value;
-                                  _currentPage = 0;
-                                });
-                                _applyFiltersAndReload();
-                              });
-                            })
-                          : filterType == 'phone'
-                              ? _buildSearchInput(width, _phoneSearchController, 'Search phone...', (value) {
-                                  _phoneSearchDebounce?.cancel();
-                                  _phoneSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                                    setState(() {
-                                      _phoneSearch = value.isEmpty ? null : value;
-                                      _currentPage = 0;
-                                    });
-                                    _applyFiltersAndReload();
-                                  });
-                                })
-                              : filterType == 'location'
-                                  ? _buildSearchInput(width, _locationSearchController, 'Search location...', (value) {
-                                      _locationSearchDebounce?.cancel();
-                                      _locationSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                                        setState(() {
-                                          _locationSearch = value.isEmpty ? null : value;
-                                          _currentPage = 0;
-                                        });
-                                        _applyFiltersAndReload();
-                                      });
-                                    })
-                                  : filterType == 'pincode'
-                                      ? _buildSearchInput(width, _pincodeSearchController, 'Search pincode...', (value) {
-                                          _pincodeSearchDebounce?.cancel();
-                                          _pincodeSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                                            setState(() {
-                                              _pincodeSearch = value.isEmpty ? null : value;
-                                              _currentPage = 0;
-                                            });
-                                            _applyFiltersAndReload();
-                                          });
-                                        })
-                                      : filterType == 'fieldOfficer'
-                                      ? SizedBox(
-                                          width: width - 24,
-                                          child: DropdownButtonFormField<String>(
-                                            value: _fieldOfficerFilter,
-                                            decoration: InputDecoration(
-                                              isDense: true,
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                              border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                                borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-                                              ),
-                                              enabledBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                                borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-                                              ),
-                                              focusedBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                                borderSide: BorderSide(color: AppColors.brandGreen, width: 1.5),
-                                              ),
-                                              filled: true,
-                                              fillColor: Colors.white,
-                                            ),
-                                            style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textPrimary),
-                                            items: const [
-                                              DropdownMenuItem(value: null, child: Text('All')),
-                                              DropdownMenuItem(value: 'ASSIGN', child: Text('Assign')),
-                                              DropdownMenuItem(value: 'VIEW', child: Text('View')),
-                                              DropdownMenuItem(value: 'MANAGE', child: Text('Manage')),
-                                            ],
-                                            onChanged: _onFieldOfficerFilterChanged,
-                                            icon: Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey.shade600),
-                                          ),
-                                        )
-                                      : const SizedBox.shrink(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: AppColors.brandGreen,
+                      width: 1.5,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppColors.textPrimary,
+                ),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('All')),
+                  DropdownMenuItem(value: 'PENDING', child: Text('Pending')),
+                  DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
+                  DropdownMenuItem(value: 'EXPIRED', child: Text('Expired')),
+                ],
+                onChanged: _onSubscriptionFilterChanged,
+                icon: Icon(
+                  Icons.arrow_drop_down,
+                  size: 20,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            )
+          : filterType == 'farmerId'
+          ? _buildSearchInput(
+              width,
+              _farmerIdSearchController,
+              'Search Farmer ID...',
+              (value) {
+                _farmerIdSearchDebounce?.cancel();
+                _farmerIdSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _farmerIdSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'userId'
+          ? _buildSearchInput(
+              width,
+              _userIdSearchController,
+              'Search User ID...',
+              (value) {
+                _userIdSearchDebounce?.cancel();
+                _userIdSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _userIdSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'fullName'
+          ? _buildSearchInput(
+              width,
+              _fullNameSearchController,
+              'Search name...',
+              (value) {
+                _fullNameSearchDebounce?.cancel();
+                _fullNameSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _fullNameSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'username'
+          ? _buildSearchInput(
+              width,
+              _usernameSearchController,
+              'Search username...',
+              (value) {
+                _usernameSearchDebounce?.cancel();
+                _usernameSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _usernameSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'phone'
+          ? _buildSearchInput(
+              width,
+              _phoneSearchController,
+              'Search phone...',
+              (value) {
+                _phoneSearchDebounce?.cancel();
+                _phoneSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _phoneSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'location'
+          ? _buildSearchInput(
+              width,
+              _locationSearchController,
+              'Search location...',
+              (value) {
+                _locationSearchDebounce?.cancel();
+                _locationSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _locationSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'pincode'
+          ? _buildSearchInput(
+              width,
+              _pincodeSearchController,
+              'Search pincode...',
+              (value) {
+                _pincodeSearchDebounce?.cancel();
+                _pincodeSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _pincodeSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'fieldOfficer'
+          ? SizedBox(
+              width: width - 24,
+              child: DropdownButtonFormField<String>(
+                value: _fieldOfficerFilter,
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: AppColors.brandGreen,
+                      width: 1.5,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppColors.textPrimary,
+                ),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('All')),
+                  DropdownMenuItem(value: 'ASSIGN', child: Text('Assign')),
+                  DropdownMenuItem(value: 'VIEW', child: Text('View')),
+                  DropdownMenuItem(value: 'MANAGE', child: Text('Manage')),
+                ],
+                onChanged: _onFieldOfficerFilterChanged,
+                icon: Icon(
+                  Icons.arrow_drop_down,
+                  size: 20,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            )
+          : const SizedBox.shrink(),
     );
   }
 
-  Widget _buildSearchInput(double width, TextEditingController controller, String hint, Function(String) onChanged) {
+  Widget _buildSearchInput(
+    double width,
+    TextEditingController controller,
+    String hint,
+    Function(String) onChanged,
+  ) {
     return StatefulBuilder(
       builder: (context, setStateLocal) {
         final hasText = controller.text.isNotEmpty;
-        
+
         return SizedBox(
           width: width - 24,
           child: TextField(
@@ -2155,7 +2439,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               setStateLocal(() {});
               onChanged(value);
             },
-            style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textPrimary),
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: AppColors.textPrimary,
+            ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.poppins(
@@ -2163,7 +2450,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 color: Colors.grey.shade400,
               ),
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 8,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
@@ -2180,14 +2470,21 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               fillColor: Colors.white,
               suffixIcon: hasText
                   ? IconButton(
-                      icon: Icon(Icons.clear_rounded, size: 14, color: Colors.grey.shade400),
+                      icon: Icon(
+                        Icons.clear_rounded,
+                        size: 14,
+                        color: Colors.grey.shade400,
+                      ),
                       onPressed: () {
                         controller.clear();
                         setStateLocal(() {});
                         onChanged('');
                       },
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                     )
                   : null,
             ),
@@ -2207,9 +2504,9 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -2223,8 +2520,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-            Text(
-              'No farmers found',
+              Text(
+                'No farmers found',
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -2255,7 +2552,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.brandGreen,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -2265,9 +2565,9 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             ],
           ),
         ),
-        ),
-      );
-    }
+      ),
+    );
+  }
 
   Widget _buildCustomFarmerRow(
     FarmerSummary farmer,
@@ -2293,7 +2593,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(
-            bottom: isLastRow 
+            bottom: isLastRow
                 ? BorderSide.none
                 : BorderSide(color: Colors.grey.shade200, width: 1),
           ),
@@ -2304,170 +2604,220 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             onTap: () => _viewFarmerDetail(farmer),
             hoverColor: AppColors.brandGreen.withOpacity(0.05),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,  // Ensure vertical alignment
+              crossAxisAlignment:
+                  CrossAxisAlignment.center, // Ensure vertical alignment
               children: [
-          // Farmer ID
-          _buildDataCell(farmerIdWidth, Text(
-            farmer.farmerId.toString(),
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ), true),
-          _buildDivider(),
-          // User ID
-          _buildDataCell(userIdWidth, Text(
-            farmer.userId.toString(),
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ), false),
-          _buildDivider(),
-          // Username
-          _buildDataCell(usernameWidth, Text(
-            farmer.username,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: AppColors.textPrimary,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-            softWrap: false,
-          ), false),
-          _buildDivider(),
-          // Full Name with avatar
-          _buildDataCell(fullNameWidth, Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: AppColors.brandGreen.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    farmer.fullName.isNotEmpty
-                        ? farmer.fullName[0].toUpperCase()
-                        : '?',
+                // Farmer ID
+                _buildDataCell(
+                  farmerIdWidth,
+                  Text(
+                    farmer.farmerId.toString(),
                     style: GoogleFonts.poppins(
-                      color: AppColors.brandGreen,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
+                  true,
                 ),
-              ),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Text(
-                  farmer.fullName.isEmpty ? 'Not Set' : farmer.fullName,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                _buildDivider(),
+                // User ID
+                _buildDataCell(
+                  userIdWidth,
+                  Text(
+                    farmer.userId.toString(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  softWrap: false,
+                  false,
                 ),
-              ),
-            ],
-          ), false),
-          _buildDivider(),
-          // Phone No
-          _buildDataCell(phoneWidth, Text(
-            farmer.phoneNumber,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: AppColors.textPrimary,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-            softWrap: false,
-          ), false),
-          _buildDivider(),
-          // Location
-          _buildDataCell(locationWidth, SizedBox(
-            width: locationWidth - 24,
-            child: Text(
-              '${farmer.village ?? '-'}, ${farmer.district ?? '-'}',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: AppColors.textPrimary,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-              softWrap: false,
-            ),
-          ), false),
-          _buildDivider(),
-          // Pincode
-          _buildDataCell(pincodeWidth, Text(
-            farmer.pincode ?? '-',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: AppColors.textPrimary,
-            ),
-          ), false),
-          _buildDivider(),
-          // KYC Status
-          _buildDataCell(kycWidth, _buildStatusChip(farmer.kycStatus, _getKycStatusColor(farmer.kycStatus)), false),
-          _buildDivider(),
-          // Subscription Status
-          _buildDataCell(subscriptionWidth, _buildStatusChip(farmer.subscriptionStatus, _getSubStatusColor(farmer.subscriptionStatus)), false),
-          _buildDivider(),
-          // Field Officer
-          _buildDataCell(fieldOfficerWidth, _buildFieldOfficerCell(farmer), false),
-          _buildDivider(),
-          // Verified Farms
-          _buildDataCell(
-            verifiedFarmsWidth,
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Text(
-                '${farmer.verifiedFarmCount}/${farmer.farmCount}',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.blue.shade700,
+                _buildDivider(),
+                // Username
+                _buildDataCell(
+                  usernameWidth,
+                  Text(
+                    farmer.username,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                  false,
                 ),
-              ),
-            ),
-            false,
-          ),
-          _buildDivider(),
-          // Actions - Delete Farmer
-          _buildDataCell(
-            actionsWidth,
-            Tooltip(
-              message: 'Delete farmer (cascade across all services)',
-              child: IconButton(
-                icon: const Icon(
-                  Icons.delete_forever_rounded,
-                  size: 20,
-                  color: Colors.redAccent,
+                _buildDivider(),
+                // Full Name with avatar
+                _buildDataCell(
+                  fullNameWidth,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: AppColors.brandGreen.withOpacity(0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            farmer.fullName.isNotEmpty
+                                ? farmer.fullName[0].toUpperCase()
+                                : '?',
+                            style: GoogleFonts.poppins(
+                              color: AppColors.brandGreen,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          farmer.fullName.isEmpty ? 'Not Set' : farmer.fullName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          softWrap: false,
+                        ),
+                      ),
+                    ],
+                  ),
+                  false,
                 ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () async {
-                  // Prevent row tap from triggering when clicking delete
-                  await _confirmAndDeleteFarmer(farmer);
-                },
-              ),
-            ),
-            true,
-          ),
-        ],
+                _buildDivider(),
+                // Phone No
+                _buildDataCell(
+                  phoneWidth,
+                  Text(
+                    farmer.phoneNumber,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                  false,
+                ),
+                _buildDivider(),
+                // Location
+                _buildDataCell(
+                  locationWidth,
+                  SizedBox(
+                    width: locationWidth - 24,
+                    child: Text(
+                      '${farmer.village ?? '-'}, ${farmer.district ?? '-'}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
+                  ),
+                  false,
+                ),
+                _buildDivider(),
+                // Pincode
+                _buildDataCell(
+                  pincodeWidth,
+                  Text(
+                    farmer.pincode ?? '-',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  false,
+                ),
+                _buildDivider(),
+                // KYC Status
+                _buildDataCell(
+                  kycWidth,
+                  _buildStatusChip(
+                    farmer.kycStatus,
+                    _getKycStatusColor(farmer.kycStatus),
+                  ),
+                  false,
+                ),
+                _buildDivider(),
+                // Subscription Status
+                _buildDataCell(
+                  subscriptionWidth,
+                  _buildStatusChip(
+                    farmer.subscriptionStatus,
+                    _getSubStatusColor(farmer.subscriptionStatus),
+                  ),
+                  false,
+                ),
+                _buildDivider(),
+                // Field Officer
+                _buildDataCell(
+                  fieldOfficerWidth,
+                  _buildFieldOfficerCell(farmer),
+                  false,
+                ),
+                _buildDivider(),
+                // Verified Farms
+                _buildDataCell(
+                  verifiedFarmsWidth,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Text(
+                      '${farmer.verifiedFarmCount}/${farmer.farmCount}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
+                  false,
+                ),
+                _buildDivider(),
+                // Actions - Delete Farmer
+                _buildDataCell(
+                  actionsWidth,
+                  Tooltip(
+                    message: 'Delete farmer (cascade across all services)',
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.delete_forever_rounded,
+                        size: 20,
+                        color: Colors.redAccent,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () async {
+                        // Prevent row tap from triggering when clicking delete
+                        await _confirmAndDeleteFarmer(farmer);
+                      },
+                    ),
+                  ),
+                  true,
+                ),
+              ],
             ),
           ),
         ),
@@ -2478,7 +2828,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   Widget _buildDataCell(double width, Widget child, bool isFirstOrLast) {
     return Container(
       width: width,
-      height: double.infinity,  // Ensure consistent height
+      height: double.infinity, // Ensure consistent height
       padding: EdgeInsets.symmetric(
         horizontal: isFirstOrLast ? 16 : 12,
         vertical: 16,
@@ -2562,9 +2912,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               onPressed: () => Navigator.of(ctx).pop(false),
               child: Text(
                 'Cancel',
-                style: GoogleFonts.poppins(
-                  color: theme.colorScheme.outline,
-                ),
+                style: GoogleFonts.poppins(color: theme.colorScheme.outline),
               ),
             ),
             ElevatedButton.icon(
@@ -2576,9 +2924,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               onPressed: () => Navigator.of(ctx).pop(true),
               label: Text(
                 'Delete Farmer',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -2660,17 +3006,17 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                child: Text(
+                  child: Text(
                     farmer.fullName.isNotEmpty
                         ? farmer.fullName[0].toUpperCase()
                         : '?',
-                  style: GoogleFonts.poppins(
-                    color: AppColors.brandGreen,
-                    fontWeight: FontWeight.w600,
+                    style: GoogleFonts.poppins(
+                      color: AppColors.brandGreen,
+                      fontWeight: FontWeight.w600,
                       fontSize: 14,
+                    ),
                   ),
                 ),
-              ),
               ),
               const SizedBox(width: 12),
               Flexible(
@@ -2718,8 +3064,18 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             ),
           ),
         ),
-        DataCell(_buildStatusChip(farmer.kycStatus, _getKycStatusColor(farmer.kycStatus))),
-        DataCell(_buildStatusChip(farmer.subscriptionStatus, _getSubStatusColor(farmer.subscriptionStatus))),
+        DataCell(
+          _buildStatusChip(
+            farmer.kycStatus,
+            _getKycStatusColor(farmer.kycStatus),
+          ),
+        ),
+        DataCell(
+          _buildStatusChip(
+            farmer.subscriptionStatus,
+            _getSubStatusColor(farmer.subscriptionStatus),
+          ),
+        ),
         DataCell(
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -2738,9 +3094,7 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             ),
           ),
         ),
-        DataCell(
-          _buildFieldOfficerCell(farmer),
-        ),
+        DataCell(_buildFieldOfficerCell(farmer)),
         DataCell(
           Container(
             decoration: BoxDecoration(
@@ -2753,11 +3107,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                 color: AppColors.brandGreen,
                 size: 20,
               ),
-                onPressed: () => _viewFarmerDetail(farmer),
-                tooltip: 'View Details',
+              onPressed: () => _viewFarmerDetail(farmer),
+              tooltip: 'View Details',
               padding: const EdgeInsets.all(8),
               constraints: const BoxConstraints(),
-              ),
+            ),
           ),
         ),
       ],
@@ -2865,15 +3219,15 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
             color: hasAllAssigned
                 ? AppColors.success.withOpacity(0.12)
                 : hasPartial
-                    ? AppColors.warning.withOpacity(0.12)
-                    : Colors.grey.shade100,
+                ? AppColors.warning.withOpacity(0.12)
+                : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: hasAllAssigned
                   ? AppColors.success.withOpacity(0.3)
                   : hasPartial
-                      ? AppColors.warning.withOpacity(0.3)
-                      : Colors.grey.shade300,
+                  ? AppColors.warning.withOpacity(0.3)
+                  : Colors.grey.shade300,
               width: 1,
             ),
           ),
@@ -2885,8 +3239,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
               color: hasAllAssigned
                   ? AppColors.success
                   : hasPartial
-                      ? AppColors.warning
-                      : Colors.grey.shade700,
+                  ? AppColors.warning
+                  : Colors.grey.shade700,
             ),
           ),
         ),
@@ -2934,13 +3288,13 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 600;
-          
+
           if (isWide) {
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-        Text(
-          'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
+                Text(
+                  'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -2971,13 +3325,16 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.brandGreen.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-            'Page ${_currentPage + 1} of $_totalPages',
+                        'Page ${_currentPage + 1} of $_totalPages',
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -3013,8 +3370,8 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
           } else {
             return Column(
               children: [
-        Text(
-          'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
+                Text(
+                  'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -3046,7 +3403,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.brandGreen.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -3136,9 +3496,7 @@ class _DropdownOverlayState extends State<_DropdownOverlay> {
   @override
   Widget build(BuildContext context) {
     final List<String> filteredOptions = widget.options
-        .where(
-          (o) => o.toLowerCase().contains(searchQuery.toLowerCase()),
-        )
+        .where((o) => o.toLowerCase().contains(searchQuery.toLowerCase()))
         .toList();
 
     return Stack(
@@ -3147,9 +3505,7 @@ class _DropdownOverlayState extends State<_DropdownOverlay> {
         Positioned.fill(
           child: GestureDetector(
             onTap: widget.onClose,
-            child: Container(
-              color: Colors.transparent,
-            ),
+            child: Container(color: Colors.transparent),
           ),
         ),
         // Dropdown content
@@ -3212,15 +3568,11 @@ class _DropdownOverlayState extends State<_DropdownOverlay> {
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),

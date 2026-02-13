@@ -28,6 +28,7 @@ public class GatewayConfig {
         log.info("  Field Officer Service: {}", serviceUrls.getFieldOfficerService());
         log.info("  Subscription Service: {}", serviceUrls.getSubscriptionService());
         log.info("  KYC Service: {}", serviceUrls.getKycService());
+        log.info("  Job Application Service: {}", serviceUrls.getJobApplicationService());
     }
 
     @Bean
@@ -138,6 +139,11 @@ public class GatewayConfig {
                 .route("admin-field-officer-service", r -> r
                         .path("/admin/field-officers/**")
                         .uri(serviceUrls.getFieldOfficerService()))
+                
+                // Job Application Service Routes
+                .route("job-application-service", r -> r
+                        .path("/api/applications/**")
+                        .uri(serviceUrls.getJobApplicationService()))
                 
                 .build();
     }

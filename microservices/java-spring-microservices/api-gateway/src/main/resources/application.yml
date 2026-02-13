@@ -41,6 +41,7 @@ gateway:
       - /auth/logout
       - /.well-known
       - /actuator/health
+      - /api/applications  # Public job application submission
     jwks-uri: http://127.0.0.1:4005/.well-known/jwks.json
   
   # Service URLs for localhost development
@@ -60,6 +61,7 @@ gateway:
     subscription-service: http://127.0.0.1:4013
     kyc-service: http://127.0.0.1:4014
     field-officer-service: http://127.0.0.1:4015
+    job-application-service: http://127.0.0.1:4017
 
 management:
   endpoints:
