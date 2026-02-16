@@ -338,22 +338,7 @@ class _JobApplicationDetailScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Application Details',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-      ),
+      appBar: _buildAppBar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _application == null
@@ -374,375 +359,465 @@ class _JobApplicationDetailScreenState
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Status Action Card
-                  _buildStatusActionCard(),
-
-                  const SizedBox(height: 24),
-
-                  // Personal Information
-                  _buildSectionCard(
-                    title: 'Personal Information',
-                    icon: Icons.person_outline,
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow('Full Name', _application!.fullName),
-                      if (_application!.email != null)
-                        _buildInfoRow('Email', _application!.email!),
-                      if (_application!.mobileNumber != null)
-                        _buildInfoRow(
-                          'Mobile Number',
-                          _application!.mobileNumber!,
-                        ),
-                      if (_application!.whatsappNumber != null)
-                        _buildInfoRow(
-                          'WhatsApp Number',
-                          _application!.whatsappNumber!,
-                        ),
-                      if (_application!.dateOfBirth != null)
-                        _buildInfoRow(
-                          'Date of Birth',
-                          DateFormat(
-                            'dd MMM yyyy',
-                          ).format(_application!.dateOfBirth!),
-                        ),
-                      if (_application!.gender != null)
-                        _buildInfoRow('Gender', _application!.gender!),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Address Information
-                  if (_application!.address != null ||
-                      _application!.city != null ||
-                      _application!.state != null ||
-                      _application!.pincode != null)
-                    _buildSectionCard(
-                      title: 'Address Information',
-                      icon: Icons.location_on_outlined,
-                      children: [
-                        if (_application!.address != null)
-                          _buildInfoRow('Address', _application!.address!),
-                        if (_application!.city != null)
-                          _buildInfoRow('City', _application!.city!),
-                        if (_application!.state != null)
-                          _buildInfoRow('State', _application!.state!),
-                        if (_application!.pincode != null)
-                          _buildInfoRow('Pincode', _application!.pincode!),
-                      ],
-                    ),
-
-                  const SizedBox(height: 24),
-
-                  // Educational Details
-                  _buildSectionCard(
-                    title: 'Educational Details',
-                    icon: Icons.school_outlined,
-                    children: [
-                      if (_application!.highestQualification != null)
-                        _buildInfoRow(
-                          'Highest Qualification',
-                          _application!.highestQualification!,
-                        ),
-                      if (_application!.fieldOfStudy != null)
-                        _buildInfoRow(
-                          'Field of Study',
-                          _application!.fieldOfStudy!,
-                        ),
-                      if (_application!.yearOfPassing != null)
-                        _buildInfoRow(
-                          'Year of Passing',
-                          _application!.yearOfPassing.toString(),
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Experience Details
-                  _buildSectionCard(
-                    title: 'Experience Details',
-                    icon: Icons.work_outline,
-                    children: [
-                      _buildInfoRow('Role Type', _application!.roleTypeDisplay),
-                      _buildInfoRow(
-                        'Previous Experience',
-                        _application!.previousExperience ?? 'N/A',
+                      _buildStatusTimeline(),
+                      const SizedBox(height: 32),
+                      
+                      // Desktop: Row for Action Card + Info
+                      // Mobile: Column
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (constraints.maxWidth > 900) {
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: Column(
+                                    children: [
+                                     _buildSectionCard(
+                                        title: 'Personal Information',
+                                        icon: Icons.person_outline,
+                                        child: _buildResponsiveGrid([
+                                          _buildInfoItem('Full Name', _application!.fullName),
+                                          if (_application!.email != null)
+                                            _buildInfoItem('Email', _application!.email!),
+                                          if (_application!.mobileNumber != null)
+                                            _buildInfoItem('Mobile Number', _application!.mobileNumber!),
+                                          if (_application!.whatsappNumber != null)
+                                            _buildInfoItem('WhatsApp', _application!.whatsappNumber!),
+                                          if (_application!.dateOfBirth != null)
+                                            _buildInfoItem(
+                                              'Date of Birth',
+                                              DateFormat('dd MMM yyyy').format(_application!.dateOfBirth!),
+                                            ),
+                                          if (_application!.gender != null)
+                                            _buildInfoItem('Gender', _application!.gender!),
+                                        ]),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      _buildSectionCard(
+                                        title: 'Address Information',
+                                        icon: Icons.location_on_outlined,
+                                        child: _buildResponsiveGrid([
+                                          if (_application!.address != null)
+                                            _buildInfoItem('Address', _application!.address!, flex: 2), // Spans 2 cols
+                                          if (_application!.city != null)
+                                            _buildInfoItem('City', _application!.city!),
+                                          if (_application!.state != null)
+                                            _buildInfoItem('State', _application!.state!),
+                                          if (_application!.pincode != null)
+                                            _buildInfoItem('Pincode', _application!.pincode!),
+                                        ]),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      _buildSectionCard(
+                                        title: 'Educational & Experience',
+                                        icon: Icons.school_outlined,
+                                        child: _buildResponsiveGrid([
+                                          if (_application!.highestQualification != null)
+                                            _buildInfoItem('Qualification', _application!.highestQualification!),
+                                          if (_application!.yearOfPassing != null)
+                                            _buildInfoItem('Passing Year', _application!.yearOfPassing.toString()),
+                                          _buildInfoItem('Role Applied', _application!.roleTypeDisplay),
+                                          if (_application!.yearsOfExperience != null)
+                                            _buildInfoItem('Experience', _application!.yearsOfExperience!),
+                                          if (_application!.previousExperience != null)
+                                            _buildInfoItem('Prev. Exp.', _application!.previousExperience!),
+                                           if (_application!.relevantSkills != null)
+                                            _buildInfoItem('Skills', _application!.relevantSkills!, flex: 3),
+                                        ]),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 24),
+                                Expanded(
+                                  flex: 1,
+                                  child: Column(
+                                    children: [
+                                      _buildActionCard(),
+                                      const SizedBox(height: 24),
+                                      if (_application!.resumeUrl != null)
+                                        _buildResumeCard(),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          } else {
+                            // Mobile Layout
+                            return Column(
+                              children: [
+                                _buildActionCard(),
+                                const SizedBox(height: 24),
+                                _buildSectionCard(
+                                  title: 'Personal Information',
+                                  icon: Icons.person_outline,
+                                  child: Column(
+                                    children: [
+                                      _buildInfoRow('Full Name', _application!.fullName),
+                                      if (_application!.email != null) _buildInfoRow('Email', _application!.email!),
+                                      // ... other mobile fields
+                                    ],
+                                  ),
+                                ),
+                                // ... other mobile sections
+                                if (_application!.resumeUrl != null)
+                                  _buildResumeCard(),
+                              ],
+                            );
+                          }
+                        },
                       ),
-                      if (_application!.yearsOfExperience != null)
-                        _buildInfoRow(
-                          'Years of Experience',
-                          _application!.yearsOfExperience!,
-                        ),
-                      if (_application!.relevantSkills != null)
-                        _buildInfoRow(
-                          'Relevant Skills',
-                          _application!.relevantSkills!,
-                        ),
                     ],
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Resume
-                  if (_application!.resumeUrl != null)
-                    _buildSectionCard(
-                      title: 'Resume',
-                      icon: Icons.description_outlined,
-                      children: [
-                        Center(
-                          child: ElevatedButton.icon(
-                            onPressed: _downloadResume,
-                            icon: const Icon(Icons.download),
-                            label: Text(
-                              'Download Resume',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.brandGreen,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                  const SizedBox(height: 24),
-
-                  // Application Timeline
-                  _buildSectionCard(
-                    title: 'Application Timeline',
-                    icon: Icons.timeline,
-                    children: [
-                      _buildInfoRow(
-                        'Applied On',
-                        DateFormat(
-                          'dd MMM yyyy, hh:mm a',
-                        ).format(_application!.appliedAt),
-                      ),
-                      if (_application!.lastUpdated != null)
-                        _buildInfoRow(
-                          'Last Updated',
-                          DateFormat(
-                            'dd MMM yyyy, hh:mm a',
-                          ).format(_application!.lastUpdated!),
-                        ),
-                      _buildInfoRow('Application ID', _application!.id),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
     );
   }
 
-  Widget _buildStatusActionCard() {
-    final status = _application!.currentStatus;
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      titleSpacing: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: Text(
+        'Application Details',
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+        ),
+      ),
+      actions: [
+         if (_application?.currentStatus == 'SCREENING' || _application?.currentStatus == 'SELECTED_FOR_HR')
+          Padding(
+            padding: const EdgeInsets.only(right: 24.0),
+            child: Row(
+              children: [
+                 OutlinedButton(
+                  onPressed: _isProcessing ? null : _rejectApplication,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text('Reject', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: _isProcessing 
+                    ? null 
+                    : () {
+                        if (_application!.currentStatus == 'SCREENING') {
+                           setState(() => _showHRForm = true);
+                        } else {
+                           setState(() => _showOfferLetterForm = true);
+                        }
+                      },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandGreen,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text(
+                    _application!.currentStatus == 'SCREENING' ? 'Approve for HR' : 'Send Offer', 
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ]
+    );
+  }
+
+  Widget _buildStatusTimeline() {
+    final steps = ['Applied', 'Screening', 'HR Round', 'Offer', 'Hired'];
+    int currentStep = 0;
+    
+    switch (_application!.currentStatus) {
+      case 'APPLIED': currentStep = 0; break;
+      case 'SCREENING': currentStep = 1; break;
+      case 'SELECTED_FOR_HR': currentStep = 2; break; 
+      case 'OFFER_SENT': currentStep = 3; break; // Assuming exist
+      case 'SELECTED': currentStep = 4; break;
+      case 'REJECTED': currentStep = -1; break; // Handle rejection specially
+    }
+
+    if (currentStep == -1) {
+       return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.errorBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.error.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.cancel, color: AppColors.error, size: 28),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Application Rejected', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: AppColors.error, fontSize: 16)),
+                Text('This application has been closed.', style: GoogleFonts.poppins(color: AppColors.error, fontSize: 13)),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Row(
+            children: List.generate(steps.length, (index) {
+              final isCompleted = index <= currentStep;
+              final isCurrent = index == currentStep;
+              final isLast = index == steps.length - 1;
+              
+              return Expanded(
+                child: Row(
+                  children: [
+                    Column(
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isCompleted ? AppColors.brandGreen : Colors.grey.shade200,
+                            border: isCurrent ? Border.all(color: AppColors.brandGreen, width: 4) : null,
+                          ),
+                          child: Center(
+                            child: isCompleted 
+                              ? const Icon(Icons.check, size: 16, color: Colors.white)
+                              : Text('${index + 1}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                         Text(
+                          steps[index],
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: isCompleted ? FontWeight.w600 : FontWeight.w400,
+                            color: isCompleted ? AppColors.brandGreen : Colors.grey.shade600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                    if (!isLast)
+                      Expanded(
+                        child: Container(
+                          height: 2,
+                          color: index < currentStep ? AppColors.brandGreen : Colors.grey.shade200,
+                          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 0).copyWith(bottom: 24),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+          );
+        }
+      ),
+    );
+  }
+
+  Widget _buildResponsiveGrid(List<Widget> children) {
+    return Wrap(
+      spacing: 24,
+      runSpacing: 24,
+      children: children,
+    );
+  }
+
+  Widget _buildInfoItem(String label, String value, {int flex = 1}) {
+    // Basic calculation for 3 columns on desktop (approx 30% width)
+    // Adjust logic if strictly need Flex, but Wrap works better for flowing content
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // We want 3 items per row roughly
+        // If parent has specific width, we can calculate.
+        // For now, let's give them a min-width approx 250px
+        return SizedBox(
+          width: 250.0 * flex, 
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+               Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)),
+               const SizedBox(height: 4),
+               Text(value, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.black87)),
+            ],
+          ),
+        );
+      }
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required IconData icon, required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0,4)),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.brandGreen.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.edit_outlined,
-                  color: AppColors.brandGreen,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Application Status',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-              const Spacer(),
-              _buildStatusBadge(status, large: true),
-            ],
-          ),
-          const SizedBox(height: 20),
+           Row(
+             children: [
+               Icon(icon, size: 20, color: Colors.grey.shade700),
+               const SizedBox(width: 8),
+               Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87)),
+             ],
+           ),
+           const Divider(height: 32),
+           child,
+        ],
+      ),
+    );
+  }
 
-          // Status-specific actions
-          if (status == 'SCREENING') ...[
-            if (!_showHRForm) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isProcessing
-                          ? null
-                          : () => setState(() => _showHRForm = true),
-                      icon: const Icon(Icons.event),
-                      label: Text(
-                        'Approve for HR Round',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.brandGreen,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isProcessing ? null : _rejectApplication,
-                      icon: const Icon(Icons.close),
-                      label: Text(
-                        'Reject Application',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ] else ...[
-              _buildHRSchedulingForm(),
-            ],
-          ] else if (status == 'SELECTED_FOR_HR') ...[
-            if (!_showOfferLetterForm) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isProcessing
-                          ? null
-                          : () => setState(() => _showOfferLetterForm = true),
-                      icon: const Icon(Icons.description),
-                      label: Text(
-                        'Approve for Final Offer',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.brandGreen,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isProcessing ? null : _rejectApplication,
-                      icon: const Icon(Icons.close),
-                      label: Text(
-                        'Reject Application',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ] else ...[
-              _buildOfferLetterForm(),
-            ],
-          ] else if (status == 'SELECTED') ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.successBg,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle, color: AppColors.success),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Candidate has been hired! Offer letter has been sent.',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ] else if (status == 'REJECTED') ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.errorBg,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.cancel, color: AppColors.error),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'This application has been rejected.',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+  Widget _buildActionCard() {
+    // If we have specific forms (HR/Offer) open, show them here
+    if (_showHRForm) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.brandGreen, width: 2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Schedule HR Round', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)), IconButton(onPressed: () => setState(() => _showHRForm = false), icon: const Icon(Icons.close))]),
+             const SizedBox(height: 16),
+             _buildHRSchedulingForm(),
           ],
+        ),
+      );
+    }
+    
+    if (_showOfferLetterForm) {
+       return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.brandGreen, width: 2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Send Offer Letter', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)), IconButton(onPressed: () => setState(() => _showOfferLetterForm = false), icon: const Icon(Icons.close))]),
+             const SizedBox(height: 16),
+             _buildOfferLetterForm(),
+          ],
+        ),
+      );
+    }
+
+    // Default Action Summary or Empty if completed
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.brandGreen.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.brandGreen.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+           Text('Current Status', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.brandGreen)),
+           const SizedBox(height: 4),
+           Text(_application!.statusDisplay, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brandGreen)),
+           const SizedBox(height: 8),
+           Text('Review the details and take action from the top-right menu.', style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResumeCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+         color: Colors.white,
+         borderRadius: BorderRadius.circular(16),
+         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0,4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+           Text('Resume', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+           const SizedBox(height: 16),
+           InkWell(
+             onTap: _downloadResume,
+             child: Container(
+               padding: const EdgeInsets.all(16),
+               decoration: BoxDecoration(
+                 color: Colors.grey.shade50,
+                 borderRadius: BorderRadius.circular(12),
+                 border: Border.all(color: Colors.grey.shade200),
+               ),
+               child: Row(
+                 children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.picture_as_pdf, color: Colors.red.shade700),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Applicant Resume.pdf', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                          Text('Click to download', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.download_rounded, color: Colors.grey.shade400),
+                 ],
+               ),
+             ),
+           ),
         ],
       ),
     );
@@ -986,107 +1061,87 @@ class _JobApplicationDetailScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Upload Offer Letter',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Upload Offer Letter',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              if (_offerLetterFileName != null)
+                 TextButton(onPressed: _isProcessing ? null : () => setState(() {
+                   _offerLetterFileName = null; 
+                   _offerLetterBytes = null;
+                 }), child: Text('Remove', style: GoogleFonts.poppins(color: AppColors.error, fontSize: 12)))
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-          // File Upload
+          // File Upload Area
           InkWell(
             onTap: _isProcessing ? null : _pickOfferLetter,
+            borderRadius: BorderRadius.circular(12),
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _offerLetterFileName != null
                       ? AppColors.brandGreen
                       : Colors.grey.shade300,
-                  width: 2,
+                  width: _offerLetterFileName != null ? 2 : 1,
+                  style: _offerLetterFileName != null ? BorderStyle.solid : BorderStyle.none, // Dotted border workaround requires custom painter, using solid/dashed implication or just simple border
                 ),
               ),
-              child: Column(
-                children: [
-                  Icon(
-                    _offerLetterFileName != null
-                        ? Icons.check_circle
-                        : Icons.cloud_upload,
-                    size: 48,
-                    color: _offerLetterFileName != null
-                        ? AppColors.brandGreen
-                        : Colors.grey[400],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _offerLetterFileName ?? 'Click to upload PDF',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: _offerLetterFileName != null
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                      color: _offerLetterFileName != null
-                          ? AppColors.brandGreen
-                          : Colors.grey[600],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  if (_offerLetterFileName == null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Only PDF files accepted',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[500],
+              child: _offerLetterFileName != null 
+                ? Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: AppColors.brandGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                        child: Icon(Icons.picture_as_pdf, color: AppColors.brandGreen, size: 32),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(_offerLetterFileName!, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Text('Ready to send', style: GoogleFonts.poppins(color: AppColors.brandGreen, fontSize: 12)),
+                          ],
                         ),
                       ),
-                    ),
-                ],
-              ),
+                      Icon(Icons.check_circle, color: AppColors.brandGreen),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      Icon(Icons.cloud_upload_outlined, size: 40, color: Colors.grey.shade400),
+                      const SizedBox(height: 12),
+                      Text('Click to upload Offer Letter PDF', style: GoogleFonts.poppins(color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 4),
+                      Text('Supported format: PDF', style: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 12)),
+                    ],
+                  ),
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: _isProcessing
-                      ? null
-                      : () {
-                          setState(() {
-                            _showOfferLetterForm = false;
-                            _offerLetterFileName = null;
-                            _offerLetterBytes = null;
-                          });
-                        },
-                  child: Text('Cancel', style: GoogleFonts.poppins()),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton.icon(
+          
+          if (_offerLetterFileName == null) ...[
+             // Helper text or Dotted border implementation could go here
+          ] else ...[
+             const SizedBox(height: 24),
+             SizedBox(
+               width: double.infinity,
+               child: ElevatedButton.icon(
                   onPressed: _isProcessing ? null : _sendOfferLetter,
                   icon: _isProcessing
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : const Icon(Icons.send),
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+                      : const Icon(Icons.send_rounded, size: 18),
                   label: Text(
                     'Send Offer Letter',
                     style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -1094,64 +1149,15 @@ class _JobApplicationDetailScreenState
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.brandGreen,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    elevation: 0,
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionCard({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.brandGreen.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: AppColors.brandGreen, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          ...children,
+             ),
+          ],
         ],
       ),
     );

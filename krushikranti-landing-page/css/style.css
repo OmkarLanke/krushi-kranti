@@ -387,3 +387,29 @@ ul { list-style: none; }
 
 @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
 @keyframes slideDown { from {transform: translateY(-50px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
+
+/* Venture Box Styling */
+.venture-box {
+    margin-top: 25px;
+    display: inline-block;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.venture-label {
+    display: block;
+    font-size: 10px;
+    color: #888;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.venture-logo {
+    height: 35px;
+    width: auto;
+    display: block;
+}

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -41,9 +40,48 @@ class _ShopkeeperQualificationScreenState extends State<ShopkeeperQualificationS
     );
   }
 
+  // --- HELPER WIDGETS ---
+  Widget _label(String text, {bool required = false}) => Padding(
+    padding: const EdgeInsets.only(bottom: 8.0, top: 20.0),
+    child: Row(
+      children: [
+        Text(text, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.blueGrey[900])),
+        if (required) const SizedBox(width: 4),
+        if (required) const Text('*', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+      ],
+    ),
+  );
+
+  Widget _textField(TextEditingController controller, String hint, {bool required = true, bool isNumber = false, int? maxLength, List<TextInputFormatter>? inputFormatters, String? Function(String?)? validator, IconData? prefixIcon}) {
+    return TextFormField(
+      controller: controller, 
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text, 
+      maxLength: maxLength,
+      inputFormatters: inputFormatters,
+      style: GoogleFonts.poppins(fontSize: 16), 
+      decoration: InputDecoration(
+        hintText: hint, 
+        hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
+        filled: true,
+        fillColor: Colors.grey[50],
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        counterText: "", 
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey[600], size: 22) : null,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), 
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), 
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFFD700), width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1.5)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1.5)),
+      ), 
+      validator: validator ?? (val) {
+         if (!required) return null;
+         return (val == null || val.isEmpty) ? AppStrings.tr('required') : null;
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ✅ Listen to Language Changes
     return ValueListenableBuilder<String>(
       valueListenable: currentLanguage,
       builder: (context, lang, child) {
@@ -51,10 +89,10 @@ class _ShopkeeperQualificationScreenState extends State<ShopkeeperQualificationS
           backgroundColor: Colors.white,
           appBar: AppBar(
             backgroundColor: Colors.white,
-            elevation: 0,
+            elevation: 0.5,
             leading: IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.black), onPressed: () => Navigator.pop(context)),
             centerTitle: true,
-            title: Text(AppStrings.tr('enter_qualification'), style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
+            title: Text(AppStrings.tr('enter_qualification'), style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black)),
           ),
           body: Center(
             child: Container(
@@ -66,37 +104,77 @@ class _ShopkeeperQualificationScreenState extends State<ShopkeeperQualificationS
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel(AppStrings.tr('shop_name')), 
-                      _buildTextField(_shopNameController, "Rajiv Mart"),
+                      _label(AppStrings.tr('shop_name'), required: true), 
+                      _textField(_shopNameController, "Rajiv Mart", prefixIcon: Icons.store_outlined),
 
-                      _buildLabel(AppStrings.tr('shop_address')), 
-                      _buildTextField(_shopAddressController, "Near Maharashtra Bank"),
+                      _label(AppStrings.tr('shop_address'), required: true), 
+                      _textField(_shopAddressController, "Near Maharashtra Bank", prefixIcon: Icons.location_on_outlined),
 
-                      _buildLabel(AppStrings.tr('gst_number')), 
-                      _buildTextField(
+                      _label(AppStrings.tr('gst_number'), required: true), 
+                      _textField(
                         _gstNumberController, 
                         "598454987451494",
                         maxLength: 15,
+                        prefixIcon: Icons.receipt_long_outlined,
                         validator: (val) {
                           if (val == null || val.isEmpty) return AppStrings.tr('required');
-                          if (val.length != 15) return '15 chars required'; // You can localize this too if needed
+                          if (val.length != 15) return '15 chars required';
                           return null;
                         }
                       ),
 
-                      _buildLabel(AppStrings.tr('years_business')), 
-                      _buildTextField(_yearsInBusinessController, "5", isNumber: true, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
+                      _label(AppStrings.tr('years_business'), required: true), 
+                      _textField(_yearsInBusinessController, "5", isNumber: true, inputFormatters: [FilteringTextInputFormatter.digitsOnly], prefixIcon: Icons.access_time),
 
-                      _buildLabel(AppStrings.tr('shop_type')), 
-                      _buildDropdown(),
+                      _label(AppStrings.tr('shop_type'), required: true), 
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          prefixIcon: const Icon(Icons.category_outlined, color: Colors.grey, size: 22),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), 
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), 
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFFD700), width: 1.5)),
+                        ),
+                        value: _shopTypeValue, 
+                        hint: Text(AppStrings.tr('shop_type'), style: GoogleFonts.poppins(color: Colors.grey[400])), 
+                        isExpanded: true, 
+                        items: [
+                          DropdownMenuItem(value: "Retail", child: Text(AppStrings.tr('retail'))), 
+                          DropdownMenuItem(value: "Wholesale", child: Text(AppStrings.tr('wholesale'))), 
+                          DropdownMenuItem(value: "Distributor", child: Text(AppStrings.tr('distributor')))
+                        ], 
+                        onChanged: (val) => setState(() => _shopTypeValue = val),
+                        validator: (val) => val == null ? AppStrings.tr('required') : null,
+                      ),
 
                       const SizedBox(height: 30),
 
-                      _buildUploadButton(
-                        label: _shopPhotoFileName ?? AppStrings.tr('upload_shop_photo'), 
-                        icon: Icons.storefront, 
-                        onTap: _pickShopPhoto, 
-                        isSelected: _shopPhotoFileName != null
+                      _label(AppStrings.tr('upload_shop_photo'), required: true),
+                      InkWell(
+                        onTap: _pickShopPhoto,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(child: Text(_shopPhotoFileName ?? AppStrings.tr('upload_shop_photo'), 
+                                style: GoogleFonts.poppins(color: _shopPhotoFileName != null ? Colors.black : Colors.grey[600], fontWeight: _shopPhotoFileName != null ? FontWeight.w500 : FontWeight.normal))),
+                              Icon(_shopPhotoFileName != null ? Icons.check_circle : Icons.add_a_photo_outlined, color: _shopPhotoFileName != null ? Colors.green : Colors.grey)
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (_shopPhotoFileName == null) Padding(
+                        padding: const EdgeInsets.only(top:8.0, left: 4),
+                        child: Text(AppStrings.tr('required'), style: const TextStyle(color: Colors.red, fontSize: 12)),
                       ),
 
                       const SizedBox(height: 40),
@@ -106,10 +184,14 @@ class _ShopkeeperQualificationScreenState extends State<ShopkeeperQualificationS
                         child: ElevatedButton(
                           onPressed: () {
                             if (_formKey.currentState!.validate()) {
+                              if (_shopPhotoFileName == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.tr('required'))));
+                                return;
+                              }
                               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SubmissionSuccessScreen()));
                             }
                           },
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFD700), foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFD700), foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
                           child: Text(AppStrings.tr('submit_form'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
@@ -124,62 +206,4 @@ class _ShopkeeperQualificationScreenState extends State<ShopkeeperQualificationS
       }
     );
   }
-
-  // --- Helper Widgets ---
-  Widget _buildDropdown() => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16), 
-    decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(12)), 
-    child: DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        value: _shopTypeValue, 
-        hint: Text(AppStrings.tr('shop_type'), style: GoogleFonts.poppins(color: Colors.grey[400])), 
-        isExpanded: true, 
-        items: [
-          DropdownMenuItem(value: "Retail", child: Text(AppStrings.tr('retail'))), 
-          DropdownMenuItem(value: "Wholesale", child: Text(AppStrings.tr('wholesale'))), 
-          DropdownMenuItem(value: "Distributor", child: Text(AppStrings.tr('distributor')))
-        ], 
-        onChanged: (val) => setState(() => _shopTypeValue = val)
-      )
-    )
-  );
-
-  Widget _buildLabel(String text) => Padding(padding: const EdgeInsets.only(bottom: 8.0, top: 16.0), child: Text(text, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)));
-
-  Widget _buildTextField(TextEditingController controller, String hint, {bool isNumber = false, int? maxLength, List<TextInputFormatter>? inputFormatters, String? Function(String?)? validator}) {
-    return TextFormField(
-      controller: controller, 
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text, 
-      maxLength: maxLength,
-      inputFormatters: inputFormatters,
-      style: GoogleFonts.poppins(fontSize: 16), 
-      decoration: InputDecoration(
-        hintText: hint, 
-        hintStyle: GoogleFonts.poppins(color: Colors.grey[400]), 
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), 
-        counterText: "", 
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), 
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue, width: 1.5))
-      ), 
-      validator: validator ?? (val) => val!.isEmpty ? AppStrings.tr('required') : null
-    );
-  }
-
-  Widget _buildUploadButton({required String label, required IconData icon, required VoidCallback onTap, required bool isSelected}) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(12), child: CustomPaint(painter: DashedBorderPainter(), child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Expanded(child: Text(label, style: GoogleFonts.poppins(fontSize: 16, color: isSelected ? Colors.green : Colors.grey[600], fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal))), Icon(isSelected ? Icons.check_circle : icon, color: isSelected ? Colors.green : Colors.indigo)]))));
-}
-
-class DashedBorderPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..color = Colors.grey[400]!..strokeWidth = 1.5..style = PaintingStyle.stroke;
-    final Path path = Path()..addRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(12)));
-    final Path dashPath = Path();
-    double dashWidth = 6.0; double dashSpace = 4.0; double distance = 0.0;
-    for (final PathMetric pathMetric in path.computeMetrics()) {
-      while (distance < pathMetric.length) { dashPath.addPath(pathMetric.extractPath(distance, distance + dashWidth), Offset.zero); distance += dashWidth + dashSpace; }
-    }
-    canvas.drawPath(dashPath, paint);
-  }
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

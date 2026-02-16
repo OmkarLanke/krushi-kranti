@@ -1,14 +1,29 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; 
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart'; 
-// ❌ REMOVED: import 'package:image_picker/image_picker.dart'; (Unused)
 import 'submission_success_screen.dart';
 import '../../../../core/app_localizations.dart';
+import '../../data/job_application_service.dart';
+import '../widgets/hiring_screen_wrapper.dart';
+import '../widgets/hiring_form_widgets.dart';
+import '../widgets/hiring_side_panel.dart';
 
 class FieldOfficerQualificationScreen extends StatefulWidget {
-  const FieldOfficerQualificationScreen({super.key});
+  final String fullName;
+  final String mobile;
+  final String email;
+  final String dob;
+  final String location;
+
+  const FieldOfficerQualificationScreen({
+    super.key,
+    required this.fullName,
+    required this.mobile,
+    required this.email,
+    required this.dob,
+    required this.location,
+  });
 
   @override
   State<FieldOfficerQualificationScreen> createState() => _FieldOfficerQualificationScreenState();
@@ -17,17 +32,42 @@ class FieldOfficerQualificationScreen extends StatefulWidget {
 class _FieldOfficerQualificationScreenState extends State<FieldOfficerQualificationScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _qualificationController = TextEditingController();
+  // Text Controllers
+  final _institutionController = TextEditingController();
+  final _yearOfCompletionController = TextEditingController();
   final _experienceController = TextEditingController();
-  final _districtController = TextEditingController();
-  
+  final _relevantExperienceController = TextEditingController(); // Text Area
+  final _lastEmployerRoleController = TextEditingController();
+
+  // Dropdown Values
+  String? _highestQualificationValue;
   String? _vehicleValue;
+  String? _willingToVisitValue;
+
   String? _resumeFileName;
+  PlatformFile? _resumeFile;
+  bool _consent = false;
+  bool _isSubmitting = false;
+
+  final List<String> _qualifications = [
+    '10th',
+    '12th',
+    'Diploma (Agri)',
+    'B.Sc Agri',
+    'M.Sc Agri',
+    'MBA (Agri)',
+    'Other'
+  ];
 
   // --- 📂 FILE PICKING LOGIC ---
   Future<void> _pickDocument() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf', 'doc', 'docx']);
-    if (result != null) setState(() => _resumeFileName = result.files.single.name);
+    if (result != null) {
+      setState(() {
+        _resumeFile = result.files.single;
+        _resumeFileName = _resumeFile!.name;
+      });
+    }
   }
 
   @override
@@ -35,105 +75,243 @@ class _FieldOfficerQualificationScreenState extends State<FieldOfficerQualificat
     return ValueListenableBuilder<String>(
       valueListenable: currentLanguage,
       builder: (context, lang, child) {
-        return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            leading: IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.black), onPressed: () => Navigator.pop(context)),
-            centerTitle: true,
-            title: Text(AppStrings.tr('enter_qualification'), style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
+        return HiringScreenWrapper(
+          title: AppStrings.tr('enter_qualification'),
+          currentStep: 2,
+          totalSteps: 2,
+          sidePanel: HiringSidePanel(
+            icon: Icons.workspace_premium, 
+            title: AppStrings.tr('showcase_skills'), 
+            description: AppStrings.tr('showcase_desc'), 
+            features: [
+              AppStrings.tr('feat_earn'),
+              AppStrings.tr('feat_growth'),
+              AppStrings.tr('feat_smart'),
+            ],
           ),
-          body: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 500),
-              padding: const EdgeInsets.all(24.0),
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel(AppStrings.tr('highest_qual')),
-                      _buildTextField(_qualificationController, "A.sc"),
-
-                      _buildLabel(AppStrings.tr('years_exp')),
-                      _buildTextField(_experienceController, "5", isNumber: true, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
-
-                      _buildLabel(AppStrings.tr('district_pref')),
-                      _buildTextField(_districtController, "Pune / Satara"),
-
-                      _buildLabel(AppStrings.tr('vehicle_avail')),
-                      DropdownButtonFormField<String>(
-                        decoration: InputDecoration(contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue, width: 1.5))),
-                        // ✅ FIXED: String Interpolation
-                        hint: Text("${AppStrings.tr('yes')} / ${AppStrings.tr('no')}", style: GoogleFonts.poppins(color: Colors.grey[400])),
-                        // Use current value
-                        value: _vehicleValue,
-                        items: [
-                          DropdownMenuItem(value: "Yes", child: Text(AppStrings.tr('yes'))),
-                          DropdownMenuItem(value: "No", child: Text(AppStrings.tr('no'))),
-                        ],
-                        onChanged: (val) => setState(() => _vehicleValue = val),
-                        validator: (val) => val == null ? AppStrings.tr('required') : null,
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      _buildUploadButton(
-                        label: _resumeFileName ?? AppStrings.tr('upload_resume'), 
-                        icon: Icons.upload_file, 
-                        onTap: _pickDocument, 
-                        isSelected: _resumeFileName != null
-                      ),
-
-                      const SizedBox(height: 40),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              if (_vehicleValue == null) {
-                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.tr('required'))));
-                                 return;
-                              }
-                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SubmissionSuccessScreen()));
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFD700), foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                          child: Text(AppStrings.tr('submit_form'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          child: _buildFormContent(),
         );
       }
     );
   }
-  
-  Widget _buildLabel(String text) => Padding(padding: const EdgeInsets.only(bottom: 8.0, top: 16.0), child: Text(text, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)));
-  Widget _buildTextField(TextEditingController controller, String hint, {bool isNumber = false, List<TextInputFormatter>? inputFormatters}) => TextFormField(controller: controller, keyboardType: isNumber ? TextInputType.number : TextInputType.text, inputFormatters: inputFormatters, style: GoogleFonts.poppins(fontSize: 16), decoration: InputDecoration(hintText: hint, hintStyle: GoogleFonts.poppins(color: Colors.grey[400]), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue, width: 1.5))), validator: (val) => val!.isEmpty ? AppStrings.tr('required') : null);
-  Widget _buildUploadButton({required String label, required IconData icon, required VoidCallback onTap, required bool isSelected}) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(12), child: CustomPaint(painter: DashedBorderPainter(), child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: 16, color: isSelected ? Colors.green : Colors.grey[600], fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal))), Icon(isSelected ? Icons.check_circle : icon, color: isSelected ? Colors.green : Colors.indigo)]))));
-}
 
-class DashedBorderPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..color = Colors.grey[400]!..strokeWidth = 1.5..style = PaintingStyle.stroke;
-    final Path path = Path()..addRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(12)));
-    final Path dashPath = Path();
-    double dashWidth = 6.0; double dashSpace = 4.0; double distance = 0.0;
-    for (final PathMetric pathMetric in path.computeMetrics()) {
-      while (distance < pathMetric.length) { dashPath.addPath(pathMetric.extractPath(distance, distance + dashWidth), Offset.zero); distance += dashWidth + dashSpace; }
-    }
-    canvas.drawPath(dashPath, paint);
+  Widget _buildFormContent() {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Highest Qualification (Dropdown)
+            HiringLabel(AppStrings.tr('highest_qual'), required: true),
+             HiringDropdown(
+              hint: AppStrings.tr('highest_qual'),
+              value: _highestQualificationValue,
+              items: _qualifications,
+              onChanged: (val) => setState(() => _highestQualificationValue = val),
+              icon: Icons.school_outlined,
+            ),
+
+            // 2. Institution / University
+            HiringLabel(AppStrings.tr('institution'), required: true),
+            HiringTextField(
+              controller: _institutionController,
+              hint: "Agriculture College, Pune",
+              prefixIcon: Icons.account_balance_outlined,
+            ),
+
+            // 3. Year of Completion
+            HiringLabel(AppStrings.tr('year_of_completion'), required: true),
+            HiringTextField(
+              controller: _yearOfCompletionController,
+              hint: "2020",
+              isNumber: true,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
+              prefixIcon: Icons.calendar_today_outlined,
+            ),
+
+            // 4. Years of Experience
+            HiringLabel(AppStrings.tr('years_exp'), required: true),
+            HiringTextField(
+              controller: _experienceController,
+              hint: "2",
+              isNumber: true,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              prefixIcon: Icons.work_history_outlined,
+            ),
+
+            // 5. Relevant Experience (Text Area)
+            HiringLabel(AppStrings.tr('relevant_experience'), required: false),
+            HiringTextField(
+              controller: _relevantExperienceController,
+              hint: "Worked as sales executive...",
+              maxLines: 3,
+              required: false,
+            ),
+
+            // 6. Last Employer Role
+            HiringLabel(AppStrings.tr('last_employer_role'), required: false),
+            HiringTextField(
+              controller: _lastEmployerRoleController,
+              hint: "Sales Manager",
+              required: false,
+              prefixIcon: Icons.badge_outlined,
+            ),
+
+            // 7. Vehicle Available (Dropdown)
+            HiringLabel(AppStrings.tr('vehicle_avail'), required: true),
+            HiringDropdown(
+              hint: "${AppStrings.tr('yes')} / ${AppStrings.tr('no')}",
+              value: _vehicleValue,
+              items: ["Yes", "No"],
+              onChanged: (val) => setState(() => _vehicleValue = val),
+              icon: Icons.directions_bike_outlined,
+            ),
+            
+            // 8. Willingness for Field Visit (Dropdown)
+            HiringLabel(AppStrings.tr('willing_field_visit'), required: true),
+            HiringDropdown(
+              hint: "${AppStrings.tr('yes')} / ${AppStrings.tr('no')}",
+              value: _willingToVisitValue,
+              items: ["Yes", "No"],
+              onChanged: (val) => setState(() => _willingToVisitValue = val),
+              icon: Icons.directions_walk_outlined,
+            ),
+
+            const SizedBox(height: 30),
+
+            // Resume Upload
+            HiringLabel(AppStrings.tr('resume'), required: true),
+            InkWell(
+              onTap: _pickDocument,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                decoration: HiringStyles.fieldDecoration.copyWith(
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(child: Text(
+                      _resumeFileName ?? AppStrings.tr('upload_resume'), 
+                      style: GoogleFonts.poppins(
+                        color: _resumeFileName != null ? Colors.black : Colors.grey[600],
+                        fontWeight: _resumeFileName != null ? FontWeight.w500 : FontWeight.normal,
+                        fontSize: 15
+                      ),
+                    )),
+                    Icon(
+                      _resumeFileName != null ? Icons.check_circle : Icons.cloud_upload_outlined, 
+                      color: _resumeFileName != null ? Colors.green : Colors.grey,
+                      size: 24
+                    )
+                  ],
+                ),
+              ),
+            ),
+            if (_resumeFileName == null) Padding(
+              padding: const EdgeInsets.only(top:8.0, left: 4),
+              child: Text(AppStrings.tr('resume_required_hint'), style: const TextStyle(color: Colors.red, fontSize: 12)),
+            ),
+
+            const SizedBox(height: 24),
+            // Consent
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4), // Light Green
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.withOpacity(0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 24, 
+                    height: 24, 
+                    child: Checkbox(
+                      value: _consent, 
+                      activeColor: Colors.green, 
+                      checkColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      onChanged: (v) => setState(() => _consent = v ?? false)
+                    )
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      AppStrings.tr('consent_text'), 
+                      style: GoogleFonts.poppins(fontSize: 13, color: Colors.green[900], height: 1.5)
+                    )
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 40),
+            // Submit Button
+            HiringPrimaryButton(
+              text: AppStrings.tr('submit_form'),
+              isLoading: _isSubmitting,
+              onPressed: _submitForm,
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
   }
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
+
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+       if (_highestQualificationValue == null) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.tr('required'))));
+          return;
+       }
+       if (_vehicleValue == null || _willingToVisitValue == null) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.tr('required'))));
+          return;
+       }
+       if (_resumeFileName == null) {
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.tr('resume_required'))));
+         return;
+       }
+       if (!_consent) {
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.tr('consent_required'))));
+         return;
+       }
+
+       setState(() => _isSubmitting = true);
+
+       try {
+         await JobApplicationApiService.submitApplication(
+            roleType: 'FIELD_OFFICER',
+            fullName: widget.fullName,
+            mobile: widget.mobile,
+            email: widget.email,
+            dob: widget.dob,
+            locationText: widget.location,
+            highestQualification: _highestQualificationValue, // Dropdown Value
+            institution: _institutionController.text.trim(),
+            yearOfCompletion: int.tryParse(_yearOfCompletionController.text.trim()),
+            yearsExperience: int.tryParse(_experienceController.text.trim()),
+            relevantExperience: _relevantExperienceController.text.trim(),
+            lastEmployerRole: _lastEmployerRoleController.text.trim(),
+            vehicleAvailable: _vehicleValue == 'Yes', // Map to boolean
+            willingForFieldVisit: _willingToVisitValue == 'Yes', // Map to boolean
+            resumeFile: _resumeFile,
+          );
+
+          if (!mounted) return;
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SubmissionSuccessScreen()));
+
+       } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
+       } finally {
+         if (mounted) setState(() => _isSubmitting = false);
+       }
+    }
+  }
 }
