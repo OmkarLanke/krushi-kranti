@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
-import '../../../l10n/app_localizations.dart'; 
+import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../dashboard/services/crop_service.dart';
@@ -10,8 +10,10 @@ import '../../dashboard/services/field_officer_assignment_service.dart';
 import '../../dashboard/services/notification_service.dart';
 import '../../../core/services/http_service.dart';
 import '../../../core/services/storage_service.dart';
-import '../../subscription/widgets/subscription_guard.dart' show showSubscriptionRequiredDialog;
+import '../../subscription/widgets/subscription_guard.dart'
+    show showSubscriptionRequiredDialog;
 import 'field_officer_details_dialog.dart';
+import '../../farm_management/widgets/weather_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,10 +23,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool isAgentAssigned = false; 
+  bool isAgentAssigned = false;
   List<Map<String, dynamic>> fieldOfficerAssignments = [];
   Map<int, String> _farmNames = {}; // Map of farmId -> farmName
-  List<Map<String, dynamic>> _unassignedFarms = []; // Farms without field officer assignment
+  List<Map<String, dynamic>> _unassignedFarms =
+      []; // Farms without field officer assignment
   bool isLoadingAssignments = true;
   bool isNavigating = false;
   bool _allFarmsVerified = false;
@@ -46,14 +49,14 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Filter any existing notifications to ensure they belong to current user (safeguard)
     _notificationService.filterNotificationsByCurrentUser();
-    
+
     // Load initial data and wait for it to complete before showing UI
     _loadInitialData();
-    
+
     _setupNotificationListener();
     // Start polling for notifications from backend
     _notificationService.startPolling(interval: const Duration(seconds: 10));
-    
+
     // Optimized: Combine cleanup and farm check into a single timer
     // Reduces number of timers and improves battery efficiency
     Timer.periodic(const Duration(seconds: 30), (timer) {
@@ -86,14 +89,14 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Load initial data - called once on initState
   Future<void> _loadInitialData() async {
     if (!mounted) return;
-    
+
     // Add a small delay to ensure any previous API calls have completed
     // This is especially important when coming from onboarding
     await Future.delayed(const Duration(milliseconds: 100));
-    
+
     // Force refresh farms cache to get latest data
     await _fetchFarmsData(forceRefresh: true);
-    
+
     // Then check all statuses in parallel
     await Future.wait([
       _checkFieldOfficerAssignments(),
@@ -101,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _checkPersonalDetailsCompletion(),
       _checkHasCrops(),
     ]);
-    
+
     // Mark initial load as complete and update UI
     if (mounted) {
       setState(() {
@@ -113,10 +116,10 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Refresh all data checks - called when screen becomes visible or after navigation
   Future<void> _refreshAllData() async {
     if (!mounted) return;
-    
+
     // Force refresh farms cache to get latest data
     await _fetchFarmsData(forceRefresh: true);
-    
+
     // Then check all statuses in parallel
     await Future.wait([
       _checkFieldOfficerAssignments(),
@@ -124,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _checkPersonalDetailsCompletion(),
       _checkHasCrops(),
     ]);
-    
+
     // Ensure UI is updated after all checks complete
     if (mounted) {
       setState(() {});
@@ -133,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showOtpReceivedPopup() {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Padding(
@@ -180,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       },
     );
-    
+
     // Listen to notification service changes (when notifyListeners is called)
     _notificationServiceListener = () {
       if (mounted) setState(() {});
@@ -207,8 +210,8 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Fetch farms data with caching to prevent duplicate API calls
   Future<List<dynamic>?> _fetchFarmsData({bool forceRefresh = false}) async {
     // Return cached data if still valid and not forcing refresh
-    if (!forceRefresh && 
-        _cachedFarmsData != null && 
+    if (!forceRefresh &&
+        _cachedFarmsData != null &&
         _farmsDataCacheTime != null &&
         DateTime.now().difference(_farmsDataCacheTime!) < _farmsCacheDuration) {
       return _cachedFarmsData;
@@ -229,42 +232,47 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Optimized: Check field officer assignments and load all related data in parallel
   Future<void> _checkFieldOfficerAssignments() async {
     if (!mounted) return;
-    
+
     setState(() {
       isLoadingAssignments = true;
     });
-    
+
     try {
       // Run both operations in parallel
       final results = await Future.wait([
         FieldOfficerAssignmentService.getAssignments(),
         _fetchFarmsData(),
       ]);
-      
+
       final assignments = results[0] as List<dynamic>;
       final farmsData = results[1] as List<dynamic>? ?? [];
-      
+
       // Only show ASSIGNED field officers - filter out COMPLETED and CANCELLED
-      final activeAssignments = assignments.where((assignment) {
-        final status = assignment['status']?.toString().toUpperCase();
-        return status == 'ASSIGNED';
-      }).map((assignment) => assignment as Map<String, dynamic>).toList();
-      
+      final activeAssignments = assignments
+          .where((assignment) {
+            final status = assignment['status']?.toString().toUpperCase();
+            return status == 'ASSIGNED';
+          })
+          .map((assignment) => assignment as Map<String, dynamic>)
+          .toList();
+
       // Check if there's an assignment with null farmId (all farms assigned)
-      bool allFarmsAssigned = activeAssignments.any((assignment) => assignment['farmId'] == null);
-      
+      bool allFarmsAssigned =
+          activeAssignments.any((assignment) => assignment['farmId'] == null);
+
       // Extract assigned farm IDs from assignments
       final Set<int> assignedFarmIds = {};
       for (var assignment in activeAssignments) {
         final farmId = assignment['farmId'];
         if (farmId != null) {
-          final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+          final farmIdInt =
+              farmId is int ? farmId : int.tryParse(farmId.toString());
           if (farmIdInt != null) {
             assignedFarmIds.add(farmIdInt);
           }
         }
       }
-      
+
       // Build farm names map from cached farms data
       final Map<int, String> farmNamesMap = {};
       if (farmsData.isNotEmpty) {
@@ -279,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
       }
-      
+
       // Find unassigned farms (active farms without assignments)
       // If allFarmsAssigned is true (null farmId assignment exists), no farms are unassigned
       final List<Map<String, dynamic>> unassignedFarms = [];
@@ -288,12 +296,15 @@ class _HomeScreenState extends State<HomeScreen> {
         final activeFarms = farmsData.where((farm) {
           return farm['isActive'] == true;
         }).toList();
-        
+
         for (var farm in activeFarms) {
           final farmId = farm['id'];
-          final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+          final farmIdInt =
+              farmId is int ? farmId : int.tryParse(farmId.toString());
           // Only add to unassigned if it's not already assigned AND not already verified
-          if (farmIdInt != null && !assignedFarmIds.contains(farmIdInt) && (farm['isVerified'] == false || farm['isVerified'] == null)) {
+          if (farmIdInt != null &&
+              !assignedFarmIds.contains(farmIdInt) &&
+              (farm['isVerified'] == false || farm['isVerified'] == null)) {
             unassignedFarms.add({
               'id': farmIdInt,
               'farmName': farm['farmName'] ?? 'Farm ${farmIdInt}',
@@ -301,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
       }
-      
+
       if (mounted) {
         setState(() {
           fieldOfficerAssignments = activeAssignments;
@@ -327,31 +338,31 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Optimized: Check all farms verified status using cached data
   Future<void> _checkAllFarmsVerified() async {
     if (_isLoadingFarms || !mounted) return; // Prevent concurrent calls
-    
+
     setState(() {
       _isLoadingFarms = true;
     });
 
     try {
       final farmsData = await _fetchFarmsData();
-      
+
       if (farmsData == null || farmsData.isEmpty) {
-      if (mounted) {
-        setState(() {
+        if (mounted) {
+          setState(() {
             _allFarmsVerified = false;
             _totalFarms = 0;
             _verifiedFarms = 0;
             _isLoadingFarms = false;
-    });
+          });
         }
         return;
       }
-      
+
       // Filter only active farms
       final activeFarms = farmsData.where((farm) {
         return farm['isActive'] == true;
       }).toList();
-      
+
       if (activeFarms.isEmpty) {
         if (mounted) {
           setState(() {
@@ -394,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
       try {
         final response = await HttpService.get("farmer/profile/my-details");
         final data = response['data'] ?? {};
-        
+
         final firstName = (data['firstName'] ?? '').toString().trim();
         final lastName = (data['lastName'] ?? '').toString().trim();
         final dob = data['dateOfBirth']?.toString() ?? '';
@@ -410,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _hasPersonalDetails = hasPersonal;
           });
         }
-        
+
         // Also update local storage with fresh data
         if (hasPersonal) {
           await StorageService.savePersonalDetails(
@@ -477,20 +488,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      
+
       // --- 1. HEADER ---
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false, 
+        automaticallyImplyLeading: false,
         titleSpacing: 20,
         title: Text(
-          l10n.krushiKranti, 
+          l10n.krushiKranti,
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 28,
-            fontWeight: FontWeight.w700, 
-            height: 1.0, 
+            fontWeight: FontWeight.w700,
+            height: 1.0,
             letterSpacing: 0.5,
           ),
         ),
@@ -508,7 +519,7 @@ class _HomeScreenState extends State<HomeScreen> {
               colors: [
                 AppColors.brandGreen,
                 AppColors.brandGreen.withOpacity(0.8),
-        ],
+              ],
             ),
           ),
         ),
@@ -528,124 +539,129 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Profile completion nudges (non-blocking) - ONLY SHOW ON HOME SCREEN
                   // These cards should only appear on the Home tab, not in Account or other sections
                   if (!_hasPersonalDetails && _isInitialLoadComplete) ...[
-              _buildCompletionCard(
-                icon: Icons.person_outline_rounded,
-                title: 'Complete your profile',
-                message:
-                    'Add your basic details so we can personalise Krushi Kranti for you.',
-                ctaLabel: 'Complete now',
-                onTap: () async {
-                  final result = await Navigator.pushNamed(context, AppRoutes.myDetails);
-                  // Refresh data when returning from profile screen
-                  // Add small delay to ensure data is saved
-                  await Future.delayed(const Duration(milliseconds: 300));
-                  if (mounted) {
-                    await _refreshAllData();
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (_totalFarms == 0 && _isInitialLoadComplete) ...[
-              _buildCompletionCard(
-                icon: Icons.agriculture_rounded,
-                title: 'Add your first farm',
-                message:
-                    'Add at least one farm to see farm-specific insights and crops.',
-                ctaLabel: 'Add farm',
-                onTap: () async {
-                  final result = await Navigator.pushNamed(context, AppRoutes.addFarm);
-                  // Refresh data when returning from add farm screen
-                  // Add small delay to ensure data is saved
-                  await Future.delayed(const Duration(milliseconds: 300));
-                  if (mounted) {
-                    await _refreshAllData();
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (_totalFarms > 0 && !_hasCrops && _isInitialLoadComplete) ...[
-              _buildCompletionCard(
-                icon: Icons.grass_rounded,
-                title: 'Add your first crop',
-                message:
-                    'Add at least one crop to start getting guidance and forecasts.',
-                ctaLabel: 'Add crop',
-                onTap: () async {
-                  final result = await Navigator.pushNamed(context, AppRoutes.addCrop);
-                  // Refresh data when returning from add crop screen
-                  // Add small delay to ensure data is saved
-                  await Future.delayed(const Duration(milliseconds: 300));
-                  if (mounted) {
-                    await _refreshAllData();
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-            
-            // B. All Farms Verified Banner (if all farms are verified)
-            if (_allFarmsVerified) ...[
-              _buildAllFarmsVerifiedCard(l10n),
-              const SizedBox(height: 20),
-            ],
-            
-            // D. Field Officer Banner (only show if not all farms are verified)
-            if (!_allFarmsVerified) ...[
-              if (isLoadingAssignments)
-                _buildLoadingBanner(l10n)
-              else ...[
-                // Show assigned field officer card if there are assignments
-                if (isAgentAssigned) ...[
-                  _buildFieldOfficerAssignedCard(l10n),
+                    _buildCompletionCard(
+                      icon: Icons.person_outline_rounded,
+                      title: 'Complete your profile',
+                      message:
+                          'Add your basic details so we can personalise Krushi Kranti for you.',
+                      ctaLabel: 'Complete now',
+                      onTap: () async {
+                        final result = await Navigator.pushNamed(
+                            context, AppRoutes.myDetails);
+                        // Refresh data when returning from profile screen
+                        // Add small delay to ensure data is saved
+                        await Future.delayed(const Duration(milliseconds: 300));
+                        if (mounted) {
+                          await _refreshAllData();
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_totalFarms == 0 && _isInitialLoadComplete) ...[
+                    _buildCompletionCard(
+                      icon: Icons.agriculture_rounded,
+                      title: 'Add your first farm',
+                      message:
+                          'Add at least one farm to see farm-specific insights and crops.',
+                      ctaLabel: 'Add farm',
+                      onTap: () async {
+                        final result = await Navigator.pushNamed(
+                            context, AppRoutes.addFarm);
+                        // Refresh data when returning from add farm screen
+                        // Add small delay to ensure data is saved
+                        await Future.delayed(const Duration(milliseconds: 300));
+                        if (mounted) {
+                          await _refreshAllData();
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_totalFarms > 0 &&
+                      !_hasCrops &&
+                      _isInitialLoadComplete) ...[
+                    _buildCompletionCard(
+                      icon: Icons.grass_rounded,
+                      title: 'Add your first crop',
+                      message:
+                          'Add at least one crop to start getting guidance and forecasts.',
+                      ctaLabel: 'Add crop',
+                      onTap: () async {
+                        final result = await Navigator.pushNamed(
+                            context, AppRoutes.addCrop);
+                        // Refresh data when returning from add crop screen
+                        // Add small delay to ensure data is saved
+                        await Future.delayed(const Duration(milliseconds: 300));
+                        if (mounted) {
+                          await _refreshAllData();
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // B. All Farms Verified Banner (if all farms are verified)
+                  if (_allFarmsVerified) ...[
+                    _buildAllFarmsVerifiedCard(l10n),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // D. Field Officer Banner (only show if not all farms are verified)
+                  if (!_allFarmsVerified) ...[
+                    if (isLoadingAssignments)
+                      _buildLoadingBanner(l10n)
+                    else ...[
+                      // Show assigned field officer card if there are assignments
+                      if (isAgentAssigned) ...[
+                        _buildFieldOfficerAssignedCard(l10n),
+                        const SizedBox(height: 16),
+                      ],
+                      // Show pending banner for unassigned farms
+                      if (_unassignedFarms.isNotEmpty) ...[
+                        _buildFieldOfficerPendingBanner(l10n),
+                      ],
+                    ],
+                  ],
+
+                  const SizedBox(height: 24),
+
+                  // E. Quick Action Title
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text(
+                      l10n.quickAction,
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                ],
-                // Show pending banner for unassigned farms
-                if (_unassignedFarms.isNotEmpty) ...[
-                  _buildFieldOfficerPendingBanner(l10n),
-                ],
-              ],
-            ],
-            
-            const SizedBox(height: 24),
 
-            // E. Quick Action Title
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: Text(
-              l10n.quickAction,
-              style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
+                  // F. Grid
+                  _buildQuickActionGrid(context, l10n),
 
-            // F. Grid
-            _buildQuickActionGrid(context, l10n),
-            
-            const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-            // G. Alerts
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: Text(
-              l10n.alerts,
-              style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildAlertCard(context),
-            const SizedBox(height: 32),
+                  // G. Alerts
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text(
+                      l10n.alerts,
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildAlertCard(context),
+                  const SizedBox(height: 32),
                 ],
               ),
             )
@@ -670,13 +686,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           width: 44,
           height: 44,
-      decoration: BoxDecoration(
+          decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.2),
-        shape: BoxShape.circle,
+            shape: BoxShape.circle,
             border: Border.all(
               color: Colors.white.withOpacity(0.3),
               width: 1,
-      ),
+            ),
           ),
           child: Icon(icon, color: Colors.white, size: 22),
         ),
@@ -687,7 +703,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNotificationIcon() {
     final unreadCount = _notificationService.unreadOtpNotificationsCount;
     final hasUnreadNotifications = unreadCount > 0;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -743,121 +759,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWeatherHeader(AppLocalizations l10n) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.creamBackground,
-            AppColors.creamBackground.withOpacity(0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "${l10n.hello} Ramesh,", 
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.brandGreen,
-                    height: 1.2,
-                    letterSpacing: 0.3,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on_rounded,
-                      size: 16,
-                      color: Colors.grey.shade700,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        l10n.currentLocation, 
-                        style: GoogleFonts.poppins(
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500, 
-                          fontSize: 13,
-                          letterSpacing: 0.2,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "28°", 
-                    style: GoogleFonts.poppins(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w700, 
-                      color: AppColors.textPrimary,
-                      height: 1.0,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "High: 30° / Low: 15°", 
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: Colors.grey.shade700, 
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.cloud_rounded,
-                  size: 40,
-                  color: Color(0xFF29B6F6),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    // Use the WeatherCard widget to show real weather data
+    // from the backend farmer-service weather API
+    return const WeatherCard(
+      farmId: null, // null means use primary farm
+      showForecast: true,
     );
   }
 
@@ -867,7 +773,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)], 
+          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -894,19 +800,19 @@ class _HomeScreenState extends State<HomeScreen> {
       final farmName = farm['farmName'] ?? 'Farm ${farmId}';
       unassignedFarmNames.add(farmName.toString());
     }
-    
+
     final String farmNamesText = unassignedFarmNames.isEmpty
         ? ''
         : unassignedFarmNames.length == 1
             ? unassignedFarmNames.first
             : unassignedFarmNames.join(', ');
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)], 
+          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1003,7 +909,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)], 
+          colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1069,16 +975,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Get the first active assignment (all should have same field officer)
     final assignment = fieldOfficerAssignments.first;
-    final fieldOfficerName = assignment['fieldOfficerName']?.toString() ?? 'Field Officer';
+    final fieldOfficerName =
+        assignment['fieldOfficerName']?.toString() ?? 'Field Officer';
     final fieldOfficerPhone = assignment['fieldOfficerPhone']?.toString() ?? '';
-    final fieldOfficerPincode = assignment['fieldOfficerPincode']?.toString() ?? '';
-    
+    final fieldOfficerPincode =
+        assignment['fieldOfficerPincode']?.toString() ?? '';
+
     // Get all farm IDs from assignments and their names
     final List<String> assignedFarmNames = [];
     for (var assign in fieldOfficerAssignments) {
       final farmId = assign['farmId'];
       if (farmId != null) {
-        final farmIdInt = farmId is int ? farmId : int.tryParse(farmId.toString());
+        final farmIdInt =
+            farmId is int ? farmId : int.tryParse(farmId.toString());
         if (farmIdInt != null && _farmNames.containsKey(farmIdInt)) {
           assignedFarmNames.add(_farmNames[farmIdInt]!);
         } else {
@@ -1090,25 +999,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-      onTap: () {
-        _showFieldOfficerDetailsDialog(l10n);
-      },
+        onTap: () {
+          _showFieldOfficerDetailsDialog(l10n);
+        },
         borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-          boxShadow: [
+            boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.04),
                 blurRadius: 15,
                 offset: const Offset(0, 4),
               ),
-          ],
-        ),
-        child: Row(
-          children: [
+            ],
+          ),
+          child: Row(
+            children: [
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
@@ -1122,34 +1031,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: const CircleAvatar(
                   radius: 28,
-              backgroundColor: AppColors.creamBackground,
-                  child: Icon(Icons.person_rounded, color: Colors.brown, size: 30),
+                  backgroundColor: AppColors.creamBackground,
+                  child:
+                      Icon(Icons.person_rounded, color: Colors.brown, size: 30),
                 ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.fieldOfficerAssignedMsg,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.fieldOfficerAssignedMsg,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: Colors.grey.shade600,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.2,
                       ),
-                  ),
+                    ),
                     const SizedBox(height: 6),
-                  Text(
-                    fieldOfficerName,
+                    Text(
+                      fieldOfficerName,
                       style: GoogleFonts.poppins(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                         color: Colors.black87,
                         letterSpacing: 0.2,
                       ),
-                  ),
+                    ),
                     if (fieldOfficerPincode.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Row(
@@ -1160,19 +1070,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.grey.shade600,
                           ),
                           const SizedBox(width: 4),
-                    Text(
-                      "${l10n.pincodeLabel} $fieldOfficerPincode",
+                          Text(
+                            "${l10n.pincodeLabel} $fieldOfficerPincode",
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: Colors.grey.shade600,
                               fontWeight: FontWeight.w500,
-                    ),
+                            ),
                           ),
                         ],
                       ),
                     ],
                     if (fieldOfficerPhone.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           Icon(
@@ -1181,13 +1091,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.grey.shade600,
                           ),
                           const SizedBox(width: 4),
-                    Text(
-                      fieldOfficerPhone,
+                          Text(
+                            fieldOfficerPhone,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Colors.black87,
-                    ),
+                            ),
                           ),
                         ],
                       ),
@@ -1218,38 +1128,39 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ],
-                  if (fieldOfficerAssignments.length > 1)
-                    Padding(
+                    if (fieldOfficerAssignments.length > 1)
+                      Padding(
                         padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        l10n.moreAssignments(fieldOfficerAssignments.length - 1),
+                        child: Text(
+                          l10n.moreAssignments(
+                              fieldOfficerAssignments.length - 1),
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             color: AppColors.brandGreen,
                             fontWeight: FontWeight.w600,
                           ),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
                   color: AppColors.brandGreen.withOpacity(0.1),
-                shape: BoxShape.circle,
+                  shape: BoxShape.circle,
                   border: Border.all(
                     color: AppColors.brandGreen.withOpacity(0.3),
                     width: 1.5,
                   ),
-              ),
+                ),
                 child: const Icon(
                   Icons.arrow_forward_ios_rounded,
                   color: AppColors.brandGreen,
                   size: 18,
                 ),
-            ),
-          ],
+              ),
+            ],
           ),
         ),
       ),
@@ -1286,15 +1197,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildQuickActionGrid(BuildContext context, AppLocalizations l10n) {
-    final String cropStatus = isAgentAssigned ? l10n.active : l10n.pending; 
-    final Color cropStatusColor = isAgentAssigned ? AppColors.brandGreen : AppColors.pendingStatus;
+    final String cropStatus = isAgentAssigned ? l10n.active : l10n.pending;
+    final Color cropStatusColor =
+        isAgentAssigned ? AppColors.brandGreen : AppColors.pendingStatus;
 
     final items = [
       {
-        "icon": Icons.grass, 
+        "icon": Icons.grass,
         "title": l10n.cropDetail,
         "route": AppRoutes.cropList,
-        "status": cropStatus, 
+        "status": cropStatus,
         "statusColor": cropStatusColor,
         "isPremium": false,
         "requiresPersonal": false,
@@ -1302,7 +1214,7 @@ class _HomeScreenState extends State<HomeScreen> {
         "requiresCrop": true,
       },
       {
-        "icon": Icons.bar_chart, 
+        "icon": Icons.bar_chart,
         "title": l10n.dailySale,
         "route": AppRoutes.sell,
         "status": l10n.pending,
@@ -1314,7 +1226,7 @@ class _HomeScreenState extends State<HomeScreen> {
         "requiresCrop": true,
       },
       {
-        "icon": Icons.monetization_on_outlined, 
+        "icon": Icons.monetization_on_outlined,
         "title": l10n.funding,
         "route": AppRoutes.requestFunds,
         "status": l10n.pending,
@@ -1325,7 +1237,7 @@ class _HomeScreenState extends State<HomeScreen> {
         "requiresCrop": false,
       },
       {
-        "icon": Icons.account_balance_wallet_outlined, 
+        "icon": Icons.account_balance_wallet_outlined,
         "title": l10n.account,
         "route": null,
         "status": l10n.pending,
@@ -1343,7 +1255,7 @@ class _HomeScreenState extends State<HomeScreen> {
       itemCount: items.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.95, 
+        childAspectRatio: 0.95,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -1365,11 +1277,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActionCard(
-    BuildContext context, 
-    IconData icon, 
-    String title, 
-    String? route, 
-    String status, 
+    BuildContext context,
+    IconData icon,
+    String title,
+    String? route,
+    String status,
     Color statusColor,
     bool isPremium,
     bool requiresPersonal,
@@ -1436,13 +1348,13 @@ class _HomeScreenState extends State<HomeScreen> {
             setState(() {
               isNavigating = true;
             });
-            
+
             // Show loading dialog
             _showLoadingDialog(context);
-            
+
             // Small delay to show loading animation
             await Future.delayed(const Duration(milliseconds: 500));
-            
+
             // Hide loading dialog and navigate
             if (mounted) {
               Navigator.pop(context); // Close loading dialog
@@ -1498,7 +1410,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Icon(icon, color: Colors.white, size: 24),
               ),
-              
               Padding(
                 padding: const EdgeInsets.only(top: 12.0),
                 child: Text(
@@ -1514,7 +1425,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.only(top: 12.0),
                 child: Row(
@@ -1529,7 +1439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          status, 
+                          status,
                           style: GoogleFonts.poppins(
                             color: statusColor,
                             fontSize: 11,
@@ -1635,11 +1545,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     "Lorem Ipsum is simply dummy text of the printing.",
                     style: GoogleFonts.poppins(
                       fontSize: 13,
-                      color: AppColors.alertText, 
+                      color: AppColors.alertText,
                       fontWeight: FontWeight.w500,
                       height: 1.4,
                       letterSpacing: 0.2,
-                    ), 
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1649,7 +1559,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(width: 12),
-
         Material(
           color: Colors.transparent,
           child: InkWell(
@@ -1658,7 +1567,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             borderRadius: BorderRadius.circular(32),
             child: Container(
-              width: 64, 
+              width: 64,
               height: 64,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -1712,7 +1621,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
                     strokeWidth: 3,
                   ),
                   const SizedBox(height: 20),
@@ -1823,7 +1733,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
               Icon(icon, color: AppColors.brandGreen),
@@ -1931,12 +1842,12 @@ class _OtpNotificationBannerState extends State<_OtpNotificationBanner> {
 
   void _updateRemainingTime() {
     if (!mounted) return;
-    
+
     final now = DateTime.now();
     const otpExpirationDuration = Duration(minutes: 10);
     final age = now.difference(widget.notification.timestamp);
     final remaining = otpExpirationDuration - age;
-    
+
     setState(() {
       _remainingTime = remaining.isNegative ? Duration.zero : remaining;
     });
@@ -1958,8 +1869,9 @@ class _OtpNotificationBannerState extends State<_OtpNotificationBanner> {
   Widget build(BuildContext context) {
     final otp = widget.notification.data?['otp'] ?? '';
     final farmName = widget.notification.data?['farmName'] ?? 'Farm';
-    final fieldOfficerName = widget.notification.data?['fieldOfficerName'] ?? 'Field Officer';
-    
+    final fieldOfficerName =
+        widget.notification.data?['fieldOfficerName'] ?? 'Field Officer';
+
     final isExpiringSoon = _remainingTime.inMinutes < 2;
     final isExpired = _remainingTime.inSeconds <= 0;
 
@@ -1968,168 +1880,170 @@ class _OtpNotificationBannerState extends State<_OtpNotificationBanner> {
     }
 
     return Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isExpiringSoon
-                ? [Colors.red.shade400, Colors.red.shade600]
-                : [Colors.orange.shade400, Colors.orange.shade600],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: (isExpiringSoon ? Colors.red : Colors.orange).withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isExpiringSoon
+              ? [Colors.red.shade400, Colors.red.shade600]
+              : [Colors.orange.shade400, Colors.orange.shade600],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.verified_user,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color:
+                (isExpiringSoon ? Colors.red : Colors.orange).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Farm Verification OTP',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                child: const Icon(
+                  Icons.verified_user,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Farm Verification OTP',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$fieldOfficerName is verifying "$farmName"',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$fieldOfficerName is verifying "$farmName"',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.9),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                onPressed: () {
+                  widget.notificationService
+                      .removeNotification(widget.notification.id);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Your OTP Code',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      otp,
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 4,
+                      ),
+                    ),
+                  ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                  icon: const Icon(Icons.copy, color: Colors.white, size: 24),
                   onPressed: () {
-                    widget.notificationService.removeNotification(widget.notification.id);
+                    Clipboard.setData(ClipboardData(text: otp));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('OTP copied to clipboard: $otp'),
+                        backgroundColor: AppColors.success,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
                   },
+                  tooltip: 'Copy OTP',
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 2,
+          ),
+          const SizedBox(height: 12),
+          // Countdown Timer
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.timer_outlined,
+                  color: Colors.white,
+                  size: 18,
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Your OTP Code',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.9),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        otp,
-                        style: GoogleFonts.poppins(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 4,
-                        ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.copy, color: Colors.white, size: 24),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: otp));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('OTP copied to clipboard: $otp'),
-                          backgroundColor: AppColors.success,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    tooltip: 'Copy OTP',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Countdown Timer
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.timer_outlined,
+                const SizedBox(width: 8),
+                Text(
+                  'Expires in: ${_formatDuration(_remainingTime)}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     color: Colors.white,
-                    size: 18,
+                    letterSpacing: 0.5,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Expires in: ${_formatDuration(_remainingTime)}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Please share this OTP with the field officer to complete verification.',
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                color: Colors.white.withOpacity(0.9),
-                fontStyle: FontStyle.italic,
-              ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Please share this OTP with the field officer to complete verification.',
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.9),
+              fontStyle: FontStyle.italic,
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 }

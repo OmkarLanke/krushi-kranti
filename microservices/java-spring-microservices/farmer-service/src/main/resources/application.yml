@@ -60,6 +60,22 @@ services:
   field-officer-service:
     url: http://localhost:4015
 
+# Weather API Configuration
+weather:
+  api:
+    # Base URL for WeatherAPI.com
+    base-url: https://api.weatherapi.com/v1
+    # API key - Get free key from https://www.weatherapi.com/signup.aspx
+    # Replace with your actual key or use environment variable ${WEATHER_API_KEY}
+    key: ${WEATHER_API_KEY:your_api_key_here}
+
+# Cache Configuration for Weather Data
+spring.cache:
+  type: caffeine
+  cache-names: currentWeather,weatherForecast
+  caffeine:
+    spec: maximumSize=500,expireAfterWrite=30m
+
 logging:
   level:
     root: INFO

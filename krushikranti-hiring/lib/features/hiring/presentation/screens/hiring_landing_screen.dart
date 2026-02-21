@@ -66,7 +66,7 @@ class HiringLandingScreen extends StatelessWidget {
                                 const SizedBox(height: 24),
                                 _buildSubtitle(),
                                 const SizedBox(height: 48),
-                                _buildNextButton(context),
+                                _buildRoleCards(context),
                                 
                                 const Spacer(),
                               ],
@@ -123,7 +123,7 @@ class HiringLandingScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             _buildSubtitle(),
                             const SizedBox(height: 40), 
-                            _buildNextButton(context),
+                            _buildRoleCards(context),
                             const SizedBox(height: 20), 
                           ],
                         ),
@@ -176,55 +176,161 @@ class HiringLandingScreen extends StatelessWidget {
 
   Widget _buildTitle() {
     return Text(
-      AppStrings.tr('apply_title'), 
+      AppStrings.tr('brand_name'), // "Krushi Kranti"
       style: GoogleFonts.poppins(
-        fontSize: 32, // Slightly larger for better impact
+        fontSize: 32,
         fontWeight: FontWeight.bold,
-        color: const Color(0xFF1B5E20), // Darker Green for better readability
+        color: const Color(0xFF1B5E20),
         height: 1.2,
       ),
     );
   }
 
   Widget _buildSubtitle() {
-    return Text(
-      AppStrings.tr('apply_subtitle'), 
-      style: GoogleFonts.poppins(
-        fontSize: 16,
-        color: Colors.grey[700],
-        height: 1.6,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppStrings.tr('continue_as'), // "Continue as"
+          style: GoogleFonts.poppins(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          AppStrings.tr('role_desc'), // "Choose form to work as..."
+          style: GoogleFonts.poppins(
+            fontSize: 15,
+            color: Colors.grey[700],
+            height: 1.6,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleCards(BuildContext context) {
+    return Column(
+      children: [
+        _buildRoleCard(
+          context,
+          title: AppStrings.tr('role_field_officer'),
+          subtitle: AppStrings.tr('role_officer_desc'),
+          avatarColor: Colors.purple.shade100,
+          icon: Icons.nature_people, // 🌿 Nature/Field
+          iconColor: Colors.deepPurple,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ApplicationFormScreen(roleType: 'FIELD_OFFICER')),
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        _buildRoleCard(
+          context,
+          title: AppStrings.tr('role_tadnya'),
+          subtitle: AppStrings.tr('role_tadnya_desc'),
+          avatarColor: Colors.orange.shade100,
+          icon: Icons.psychology, // 🧠 Knowledge/Expert
+          iconColor: Colors.deepOrange,
+          onTap: () => _showComingSoon(context),
+        ),
+        const SizedBox(height: 20),
+        _buildRoleCard(
+          context,
+          title: AppStrings.tr('role_shopkeeper'),
+          subtitle: AppStrings.tr('role_shopkeeper_desc'),
+          avatarColor: Colors.blue.shade100,
+          icon: Icons.storefront, // 🏪 Shop
+          iconColor: Colors.blue[800]!,
+          onTap: () => _showComingSoon(context),
+        ),
+      ],
+    );
+  }
+
+  void _showComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppStrings.tr('coming_soon') ?? "Coming Soon"),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.black87,
       ),
     );
   }
 
-  Widget _buildNextButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56, 
-              child: ElevatedButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ApplicationFormScreen(),
-            ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFFD700), // Brand Yellow
-          foregroundColor: Colors.black, 
-          elevation: 4, // Subtle shadow
-          shadowColor: const Color(0xFFFFD700).withValues(alpha: 0.4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+  Widget _buildRoleCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required Color avatarColor,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        child: Text(
-          AppStrings.tr('next'), 
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              children: [
+                Container(
+                  height: 60, width: 60,
+                  decoration: BoxDecoration(
+                    color: avatarColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: iconColor, size: 32),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title.toUpperCase(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: Colors.grey[700],
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
