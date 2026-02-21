@@ -28,6 +28,7 @@ public class JobApplicationController {
             @RequestParam("fullName") String fullName,
             @RequestParam(value = "mobile", required = false) String mobile,
             @RequestParam(value = "email", required = false) String email,
+            @RequestParam(value = "dob", required = false) String dob,
             @RequestParam(value = "locationText", required = false) String locationText,
             @RequestParam(value = "highestQualification", required = false) String highestQualification,
             @RequestParam(value = "institution", required = false) String institution,
@@ -43,6 +44,7 @@ public class JobApplicationController {
         req.fullName = fullName;
         req.mobile = mobile;
         req.email = email;
+        req.dob = dob;
         req.locationText = locationText;
         req.highestQualification = highestQualification;
         req.institution = institution;

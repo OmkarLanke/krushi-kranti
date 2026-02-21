@@ -14,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
 import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +57,29 @@ public class JobApplicationService {
                     entity.setFullName(req.fullName);
                     entity.setMobile(req.mobile);
                     entity.setEmail(req.email);
+                    
+                    // Parse DOB from ISO 8601 string to OffsetDateTime
+                    log.info("Received DOB parameter: '{}'", req.dob);
+                    if (req.dob != null && !req.dob.isEmpty()) {
+                        try {
+                            OffsetDateTime parsedDob;
+                            if (req.dob.contains("T") && !req.dob.contains("Z") && !req.dob.contains("+")) {
+                                // Handle ISO string without timezone (e.g., "2006-02-21T00:00:00.000")
+                                LocalDateTime localDateTime = LocalDateTime.parse(req.dob);
+                                parsedDob = localDateTime.atOffset(ZoneOffset.UTC);
+                            } else {
+                                // Handle full ISO string with timezone
+                                parsedDob = OffsetDateTime.parse(req.dob);
+                            }
+                            entity.setDob(parsedDob);
+                            log.info("Successfully parsed DOB: {}", parsedDob);
+                        } catch (Exception e) {
+                            log.warn("Failed to parse DOB: {} - Error: {}", req.dob, e.getMessage());
+                        }
+                    } else {
+                        log.warn("DOB parameter is null or empty");
+                    }
+                    
                     entity.setLocationText(req.locationText);
                     entity.setHighestQualification(req.highestQualification);
                     entity.setInstitution(req.institution);
