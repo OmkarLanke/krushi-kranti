@@ -170,6 +170,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
 
   # Kafka
   kafka:
@@ -454,4 +457,6 @@ volumes:
   job-application-db-data:
   redis-data:
   kafka-data:
+  zookeeper-data:
+  zookeeper-logs:
 
