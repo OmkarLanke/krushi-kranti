@@ -2965,7 +2965,7 @@ and which approach will be good
 
 **Cursor**
 
-Great question! Let me explain the key differences between Neon Projects and Branches, and recommend the best approach for your use case.
+Great question! Let me explain the key differences between  Projects and Branches, and recommend the best approach for your use case.
 
 ## Neon Projects vs Branches
 
