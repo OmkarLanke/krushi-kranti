@@ -1,0 +1,468 @@
+{
+	"info": {
+		"_postman_id": "job-app-service-collection",
+		"name": "Job Application Service",
+		"description": "API collection for KrushiKranti Job Application Service (port 8086)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8086",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actuator/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["actuator", "health"]
+						},
+						"description": "Check if the service is running and healthy"
+					},
+					"response": []
+				},
+				{
+					"name": "Service Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actuator/info",
+							"host": ["{{baseUrl}}"],
+							"path": ["actuator", "info"]
+						},
+						"description": "Get service info"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Job Applications",
+			"item": [
+				{
+					"name": "Create Application - Field Officer (All Fields)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "roleType",
+									"value": "FIELD_OFFICER",
+									"type": "text",
+									"description": "Required. Role type: FIELD_OFFICER, KRUSHI_TADNYA, VENDOR"
+								},
+								{
+									"key": "fullName",
+									"value": "Rahul Sharma",
+									"type": "text",
+									"description": "Required. Full name of applicant"
+								},
+								{
+									"key": "mobile",
+									"value": "9876543210",
+									"type": "text",
+									"description": "Mobile number"
+								},
+								{
+									"key": "email",
+									"value": "rahul.sharma@example.com",
+									"type": "text",
+									"description": "Email address"
+								},
+								{
+									"key": "locationText",
+									"value": "Pune, Maharashtra",
+									"type": "text",
+									"description": "Location / address"
+								},
+								{
+									"key": "highestQualification",
+									"value": "B.Sc Agriculture",
+									"type": "text",
+									"description": "Highest qualification"
+								},
+								{
+									"key": "institution",
+									"value": "Pune University",
+									"type": "text",
+									"description": "Institution name"
+								},
+								{
+									"key": "yearOfCompletion",
+									"value": "2022",
+									"type": "text",
+									"description": "Year of completion"
+								},
+								{
+									"key": "yearsExperience",
+									"value": "3",
+									"type": "text",
+									"description": "Years of experience"
+								},
+								{
+									"key": "relevantExperience",
+									"value": "Worked as field assistant at AgriTech Solutions for 2 years. Handled crop monitoring and farmer interactions.",
+									"type": "text",
+									"description": "Relevant experience details"
+								},
+								{
+									"key": "lastEmployerRole",
+									"value": "Field Assistant at AgriTech Solutions",
+									"type": "text",
+									"description": "Last employer and role"
+								},
+								{
+									"key": "vehicleAvailable",
+									"value": "true",
+									"type": "text",
+									"description": "Has own vehicle? true/false"
+								},
+								{
+									"key": "willingForFieldVisit",
+									"value": "true",
+									"type": "text",
+									"description": "Willing for field visits? true/false"
+								},
+								{
+									"key": "resume",
+									"type": "file",
+									"src": [],
+									"description": "Optional. Resume file (PDF/DOC)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/applications",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications"]
+						},
+						"description": "Submit a new job application with all fields filled"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Application - Minimal (Required Only)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "roleType",
+									"value": "VENDOR",
+									"type": "text",
+									"description": "Required. Role type"
+								},
+								{
+									"key": "fullName",
+									"value": "Priya Patil",
+									"type": "text",
+									"description": "Required. Full name"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/applications",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications"]
+						},
+						"description": "Submit a new application with only required fields (roleType + fullName)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Application - Krushi Tadnya",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "roleType",
+									"value": "KRUSHI_TADNYA",
+									"type": "text"
+								},
+								{
+									"key": "fullName",
+									"value": "Amit Deshmukh",
+									"type": "text"
+								},
+								{
+									"key": "mobile",
+									"value": "9988776655",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "amit.deshmukh@example.com",
+									"type": "text"
+								},
+								{
+									"key": "highestQualification",
+									"value": "M.Sc Agronomy",
+									"type": "text"
+								},
+								{
+									"key": "yearsExperience",
+									"value": "5",
+									"type": "text"
+								},
+								{
+									"key": "relevantExperience",
+									"value": "Expert in crop disease identification and soil testing. 5 years in agricultural advisory.",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/applications",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications"]
+						},
+						"description": "Submit a Krushi Tadnya application"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin - Review Applications",
+			"item": [
+				{
+					"name": "Get All Applications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/applications",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications"]
+						},
+						"description": "Get all job applications (no filters)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Applications by Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/applications?status=SCREENING",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications"],
+							"query": [
+								{
+									"key": "status",
+									"value": "SCREENING",
+									"description": "Filter by status: SCREENING, SHORTLISTED, INTERVIEW_SCHEDULED, SELECTED, REJECTED"
+								}
+							]
+						},
+						"description": "Get applications filtered by status"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Applications by Role Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/applications?roleType=FIELD_OFFICER",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications"],
+							"query": [
+								{
+									"key": "roleType",
+									"value": "FIELD_OFFICER",
+									"description": "Filter by role: FIELD_OFFICER, KRUSHI_TADNYA, VENDOR"
+								}
+							]
+						},
+						"description": "Get applications filtered by role type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Applications with Multiple Filters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/applications?status=SCREENING&roleType=FIELD_OFFICER",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications"],
+							"query": [
+								{
+									"key": "status",
+									"value": "SCREENING",
+									"description": "Status filter"
+								},
+								{
+									"key": "roleType",
+									"value": "FIELD_OFFICER",
+									"description": "Role type filter"
+								}
+							]
+						},
+						"description": "Get applications with both status and role type filters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Application by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/applications/:applicantId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications", ":applicantId"],
+							"variable": [
+								{
+									"key": "applicantId",
+									"value": "7abb617b-4975-4ca0-90aa-d80d9ee4d04e",
+									"description": "UUID of the applicant"
+								}
+							]
+						},
+						"description": "Get a single application by applicant ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Status - Shortlist",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"SHORTLISTED\",\n  \"remarks\": \"Good qualifications and relevant experience\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/applications/:applicantId/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications", ":applicantId", "status"],
+							"variable": [
+								{
+									"key": "applicantId",
+									"value": "7abb617b-4975-4ca0-90aa-d80d9ee4d04e",
+									"description": "UUID of the applicant"
+								}
+							]
+						},
+						"description": "Update application status to SHORTLISTED"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Status - Schedule Interview",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"INTERVIEW_SCHEDULED\",\n  \"remarks\": \"Interview scheduled for next Monday at 10 AM\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/applications/:applicantId/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications", ":applicantId", "status"],
+							"variable": [
+								{
+									"key": "applicantId",
+									"value": "7abb617b-4975-4ca0-90aa-d80d9ee4d04e"
+								}
+							]
+						},
+						"description": "Update application status to INTERVIEW_SCHEDULED"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Status - Select",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"SELECTED\",\n  \"remarks\": \"Congratulations! You have been selected for the position.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/applications/:applicantId/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications", ":applicantId", "status"],
+							"variable": [
+								{
+									"key": "applicantId",
+									"value": "7abb617b-4975-4ca0-90aa-d80d9ee4d04e"
+								}
+							]
+						},
+						"description": "Update application status to SELECTED"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Status - Reject",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"REJECTED\",\n  \"remarks\": \"Does not meet minimum experience requirements\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/applications/:applicantId/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "applications", ":applicantId", "status"],
+							"variable": [
+								{
+									"key": "applicantId",
+									"value": "7abb617b-4975-4ca0-90aa-d80d9ee4d04e"
+								}
+							]
+						},
+						"description": "Update application status to REJECTED"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

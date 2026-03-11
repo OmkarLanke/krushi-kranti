@@ -81,6 +81,32 @@ public class EmailService {
     }
 
     /**
+     * Send a generic email that can be triggered by other services.
+     */
+    public void sendEmail(String toEmail, String subject, String body, boolean isHtml) {
+        log.info("Sending email to: {}", toEmail);
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject(subject != null && !subject.isBlank() ? subject : "Notification from Krushi Kranti");
+            helper.setText(body != null ? body : "", isHtml);
+
+            mailSender.send(message);
+            log.info("Email sent successfully to: {}", toEmail);
+        } catch (MessagingException e) {
+            log.error("Failed to send email to: {}", toEmail, e);
+            throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Unexpected error sending email to: {}", toEmail, e);
+            throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Build HTML email body for password reset.
      */
     private String buildPasswordResetEmailHtml(String userName, String buttonLink, String deepLink, String token) {

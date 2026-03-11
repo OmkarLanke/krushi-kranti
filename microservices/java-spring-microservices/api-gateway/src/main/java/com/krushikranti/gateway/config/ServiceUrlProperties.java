@@ -28,5 +28,6 @@ public class ServiceUrlProperties {
     private String subscriptionService = "http://localhost:4013";
     private String kycService = "http://localhost:4014";
     private String fieldOfficerService = "http://localhost:4015";
+    private String jobApplicationService = "http://localhost:4017";
 }
 

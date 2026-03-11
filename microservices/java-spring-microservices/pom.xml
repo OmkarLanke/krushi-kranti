@@ -52,6 +52,7 @@
         <module>kyc-service</module>
         <module>file-service</module>
         <module>notification-service</module>
+        <module>job-application-service</module>
     </modules>
 
     <dependencyManagement>
@@ -90,6 +91,11 @@
                 <groupId>net.devh</groupId>
                 <artifactId>grpc-spring-boot-starter</artifactId>
                 <version>3.0.0.RELEASE</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>net.devh</groupId>

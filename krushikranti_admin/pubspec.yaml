@@ -32,6 +32,12 @@ dependencies:
   
   # Charts (for dashboard)
   fl_chart: ^0.66.0
+  
+  # URL Launcher
+  url_launcher: ^6.2.4
+  
+  # File Picker
+  file_picker: ^8.0.0+1
 
 dev_dependencies:
   flutter_test:

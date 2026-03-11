@@ -25,16 +25,57 @@ class Sidebar extends StatelessWidget {
   });
 
   static final List<SidebarItem> items = [
-    SidebarItem(title: 'Dashboard', icon: Icons.dashboard_rounded, routeName: 'dashboard'),
-    SidebarItem(title: 'Farmer', icon: Icons.people_rounded, routeName: 'farmers'),
-    SidebarItem(title: 'Field Officer', icon: Icons.badge_rounded, routeName: 'field-officers'),
-    SidebarItem(title: 'Product & Pricing', icon: Icons.inventory_2_rounded, routeName: 'products'),
-    SidebarItem(title: 'Inventory', icon: Icons.warehouse_rounded, routeName: 'inventory'),
-    SidebarItem(title: 'Order & Logistics', icon: Icons.local_shipping_rounded, routeName: 'orders'),
-    SidebarItem(title: 'Payment & Finance', icon: Icons.payment_rounded, routeName: 'payments'),
+    SidebarItem(
+      title: 'Dashboard',
+      icon: Icons.dashboard_rounded,
+      routeName: 'dashboard',
+    ),
+    SidebarItem(
+      title: 'Farmer',
+      icon: Icons.people_rounded,
+      routeName: 'farmers',
+    ),
+    SidebarItem(
+      title: 'Field Officer',
+      icon: Icons.badge_rounded,
+      routeName: 'field-officers',
+    ),
+    SidebarItem(
+      title: 'Job Applications',
+      icon: Icons.work_outline_rounded,
+      routeName: 'job-applications',
+    ),
+    SidebarItem(
+      title: 'Product & Pricing',
+      icon: Icons.inventory_2_rounded,
+      routeName: 'products',
+    ),
+    SidebarItem(
+      title: 'Inventory',
+      icon: Icons.warehouse_rounded,
+      routeName: 'inventory',
+    ),
+    SidebarItem(
+      title: 'Order & Logistics',
+      icon: Icons.local_shipping_rounded,
+      routeName: 'orders',
+    ),
+    SidebarItem(
+      title: 'Payment & Finance',
+      icon: Icons.payment_rounded,
+      routeName: 'payments',
+    ),
     SidebarItem(title: 'User', icon: Icons.person_rounded, routeName: 'users'),
-    SidebarItem(title: 'Support', icon: Icons.support_agent_rounded, routeName: 'support'),
-    SidebarItem(title: 'Configurations', icon: Icons.settings_rounded, routeName: 'settings'),
+    SidebarItem(
+      title: 'Support',
+      icon: Icons.support_agent_rounded,
+      routeName: 'support',
+    ),
+    SidebarItem(
+      title: 'Configurations',
+      icon: Icons.settings_rounded,
+      routeName: 'settings',
+    ),
   ];
 
   @override
@@ -42,7 +83,7 @@ class Sidebar extends StatelessWidget {
     return Container(
       width: 280,
       decoration: BoxDecoration(
-      color: AppColors.sidebarBackground,
+        color: AppColors.sidebarBackground,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -64,10 +105,7 @@ class Sidebar extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white,
-                      Colors.white.withOpacity(0.95),
-                    ],
+                    colors: [Colors.white, Colors.white.withOpacity(0.95)],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
@@ -127,7 +165,7 @@ class Sidebar extends StatelessWidget {
               ),
             ),
           ),
-          
+
           Container(
             height: 1,
             margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -141,9 +179,9 @@ class Sidebar extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Menu Items
           Expanded(
             child: ListView.builder(
@@ -152,12 +190,12 @@ class Sidebar extends StatelessWidget {
               itemBuilder: (context, index) {
                 final item = items[index];
                 final isSelected = currentRoute == item.routeName;
-                
+
                 return _buildMenuItem(item, isSelected);
               },
             ),
           ),
-          
+
           // Logout Button
           Container(
             padding: const EdgeInsets.all(16),
@@ -196,36 +234,36 @@ class Sidebar extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
+                  decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.brandGreenLight.withOpacity(0.2)
                         : Colors.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
-      ),
+                  ),
                   child: Icon(
-          item.icon,
+                    item.icon,
                     color: isSelected
                         ? AppColors.brandGreenLight
                         : Colors.white.withOpacity(0.8),
                     size: 20,
                   ),
-        ),
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-          item.title,
-          style: GoogleFonts.poppins(
+                    item.title,
+                    style: GoogleFonts.poppins(
                       color: isSelected
                           ? Colors.white
                           : Colors.white.withOpacity(0.85),
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.w500,
-            fontSize: 14,
+                      fontSize: 14,
                       letterSpacing: 0.2,
                     ),
-          ),
-        ),
+                  ),
+                ),
                 if (isSelected)
                   Container(
                     width: 4,
@@ -254,10 +292,7 @@ class Sidebar extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.1),
-              width: 1,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
           ),
           child: Row(
             children: [
@@ -271,15 +306,15 @@ class Sidebar extends StatelessWidget {
                   Icons.logout_rounded,
                   color: Colors.redAccent,
                   size: 20,
-      ),
+                ),
               ),
               const SizedBox(width: 14),
               Text(
-        'Logout',
-        style: GoogleFonts.poppins(
+                'Logout',
+                style: GoogleFonts.poppins(
                   color: Colors.white.withOpacity(0.9),
                   fontWeight: FontWeight.w600,
-          fontSize: 14,
+                  fontSize: 14,
                   letterSpacing: 0.2,
                 ),
               ),
@@ -290,4 +325,3 @@ class Sidebar extends StatelessWidget {
     );
   }
 }
-

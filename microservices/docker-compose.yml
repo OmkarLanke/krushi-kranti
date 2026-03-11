@@ -118,6 +118,25 @@ services:
       timeout: 5s
       retries: 5
 
+  job-application-db:
+    image: postgres:16-alpine
+    container_name: job-application-db
+    environment:
+      POSTGRES_DB: job_applications
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5454:5432"
+    volumes:
+      - job-application-db-data:/var/lib/postgresql/data
+    networks:
+      - krushi-kranti-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Redis
   redis:
     image: redis:7-alpine
@@ -151,6 +170,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
 
   # Kafka
   kafka:
@@ -257,6 +279,7 @@ services:
       - ./data:/data:ro  
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/actuator/health"]
       interval: 30s
@@ -395,6 +418,30 @@ services:
       retries: 3
       start_period: 40s
 
+  # Job Application Service
+  job-application-service:
+    build:
+      context: ./java-spring-microservices
+      dockerfile: job-application-service/Dockerfile
+    container_name: job-application-service
+    ports:
+      - "4017:4017"
+    depends_on:
+      job-application-db:
+        condition: service_healthy
+      file-service:
+        condition: service_healthy
+    networks:
+      - krushi-kranti-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4017/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 networks:
   krushi-kranti-network:
     driver: bridge
@@ -407,6 +454,9 @@ volumes:
   subscription-db-data:
   kyc-db-data:
   field-officer-db-data:
+  job-application-db-data:
   redis-data:
   kafka-data:
+  zookeeper-data:
+  zookeeper-logs:
 
