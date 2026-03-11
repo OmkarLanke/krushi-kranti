@@ -11,12 +11,12 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>job-application-service</artifactId>
+    <artifactId>support-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Job Application Service</name>
-    <description>Service to handle job applications and workflows</description>
+    <name>Support Service</name>
+    <description>Service for farmer support tickets and conversations</description>
 
     <dependencies>
         <dependency>
@@ -30,10 +30,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -52,10 +48,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

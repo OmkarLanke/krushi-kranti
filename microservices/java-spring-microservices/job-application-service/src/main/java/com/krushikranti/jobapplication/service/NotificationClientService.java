@@ -28,6 +28,22 @@ public class NotificationClientService {
     @Value("${notification.service.url:http://notification-service:4016}")
     private String notificationServiceUrl;
 
+    public Mono<Void> sendGenericEmail(Map<String, Object> emailRequest) {
+        log.info("Sending generic email to: {}", emailRequest.get("to"));
+
+        WebClient client = webClientBuilder.baseUrl(notificationServiceUrl).build();
+
+        return client.post()
+                .uri("/notification/send-email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(emailRequest)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .doOnSuccess(response -> log.info("Generic email sent successfully to: {}", emailRequest.get("to")))
+                .doOnError(error -> log.error("Failed to send generic email to: {}", emailRequest.get("to"), error))
+                .then();
+    }
+
     /**
      * Send HR interview invitation email
      */
