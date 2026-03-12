@@ -11,9 +11,9 @@ spring:
       max-request-size: 10MB
   
   datasource:
-    url: jdbc:postgresql://job-application-db:5432/job_applications
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://job-application-db:5432/job_applications}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   
   jpa:

@@ -11,8 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Service for importing pincode data from Excel file.
@@ -22,6 +21,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Slf4j
 public class PincodeImportService {
+
+    private static final int BATCH_SIZE = 200;
 
     private final PincodeMasterRepository pincodeMasterRepository;
 
@@ -35,41 +36,41 @@ public class PincodeImportService {
     @Transactional
     public int importFromExcel(String filePath) {
         log.info("Starting pincode import from file: {}", filePath);
-        
+
+        Set<String> existingKeys = loadExistingKeys();
+        log.info("Loaded {} existing pincode-village combinations from DB", existingKeys.size());
+
         int importedCount = 0;
         int skippedCount = 0;
-        Set<String> uniqueKeys = new HashSet<>();
-        int[] columnMapping = null; // Will store: [pincodeIndex, villageIndex, talukaIndex, districtIndex, stateIndex]
+        Set<String> uniqueKeys = new HashSet<>(existingKeys);
+        List<PincodeMaster> batch = new ArrayList<>(BATCH_SIZE);
+        int[] columnMapping;
 
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = new XSSFWorkbook(fis)) {
 
-            Sheet sheet = workbook.getSheetAt(0); // First sheet
-            
-            // Detect column order from header row or sample rows
+            Sheet sheet = workbook.getSheetAt(0);
+
             columnMapping = detectColumnOrder(sheet);
             if (columnMapping == null) {
                 log.error("Could not detect column order. Please check Excel file structure.");
                 throw new RuntimeException("Could not detect column order in Excel file");
             }
-            
+
             log.info("Detected column order - Pincode: {}, Village: {}, Taluka: {}, District: {}, State: {}",
                     columnMapping[0], columnMapping[1], columnMapping[2], columnMapping[3], columnMapping[4]);
-            
-            // Skip header row (row 0) and start from row 1
+
             for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                 Row row = sheet.getRow(rowIndex);
                 if (row == null) continue;
 
                 try {
-                    // Read columns using detected mapping
                     String pincode = getCellValueAsString(row.getCell(columnMapping[0]));
                     String village = getCellValueAsString(row.getCell(columnMapping[1]));
                     String taluka = getCellValueAsString(row.getCell(columnMapping[2]));
                     String district = getCellValueAsString(row.getCell(columnMapping[3]));
                     String state = getCellValueAsString(row.getCell(columnMapping[4]));
 
-                    // Validate required fields
                     if (pincode == null || pincode.trim().isEmpty() ||
                         village == null || village.trim().isEmpty() ||
                         taluka == null || taluka.trim().isEmpty() ||
@@ -79,51 +80,45 @@ public class PincodeImportService {
                         continue;
                     }
 
-                    // Normalize pincode (remove spaces, ensure 6 digits)
                     pincode = pincode.trim().replaceAll("\\s+", "");
-                    // Check if pincode is a valid 6-digit number
                     if (!pincode.matches("^[0-9]{6}$")) {
                         log.warn("Invalid pincode format at row {}: {}", rowIndex + 1, pincode);
                         skippedCount++;
                         continue;
                     }
 
-                    // Create unique key to avoid duplicates
-                    String uniqueKey = pincode + "|" + village.trim();
+                    String uniqueKey = pincode + "|" + village.trim().toLowerCase();
                     if (uniqueKeys.contains(uniqueKey)) {
                         skippedCount++;
                         continue;
                     }
                     uniqueKeys.add(uniqueKey);
 
-                    // Check if already exists in database
-                    boolean exists = pincodeMasterRepository.findByPincode(pincode)
-                            .stream()
-                            .anyMatch(p -> p.getVillage().equalsIgnoreCase(village.trim()));
+                    batch.add(PincodeMaster.builder()
+                            .pincode(pincode)
+                            .village(village.trim())
+                            .taluka(taluka.trim())
+                            .district(district.trim())
+                            .state(state.trim())
+                            .build());
+                    importedCount++;
 
-                    if (!exists) {
-                        PincodeMaster pincodeMaster = PincodeMaster.builder()
-                                .pincode(pincode)
-                                .village(village.trim())
-                                .taluka(taluka.trim())
-                                .district(district.trim())
-                                .state(state.trim())
-                                .build();
-
-                        pincodeMasterRepository.save(pincodeMaster);
-                        importedCount++;
-
-                        if (importedCount % 1000 == 0) {
-                            log.info("Imported {} records so far...", importedCount);
-                        }
-                    } else {
-                        skippedCount++;
+                    if (batch.size() >= BATCH_SIZE) {
+                        pincodeMasterRepository.saveAll(batch);
+                        pincodeMasterRepository.flush();
+                        log.info("Flushed batch – imported {} records so far...", importedCount);
+                        batch.clear();
                     }
 
                 } catch (Exception e) {
                     log.warn("Error processing row {}: {}", rowIndex + 1, e.getMessage());
                     skippedCount++;
                 }
+            }
+
+            if (!batch.isEmpty()) {
+                pincodeMasterRepository.saveAll(batch);
+                pincodeMasterRepository.flush();
             }
 
             log.info("Pincode import completed. Imported: {}, Skipped: {}", importedCount, skippedCount);
@@ -133,6 +128,15 @@ public class PincodeImportService {
             log.error("Error reading Excel file: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to read Excel file: " + filePath, e);
         }
+    }
+
+    private Set<String> loadExistingKeys() {
+        Set<String> keys = new HashSet<>();
+        List<PincodeMaster> existing = pincodeMasterRepository.findAll();
+        for (PincodeMaster p : existing) {
+            keys.add(p.getPincode() + "|" + p.getVillage().toLowerCase());
+        }
+        return keys;
     }
 
     /**

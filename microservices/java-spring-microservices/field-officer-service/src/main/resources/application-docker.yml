@@ -6,9 +6,9 @@ spring:
     name: field-officer-service
   
   datasource:
-    url: jdbc:postgresql://field-officer-db:5432/field_officer_db
-    username: postgres
-    password: ${POSTGRES_PASSWORD:postgres}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://field-officer-db:5432/field_officer_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver
   
   jpa:

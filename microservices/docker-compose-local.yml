@@ -221,7 +221,17 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"  # For Linux compatibility
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=local
+      - GATEWAY_SERVICES_AUTH_SERVICE=http://auth-service:4005
+      - GATEWAY_SERVICES_FARMER_SERVICE=http://farmer-service:4000
+      - GATEWAY_SERVICES_FIELD_OFFICER_SERVICE=http://field-officer-service:4015
+      - GATEWAY_SERVICES_SUBSCRIPTION_SERVICE=http://subscription-service:4013
+      - GATEWAY_SERVICES_KYC_SERVICE=http://kyc-service:4014
+      - GATEWAY_SERVICES_NOTIFICATION_SERVICE=http://notification-service:4016
+      - GATEWAY_SERVICES_FILE_SERVICE=http://file-service:4008
+      - GATEWAY_SERVICES_SUPPORT_SERVICE=http://support-service:4012
+      - GATEWAY_SERVICES_JOB_APPLICATION_SERVICE=http://job-application-service:4017
+      - GATEWAY_JWT_JWKS_URI=http://auth-service:4005/.well-known/jwks.json
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4004/actuator/health"]
       interval: 30s
@@ -248,7 +258,13 @@ services:
     env_file:
       - .env
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_DATASOURCE_URL=${NEON_DEV_AUTH_JDBC_URL}
+      - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4005/actuator/health"]
       interval: 30s
@@ -274,12 +290,16 @@ services:
     networks:
       - krushi-kranti-network
     volumes:
-      # Pincode import: host data folder -> /data in container (filePath=/data/Maharashtra.xlsx).
-      # If mount fails (e.g. path with space), override in docker-compose.override.yml with absolute path.
-      - ./data:/data:ro  
+      # Mount entire project root read-only so farmer-service can access Excel files.
+      # Use container path /workspace for file-based imports (e.g. filePath=/workspace/Maharashtra.xlsx).
+      - /home/omkar/Desktop/Thynktech/krushi-kranti:/workspace:ro
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=local
       - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - SPRING_DATASOURCE_URL=${NEON_DEV_FARMER_JDBC_URL}
+      - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/actuator/health"]
       interval: 30s
@@ -305,7 +325,13 @@ services:
     networks:
       - krushi-kranti-network
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_DATASOURCE_URL=${NEON_DEV_FIELD_OFFICER_JDBC_URL}
+      - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4015/actuator/health"]
       interval: 30s
@@ -332,7 +358,11 @@ services:
     networks:
       - krushi-kranti-network
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_DATASOURCE_URL=${NEON_DEV_SUBSCRIPTION_JDBC_URL}
+      - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4013/actuator/health"]
       interval: 30s
@@ -359,8 +389,12 @@ services:
     networks:
       - krushi-kranti-network
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=local
       - QUICKEKYC_BASE_URL=${QUICKEKYC_BASE_URL:-https://api.quickekyc.com}
+      - SPRING_DATASOURCE_URL=${NEON_DEV_KYC_JDBC_URL}
+      - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4014/actuator/health"]
       interval: 30s
@@ -386,7 +420,11 @@ services:
     env_file:
       - .env
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_DATASOURCE_URL=${NEON_DEV_NOTIFICATION_JDBC_URL}
+      - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4016/actuator/health"]
       interval: 30s
@@ -410,7 +448,7 @@ services:
     networks:
       - krushi-kranti-network
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=local
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4008/actuator/health"]
       interval: 30s
@@ -434,7 +472,12 @@ services:
     networks:
       - krushi-kranti-network
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_DATASOURCE_URL=${NEON_DEV_JOB_APPLICATION_JDBC_URL}
+      - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4017/actuator/health"]
       interval: 30s
