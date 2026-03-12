@@ -6,7 +6,7 @@ WORKDIR /app
 COPY pom.xml .
 
 # Create directories for all modules (Maven requires all modules in parent POM to exist)
-RUN mkdir -p i18n-common api-gateway auth-service farmer-service field-officer-service subscription-service kyc-service file-service notification-service job-application-service
+RUN mkdir -p i18n-common api-gateway auth-service farmer-service field-officer-service subscription-service kyc-service file-service notification-service job-application-service support-service
 
 # Copy all module pom files (needed for Maven to resolve parent pom)
 COPY i18n-common/pom.xml ./i18n-common/
@@ -19,6 +19,7 @@ COPY kyc-service/pom.xml ./kyc-service/
 COPY file-service/pom.xml ./file-service/
 COPY notification-service/pom.xml ./notification-service/
 COPY job-application-service/pom.xml ./job-application-service/
+COPY support-service/pom.xml ./support-service/
 
 # Download dependencies for farmer-service
 RUN mvn dependency:go-offline -pl :farmer-service -am -DskipTests

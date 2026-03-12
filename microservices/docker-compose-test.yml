@@ -1,141 +1,25 @@
+# Backend - TEST SERVER configuration
+# Connects to Neon DB (dev branch) for the test environment.
+#
+# Usage (on test server):
+#   cd microservices
+#   docker compose -f docker-compose-test.yml up -d
+#
+# Differences from docker-compose-local.yml:
+#   - No local Postgres DB containers (all services connect to Neon dev branch)
+#   - No local-specific volume mounts
+#   - Uses .env.test for environment variables
+#   - Includes support-service
+#
+# Spring profile: "docker" (reuses existing application-docker.yml files).
+# The test vs local distinction is purely via env vars (which Neon branch).
+# If you later need test-specific Spring config (log levels, feature flags),
+# create application-test.yml per service and change to: SPRING_PROFILES_ACTIVE=docker,test
+
 services:
   # ============================================
   # Infrastructure Services
   # ============================================
-
-  # PostgreSQL Databases (Schema-per-Service)
-  auth-db:
-    image: postgres:16-alpine
-    container_name: auth-db
-    environment:
-      POSTGRES_DB: auth_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ....
-    ports:
-      - "5433:5432"
-    volumes:
-      - auth-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  farmer-db:
-    image: postgres:16-alpine
-    container_name: farmer-db
-    environment:
-      POSTGRES_DB: farmer_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ....
-    ports:
-      - "5450:5432"
-    volumes:
-      - farmer-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  notification-db:
-    image: postgres:16-alpine
-    container_name: notification-db
-    environment:
-      POSTGRES_DB: notification_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5441:5432"
-    volumes:
-      - notification-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  subscription-db:
-    image: postgres:16-alpine
-    container_name: subscription-db
-    environment:
-      POSTGRES_DB: subscription_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5451:5432"
-    volumes:
-      - subscription-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  kyc-db:
-    image: postgres:16-alpine
-    container_name: kyc-db
-    environment:
-      POSTGRES_DB: kyc_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5452:5432"
-    volumes:
-      - kyc-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  field-officer-db:
-    image: postgres:16-alpine
-    container_name: field-officer-db
-    environment:
-      POSTGRES_DB: field_officer_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5453:5432"
-    volumes:
-      - field-officer-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  job-application-db:
-    image: postgres:16-alpine
-    container_name: job-application-db
-    environment:
-      POSTGRES_DB: job_applications
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5454:5432"
-    volumes:
-      - job-application-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # Redis
   redis:
@@ -153,6 +37,7 @@ services:
       timeout: 5s
       retries: 5
     command: redis-server --appendonly yes
+    restart: unless-stopped
 
   # Zookeeper (for Kafka)
   zookeeper:
@@ -173,6 +58,7 @@ services:
     volumes:
       - zookeeper-data:/var/lib/zookeeper/data
       - zookeeper-logs:/var/lib/zookeeper/log
+    restart: unless-stopped
 
   # Kafka
   kafka:
@@ -200,9 +86,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   # ============================================
-  # Microservices (to be added as they are built)
+  # Microservices
   # ============================================
 
   # API Gateway
@@ -218,8 +105,6 @@ services:
         condition: service_healthy
     networks:
       - krushi-kranti-network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # For Linux compatibility
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - GATEWAY_SERVICES_AUTH_SERVICE=http://auth-service:4005
@@ -238,6 +123,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
 
   # Auth Service
   auth-service:
@@ -249,14 +135,12 @@ services:
       - "4005:4005"
       - "9090:9090"  # gRPC port
     depends_on:
-      auth-db:
-        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
       - krushi-kranti-network
     env_file:
-      - .env
+      - .env.test
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=${NEON_DEV_AUTH_JDBC_URL}
@@ -271,6 +155,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
 
   # Farmer Service
   farmer-service:
@@ -281,18 +166,12 @@ services:
     ports:
       - "4000:4000"
     depends_on:
-      farmer-db:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
       - krushi-kranti-network
-    volumes:
-      # Mount entire project root read-only so farmer-service can access Excel files.
-      # Use container path /workspace for file-based imports (e.g. filePath=/workspace/Maharashtra.xlsx).
-      - /home/omkar/Desktop/Thynktech/krushi-kranti:/workspace:ro
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - WEATHER_API_KEY=${WEATHER_API_KEY}
@@ -300,12 +179,15 @@ services:
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    env_file:
+      - .env.test
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
 
   # Field Officer Service
   field-officer-service:
@@ -316,8 +198,6 @@ services:
     ports:
       - "4015:4015"
     depends_on:
-      field-officer-db:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
       kafka:
@@ -332,12 +212,15 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    env_file:
+      - .env.test
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4015/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
 
   # Subscription Service
   subscription-service:
@@ -349,8 +232,6 @@ services:
       - "4013:4013"
       - "9093:9093"  # gRPC port
     depends_on:
-      subscription-db:
-        condition: service_healthy
       farmer-service:
         condition: service_healthy
       kafka:
@@ -363,12 +244,15 @@ services:
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    env_file:
+      - .env.test
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4013/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
 
   # KYC Service
   kyc-service:
@@ -380,8 +264,6 @@ services:
       - "4014:4014"
       - "9094:9094"  # gRPC port
     depends_on:
-      kyc-db:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
       kafka:
@@ -395,12 +277,15 @@ services:
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    env_file:
+      - .env.test
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4014/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
 
   # Notification Service
   notification-service:
@@ -411,16 +296,14 @@ services:
     ports:
       - "4016:4016"
     depends_on:
-      notification-db:
-        condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
       - krushi-kranti-network
     env_file:
-      - .env
+      - .env.test
     environment:
-      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=${NEON_DEV_NOTIFICATION_JDBC_URL}
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
@@ -431,6 +314,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
 
   # File Service
   file-service:
@@ -448,13 +332,14 @@ services:
     networks:
       - krushi-kranti-network
     environment:
-      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_PROFILES_ACTIVE=docker
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4008/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
 
   # Job Application Service
   job-application-service:
@@ -465,25 +350,54 @@ services:
     ports:
       - "4017:4017"
     depends_on:
-      job-application-db:
-        condition: service_healthy
       file-service:
         condition: service_healthy
     networks:
       - krushi-kranti-network
     environment:
-      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=${NEON_DEV_JOB_APPLICATION_JDBC_URL}
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
+    env_file:
+      - .env.test
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4017/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
+
+  # Support Service
+  support-service:
+    build:
+      context: ./java-spring-microservices
+      dockerfile: support-service/Dockerfile
+    container_name: support-service
+    ports:
+      - "4012:4012"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    networks:
+      - krushi-kranti-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=${NEON_DEV_SUPPORT_JDBC_URL}
+      - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
+    env_file:
+      - .env.test
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4012/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
 
 networks:
   krushi-kranti-network:
@@ -491,15 +405,7 @@ networks:
     name: krushi-kranti-network
 
 volumes:
-  auth-db-data:
-  farmer-db-data:
-  notification-db-data:
-  subscription-db-data:
-  kyc-db-data:
-  field-officer-db-data:
-  job-application-db-data:
   redis-data:
   kafka-data:
   zookeeper-data:
   zookeeper-logs:
-
