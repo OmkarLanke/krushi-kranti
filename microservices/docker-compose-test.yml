@@ -401,7 +401,7 @@ services:
 
 networks:
   krushi-kranti-network:
-    driver: bridge
+    external: true
     name: krushi-kranti-network
 
 volumes:
