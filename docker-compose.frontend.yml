@@ -16,7 +16,8 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        BASE_URL: https://api.krushikranti.ltd  # ← PRODUCTION: Domain URL
+        BASE_URL: https://api.krushikranti.ltd           # ← PRODUCTION: Domain URL
+        APK_FILENAME: krushi-kranti-farmer.apk            # ← PRODUCTION: APK built with prod BASE_URL
     image: krushi-frontend:latest
     container_name: krushi-frontend
     ports:

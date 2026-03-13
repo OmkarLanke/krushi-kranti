@@ -16,7 +16,8 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        BASE_URL: https://api2.krushikranti.ltd  # ← TEST: Test backend URL
+        BASE_URL: https://api2.krushikranti.ltd       # ← TEST: Test backend URL
+        APK_FILENAME: krushi-kranti-farmer-test.apk    # ← TEST: APK built with test BASE_URL
     image: krushi-frontend:test
     container_name: krushi-frontend-test
     ports:
