@@ -3,12 +3,13 @@
 #
 # TEST settings:
 # - BASE_URL: https://api2.krushikranti.ltd (test backend)
-# - Ports: 80:80, 443:443 (standard HTTP/HTTPS behind Nginx)
-# - Nginx: production-style config with SSL
+# - Nginx: test config with SSL (test.krushikranti.ltd, test.admin, test.careers, api2)
+# - APK: test APK built with test BASE_URL
 # - Domains served:
-#     Landing page:  test.krushikranti.ltd
-#     Admin panel:   test.admin.krushikranti.ltd
-#     API backend:   api2.krushikranti.ltd (reverse-proxied to api-gateway:4004)
+#     Landing:  test.krushikranti.ltd
+#     Admin:    test.admin.krushikranti.ltd
+#     Hiring:   test.careers.krushikranti.ltd
+#     API:      api2.krushikranti.ltd
 
 services:
   frontend:
@@ -16,17 +17,15 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        BASE_URL: https://api2.krushikranti.ltd       # ← TEST: Test backend URL
-        APK_FILENAME: krushi-kranti-farmer-test.apk    # ← TEST: APK built with test BASE_URL
+        BASE_URL: https://api2.krushikranti.ltd
+        APK_FILENAME: krushi-kranti-farmer-test.apk
+        NGINX_CONF: frontend/nginx-test.conf
     image: krushi-frontend:test
     container_name: krushi-frontend-test
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      # Production-style nginx config with SSL
-      - ./frontend/nginx-test.conf:/etc/nginx/conf.d/default.conf:ro
-      # SSL certificates (Certbot / Let's Encrypt on test server)
       - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - krushi-kranti-network

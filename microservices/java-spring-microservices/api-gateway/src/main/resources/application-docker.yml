@@ -43,6 +43,7 @@ gateway:
       - /.well-known
       - /actuator/health
       - /api/applications  # Public job application submission
+      - /api/otp/**  # Public email OTP for job applicants
     jwks-uri: http://auth-service:4005/.well-known/jwks.json
   
   # Service URLs for Docker environment (using Docker service names)

@@ -42,6 +42,7 @@ gateway:
       - /.well-known
       - /actuator/health
       - /api/applications  # Public job application submission
+      - /api/otp/**  # Public email OTP for job applicants
     jwks-uri: http://127.0.0.1:4005/.well-known/jwks.json
   
   # Service URLs for localhost development

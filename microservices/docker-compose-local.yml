@@ -420,7 +420,7 @@ services:
     env_file:
       - .env
     environment:
-      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=${NEON_DEV_NOTIFICATION_JDBC_URL}
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
@@ -448,7 +448,7 @@ services:
     networks:
       - krushi-kranti-network
     environment:
-      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_PROFILES_ACTIVE=docker
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4008/actuator/health"]
       interval: 30s
@@ -472,7 +472,7 @@ services:
     networks:
       - krushi-kranti-network
     environment:
-      - SPRING_PROFILES_ACTIVE=local
+      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=${NEON_DEV_JOB_APPLICATION_JDBC_URL}
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
