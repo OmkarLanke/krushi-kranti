@@ -268,7 +268,7 @@ class _OtpScreenState extends State<OtpScreen> {
           }
         }
       } else {
-        // CASE B: User is Signing Up -> Call /auth/verify-otp, then login to get token
+        // CASE B: User is Signing Up -> Call /auth/verify-otp (returns tokens directly)
         final response = await HttpService.post(
           "auth/verify-otp",
           {
@@ -277,65 +277,34 @@ class _OtpScreenState extends State<OtpScreen> {
           },
         );
 
-        // Extract user info from response
-        final data = response['data'] ?? {};
-        if (data.isEmpty) {
+        // verify-otp now returns AuthResponse with tokens and user info
+        final String accessToken = response['accessToken'] ?? '';
+        final String refreshToken = response['refreshToken'] ?? '';
+        final userInfo = response['user'] ?? {};
+
+        if (accessToken.isEmpty) {
           throw Exception("OTP verification failed. Please try again.");
         }
 
-        // Save basic user details
-        await StorageService.saveAuthDetails(
-          email: data['email'] ?? '',
-          phone: data['phoneNumber'] ?? phoneNumber,
-        );
-
-        // Save username as first name initially
-        await StorageService.savePersonalDetails(
-          firstName: data['username'] ?? '',
-          lastName: "",
-          dob: "",
-          gender: "",
-          profilePicPath: null,
-        );
-
-        // Request a new login OTP (since the registration OTP was consumed)
-        await HttpService.post(
-          "auth/request-login-otp",
-          {"phoneNumber": phoneNumber},
-        );
-
-        // Get the new OTP for login (using test endpoint for now)
-        // In production, this would be sent via SMS and user would enter it
-        // For now, we'll fetch it from the test endpoint
-        final otpResponse = await HttpService.get("auth/get-otp/$phoneNumber");
-        final String loginOtp = otpResponse['data'] ?? '';
-        
-        if (loginOtp.isEmpty) {
-          throw Exception("Failed to get login OTP. Please try logging in manually.");
-        }
-
-        // Use the new OTP to login and get JWT token
-        final loginResp = await HttpService.post(
-          "auth/login",
-          {
-            "phoneNumber": phoneNumber,
-            "otp": loginOtp,
-          },
-        );
-        final String accessToken = loginResp['accessToken'] ?? '';
-        final String refreshToken = loginResp['refreshToken'] ?? '';
-        final userInfo = loginResp['user'] ?? {};
-        if (accessToken.isEmpty) {
-          throw Exception("Login failed after signup. Please try again.");
-        }
-
+        // Save tokens
         await StorageService.saveToken(accessToken);
         if (refreshToken.isNotEmpty) {
           await StorageService.saveRefreshToken(refreshToken);
         }
+
+        // Save user details
         await StorageService.saveAuthDetails(
-          email: userInfo['email'] ?? data['email'] ?? '',
+          email: userInfo['email'] ?? '',
           phone: userInfo['phoneNumber'] ?? phoneNumber,
+        );
+
+        // Save username as first name initially
+        await StorageService.savePersonalDetails(
+          firstName: userInfo['username'] ?? '',
+          lastName: "",
+          dob: "",
+          gender: "",
+          profilePicPath: null,
         );
 
         // Save user role and ID

@@ -308,6 +308,13 @@ services:
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SMS_API_URL=${SMS_API_URL}
+      - SMS_AUTH_KEY=${SMS_AUTH_KEY}
+      - SMS_SENDER_ID=${SMS_SENDER_ID}
+      - SMS_ROUTE=${SMS_ROUTE}
+      - SMS_COUNTRY=${SMS_COUNTRY}
+      - SMS_DLT_TE_ID=${SMS_DLT_TE_ID}
+      - SMS_ENABLED=${SMS_ENABLED}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4016/actuator/health"]
       interval: 30s

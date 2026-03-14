@@ -1,5 +1,5 @@
 # Project log book context
-_Exported on 3/12/2026 at 15:36:31 GMT+5:30 from Cursor (2.4.28)_
+_Exported on 3/14/2026 at 13:33:27 GMT+5:30 from Cursor (2.4.28)_
 
 ---
 
@@ -1153,4 +1153,808 @@ and also change your SSH config `HostName` back to `myserver.retailbilling.ltd` 
 ---
 
 Next step: try `ssh -p 22517 root@46.37.122.119` and tell me exactly what output you see (prompt, timeout, error message); I’ll guide you through whatever comes next.
+
+---
+
+**User**
+
+even though the user (farmer )exists in the database
+while login 
+with phone - shows invalid phone no
+with email - invalid email or password
+this means its due to @krushi-kranti/krushikranti-landing-page/downloads/krushi-kranti-farmer.apk  is using the production db (not the neon one ,thats our old one
+)i guess
+if thats the issue do we need to create another apk for to use test
+or there is another issue.
+
+and i guess same issue will happen with @krushi-kranti/krushikranti-landing-page  ,@krushi-kranti/krushikranti-hiring 
+because i guess only admin frontend we have dockerized.
+
+please accknowledge and address the issue
+
+---
+
+**Cursor**
+
+### What’s actually happening
+
+- The farmer app’s API base URL is **baked into the build at compile time** via `BASE_URL`:
+
+```dart
+// krushikranti_farmer/lib/core/services/http_service.dart
+static String get baseUrl {
+  const String envBaseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: '',
+  );
+  if (envBaseUrl.isNotEmpty) {
+    return envBaseUrl.trim();
+  }
+  // otherwise falls back to localhost / 192.168...
+}
+```
+
+- For production web/admin, the Dockerfile explicitly builds with:
+
+```dockerfile
+# frontend/Dockerfile
+ARG BASE_URL=https://api.krushikranti.ltd
+RUN flutter build web --dart-define=BASE_URL=${BASE_URL} --release
+```
+
+- The APK you’re serving here:
+
+```dockerfile
+COPY krushikranti-landing-page/downloads/krushi-kranti-farmer.apk ...
+```
+
+was almost certainly built with **`--dart-define=BASE_URL=https://api.krushikranti.ltd`**, i.e. it always talks to the **production backend / old DB**, not the Neon dev/test backend.
+
+That explains the behaviour:
+
+- You created/see the farmer user in **Neon dev**.
+- The currently installed APK still calls **prod auth-service** (old DB), where that user doesn’t exist or has different phone/email/password.
+- So login via phone → “invalid phone number”; login via email → “invalid email or password”, because you’re authenticating against the wrong DB.
+
+So yes: this is almost certainly an **environment mismatch**, not a bug in the auth logic.
+
+---
+
+### Do you need another APK for test?
+
+Yes, **for a separate test environment you need a separate build** that points to the test API:
+
+- **Prod APK** (used on real users / `krushikranti.ltd`):
+  - Build with:
+
+    ```bash
+    flutter build apk --release \
+      --dart-define=BASE_URL=https://api.krushikranti.ltd
+    ```
+
+- **Test APK** (used only by your QA / internal devices):
+  - Build with:
+
+    ```bash
+    flutter build apk --release \
+      --dart-define=BASE_URL=https://api2.krushikranti.ltd
+    ```
+
+  - Save it as something like `krushi-kranti-farmer-test.apk`.
+  - Host it on your **test landing site** (e.g. `test.krushikranti.ltd/downloads/`) or share it directly, but **do not overwrite** the prod APK used on the main landing page.
+
+There is no way to “switch” the existing installed APK from prod to test without rebuilding; `BASE_URL` is compiled in.
+
+---
+
+### What about `krushikranti-landing-page` and `krushikranti-hiring`?
+
+Your guess is correct:
+
+- The **landing page** currently bundles and links the **prod APK** and any JavaScript that calls the API will be using prod URLs (or the Nginx config proxies to prod backend).
+- The **hiring site** similarly is likely wired to `https://api.krushikranti.ltd` in its code or nginx config.
+- Only the **admin** is dockerized with an explicit `BASE_URL` build arg today, but its Dockerfile is also using **prod** `https://api.krushikranti.ltd`.
+
+For a clean setup you effectively need three front-end “flavours” just like the backend:
+
+1. **Prod frontend stack**
+   - Landing/admin/hiring built with `BASE_URL=https://api.krushikranti.ltd`
+   - Served on `krushikranti.ltd`, `admin.krushikranti.ltd`, etc.
+   - Links to **prod APK**.
+
+2. **Test frontend stack**
+   - Landing/admin/hiring built with `BASE_URL=https://api2.krushikranti.ltd`
+   - Served on `test.krushikranti.ltd`, `test.admin.krushikranti.ltd`, maybe `hiring-test.krushikranti.ltd`.
+   - Links to **test APK** that talks to `api2.krushikranti.ltd`.
+
+3. **Local dev** (what you’re running now)
+   - Frontend hitting `http://localhost:4004` or your LAN IP, APKs built with `BASE_URL` pointing to your local gateway.
+
+---
+
+### What I recommend you do next
+
+- **For immediate debugging of Neon dev**:
+  - Build a **test APK** with `BASE_URL=https://api2.krushikranti.ltd` (once your test backend is up there).
+  - Sideload it on your phone and log in with the farmer you see in Neon dev. That should work if the backend is configured correctly.
+
+- **For environments**:
+  - Keep **separate build commands / scripts** for:
+    - `build_apk_prod.sh` (BASE_URL=api.krushikranti.ltd)
+    - `build_apk_test.sh` (BASE_URL=api2.krushikranti.ltd)
+  - For web frontends (admin, landing, hiring), mirror the same pattern with Dockerfiles or build args.
+
+If you’d like, I can outline concrete build commands and suggested folder/filename conventions for:
+- prod APK vs test APK
+- prod Docker build vs test Docker build for the landing/admin/hiring frontends.
+
+---
+
+**User**
+
+first tell me
+do i need to dockerize landing page and hiring page
+or its already dockerized just like admin
+
+---
+
+**Cursor**
+
+### Short answer
+
+- **Landing page**: **Already dockerized.**  
+  The single `frontend/Dockerfile` builds the **admin Flutter web app** and serves **both**:
+  - landing site (`/usr/share/nginx/html/landing`, domains `krushikranti.ltd`, `www.krushikranti.ltd`)
+  - admin app (`/usr/share/nginx/html/admin`, domain `admin.krushikranti.ltd`)  
+  plus the **API proxy `api.krushikranti.ltd`** – all from one Nginx container (see `frontend/nginx.conf` lines 17–46 for landing, 48–69 for admin, 71–97 for API).
+
+- **Hiring page**: **Not yet dockerized** in that same image.  
+  There is no reference to `krushikranti-hiring` in `frontend/Dockerfile` or `frontend/nginx.conf`, so hiring is currently a **separate Flutter project** that you run/deploy independently (likely not behind that Nginx container yet).
+
+### What this means for your environments
+
+- The **landing + admin + API domains** are already handled by the `frontend` Docker image; for test, you’ll want a test variant of that image (which you started with `docker-compose.frontend.test.yml`) pointing to `api2.krushikranti.ltd`.
+- For **hiring**, you’ll either:
+  - build and host it separately (e.g. as static web under another Nginx vhost), or
+  - extend `frontend/Dockerfile` + `nginx.conf` to also copy and serve a `krushikranti-hiring` build (e.g. under `/usr/share/nginx/html/hiring` and `hiring.krushikranti.ltd` / `test.hiring.krushikranti.ltd`).  
+
+If you want, I can outline how to extend `frontend/Dockerfile` and `nginx.conf` so they also dockerize and serve the hiring site alongside landing and admin.
+
+---
+
+**User**
+
+@frontend/Dockerfile 
+in this docker file admin and landing page is dockerised.
+
+and hiring page is not dockerized.
+
+is it correct?
+
+---
+
+**Cursor**
+
+Yes, that's correct.
+
+- **Admin** (Flutter web app): Built in Stage 1 (`COPY krushikranti_admin ...` → `flutter build web`) and served from `/usr/share/nginx/html/admin`.
+- **Landing page** (static HTML/CSS/JS): Copied directly in Stage 2 (`COPY krushikranti-landing-page ...`) to `/usr/share/nginx/html/landing`. No build step needed.
+- **Hiring page**: Not mentioned anywhere in this Dockerfile. It is not dockerized here.
+
+---
+
+**User**
+
+even though the user (farmer )exists in the database
+while login 
+with phone - shows invalid phone no
+with email - invalid email or password
+this means its due to @krushi-kranti/krushikranti-landing-page/downloads/krushi-kranti-farmer.apk  is using the production db (not the neon one ,thats our old one
+)
+
+so if the landing page is dockerized
+and in test domain its using base url as api2.krusi.....
+so why its still pointing to production db
+
+
+---
+
+**Cursor**
+
+Good question — the confusion is understandable. Here's the key distinction:
+
+### The `BASE_URL` in the Dockerfile only affects the **admin web app**, NOT the APK
+
+Look at the Dockerfile again:
+
+```31:36:d:\KrushiKranti\frontend\Dockerfile
+# Copy landing page (static HTML/CSS/JS - no build step)
+COPY krushikranti-landing-page /usr/share/nginx/html/landing
+
+# Copy APK file to landing page downloads directory
+# NOTE: APK should be built and placed in krushikranti-landing-page/downloads/ before building this image
+COPY krushikranti-landing-page/downloads/krushi-kranti-farmer.apk /usr/share/nginx/html/landing/downloads/krushi-kranti-farmer.apk
+```
+
+- The APK is a **pre-built binary file** that someone already compiled with `flutter build apk --dart-define=BASE_URL=https://api.krushikranti.ltd` (prod URL baked in).
+- The Dockerfile just **copies** that existing APK file as-is. It does **not** rebuild the APK.
+- So even when you run `docker-compose.frontend.test.yml` with `BASE_URL=https://api2.krushikranti.ltd`, that only changes the **admin Flutter web build** (Stage 1, line 14–18). The APK sitting in `krushikranti-landing-page/downloads/` is untouched — it still has the prod URL compiled inside it.
+
+### In summary
+
+| Component | How BASE_URL gets in | Affected by docker-compose BASE_URL? |
+|---|---|---|
+| **Admin** (Flutter web) | Built inside Dockerfile Stage 1 with `--dart-define` | **Yes** |
+| **Landing page** (static HTML) | No API calls (just serves files) | N/A |
+| **APK** (farmer app) | Pre-built binary, just COPY'd into container | **No** — still has whatever URL was baked when the APK was compiled |
+
+### What you need to do
+
+To get a test-compatible APK, you must **rebuild the APK separately** before building the Docker image:
+
+```bash
+cd krushikranti_farmer
+flutter build apk --release --dart-define=BASE_URL=https://api2.krushikranti.ltd
+```
+
+Then copy the output APK to the landing page downloads folder (replacing or alongside the prod one):
+
+```bash
+cp build/app/outputs/flutter-apk/app-release.apk ../krushikranti-landing-page/downloads/krushi-kranti-farmer.apk
+```
+
+**Then** build the frontend Docker image — now it will serve the test APK that talks to `api2.krushikranti.ltd`.
+
+For production, you'd do the same but with `BASE_URL=https://api.krushikranti.ltd`.
+
+The APK is the one piece that can never be "switched" at deploy time — it must be recompiled with the right URL.
+
+---
+
+**User**
+
+okay then do the necessary changes 
+o get a test-compatible APK, you must rebuild the APK separately before building the Docker image:
+cd krushikranti_farmerflutter build apk --release --dart-define=BASE_URL=https://api2.krushikranti.ltd
+Then copy the output APK to the landing page downloads folder (replacing or alongside the prod one):
+cp build/app/outputs/flutter-apk/app-release.apk ../krushikranti-landing-page/downloads/krushi-kranti-farmer.apk
+Then build the frontend Docker image — now it will serve the test APK that talks to api2.krushikranti.ltd.
+For production, you'd do the same but with BASE_URL=https://api.krushikranti.ltd.
+
+---
+
+**Cursor**
+
+Let me plan this properly. The key challenge is that the same Dockerfile is used by both prod and test compose files, but the APK needs to be different. I'll make the Dockerfile accept a build arg for the APK filename, then build the test APK.
+
+Now let me build the test APK.
+
+The build is still running (5+ minutes so far, which is normal for a Flutter APK build). Let me check again in a bit.
+
+Still running with no visible output yet (Flutter APK builds can be quiet until the end). Let me wait a bit more.
+
+The build has been running for 11+ minutes with no output visible. Let me check if the process is still alive or if an APK was already produced.
+
+The process (PID 19428) appears to have ended (no output from `Get-Process`) and no APK was produced. The build likely failed silently or never really started. This could be because `flutter run` was still active in terminal 8, or because the build terminal couldn't capture output properly.
+
+Let me try a fresh build directly.
+
+APK built successfully. Now let me copy it to the landing page downloads folder as the test APK.
+
+There's no `downloads/` folder in the landing page directory yet. Let me create it and place the test APK there.
+
+The `.apk` file might be hidden from glob due to `.gitignore`. Let me verify and copy using shell directly.
+
+Everything is done. Here's the summary of all changes:
+
+---
+
+### What was done
+
+**1. `frontend/Dockerfile`** — Added `APK_FILENAME` build arg
+- The Dockerfile now accepts an `APK_FILENAME` arg (defaults to `krushi-kranti-farmer.apk` for prod).
+- It copies the specified APK and always serves it as `krushi-kranti-farmer.apk` to the user, regardless of the source filename.
+
+**2. `docker-compose.frontend.test.yml`** — Passes test APK filename
+- `APK_FILENAME: krushi-kranti-farmer-test.apk`
+- `BASE_URL: https://api2.krushikranti.ltd`
+
+**3. `docker-compose.frontend.yml`** (prod) — Explicitly passes prod APK filename
+- `APK_FILENAME: krushi-kranti-farmer.apk`
+- `BASE_URL: https://api.krushikranti.ltd`
+
+**4. Test APK built** — `BASE_URL=https://api2.krushikranti.ltd` baked in
+- Built from `krushikranti_farmer` (30.7 MB, release mode).
+
+**5. Both APKs now exist** in `krushikranti-landing-page/downloads/`:
+
+| File | Size | Points to |
+|---|---|---|
+| `krushi-kranti-farmer.apk` | 30.6 MB | `https://api.krushikranti.ltd` (prod) |
+| `krushi-kranti-farmer-test.apk` | 30.7 MB | `https://api2.krushikranti.ltd` (test) |
+
+---
+
+### How it works per environment
+
+- **Prod** (`docker-compose.frontend.yml`): Builds image with prod APK + prod admin web app. Users download the APK that talks to `api.krushikranti.ltd`.
+- **Test** (`docker-compose.frontend.test.yml`): Builds image with test APK + test admin web app. Users download the APK that talks to `api2.krushikranti.ltd`.
+- **Local** (`docker-compose.frontend.local.yml`): No APK copy (uses localhost, served differently).
+
+When you deploy to the test server, just run:
+
+```bash
+docker compose -f docker-compose.frontend.test.yml up --build -d
+```
+
+and the test APK will be served from `test.krushikranti.ltd/downloads/krushi-kranti-farmer.apk`, pointing to `api2.krushikranti.ltd`.
+
+---
+
+**User**
+
+i am getting this error
+while submitting job hiring form
+please look into matter
+is it due to link with neon db
+
+---
+
+**Cursor**
+
+The screenshot shows a **500 Internal Server Error** when submitting the job application form. Let me check the job-application-service backend to find the root cause.
+
+Found it. The logs show **exactly the same issue** we just fixed for farmer-service — the `local` vs `docker` Spring profile problem.
+
+The key error line is:
+
+> `Connection refused: localhost/127.0.0.1:4008`
+
+The `job-application-service` is trying to reach `file-service` at **`localhost:4008`** (from `application.yml`, the `local` profile) instead of **`file-service:4008`** (from `application-docker.yml`, the `docker` profile).
+
+Look at the startup log:
+
+> `The following 1 profile is active: "local"`
+
+This confirms `job-application-service` is still running with the **`local` profile**. That means my earlier change to `docker-compose-local.yml` missed this service, or it wasn't rebuilt. Let me check.
+
+There it is — three services were **missed** when I changed the profiles earlier:
+
+- Line 423: **notification-service** → still `local`
+- Line 451: **file-service** → still `local`
+- Line 475: **job-application-service** → still `local`
+
+The `job-application-service` tries to upload the resume to `file-service` at `localhost:4008` (local profile) instead of `file-service:4008` (docker profile). That's your 500 error.
+
+Let me fix all three now.
+
+Let me verify all profiles are now `docker` across the entire compose file.
+
+All 9 services are now `docker`. 
+
+### Root cause of the 500 error
+
+**Not a Neon DB issue.** The `job-application-service` was still running with `SPRING_PROFILES_ACTIVE=local`, so when the form submission tried to upload the resume/biodata file, it called `file-service` at `localhost:4008` (from `application.yml`) instead of `file-service:4008` (from `application-docker.yml`). Inside the Docker container, `localhost` is itself — no file-service there — so it got `Connection refused`.
+
+### What I fixed
+
+Changed the last 3 services that were still on `local` profile to `docker`:
+- **notification-service** (line 423)
+- **file-service** (line 451)
+- **job-application-service** (line 475)
+
+### What you need to do now
+
+Rebuild and restart these three services from your terminal:
+
+```powershell
+cd D:\KrushiKranti\microservices
+
+docker compose -f docker-compose-local.yml build notification-service file-service job-application-service
+
+docker compose -f docker-compose-local.yml up -d notification-service file-service job-application-service
+```
+
+Then try submitting the hiring form again — the file upload to `file-service` should now succeed, and the 500 error should be gone.
+
+---
+
+**User**
+
+on the job apply page i had put the email validation in the form.
+where when the applicant enters his email then the otp was revieved to him on his mail and when he entered the otp on the job hiring portal then the mail was validated and then only he was able to submit the form.
+
+but now when i am running it on local host then i cant see that feature.
+
+---
+
+**Cursor**
+
+Let me investigate the hiring app and the job-application-service to trace the email OTP validation feature.
+
+Now let me look at the hiring app's UI to find where the email OTP feature should be rendered.
+
+### What I found
+
+**The email OTP feature exists only on the backend — it was never implemented in the Flutter hiring frontend.**
+
+Here's the situation:
+
+| Layer | Email OTP status |
+|---|---|
+| **Backend** (`job-application-service`) | Ready: `EmailOtpController.java` has `POST /api/otp/send` and `POST /api/otp/verify`, `OtpService.java` stores OTPs in Redis |
+| **Flutter hiring app** (`krushikranti-hiring`) | **Missing**: `application_form.dart` has a plain email text field (line 88–99) with no OTP send/verify logic at all |
+
+Searching the entire hiring app for "otp", "OTP", or "verify" returned **zero results** (only one unrelated consent string). So the feature was likely planned/discussed and the backend was built, but the frontend portion was never wired up.
+
+### What needs to happen
+
+To add the email OTP verification inline in the personal details form, the `application_form.dart` needs:
+
+1. A "Send OTP" button next to the email field
+2. An OTP input field that appears after sending
+3. A "Verify" button that calls `POST /api/otp/verify`
+4. State tracking (`_isOtpSent`, `_isEmailVerified`)
+5. Block the "Next" button until email is verified
+
+The backend endpoints to call:
+- `POST ${baseUrl}/api/otp/send?email=user@example.com` → sends OTP email
+- `POST ${baseUrl}/api/otp/verify` with body `{"email": "...", "otp": "123456"}` → returns `{"verified": true/false}`
+
+Would you like me to implement the email OTP verification in the hiring app's `application_form.dart`?
+
+---
+
+**User**
+
+yes do it without errors
+
+---
+
+**Cursor**
+
+Now let me check the localization strings to understand what keys are available.
+
+Now I have a complete picture. Let me create the OTP service and update the form.
+
+Now let me update the `application_form.dart` to add the inline email OTP verification.
+
+Now let me add the missing localization keys for the OTP feature.
+
+Now let me check for linter errors.
+
+No linter errors. Here's what was implemented:
+
+---
+
+### Changes made
+
+**1. New file: `krushikranti-hiring/lib/features/hiring/data/email_otp_service.dart`**
+- `sendOtp(email)` → calls `POST /api/otp/send?email=...`
+- `verifyOtp(email, otp)` → calls `POST /api/otp/verify` with JSON body
+
+**2. Updated: `application_form.dart`** — Email field now has inline OTP verification:
+- **Before OTP sent**: Email text field + "Send OTP" button side-by-side
+- **After OTP sent**: 6-digit OTP input field appears below + "Verify" button + 60s resend cooldown timer
+- **After verified**: Email field turns green with a verified badge, OTP row disappears, email becomes read-only
+- **Validation gate**: The "Next" button won't proceed unless `_isEmailVerified == true` (form validator shows "Please verify your email with OTP")
+- If the user edits the email after sending/verifying, the verification resets automatically
+
+**3. Updated: `app_localizations.dart`** — Added OTP-related strings in all 3 languages:
+- English: "Send OTP", "Resend", "Verify", "Email verified successfully", etc.
+- Marathi: "OTP पाठवा", "सत्यापित करा", "ईमेल यशस्वीरित्या सत्यापित", etc.
+- Hindi: "OTP भेजें", "सत्यापित करें", "ईमेल सफलतापूर्वक सत्यापित", etc.
+
+### Flow summary
+
+1. User enters email → clicks **"Send OTP"**
+2. Backend sends OTP to that email via notification-service
+3. OTP input row appears → user enters 6-digit code → clicks **"Verify"**
+4. If correct → green badge, email locked, "Next" button enabled
+5. If wrong → error message, can retry or resend after cooldown
+
+To test this, make sure the `job-application-service` and `notification-service` containers are running with `SPRING_PROFILES_ACTIVE=docker` (which you've already fixed), and then run the hiring app on localhost.
+
+---
+
+**User**
+
+okay now button of otp pathva is visible
+but these below ops are not happening:
+
+Backend sends OTP to that email via notification-service is not happening and
+OTP input row not appears
+
+---
+
+**Cursor**
+
+The logs show no OTP request reached `job-application-service` at all. The issue is the **API gateway routing** — it doesn't know how to route `/api/otp/*` to the job-application-service. Let me check the gateway's route config.
+
+Found it. The gateway only routes `/api/applications/**` to `job-application-service` (line 145). There's no route for `/api/otp/**`, and `/api/otp/send` is also not in the JWT skip-paths. Two things need fixing:
+
+1. **Add a gateway route** for `/api/otp/**` → `job-application-service`
+2. **Add `/api/otp/**` to JWT skip-paths** (applicants aren't authenticated)
+
+Now add `/api/otp/**` to the JWT skip-paths in both `application.yml` and `application-docker.yml`.
+
+Now let me also check the `NotificationClientService` in job-application-service to make sure it points to the right URL in docker mode.
+
+Good — `NotificationClientService` defaults to `http://notification-service:4016`, which is correct for Docker. Now let me check the `application-docker.yml` for the job-application-service to make sure the notification URL config is there.
+
+The notification URL defaults in the Java code to `http://notification-service:4016`, which is correct. Everything is in order now. Here's the summary of what was wrong and what was fixed:
+
+### Root cause
+
+Two issues prevented the OTP from working:
+
+1. **No gateway route for `/api/otp/**`** — The API gateway only had a route for `/api/applications/**` to `job-application-service`. The `/api/otp/send` call from the hiring app hit the gateway and got a 404 / error, which Dio caught and the frontend showed nothing.
+
+2. **`/api/otp/**` not in JWT skip-paths** — Even if routed, the gateway would reject the request because job applicants aren't authenticated.
+
+### What was fixed
+
+- **`GatewayConfig.java`** — Added route: `/api/otp/**` → `job-application-service`
+- **`application.yml`** (gateway) — Added `/api/otp/**` to `skip-paths`
+- **`application-docker.yml`** (gateway) — Same skip-path addition
+
+### What you need to do now
+
+Rebuild and restart the **api-gateway** (it's the only service that changed):
+
+```powershell
+cd D:\KrushiKranti\microservices
+
+docker compose -f docker-compose-local.yml build api-gateway
+
+docker compose -f docker-compose-local.yml up -d api-gateway
+```
+
+Then try clicking "OTP पाठवा" again on the hiring form — the request should now reach `job-application-service`, which will call `notification-service` to send the email, and the OTP input row should appear.
+
+---
+
+**User**
+
+okay now its working fine very fine
+
+now lets move to dockerization of job hiring frontend such that it can use both base urls just like other frontends like admin,landinpage etc
+now in the naukrya section in the nav bar of hiring page
+after clicling that it should redirect me to test.careers.krushikranti.ltd
+
+and on that page it should open my hiring portal 
+this is for the test server 
+do it carefully
+
+---
+
+**Cursor**
+
+Let me first understand the hiring app structure, how it uses `BASE_URL`, and the current landing page navbar to plan the changes properly.
+
+First, I need to make the hiring app support `BASE_URL` via `--dart-define` like the other apps, instead of hardcoding localhost.
+
+Now update the Dockerfile to add a hiring build stage.
+
+Now update the production Nginx config to add the `careers.krushikranti.ltd` server block.
+
+Now create the test Nginx config with test domains.
+
+Now update the local http-only config to also serve hiring.
+
+Now update the landing page "नोकऱ्या" link. Currently it points to `http://localhost:52821/` which is a hardcoded dev port. Since the landing page is static HTML (not built), I'll make it a relative protocol link that works across environments. The simplest approach: make it point to `//careers.krushikranti.ltd` for prod. But since the landing page is static and shared between environments, the cleanest solution is to use a relative URL or a JavaScript-based approach. However, since the Nginx config serves different domains per environment, the simplest and most reliable approach is to just use `https://careers.krushikranti.ltd` for prod, and we'll have a separate landing page copy or an environment variable... 
+
+Actually, the landing page is just static HTML copied as-is. The cleanest approach: use a relative link `/hiring` and have Nginx internally redirect it to the careers subdomain per environment, OR just hardcode the test domain for now since you said this is for the test server. But since the same landing page HTML is shared, let me use a protocol-relative URL that adapts.
+
+Let me use a simple JS snippet that sets the careers link based on the current hostname.
+
+Now update all three docker-compose frontend files to pass the correct `NGINX_CONF`.
+
+All done. Here's a summary of everything that was changed:
+
+---
+
+### Changes summary
+
+**1. `krushikranti-hiring/lib/core/api_config.dart`** — Now supports `--dart-define=BASE_URL=...` just like the farmer and admin apps. Falls back to localhost for dev.
+
+**2. `frontend/Dockerfile`** — Added a new build stage for hiring:
+- Stage 1: Build **admin** Flutter web (with `BASE_URL`)
+- Stage 2 (new): Build **hiring** Flutter web (with same `BASE_URL`)
+- Stage 3: Nginx serves landing + admin + hiring + API proxy
+- Accepts `NGINX_CONF` arg to pick the right nginx config per environment
+
+**3. `frontend/nginx.conf`** (production) — Added `careers.krushikranti.ltd` server block serving `/usr/share/nginx/html/hiring`
+
+**4. `frontend/nginx-test.conf`** (new) — Full test server nginx config with:
+- `test.krushikranti.ltd` → landing
+- `test.admin.krushikranti.ltd` → admin
+- `test.careers.krushikranti.ltd` → hiring
+- `api2.krushikranti.ltd` → API gateway proxy
+
+**5. `frontend/nginx-http-only.conf`** (local) — Added hiring on `localhost:8082`
+
+**6. Landing page `index.html`** — "नोकऱ्या" nav link now auto-detects environment:
+- `test.krushikranti.ltd` → `https://test.careers.krushikranti.ltd`
+- `krushikranti.ltd` → `https://careers.krushikranti.ltd`
+- `localhost` → `http://localhost:8082`
+
+**7. All 3 docker-compose frontend files updated:**
+
+| File | BASE_URL | Nginx config | Hiring domain |
+|---|---|---|---|
+| `docker-compose.frontend.yml` | `api.krushikranti.ltd` | `nginx.conf` | `careers.krushikranti.ltd` |
+| `docker-compose.frontend.test.yml` | `api2.krushikranti.ltd` | `nginx-test.conf` | `test.careers.krushikranti.ltd` |
+| `docker-compose.frontend.local.yml` | `localhost:4004` | `nginx-http-only.conf` | `localhost:8082` |
+
+### Before deploying to the test server
+
+Make sure you've created the DNS **A record** for `test.careers.krushikranti.ltd` pointing to your test server IP, and include it in your Certbot SSL certificate:
+
+```bash
+sudo certbot --nginx -d test.krushikranti.ltd -d test.admin.krushikranti.ltd -d test.careers.krushikranti.ltd -d api2.krushikranti.ltd
+```
+
+Then on the test server:
+
+```bash
+docker compose -f docker-compose.frontend.test.yml up --build -d
+```
+
+---
+
+**User**
+
+do i need to restart or rebuild containers in test server
+
+---
+
+**Cursor**
+
+Yes. Because we changed both **code** and **Docker configs**, you should **rebuild and restart** on the test server so it picks up the new images and Nginx config.
+
+### What to rebuild on the test server
+
+From `/opt/krushikranti-test` (or whatever path you’ll use):
+
+1. **Backend (if not already updated there):**
+   - We changed `api-gateway` routes and skip-paths and some job-application behaviour on your local machine earlier.  
+   - Once those changes are pushed/pulled to the test server, rebuild the gateway (and any other changed services) via:
+
+   ```bash
+   cd microservices
+   docker compose -f docker-compose-test.yml build api-gateway job-application-service
+   docker compose -f docker-compose-test.yml up -d api-gateway job-application-service
+   ```
+
+   If you’re unsure which services changed, it’s safe (just slower) to do:
+
+   ```bash
+   docker compose -f docker-compose-test.yml up -d --build
+   ```
+
+2. **Frontend (landing + admin + hiring):**
+   - We updated `frontend/Dockerfile`, `nginx.conf`, `nginx-test.conf`, the landing HTML, and the hiring app.
+   - On the test server, after pulling latest code:
+
+   ```bash
+   cd /opt/krushikranti-test
+   docker compose -f docker-compose.frontend.test.yml up -d --build
+   ```
+
+   This rebuilds the **frontend image** (with admin + hiring Flutter web builds) and restarts the Nginx container with the new test config.
+
+### When you don’t need a rebuild
+
+- Pure `.env.test` changes for microservices that are injected as env vars via `env_file:` generally need only `docker compose up -d` (no `--build`).
+- But any change to:
+  - Dockerfiles
+  - Nginx configs
+  - Java / Dart / HTML/JS source
+  requires a **rebuild**.
+
+So for your current situation on the test server: **yes**, run a rebuild for the frontend stack and any backend services that were modified (at minimum `api-gateway` and `job-application-service`).
+
+---
+
+**User**
+
+just summarize what all is done for naukrya section just to contextualize the other ai
+
+---
+
+**Cursor**
+
+### Backend (job hiring / “naukrya”)
+
+- **Job-application service & Neon**:  
+  - Switched `job-application-service`, `file-service`, and `notification-service` to `SPRING_PROFILES_ACTIVE=docker` so they use **Neon dev** and Docker hostnames (`file-service:4008`, `notification-service:4016`) instead of localhost DB/hosts.
+- **File upload error fixed**:  
+  - 500 error on job-application submit was caused by `job-application-service` calling `file-service` on `localhost:4008`; now uses Docker profile and internal DNS, so resume upload works.
+- **Email OTP backend**:
+  - `EmailOtpController` (`/api/otp/send` and `/api/otp/verify`) and `OtpService` (Redis-backed OTP store) were already implemented.
+  - **API Gateway**:
+    - Added route `/api/otp/** → job-application-service`.
+    - Added `/api/otp/**` to JWT `skip-paths` in both `application.yml` and `application-docker.yml`.
+- **Notification integration**:
+  - `NotificationClientService` in job-application-service uses `notification.service.url` (default `http://notification-service:4016`) to send OTP and hiring-related emails.
+
+---
+
+### Hiring frontend (Flutter web app `krushikranti-hiring`)
+
+- **BASE_URL handling**:
+  - `ApiConfig.baseUrl` changed to read `BASE_URL` from `--dart-define`, with local fallbacks for dev (localhost / 10.0.2.2).
+- **Email OTP UX on application form**:
+  - `ApplicationFormScreen` updated to:
+    - Show email field with **Send OTP / Resend** button.
+    - After send, show **6-digit OTP input** + **Verify** button, with a 60s resend cooldown.
+    - On success, show a green “email verified” badge and lock the email field.
+    - Form validation requires email to be verified before moving to qualification screen.
+  - New `EmailOtpService` (Dio-based) in `features/hiring/data`:
+    - `sendOtp(email)` → `POST /api/otp/send?email=…`
+    - `verifyOtp(email, otp)` → `POST /api/otp/verify` with `{email, otp}`.
+  - Added i18n strings for OTP flow in all 3 languages (EN/MR/HI).
+
+---
+
+### Frontend deployment (Docker + Nginx) for hiring / careers
+
+- **Unified frontend image** (in `frontend/Dockerfile`):
+  - Stage 1: Build **admin** Flutter web with `--dart-define=BASE_URL=…`.
+  - Stage 2: Build **hiring** Flutter web (same `BASE_URL`).
+  - Stage 3: Nginx image copies:
+    - Admin web → `/usr/share/nginx/html/admin`.
+    - Hiring web → `/usr/share/nginx/html/hiring`.
+    - Static landing page → `/usr/share/nginx/html/landing`.
+  - Build args:
+    - `BASE_URL` (api / api2 / localhost).
+    - `APK_FILENAME` (prod vs test farmer APK).
+    - `NGINX_CONF` (which nginx config file to use).
+
+- **Nginx configs**:
+  - **Prod `frontend/nginx.conf`** serves:
+    - Landing: `krushikranti.ltd`, `www.krushikranti.ltd`.
+    - Admin SPA: `admin.krushikranti.ltd`.
+    - Hiring SPA: `careers.krushikranti.ltd` (root `/hiring`).
+    - API proxy: `api.krushikranti.ltd` → `api-gateway:4004`.
+  - **Test `frontend/nginx-test.conf`** serves:
+    - Landing: `test.krushikranti.ltd`.
+    - Admin SPA: `test.admin.krushikranti.ltd`.
+    - Hiring SPA: `test.careers.krushikranti.ltd`.
+    - API proxy: `api2.krushikranti.ltd`.
+  - **Local `frontend/nginx-http-only.conf`** (no SSL):
+    - Landing on `localhost:8080`.
+    - Admin on `localhost:8081`.
+    - Hiring on `localhost:8082`.
+
+- **Docker Compose (frontend)**:
+  - **Prod `docker-compose.frontend.yml`**:
+    - `BASE_URL=https://api.krushikranti.ltd`.
+    - `APK_FILENAME=krushi-kranti-farmer.apk`.
+    - `NGINX_CONF=frontend/nginx.conf`.
+  - **Test `docker-compose.frontend.test.yml`**:
+    - `BASE_URL=https://api2.krushikranti.ltd`.
+    - `APK_FILENAME=krushi-kranti-farmer-test.apk`.
+    - `NGINX_CONF=frontend/nginx-test.conf`.
+  - **Local `docker-compose.frontend.local.yml`**:
+    - `BASE_URL=http://localhost:4004`.
+    - `NGINX_CONF=frontend/nginx-http-only.conf`.
+    - Exposes 8080/8081/8082.
+
+---
+
+### Navigation / “Naukrya” link behaviour
+
+- **Landing page (`krushikranti-landing-page/index.html`)**:
+  - Navbar `नोकऱ्या` link is now `<a id="careers-link">` with JS deciding target based on `window.location.hostname`:
+    - `test.krushikranti.ltd` → `https://test.careers.krushikranti.ltd`.
+    - `krushikranti.ltd` / `www.krushikranti.ltd` → `https://careers.krushikranti.ltd`.
+    - Else (local dev) → `http://localhost:8082`.
+- Result:  
+  - From **prod landing**, `नोकऱ्या` opens **`careers.krushikranti.ltd`** (hiring portal).  
+  - From **test landing**, `नोकऱ्या` opens **`test.careers.krushikranti.ltd`**.  
+  - Locally, it opens hiring on `http://localhost:8082`.
+
+That’s the full context for the “naukrya” / hiring section: backend OTP + email flow, job-application/file-service wiring, and full Docker/Nginx setup for serving the hiring portal on careers domains in prod and test.
 

@@ -193,7 +193,11 @@ public class AuthController {
         try {
             // Verify OTP and complete registration (user is saved to database with is_verified=true)
             User user = authService.verifyOtpAndRegister(request.getPhoneNumber(), request.getOtp());
-            
+
+            // Generate tokens so the user is logged in immediately after registration
+            String accessToken = authService.generateToken(user);
+            String refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
             UserInfo userInfo = UserInfo.builder()
                     .id(user.getId())
                     .username(user.getUsername())
@@ -203,9 +207,16 @@ public class AuthController {
                     .isVerified(user.getIsVerified())
                     .build();
 
-            return ResponseEntity.ok(new ApiResponse<>(
-                    messageService.getMessage(MessageKeys.AUTH_REGISTRATION_COMPLETED, httpRequest), 
-                    userInfo));
+            AuthResponse authResponse = AuthResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .tokenType("Bearer")
+                    .expiresIn(jwtService.getExpirationSeconds())
+                    .refreshExpiresIn(refreshTokenService.getRefreshExpirationSeconds())
+                    .user(userInfo)
+                    .build();
+
+            return ResponseEntity.ok(authResponse);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(e.getMessage(), null));
