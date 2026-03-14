@@ -52,7 +52,7 @@
                     <li><a href="#services">योजना व सुविधा</a></li>
                     <li><a href="#about">आमच्याबद्दल</a></li>
                     <li><a href="#process">कार्यपद्धती</a></li>
-                    <li><a id="careers-link" href="/hiring">नोकऱ्या</a></li>
+                    <li><a href="http://localhost:52821/">नोकऱ्या</a></li>
                     <li><a href="#contact">संपर्क</a></li>
                 </ul>
             </nav>
@@ -268,20 +268,6 @@
     </footer>
 
     <script src="script.js"></script>
-    <script>
-    (function() {
-        var host = window.location.hostname;
-        var link = document.getElementById('careers-link');
-        if (!link) return;
-        if (host.indexOf('test.') === 0) {
-            link.href = 'https://test.careers.krushikranti.ltd';
-        } else if (host === 'krushikranti.ltd' || host === 'www.krushikranti.ltd') {
-            link.href = 'https://careers.krushikranti.ltd';
-        } else {
-            link.href = 'http://localhost:8082';
-        }
-    })();
-    </script>
 
 </body>
 
