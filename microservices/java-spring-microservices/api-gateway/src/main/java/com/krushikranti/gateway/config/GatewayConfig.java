@@ -144,6 +144,11 @@ public class GatewayConfig {
                 .route("job-application-service", r -> r
                         .path("/api/applications/**")
                         .uri(serviceUrls.getJobApplicationService()))
+
+                // Job Application OTP Routes (email verification for applicants)
+                .route("job-application-otp", r -> r
+                        .path("/api/otp/**")
+                        .uri(serviceUrls.getJobApplicationService()))
                 
                 .build();
     }

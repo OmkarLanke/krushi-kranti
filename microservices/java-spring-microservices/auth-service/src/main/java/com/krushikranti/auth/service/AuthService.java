@@ -22,6 +22,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final OtpService otpService;
     private final RegistrationDataService registrationDataService;
+    private final SmsNotificationClient smsNotificationClient;
 
     @Transactional
     public User registerUser(String username, String email, String phoneNumber, String password, User.UserRole role) {
@@ -47,10 +48,13 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
         log.info("User registered: {}", savedUser.getEmail());
-        
-        // Generate and send OTP (in production, send via SMS)
-        otpService.generateOtp(phoneNumber);
-        
+
+        // Generate and send OTP
+        String otp = otpService.generateOtp(phoneNumber);
+
+        // Send OTP via SMS through notification-service
+        smsNotificationClient.sendOtpSms(phoneNumber, username, otp);
+
         return savedUser;
     }
 
@@ -110,9 +114,17 @@ public class AuthService {
 
         // Store registration data temporarily in Redis
         registrationDataService.storeRegistrationData(registerRequest.getPhoneNumber(), registerRequest);
-        
+
         // Generate and send OTP
-        otpService.generateOtp(registerRequest.getPhoneNumber());
+        String otp = otpService.generateOtp(registerRequest.getPhoneNumber());
+
+        // Send OTP via SMS through notification-service
+        smsNotificationClient.sendOtpSms(
+                registerRequest.getPhoneNumber(),
+                registerRequest.getUsername(),
+                otp
+        );
+
         log.info("OTP sent for registration to phone: {}", registerRequest.getPhoneNumber());
     }
 
@@ -207,7 +219,16 @@ public class AuthService {
     }
 
     public String generateOtpForPhone(String phoneNumber) {
-        return otpService.generateOtp(phoneNumber);
+        String otp = otpService.generateOtp(phoneNumber);
+
+        // Look up user name for the SMS template
+        Optional<User> userOpt = userRepository.findByPhoneNumber(phoneNumber);
+        String name = userOpt.map(User::getUsername).orElse("User");
+
+        // Send OTP via SMS through notification-service
+        smsNotificationClient.sendOtpSms(phoneNumber, name, otp);
+
+        return otp;
     }
 
     /**
@@ -236,7 +257,15 @@ public class AuthService {
         }
 
         // Generate and send OTP for login
-        otpService.generateOtp(phoneNumber);
+        String otp = otpService.generateOtp(phoneNumber);
+
+        // Send OTP via SMS through notification-service
+        smsNotificationClient.sendOtpSms(
+                phoneNumber,
+                user.getUsername(),
+                otp
+        );
+
         log.info("Login OTP sent to phone: {}", phoneNumber);
     }
 

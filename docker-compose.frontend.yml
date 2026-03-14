@@ -3,12 +3,12 @@
 #
 # PRODUCTION settings:
 # - BASE_URL: https://api.krushikranti.ltd
-# - Ports: 80:80, 443:443 (standard HTTP/HTTPS)
 # - Nginx: production config with SSL
-# - SSL certs: Mount from /etc/letsencrypt (on EC2) or create self-signed for local testing
-#
-# NOTE: Ports 80/443 require admin privileges on Windows. Run Docker Desktop as administrator.
-# For local testing without SSL, use docker-compose.frontend.local.yml instead.
+# - Domains served:
+#     Landing:  krushikranti.ltd, www.krushikranti.ltd
+#     Admin:    admin.krushikranti.ltd
+#     Hiring:   careers.krushikranti.ltd
+#     API:      api.krushikranti.ltd
 
 services:
   frontend:
@@ -16,17 +16,15 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        BASE_URL: https://api.krushikranti.ltd  # ← PRODUCTION: Domain URL
+        BASE_URL: https://api.krushikranti.ltd
+        APK_FILENAME: krushi-kranti-farmer.apk
+        NGINX_CONF: frontend/nginx.conf
     image: krushi-frontend:latest
     container_name: krushi-frontend
     ports:
-      - "80:80"    # Standard HTTP port
-      - "443:443"  # Standard HTTPS port
+      - "80:80"
+      - "443:443"
     volumes:
-      # Production nginx config (with SSL)
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      # SSL certificates (on EC2: /etc/letsencrypt, for local: comment out or use self-signed)
-      # NOTE: Uncomment this line when deploying to EC2 (where Certbot creates /etc/letsencrypt)
       - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - krushi-kranti-network

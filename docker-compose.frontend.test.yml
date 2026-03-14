@@ -1,0 +1,38 @@
+# Frontend - TEST SERVER configuration
+# Run from repo root: docker compose -f docker-compose.frontend.test.yml up --build -d
+#
+# TEST settings:
+# - BASE_URL: https://api2.krushikranti.ltd (test backend)
+# - Nginx: test config with SSL (test.krushikranti.ltd, test.admin, test.careers, api2)
+# - APK: test APK built with test BASE_URL
+# - Domains served:
+#     Landing:  test.krushikranti.ltd
+#     Admin:    test.admin.krushikranti.ltd
+#     Hiring:   test.careers.krushikranti.ltd
+#     API:      api2.krushikranti.ltd
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        BASE_URL: https://api2.krushikranti.ltd
+        APK_FILENAME: krushi-kranti-farmer-test.apk
+        NGINX_CONF: frontend/nginx-test.conf
+    image: krushi-frontend:test
+    container_name: krushi-frontend-test
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/nginx-test.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      - krushi-kranti-network
+    restart: unless-stopped
+
+networks:
+  krushi-kranti-network:
+    external: true
+    name: krushi-kranti-network

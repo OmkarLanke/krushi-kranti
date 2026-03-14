@@ -120,6 +120,17 @@ class AppStrings {
       'feat_earn': 'Higher Earnings',
       'feat_growth': 'Career Growth',
       'feat_smart': 'Smart Assignments',
+
+      'send_otp': 'Send OTP',
+      'resend_otp': 'Resend',
+      'verify_otp': 'Verify',
+      'otp_sent_success': 'OTP sent to your email',
+      'otp_send_failed': 'Failed to send OTP. Please try again.',
+      'otp_invalid': 'Invalid OTP. Please check and try again.',
+      'otp_verify_failed': 'Verification failed. Please try again.',
+      'email_verified_success': 'Email verified successfully',
+      'email_not_verified': 'Please verify your email with OTP',
+      'otp_hint': 'Enter the 6-digit code sent to your email',
     },
 
     // --- MARATHI (DEFAULT) ---
@@ -226,6 +237,17 @@ class AppStrings {
       'feat_earn': 'अधिक कमाई',
       'feat_growth': 'करिअर वाढ',
       'feat_smart': 'स्मार्ट असाइनमेंट',
+
+      'send_otp': 'OTP पाठवा',
+      'resend_otp': 'पुन्हा पाठवा',
+      'verify_otp': 'सत्यापित करा',
+      'otp_sent_success': 'तुमच्या ईमेलवर OTP पाठवला',
+      'otp_send_failed': 'OTP पाठवता आला नाही. कृपया पुन्हा प्रयत्न करा.',
+      'otp_invalid': 'अवैध OTP. कृपया तपासा आणि पुन्हा प्रयत्न करा.',
+      'otp_verify_failed': 'सत्यापन अयशस्वी. कृपया पुन्हा प्रयत्न करा.',
+      'email_verified_success': 'ईमेल यशस्वीरित्या सत्यापित',
+      'email_not_verified': 'कृपया OTP ने तुमचा ईमेल सत्यापित करा',
+      'otp_hint': 'तुमच्या ईमेलवर पाठवलेला ६ अंकी कोड प्रविष्ट करा',
     },
 
     // --- HINDI ---
@@ -332,6 +354,17 @@ class AppStrings {
       'feat_earn': 'उच्च कमाई',
       'feat_growth': 'करियर विकास',
       'feat_smart': 'स्मार्ट असाइनमेंट',
+
+      'send_otp': 'OTP भेजें',
+      'resend_otp': 'पुनः भेजें',
+      'verify_otp': 'सत्यापित करें',
+      'otp_sent_success': 'आपके ईमेल पर OTP भेजा गया',
+      'otp_send_failed': 'OTP भेजने में विफल। कृपया पुनः प्रयास करें।',
+      'otp_invalid': 'अमान्य OTP। कृपया जांचें और पुनः प्रयास करें।',
+      'otp_verify_failed': 'सत्यापन विफल। कृपया पुनः प्रयास करें।',
+      'email_verified_success': 'ईमेल सफलतापूर्वक सत्यापित',
+      'email_not_verified': 'कृपया OTP से अपना ईमेल सत्यापित करें',
+      'otp_hint': 'अपने ईमेल पर भेजा गया 6 अंकों का कोड दर्ज करें',
     },
   };
 }

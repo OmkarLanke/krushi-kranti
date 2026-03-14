@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://notification-db:5432/notification_db
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://notification-db:5432/notification_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
   
   kafka:
     bootstrap-servers: kafka:9092
@@ -32,3 +32,11 @@ app:
       base-url: ${RESET_PASSWORD_BASE_URL:https://krushikranti.com/reset-password}
       deep-link: ${RESET_PASSWORD_DEEP_LINK:krushikranti://reset-password}
       redirect-url: ${RESET_PASSWORD_REDIRECT_URL:}
+  sms:
+    api-url: ${SMS_API_URL:http://control.bestsms.co.in/api/sendhttp.php}
+    auth-key: ${SMS_AUTH_KEY:}
+    sender-id: ${SMS_SENDER_ID:THYNKT}
+    route: ${SMS_ROUTE:4}
+    country: ${SMS_COUNTRY:91}
+    dlt-te-id: ${SMS_DLT_TE_ID:1707177212160936245}
+    enabled: ${SMS_ENABLED:true}
