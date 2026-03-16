@@ -87,7 +87,8 @@ class _OtpScreenState extends State<OtpScreen> {
       }
 
       // Get 'isLogin' Flag to determine which endpoint to call
-      final bool isLogin = ModalRoute.of(context)?.settings.arguments as bool? ?? false;
+      final bool isLogin =
+          ModalRoute.of(context)?.settings.arguments as bool? ?? false;
 
       if (isLogin) {
         // For login: use /auth/request-login-otp
@@ -147,7 +148,7 @@ class _OtpScreenState extends State<OtpScreen> {
   Future<void> _submitOtp() async {
     // 1. Combine OTP from controllers
     String otp = otpControllers.map((e) => e.text).join();
-    
+
     if (otp.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please enter full 6-digit OTP")),
@@ -170,7 +171,8 @@ class _OtpScreenState extends State<OtpScreen> {
 
       // 3. Get 'isLogin' Flag passed from Login/Signup screen
       // Default to false (Signup) if arguments are null
-      final bool isLogin = ModalRoute.of(context)?.settings.arguments as bool? ?? false;
+      final bool isLogin =
+          ModalRoute.of(context)?.settings.arguments as bool? ?? false;
 
       if (isLogin) {
         // CASE A: User is Logging In -> Call /auth/login with phone/OTP
@@ -214,13 +216,13 @@ class _OtpScreenState extends State<OtpScreen> {
         try {
           final subStatus = await SubscriptionService.getSubscriptionStatus();
           // Check multiple possible fields to determine subscription status
-          isSubscribed = subStatus['isSubscribed'] == true || 
-                        subStatus['subscriptionStatus'] == 'ACTIVE' ||
-                        subStatus['subscriptionStatus'] == 'active';
-          
+          isSubscribed = subStatus['isSubscribed'] == true ||
+              subStatus['subscriptionStatus'] == 'ACTIVE' ||
+              subStatus['subscriptionStatus'] == 'active';
+
           if (isSubscribed) {
-            final endDate = subStatus['subscriptionEndDate']?.toString() ?? 
-                           subStatus['expiresAt']?.toString();
+            final endDate = subStatus['subscriptionEndDate']?.toString() ??
+                subStatus['expiresAt']?.toString();
             await StorageService.saveSubscriptionStatus(
               true,
               endDate: endDate,
@@ -350,7 +352,8 @@ class _OtpScreenState extends State<OtpScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -404,7 +407,8 @@ class _OtpScreenState extends State<OtpScreen> {
                       ),
                     ],
                   ),
-                  child: Icon(Icons.lock_rounded, size: 50, color: AppColors.brandGreen),
+                  child: Icon(Icons.lock_rounded,
+                      size: 50, color: AppColors.brandGreen),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -426,13 +430,13 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // OTP Input Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: List.generate(6, (i) => _otpBox(i)),
                 ),
-                
+
                 const SizedBox(height: 16),
                 // Resend OTP - Show timer or button
                 timerSeconds > 0
@@ -451,7 +455,8 @@ class _OtpScreenState extends State<OtpScreen> {
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.brandGreen),
                                 ),
                               )
                             : Text(
@@ -465,7 +470,7 @@ class _OtpScreenState extends State<OtpScreen> {
                               ),
                       ),
                 const SizedBox(height: 32),
-                
+
                 // SUBMIT BUTTON
                 SizedBox(
                   width: double.infinity,
@@ -485,10 +490,12 @@ class _OtpScreenState extends State<OtpScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : const Icon(Icons.verified_rounded, color: Colors.white, size: 20),
+                        : const Icon(Icons.verified_rounded,
+                            color: Colors.white, size: 20),
                     label: Text(
                       submitButtonText[appLang]!,
                       style: GoogleFonts.poppins(
