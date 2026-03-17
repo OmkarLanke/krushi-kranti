@@ -7,10 +7,10 @@ spring:
   kafka:
     bootstrap-servers: kafka:9092
 
-  # Email Configuration (SMTP)
+  # Email Configuration (SMTP) - default to GoDaddy TLS on 587
   mail:
     host: ${MAIL_HOST:smtpout.secureserver.net}
-    port: ${MAIL_PORT:465}
+    port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
     properties:
@@ -18,9 +18,9 @@ spring:
         smtp:
           auth: true
           ssl:
-            enable: ${MAIL_SSL_ENABLE:true}
+            enable: ${MAIL_SSL_ENABLE:false}
           starttls:
-            enable: ${MAIL_STARTTLS_ENABLE:false}
+            enable: ${MAIL_STARTTLS_ENABLE:true}
           connectiontimeout: 10000
           timeout: 10000
           writetimeout: 10000
