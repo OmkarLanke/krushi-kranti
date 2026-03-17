@@ -292,7 +292,7 @@ services:
     volumes:
       # Mount entire project root read-only so farmer-service can access Excel files.
       # Use container path /workspace for file-based imports (e.g. filePath=/workspace/Maharashtra.xlsx).
-      - /home/omkar/Desktop/Thynktech/krushi-kranti:/workspace:ro
+      - /Users/prajwal/Desktop/krushi-kranti:/workspace:ro
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - WEATHER_API_KEY=${WEATHER_API_KEY}

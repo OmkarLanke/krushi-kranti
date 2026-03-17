@@ -215,17 +215,42 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
               .toList();
     }
 
-    if (_startDate != null) {
-      filtered =
-          filtered.where((app) => app.appliedAt.isAfter(_startDate!)).toList();
-    }
+    if (_startDate != null || _endDate != null) {
+      filtered = filtered.where((app) {
+        final applied = app.appliedAt;
 
-    if (_endDate != null) {
-      // End of the day
-      final end = _endDate!.add(const Duration(days: 1)).subtract(
-        const Duration(seconds: 1),
-      );
-      filtered = filtered.where((app) => app.appliedAt.isBefore(end)).toList();
+        if (_startDate != null) {
+          final startOfStartDate = DateTime(
+            _startDate!.year,
+            _startDate!.month,
+            _startDate!.day,
+          );
+          final startOfAppliedDate = DateTime(
+            applied.year,
+            applied.month,
+            applied.day,
+          );
+          if (startOfAppliedDate.isBefore(startOfStartDate)) {
+            return false;
+          }
+        }
+
+        if (_endDate != null) {
+          final endOfEndDate = DateTime(
+            _endDate!.year,
+            _endDate!.month,
+            _endDate!.day,
+            23,
+            59,
+            59,
+          );
+          if (applied.isAfter(endOfEndDate)) {
+            return false;
+          }
+        }
+
+        return true;
+      }).toList();
     }
 
     // 3. Sorting
@@ -687,11 +712,14 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
     final label = isStart ? 'Start Date' : 'End Date';
     return InkWell(
       onTap: () async {
+        final today = DateTime.now();
+        final normalizedToday = DateTime(today.year, today.month, today.day);
+
         final newDate = await showDatePicker(
           context: context,
-          initialDate: date ?? DateTime.now(),
-          firstDate: DateTime(2024),
-          lastDate: DateTime.now().add(const Duration(days: 365)),
+          initialDate: date ?? normalizedToday,
+          firstDate: isStart ? DateTime(2024) : (_startDate ?? DateTime(2024)),
+          lastDate: normalizedToday,
         );
         if (newDate != null) {
           setState(() {

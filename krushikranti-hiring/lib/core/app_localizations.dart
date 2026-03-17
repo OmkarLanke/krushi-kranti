@@ -99,6 +99,7 @@ class AppStrings {
 
       'apply_title': 'Apply for Agriculture Careers',
       'apply_subtitle': 'Fill the form to work as a Krushi Tadnya, Field Officer, or Shopkeeper',
+      'apply': 'Apply',
       
       // Missing Keys
       'institution': 'Institution / University',
@@ -216,6 +217,7 @@ class AppStrings {
 
       'apply_title': 'कृषी करिअरसाठी अर्ज करा',
       'apply_subtitle': 'कृषी तज्ञ, क्षेत्र अधिकारी किंवा दुकानदार म्हणून काम करण्यासाठी फॉर्म भरा',
+      'apply': 'अर्ज करा',
 
       // Missing Keys
       'institution': 'संस्था / विद्यापीठ',
@@ -333,6 +335,7 @@ class AppStrings {
 
       'apply_title': 'कृषि करियर के लिए आवेदन करें',
       'apply_subtitle': 'कृषि विशेषज्ञ, फील्ड ऑफिसर या दुकानदार के रूप में काम करने के लिए फॉर्म भरें',
+      'apply': 'आवेदन करें',
 
       // Missing Keys
       'institution': 'संस्थान / विश्वविद्यालय',
