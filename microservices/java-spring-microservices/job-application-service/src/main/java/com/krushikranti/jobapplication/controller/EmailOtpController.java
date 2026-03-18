@@ -27,7 +27,7 @@ public class EmailOtpController {
 
         Map<String, Object> emailRequest = new HashMap<>();
         emailRequest.put("to", email);
-        emailRequest.put("subject", "Your Verification Code - Krushi Kranti");
+        emailRequest.put("subject", "Your OTP - Krushi Kranti");
         emailRequest.put("body", buildOtpEmailTemplate(otp));
         emailRequest.put("isHtml", true);
 
@@ -73,7 +73,7 @@ public class EmailOtpController {
                 "<!-- Content -->" +
                 "<div style=\"padding: 40px 30px; text-align: center;\">" +
                 "<p style=\"margin: 0 0 20px 0; color: #333; font-size: 16px;\">" +
-                "Welcome! Your verification code is:" +
+                "Dear Candidate, your Email Verification OTP is:" +
                 "</p>" +
 
                 "<!-- OTP Box -->" +
@@ -84,6 +84,10 @@ public class EmailOtpController {
 
                 "<p style=\"margin: 20px 0; color: #666; font-size: 14px;\">" +
                 "This code is valid for <strong>5 minutes</strong>" +
+                "</p>" +
+
+                "<p style=\"margin: 10px 0 0 0; color: #666; font-size: 13px;\">" +
+                "Visit: <a href=\"https://krushikranti.ltd\" style=\"color:#4CAF50; text-decoration:none;\">www.krushikranti.ltd</a>" +
                 "</p>" +
 
                 "<div style=\"background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 20px 0; border-radius: 4px; text-align: left;\">" +
