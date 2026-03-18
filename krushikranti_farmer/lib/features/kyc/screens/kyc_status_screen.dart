@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/services/http_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../models/kyc_models.dart';
 import '../services/kyc_service.dart';
@@ -96,7 +97,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
     if (_kycStatus == null) return;
 
     Widget nextScreen;
-    
+
     if (!_kycStatus!.aadhaarVerified) {
       nextScreen = const AadhaarVerificationScreen();
     } else if (!_kycStatus!.panVerified) {
@@ -125,7 +126,8 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
           children: [
             const Icon(Icons.check_circle, color: Colors.green, size: 32),
             const SizedBox(width: 12),
-            Text(l10n.kycComplete, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            Text(l10n.kycComplete,
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
@@ -135,7 +137,8 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(l10n.ok, style: GoogleFonts.poppins(color: AppColors.brandGreen)),
+            child: Text(l10n.ok,
+                style: GoogleFonts.poppins(color: AppColors.brandGreen)),
           ),
         ],
       ),
@@ -158,7 +161,8 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () {
             if (_fromOnboarding) {
               // When KYC is part of onboarding, back should take user into main app safely
@@ -196,7 +200,8 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.brandGreen))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.brandGreen))
           : RefreshIndicator(
               onRefresh: _loadKycStatus,
               color: AppColors.brandGreen,
@@ -214,30 +219,45 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                         CircleAvatar(
                           radius: 14,
                           backgroundColor: AppColors.brandGreen,
-                          child: Icon(Icons.check, color: Colors.white, size: 16),
+                          child:
+                              Icon(Icons.check, color: Colors.white, size: 16),
                         ),
-                        SizedBox(width: 24, child: Divider(color: AppColors.brandGreen, thickness: 2)),
+                        SizedBox(
+                            width: 24,
+                            child: Divider(
+                                color: AppColors.brandGreen, thickness: 2)),
                         // Step 2: Farm (done)
                         CircleAvatar(
                           radius: 14,
                           backgroundColor: AppColors.brandGreen,
-                          child: Icon(Icons.check, color: Colors.white, size: 16),
+                          child:
+                              Icon(Icons.check, color: Colors.white, size: 16),
                         ),
-                        SizedBox(width: 24, child: Divider(color: AppColors.brandGreen, thickness: 2)),
+                        SizedBox(
+                            width: 24,
+                            child: Divider(
+                                color: AppColors.brandGreen, thickness: 2)),
                         // Step 3: Crop (done)
                         CircleAvatar(
                           radius: 14,
                           backgroundColor: AppColors.brandGreen,
-                          child: Icon(Icons.check, color: Colors.white, size: 16),
+                          child:
+                              Icon(Icons.check, color: Colors.white, size: 16),
                         ),
-                        SizedBox(width: 24, child: Divider(color: AppColors.brandGreen, thickness: 2)),
+                        SizedBox(
+                            width: 24,
+                            child: Divider(
+                                color: AppColors.brandGreen, thickness: 2)),
                         // Step 4: Subscription (done)
                         CircleAvatar(
                           radius: 14,
                           backgroundColor: AppColors.brandGreen,
-                          child: Icon(Icons.check, color: Colors.white, size: 16),
+                          child:
+                              Icon(Icons.check, color: Colors.white, size: 16),
                         ),
-                        SizedBox(width: 24, child: Divider(color: Colors.grey, thickness: 2)),
+                        SizedBox(
+                            width: 24,
+                            child: Divider(color: Colors.grey, thickness: 2)),
                         // Step 5: KYC (active)
                         CircleAvatar(
                           radius: 14,
@@ -318,9 +338,9 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
 
                     // Progress Card
                     _buildProgressCard(l10n),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Steps
                     Text(
                       l10n.verificationSteps,
@@ -332,7 +352,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Step 1: Aadhaar
                     _buildStepCard(
                       icon: Icons.fingerprint,
@@ -345,12 +365,13 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                       isEnabled: !(_kycStatus?.aadhaarVerified ?? false),
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AadhaarVerificationScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const AadhaarVerificationScreen()),
                       ).then((_) => _loadKycStatus()),
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // Step 2: PAN
                     _buildStepCard(
                       icon: Icons.credit_card,
@@ -364,12 +385,13 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                           !(_kycStatus?.panVerified ?? false),
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const PanVerificationScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const PanVerificationScreen()),
                       ).then((_) => _loadKycStatus()),
                     ),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // Step 3: Bank
                     _buildStepCard(
                       icon: Icons.account_balance,
@@ -383,52 +405,61 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                           !(_kycStatus?.bankVerified ?? false),
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const BankVerificationScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const BankVerificationScreen()),
                       ).then((_) => _loadKycStatus()),
                     ),
-                    
+
                     const SizedBox(height: 32),
 
                     // KYC Details Section (read-only, fetched from backend)
                     _buildDetailsSection(l10n),
-                    
-                    // Test Button (for testing purposes)
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: OutlinedButton(
-                        onPressed: _isLoading ? null : _testVerifyAll,
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.orange.shade400, width: 1.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+
+                    // Test Button (only visible in non-production environments)
+                    if (!HttpService.baseUrl.contains('api.krushikranti.ltd') ||
+                        HttpService.baseUrl
+                            .contains('api2.krushikranti.ltd')) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: _isLoading ? null : _testVerifyAll,
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                                color: Colors.orange.shade400, width: 1.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.bug_report, color: Colors.orange.shade700, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Test: Verify All KYC',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.orange.shade700,
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.bug_report,
+                                        color: Colors.orange.shade700,
+                                        size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Test: Verify All KYC',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.orange.shade700,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
+                        ),
                       ),
-                    ),
-                    
+                    ],
+
                     // Continue Button
                     if (!(_kycStatus?.isComplete ?? false)) ...[
                       const SizedBox(height: 16),
@@ -438,15 +469,15 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _navigateToNextStep,
                           icon: Icon(
-                            _kycStatus?.completedSteps == 0 
-                                ? Icons.play_arrow_rounded 
+                            _kycStatus?.completedSteps == 0
+                                ? Icons.play_arrow_rounded
                                 : Icons.arrow_forward_rounded,
                             color: Colors.white,
                             size: 20,
                           ),
                           label: Text(
-                            _kycStatus?.completedSteps == 0 
-                                ? l10n.startVerification 
+                            _kycStatus?.completedSteps == 0
+                                ? l10n.startVerification
                                 : l10n.continueVerification,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
@@ -647,7 +678,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isComplete 
+          colors: isComplete
               ? [Colors.green.shade400, Colors.green.shade600]
               : [AppColors.brandGreen, AppColors.brandGreen.withOpacity(0.8)],
           begin: Alignment.topLeft,
@@ -656,7 +687,8 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: (isComplete ? Colors.green : AppColors.brandGreen).withOpacity(0.3),
+            color: (isComplete ? Colors.green : AppColors.brandGreen)
+                .withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -746,8 +778,8 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isVerified 
-                  ? Colors.green.shade200 
+              color: isVerified
+                  ? Colors.green.shade200
                   : (isEnabled ? Colors.grey.shade300 : Colors.grey.shade200),
               width: 1.5,
             ),
@@ -785,14 +817,17 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                               ],
                             )
                           : null),
-                  color: !isVerified && !isEnabled ? Colors.grey.shade100 : null,
+                  color:
+                      !isVerified && !isEnabled ? Colors.grey.shade100 : null,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
-                  color: isVerified 
+                  color: isVerified
                       ? Colors.green.shade600
-                      : (isEnabled ? AppColors.brandGreen : Colors.grey.shade400),
+                      : (isEnabled
+                          ? AppColors.brandGreen
+                          : Colors.grey.shade400),
                   size: 24,
                 ),
               ),
@@ -807,7 +842,8 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: isEnabled ? Colors.black87 : Colors.grey.shade600,
+                        color:
+                            isEnabled ? Colors.black87 : Colors.grey.shade600,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -816,7 +852,9 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                       subtitle,
                       style: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: isVerified ? Colors.green.shade700 : Colors.grey.shade600,
+                        color: isVerified
+                            ? Colors.green.shade700
+                            : Colors.grey.shade600,
                         height: 1.3,
                       ),
                       maxLines: 2,
@@ -833,10 +871,12 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                     color: Colors.green.shade50,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 22),
+                  child: const Icon(Icons.check_circle_rounded,
+                      color: Colors.green, size: 22),
                 )
               else if (isEnabled)
-                Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey.shade400, size: 16)
+                Icon(Icons.arrow_forward_ios_rounded,
+                    color: Colors.grey.shade400, size: 16)
               else
                 Icon(Icons.lock_rounded, color: Colors.grey.shade400, size: 20),
             ],
@@ -846,4 +886,3 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
     );
   }
 }
-
