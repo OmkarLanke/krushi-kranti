@@ -25,13 +25,7 @@ public class EmailOtpController {
     public Mono<ResponseEntity<Map<String, Object>>> sendOtp(@RequestParam("email") String email) {
         String otp = otpService.generateOtp(email);
 
-        Map<String, Object> emailRequest = new HashMap<>();
-        emailRequest.put("to", email);
-        emailRequest.put("subject", "Your verification code");
-        emailRequest.put("body", "Your verification code is: " + otp);
-        emailRequest.put("isHtml", false);
-
-        return notificationClientService.sendGenericEmail(emailRequest)
+        return notificationClientService.sendOtpEmail(email, otp, otpService.getOtpExpirationMinutes())
                 .then(Mono.fromSupplier(() -> {
                     Map<String, Object> resp = new HashMap<>();
                     resp.put("sent", true);
