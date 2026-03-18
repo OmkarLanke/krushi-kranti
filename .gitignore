@@ -36,6 +36,7 @@ logs/
 .env.local
 .env.*.local
 .env.test
+.env.prod
 
 # Docker
 docker-compose.override.yml
