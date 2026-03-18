@@ -446,7 +446,7 @@ services:
       dockerfile: file-service/Dockerfile
     container_name: file-service
     env_file:
-      - ./java-spring-microservices/file-service/.env
+      - ./java-spring-microservices/file-service/.env.test
     ports:
       - "4008:4008"
     depends_on:
