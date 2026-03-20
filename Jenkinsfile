@@ -23,15 +23,15 @@ pipeline {
 
         stage('Inject Secrets (.env files)') {
             steps {
-                // Jenkins will securely pull the test server's .env file from your configured Jenkins Secret Files
-                // Create a "Secret file" credential in Jenkins globally with the ID 'microservices-env-test'
-                // Create a "Secret file" credential in Jenkins globally with the ID 'file-service-env-test'
+                // Jenkins will securely pull the test server's .env files from your configured Jenkins Secret Files
                 withCredentials([
                     file(credentialsId: 'microservices-env-test', variable: 'MICROSERVICES_ENV'),
                     file(credentialsId: 'file-service-env-test', variable: 'FILE_SERVICE_ENV')
                 ]) {
-                    sh 'cp $MICROSERVICES_ENV microservices/.env.test'
-                    sh 'cp $FILE_SERVICE_ENV microservices/java-spring-microservices/file-service/.env.test'
+                    // Force copy (-f) because Jenkins Secret files are Read-Only (0400). 
+                    // Without -f, the second build fails because it can't overwrite the read-only file from the first build!
+                    sh 'cp -f $MICROSERVICES_ENV microservices/.env.test'
+                    sh 'cp -f $FILE_SERVICE_ENV microservices/java-spring-microservices/file-service/.env.test'
                 }
             }
         }
