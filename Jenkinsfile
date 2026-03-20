@@ -52,7 +52,7 @@ pipeline {
             steps {
                 // Deploys the java microservices using the test compose file
                 dir('microservices') {
-                    sh 'docker compose -f docker-compose-test.yml up --build -d'
+                    sh 'docker compose --env-file .env.test -f docker-compose-test.yml up --build -d'
                 }
             }
         }
