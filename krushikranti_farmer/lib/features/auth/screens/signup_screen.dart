@@ -21,6 +21,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
 
+  final _formKey = GlobalKey<FormState>();
+  final _usernameFocus = FocusNode();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _phoneFocus = FocusNode();
+
   String appLang = "en"; // default
   bool _isLoading = false;
   bool _obscurePassword = true; // ✅ ADDED: Password visibility toggle
@@ -99,6 +105,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void initState() {
     super.initState();
     loadLanguage();
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    phoneController.dispose();
+    _usernameFocus.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _phoneFocus.dispose();
+    super.dispose();
   }
 
   Future<void> loadLanguage() async {
@@ -214,275 +233,326 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   // ✅ UPDATED: Async function to save data
   Future<void> validateForm() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    // Keep existing per-field error strings (used by translations), but drive UX via Form.
     setState(() {
-      usernameError = validateUsername(usernameController.text)
-          ? null
-          : translationsErr[appLang]!["usernameErr"];
-
-      emailError = validateEmail(emailController.text.trim())
-          ? null
-          : translationsErr[appLang]!["emailErr"];
-
-      passwordError = validatePassword(passwordController.text.trim())
-          ? null
-          : translationsErr[appLang]!["passErr"];
-
-      phoneError = validatePhone(phoneController.text.trim())
-          ? null
-          : translationsErr[appLang]!["phoneErr"];
+      usernameError = null;
+      emailError = null;
+      passwordError = null;
+      phoneError = null;
     });
 
-    if (usernameError == null && 
-        emailError == null && 
-        passwordError == null && 
-        phoneError == null) {
-      
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await HttpService.post(
+        "auth/register",
+        {
+          "username": usernameController.text.trim(),
+          "email": emailController.text.trim(),
+          "phoneNumber": phoneController.text.trim(),
+          "password": passwordController.text.trim(),
+          "role": "FARMER",
+        },
+      );
+
+      await StorageService.saveAuthDetails(
+        email: emailController.text.trim(),
+        phone: phoneController.text.trim(),
+      );
+
+      await StorageService.savePersonalDetails(
+        firstName: usernameController.text.trim(),
+        lastName: "",
+        dob: "",
+        gender: "",
+        profilePicPath: null,
+      );
+
+      if (!mounted) return;
+      Navigator.pushNamed(context, AppRoutes.otp, arguments: false);
+    } catch (e) {
+      if (!mounted) return;
+
       setState(() {
-        _isLoading = true;
+        _isLoading = false;
       });
 
-      try {
-        // 1. Call /auth/register endpoint
-        final response = await HttpService.post(
-          "auth/register",
-          {
-            "username": usernameController.text.trim(),
-            "email": emailController.text.trim(),
-            "phoneNumber": phoneController.text.trim(),
-            "password": passwordController.text.trim(),
-            "role": "FARMER",
-          },
-        );
+      final errorMessage = _getUserFriendlyErrorMessage(e);
 
-        // 2. Save Auth Details (Email/Phone) for OTP screen
-        await StorageService.saveAuthDetails(
-          email: emailController.text.trim(),
-          phone: phoneController.text.trim(),
-        );
-
-        // 3. Save Username as First Name initially (so Profile isn't empty)
-        await StorageService.savePersonalDetails(
-          firstName: usernameController.text.trim(),
-          lastName: "",
-          dob: "",
-          gender: "",
-          profilePicPath: null,
-        );
-
-        if (!mounted) return;
-
-        // 4. Navigate to OTP (Pass 'false' because this is Signup)
-        Navigator.pushNamed(context, AppRoutes.otp, arguments: false);
-      } catch (e) {
-        if (!mounted) return;
-
-        setState(() {
-          _isLoading = false;
-        });
-
-        // Get user-friendly error message
-        final errorMessage = _getUserFriendlyErrorMessage(e);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    errorMessage,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  errorMessage,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
                   ),
                 ),
-              ],
-            ),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'OK',
-              textColor: Colors.white,
-              onPressed: () {},
-            ),
+              ),
+            ],
           ),
-        );
-      }
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'OK',
+            textColor: Colors.white,
+            onPressed: () {},
+          ),
+        ),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          translations[appLang]!["signupNow"]!,
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+    final t = translations[appLang] ?? translations["en"]!;
+    final tErr = translationsErr[appLang] ?? translationsErr["en"]!;
+
+    final media = MediaQuery.of(context);
+    final isCompactHeight = media.size.height < 700;
+    final horizontalPadding = media.size.width >= 600 ? 24.0 : 16.0;
+    final titleSize = media.size.width >= 600 ? 32.0 : 28.0;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F7FA),
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
           ),
-        ),
-        centerTitle: true,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.brandGreen,
-                AppColors.brandGreen.withOpacity(0.8),
-              ],
+          title: Text(
+            t["signupNow"] ?? "Sign Up",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
+          ),
+          centerTitle: true,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.brandGreen,
+                  AppColors.brandGreen.withOpacity(0.85),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth = constraints.maxWidth >= 700 ? 520.0 : double.infinity;
 
-                Text(
-                  translations[appLang]!["hey"]!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                    letterSpacing: 0.3,
-                  ),
+              return SingleChildScrollView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  isCompactHeight ? 12 : 20,
+                  horizontalPadding,
+                  20 + media.viewInsets.bottom,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  translations[appLang]!["signupNow"]!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.brandGreen,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // --- 1. USERNAME FIELD (ADDED BACK) ---
-                _label(translations[appLang]!["username"]!),
-                _inputField(
-                  controller: usernameController,
-                  hint: translations[appLang]!["usernameHint"]!,
-                  icon: Icons.person_outline,
-                ),
-                if (usernameError != null) _errorText(usernameError!),
-
-                const SizedBox(height: 20),
-
-                // --- 2. EMAIL FIELD ---
-                _label(translations[appLang]!["email"]!),
-                _inputField(
-                  controller: emailController,
-                  hint: translations[appLang]!["emailHint"]!,
-                  icon: Icons.email_outlined,
-                ),
-                if (emailError != null) _errorText(emailError!),
-
-                const SizedBox(height: 20),
-
-                // --- 3. PASSWORD FIELD ---
-                _label(translations[appLang]!["password"]!),
-                _inputField(
-                  controller: passwordController,
-                  hint: translations[appLang]!["passwordHint"]!,
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                  obscureText: _obscurePassword,
-                  onTogglePassword: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-                if (passwordError != null) _errorText(passwordError!),
-
-                const SizedBox(height: 20),
-
-                // --- 4. PHONE FIELD ---
-                _label(translations[appLang]!["phone"]!),
-                _inputField(
-                  controller: phoneController,
-                  hint: translations[appLang]!["phoneHint"]!,
-                  icon: Icons.phone_outlined,
-                  keyboardType: TextInputType.phone,
-                  maxLength: 10,
-                ),
-                if (phoneError != null) _errorText(phoneError!),
-
-                const SizedBox(height: 40),
-
-                // SUBMIT BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brandGreen,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    icon: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: AutofillGroup(
+                      child: Form(
+                        key: _formKey,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t["hey"] ?? "Hey,",
+                              style: GoogleFonts.poppins(
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                                height: 1.1,
+                              ),
                             ),
-                          )
-                        : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                    label: Text(
-                      translations[appLang]!["getOtp"]!,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
+                            const SizedBox(height: 6),
+                            Text(
+                              t["signupNow"] ?? "Sign Up",
+                              style: GoogleFonts.poppins(
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.brandGreen,
+                                height: 1.1,
+                              ),
+                            ),
+                            SizedBox(height: isCompactHeight ? 20 : 28),
+
+                            _fieldLabel(t["username"] ?? "Username"),
+                            const SizedBox(height: 8),
+                            _textField(
+                              controller: usernameController,
+                              focusNode: _usernameFocus,
+                              nextFocusNode: _emailFocus,
+                              hint: t["usernameHint"] ?? "Enter username",
+                              icon: Icons.person_outline,
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.username],
+                              validator: (value) {
+                                final v = value?.trim() ?? "";
+                                if (!validateUsername(v)) return tErr["usernameErr"];
+                                return null;
+                              },
+                            ),
+
+                            SizedBox(height: isCompactHeight ? 14 : 18),
+
+                            _fieldLabel(t["email"] ?? "E-Mail"),
+                            const SizedBox(height: 8),
+                            _textField(
+                              controller: emailController,
+                              focusNode: _emailFocus,
+                              nextFocusNode: _passwordFocus,
+                              hint: t["emailHint"] ?? "Enter e-mail address",
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.email],
+                              validator: (value) {
+                                final v = value?.trim() ?? "";
+                                if (!validateEmail(v)) return tErr["emailErr"];
+                                return null;
+                              },
+                            ),
+
+                            SizedBox(height: isCompactHeight ? 14 : 18),
+
+                            _fieldLabel(t["password"] ?? "Password"),
+                            const SizedBox(height: 8),
+                            _textField(
+                              controller: passwordController,
+                              focusNode: _passwordFocus,
+                              nextFocusNode: _phoneFocus,
+                              hint: t["passwordHint"] ?? "Enter password",
+                              icon: Icons.lock_outline,
+                              isPassword: true,
+                              obscureText: _obscurePassword,
+                              onTogglePassword: () {
+                                setState(() => _obscurePassword = !_obscurePassword);
+                              },
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.newPassword],
+                              validator: (value) {
+                                final v = value?.trim() ?? "";
+                                if (!validatePassword(v)) return tErr["passErr"];
+                                return null;
+                              },
+                            ),
+
+                            SizedBox(height: isCompactHeight ? 14 : 18),
+
+                            _fieldLabel(t["phone"] ?? "Phone Number"),
+                            const SizedBox(height: 8),
+                            _textField(
+                              controller: phoneController,
+                              focusNode: _phoneFocus,
+                              hint: t["phoneHint"] ?? "Enter phone number",
+                              icon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              textInputAction: TextInputAction.done,
+                              maxLength: 10,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10),
+                              ],
+                              autofillHints: const [AutofillHints.telephoneNumber],
+                              onFieldSubmitted: (_) => validateForm(),
+                              validator: (value) {
+                                final v = value?.trim() ?? "";
+                                if (!validatePhone(v)) return tErr["phoneErr"];
+                                return null;
+                              },
+                            ),
+
+                            SizedBox(height: isCompactHeight ? 20 : 28),
+
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.brandGreen,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                icon: _isLoading
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Icon(Icons.send_rounded, size: 20),
+                                label: Text(
+                                  t["getOtp"] ?? "Get OTP",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                onPressed: _isLoading ? null : validateForm,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    onPressed: _isLoading ? null : validateForm,
                   ),
                 ),
-
-                const SizedBox(height: 30),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _label(String text) {
+  Widget _fieldLabel(String text) {
     return Text(
       text,
       style: GoogleFonts.poppins(
@@ -494,115 +564,90 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _errorText(String msg) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8, left: 0),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.red.shade200, width: 1),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.red.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.error_outline_rounded, size: 16, color: Colors.red.shade700),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                msg,
-                style: GoogleFonts.poppins(
-                  color: Colors.red.shade700,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _inputField({
+  Widget _textField({
     required TextEditingController controller,
     required String hint,
     required IconData icon,
+    FocusNode? focusNode,
+    FocusNode? nextFocusNode,
     bool isPassword = false,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
     int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    TextInputAction textInputAction = TextInputAction.next,
     VoidCallback? onTogglePassword,
+    ValueChanged<String>? onFieldSubmitted,
+    String? Function(String?)? validator,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300, width: 1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            margin: const EdgeInsets.only(right: 10),
+    final borderRadius = BorderRadius.circular(14);
+    final baseBorder = OutlineInputBorder(
+      borderRadius: borderRadius,
+      borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+    );
+
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      autofillHints: autofillHints,
+      obscureText: isPassword ? obscureText : false,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      maxLength: maxLength,
+      inputFormatters: inputFormatters,
+      style: GoogleFonts.poppins(fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        counterText: '',
+        filled: true,
+        fillColor: Colors.white,
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 12, right: 8),
+          child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.brandGreen.withOpacity(0.1),
+              color: AppColors.brandGreen.withOpacity(0.10),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 20, color: AppColors.brandGreen),
           ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              obscureText: isPassword ? obscureText : false,
-              keyboardType: keyboardType,
-              maxLength: maxLength,
-              style: GoogleFonts.poppins(fontSize: 14),
-              inputFormatters: maxLength != null
-                  ? [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(maxLength),
-                    ]
-                  : null,
-              decoration: InputDecoration(
-                hintText: hint,
-                border: InputBorder.none,
-                hintStyle: GoogleFonts.poppins(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+        hintStyle: GoogleFonts.poppins(
+          color: Colors.grey.shade500,
+          fontSize: 14,
+        ),
+        enabledBorder: baseBorder,
+        focusedBorder: baseBorder.copyWith(
+          borderSide: BorderSide(color: AppColors.brandGreen, width: 1.4),
+        ),
+        errorBorder: baseBorder.copyWith(
+          borderSide: BorderSide(color: Colors.red.shade400, width: 1.2),
+        ),
+        focusedErrorBorder: baseBorder.copyWith(
+          borderSide: BorderSide(color: Colors.red.shade500, width: 1.4),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        suffixIcon: isPassword && onTogglePassword != null
+            ? IconButton(
+                tooltip: obscureText ? 'Show password' : 'Hide password',
+                icon: Icon(
+                  obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                  color: AppColors.brandGreen,
+                  size: 20,
                 ),
-                counterText: '',
-                suffixIcon: isPassword && onTogglePassword != null
-                    ? IconButton(
-                        icon: Icon(
-                          obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                          color: AppColors.brandGreen,
-                          size: 20,
-                        ),
-                        onPressed: onTogglePassword,
-                      )
-                    : null,
-              ),
-              onChanged: (_) {
-                setState(() {
-                  usernameError = null;
-                  emailError = null;
-                  passwordError = null;
-                  phoneError = null;
-                });
-              },
-            ),
-          ),
-        ],
+                onPressed: onTogglePassword,
+              )
+            : null,
       ),
+      validator: validator,
+      onFieldSubmitted: (value) {
+        onFieldSubmitted?.call(value);
+        if (nextFocusNode != null) {
+          FocusScope.of(context).requestFocus(nextFocusNode);
+        }
+      },
     );
   }
 }

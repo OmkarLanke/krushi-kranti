@@ -4,8 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/constants/app_routes.dart';
+import '../../../core/widgets/custom_text_field.dart';
+import '../../../core/widgets/custom_dropdown_field.dart';
+import '../../../core/widgets/form_stepper.dart';
+import '../../../core/onboarding/onboarding_controller.dart';
+import 'package:provider/provider.dart';
 
 class OnboardingPersonalScreen extends StatefulWidget {
   const OnboardingPersonalScreen({super.key});
@@ -155,6 +160,9 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
     );
 
     if (!mounted) return;
+    // Personal step spans multiple sub-screens (Contact -> Address).
+    // The actual backend update is done in Address screen, which then
+    // completes Step 1 and navigates to Farm.
     Navigator.pushNamed(context, AppRoutes.onboardingContact);
   }
 
@@ -166,7 +174,8 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -181,14 +190,10 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: () {
-              // Skip Step 1 (personal + contact + address) and go to Step 2 (Add Farm)
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                AppRoutes.addFarm,
-                (route) => false,
-                arguments: {'fromOnboarding': true},
-              );
+            onPressed: () async {
+              await context
+                  .read<OnboardingController>()
+                  .skipPersonalAndEndOnboarding(context);
             },
             child: Text(
               'Skip',
@@ -220,104 +225,13 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 const SizedBox(height: 10),
 
                 // ✅ GLOBAL ONBOARDING STEPPER (Steps 1–5)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Step 1: Active – Profile (Personal + Contact + Address)
-                    const CircleAvatar(
-                      radius: 14,
-                      backgroundColor: AppColors.brandGreen,
-                      child: Text(
-                        "1",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 20,
-                      height: 2,
-                      color: Colors.grey.shade300,
-                    ),
-
-                    // Step 2: Inactive – Farm details
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: Colors.grey.shade300,
-                      child: const Text(
-                        "2",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 20,
-                      height: 2,
-                      color: Colors.grey.shade300,
-                    ),
-
-                    // Step 3: Inactive – Crop details
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: Colors.grey.shade300,
-                      child: const Text(
-                        "3",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 20,
-                      height: 2,
-                      color: Colors.grey.shade300,
-                    ),
-
-                    // Step 4: Inactive – Subscription
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: Colors.grey.shade300,
-                      child: const Text(
-                        "4",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 20,
-                      height: 2,
-                      color: Colors.grey.shade300,
-                    ),
-
-                    // Step 5: Inactive – KYC
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: Colors.grey.shade300,
-                      child: const Text(
-                        "5",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  FormStepper(
+                    stepStatuses:
+                        context.watch<OnboardingController>().stepStatuses,
+                  ),
 
                 const SizedBox(height: 30),
 
@@ -359,35 +273,34 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
                 const SizedBox(height: 40),
 
                 // 1. FIRST NAME
-                Text(text[appLang]!["firstName"]!, style: _labelStyle()),
-                const SizedBox(height: 5),
-                _inputField(
+                CustomTextField(
                   controller: firstNameController,
+                  label: text[appLang]!["firstName"]!,
                   hint: text[appLang]!["firstNameHint"]!,
+                  prefixIcon: Icons.person_outline_rounded,
                 ),
 
                 const SizedBox(height: 20),
 
                 // 2. LAST NAME
-                Text(text[appLang]!["lastName"]!, style: _labelStyle()),
-                const SizedBox(height: 5),
-                _inputField(
+                CustomTextField(
                   controller: lastNameController,
+                  label: text[appLang]!["lastName"]!,
                   hint: text[appLang]!["lastNameHint"]!,
+                  prefixIcon: Icons.person_outline_rounded,
                 ),
 
                 const SizedBox(height: 20),
 
                 // 3. DATE OF BIRTH (Clickable)
-                Text(text[appLang]!["dob"]!, style: _labelStyle()),
-                const SizedBox(height: 5),
                 GestureDetector(
                   onTap: _selectDate,
                   child: AbsorbPointer(
-                    child: _inputField(
+                    child: CustomTextField(
                       controller: dobController,
+                      label: text[appLang]!["dob"]!,
                       hint: text[appLang]!["dobHint"]!,
-                      icon: Icons.calendar_month,
+                      prefixIcon: Icons.calendar_month_rounded,
                     ),
                   ),
                 ),
@@ -395,109 +308,18 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
                 const SizedBox(height: 20),
 
                 // 4. GENDER (Dropdown)
-                Text(text[appLang]!["gender"]!, style: _labelStyle()),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.grey.shade300, width: 1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.brandGreen.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(Icons.person_outline_rounded, size: 18, color: AppColors.brandGreen),
-                      ),
-                      Expanded(
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: selectedGender,
-                            hint: Text(
-                              text[appLang]!["genderHint"]!,
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey.shade400,
-                                fontSize: 14,
-                              ),
-                            ),
-                            isExpanded: true,
-                            icon: Icon(
-                              Icons.arrow_drop_down_rounded,
-                              color: AppColors.brandGreen,
-                            ),
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                            dropdownColor: Colors.white,
-                            items: [
-                              DropdownMenuItem(
-                                value: "Male",
-                                child: Text(
-                                  text[appLang]!["male"]!,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              DropdownMenuItem(
-                                value: "Female",
-                                child: Text(
-                                  text[appLang]!["female"]!,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              DropdownMenuItem(
-                                value: "Other",
-                                child: Text(
-                                  text[appLang]!["other"]!,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                            selectedItemBuilder: (BuildContext context) {
-                              return [
-                                "Male",
-                                "Female",
-                                "Other",
-                              ].map((val) {
-                                final displayText = val == "Male"
-                                    ? text[appLang]!["male"]!
-                                    : val == "Female"
-                                        ? text[appLang]!["female"]!
-                                        : text[appLang]!["other"]!;
-                                return Text(
-                                  displayText,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                );
-                              }).toList();
-                            },
-                            onChanged: (val) => setState(() => selectedGender = val),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                CustomDropdownField<String>(
+                  items: const ["Male", "Female", "Other"],
+                  value: selectedGender,
+                  onChanged: (val) => setState(() => selectedGender = val),
+                  hint: text[appLang]!["genderHint"]!,
+                  label: text[appLang]!["gender"]!,
+                  prefixIcon: Icons.wc_rounded,
+                  itemLabelBuilder: (val) {
+                    if (val == "Male") return text[appLang]!["male"]!;
+                    if (val == "Female") return text[appLang]!["female"]!;
+                    return text[appLang]!["other"]!;
+                  },
                 ),
 
                 const SizedBox(height: 40),
@@ -515,7 +337,8 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
                       ),
                       elevation: 0,
                     ),
-                    icon: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                    icon: const Icon(Icons.check_circle_rounded,
+                        color: Colors.white, size: 20),
                     label: Text(
                       text[appLang]!["continue"]!,
                       style: GoogleFonts.poppins(
@@ -534,57 +357,6 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  TextStyle _labelStyle() => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: Colors.black87,
-        letterSpacing: 0.2,
-      );
-
-  Widget _inputField({
-    required TextEditingController controller,
-    required String hint,
-    IconData? icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300, width: 1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          if (icon != null) ...[
-            Container(
-              margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.brandGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 18, color: AppColors.brandGreen),
-            ),
-          ],
-          Expanded(
-            child: TextField(
-              controller: controller,
-              style: GoogleFonts.poppins(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: hint,
-                border: InputBorder.none,
-                hintStyle: GoogleFonts.poppins(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

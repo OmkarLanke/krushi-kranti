@@ -320,6 +320,14 @@ class _OtpScreenState extends State<OtpScreen> {
         // New users are unsubscribed by default
         await StorageService.saveSubscriptionStatus(false);
 
+        // Fresh sign-up: reset onboarding flags so the user actually starts
+        // the onboarding flow (and "skip personal" from previous testing
+        // does not carry over via SharedPreferences).
+        await StorageService.saveOnboardingPersonalSkipped(false);
+        await StorageService.saveOnboardingFarmSkipped(false);
+        await StorageService.saveOnboardingPersonalCompleted(false);
+        await StorageService.saveOnboardingKycCompleted(false);
+
         if (!mounted) return;
 
         // Navigate to Onboarding (then welcome will show after completion flow)

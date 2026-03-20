@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/onboarding/onboarding_controller.dart';
+import '../../../core/widgets/form_stepper.dart';
 
 class OnboardingContactScreen extends StatefulWidget {
   const OnboardingContactScreen({super.key});
 
   @override
-  State<OnboardingContactScreen> createState() => _OnboardingContactScreenState();
+  State<OnboardingContactScreen> createState() =>
+      _OnboardingContactScreenState();
 }
 
 class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
   // Controllers
   final TextEditingController _altPhoneController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController(); // Read Only
-  final TextEditingController _phoneController = TextEditingController(); // Read Only
+  final TextEditingController _emailController =
+      TextEditingController(); // Read Only
+  final TextEditingController _phoneController =
+      TextEditingController(); // Read Only
 
   @override
   void initState() {
@@ -56,7 +62,8 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -89,83 +96,8 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
           children: [
             const SizedBox(height: 10),
             // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Step 1: Active – Profile (Personal + Contact + Address)
-                const CircleAvatar(
-                  radius: 14,
-                  backgroundColor: AppColors.brandGreen,
-                  child: Text(
-                    "1",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Container(width: 20, height: 2, color: Colors.grey.shade300),
-
-                // Step 2: Inactive – Farm details
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: Colors.grey.shade300,
-                  child: const Text(
-                    "2",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Container(width: 20, height: 2, color: Colors.grey.shade300),
-
-                // Step 3: Inactive – Crop details
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: Colors.grey.shade300,
-                  child: const Text(
-                    "3",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Container(width: 20, height: 2, color: Colors.grey.shade300),
-
-                // Step 4: Inactive – Subscription
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: Colors.grey.shade300,
-                  child: const Text(
-                    "4",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Container(width: 20, height: 2, color: Colors.grey.shade300),
-
-                // Step 5: Inactive – KYC
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: Colors.grey.shade300,
-                  child: const Text(
-                    "5",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+            FormStepper(
+              stepStatuses: context.watch<OnboardingController>().stepStatuses,
             ),
             const SizedBox(height: 32),
 
@@ -191,7 +123,7 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
               enabled: false, // 🔒 LOCKED
               fillColor: Colors.grey.shade100,
             ),
-            
+
             const SizedBox(height: 20),
 
             // --- 3. ALTERNATE MOBILE (Editable) - Third ---
@@ -215,10 +147,12 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.brandGreen,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                icon: const Icon(Icons.arrow_forward_rounded,
+                    color: Colors.white, size: 20),
                 label: Text(
                   l10n.continueBtn,
                   style: GoogleFonts.poppins(

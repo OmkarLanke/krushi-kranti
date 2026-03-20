@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_routes.dart';
 import 'core/providers/locale_provider.dart';
+import 'core/onboarding/onboarding_controller.dart';
 import 'core/services/deep_link_service.dart';
 import 'l10n/app_localizations.dart';
 
@@ -15,7 +16,10 @@ void main() {
   runApp(
     ChangeNotifierProvider(
       create: (context) => LocaleProvider()..loadSavedLocale(),
-      child: const KrushiKrantiApp(),
+      child: ChangeNotifierProvider(
+        create: (_) => OnboardingController(),
+        child: const KrushiKrantiApp(),
+      ),
     ),
   );
 }

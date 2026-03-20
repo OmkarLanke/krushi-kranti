@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/onboarding/onboarding_controller.dart';
 import '../../dashboard/services/crop_service.dart';
 import '../../dashboard/services/field_officer_assignment_service.dart';
 import '../../dashboard/services/notification_service.dart';
@@ -546,8 +548,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           'Add your basic details so we can personalise Krushi Kranti for you.',
                       ctaLabel: 'Complete now',
                       onTap: () async {
-                        final result = await Navigator.pushNamed(
-                            context, AppRoutes.myDetails);
+                        await context
+                            .read<OnboardingController>()
+                            .allowPersonalOnboardingFromHome(context);
+
+                        await Navigator.pushNamed(
+                          context,
+                          AppRoutes.onboardingPersonal,
+                        );
                         // Refresh data when returning from profile screen
                         // Add small delay to ensure data is saved
                         await Future.delayed(const Duration(milliseconds: 300));
@@ -566,8 +574,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           'Add at least one farm to see farm-specific insights and crops.',
                       ctaLabel: 'Add farm',
                       onTap: () async {
-                        final result = await Navigator.pushNamed(
-                            context, AppRoutes.addFarm);
+                        // If the user previously skipped Personal, ensure
+                        // onboarding step-1 is unlocked before entering Farm.
+                        await context
+                            .read<OnboardingController>()
+                            .allowPersonalOnboardingFromHome(context);
+                        await Navigator.pushNamed(
+                          context,
+                          AppRoutes.addFarm,
+                          arguments: {'fromOnboarding': true},
+                        );
                         // Refresh data when returning from add farm screen
                         // Add small delay to ensure data is saved
                         await Future.delayed(const Duration(milliseconds: 300));
@@ -588,8 +604,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           'Add at least one crop to start getting guidance and forecasts.',
                       ctaLabel: 'Add crop',
                       onTap: () async {
-                        final result = await Navigator.pushNamed(
-                            context, AppRoutes.addCrop);
+                        await context
+                            .read<OnboardingController>()
+                            .allowPersonalOnboardingFromHome(context);
+                        await Navigator.pushNamed(
+                          context,
+                          AppRoutes.addCrop,
+                          arguments: {'fromOnboarding': true},
+                        );
                         // Refresh data when returning from add crop screen
                         // Add small delay to ensure data is saved
                         await Future.delayed(const Duration(milliseconds: 300));
@@ -1301,7 +1323,7 @@ class _HomeScreenState extends State<HomeScreen> {
               message:
                   'Before using this feature, please add your basic personal details.',
               ctaLabel: 'Complete now',
-              routeName: AppRoutes.myDetails,
+              routeName: AppRoutes.onboardingPersonal,
             );
             return;
           }
@@ -1358,7 +1380,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Hide loading dialog and navigate
             if (mounted) {
               Navigator.pop(context); // Close loading dialog
-              final result = await Navigator.pushNamed(context, route);
+              await Navigator.pushNamed(context, route);
               // Refresh all data when returning from navigation
               // Add small delay to ensure data is saved
               await Future.delayed(const Duration(milliseconds: 300));
@@ -1508,97 +1530,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAlertCard(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.warning_rounded,
-                    color: Colors.redAccent,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    "Lorem Ipsum is simply dummy text of the printing.",
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: AppColors.alertText,
-                      fontWeight: FontWeight.w500,
-                      height: 1.4,
-                      letterSpacing: 0.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              // TODO: Navigate to ThynkChat
-            },
-            borderRadius: BorderRadius.circular(32),
-            child: Container(
-              width: 64,
-              height: 64,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.grey.shade200,
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Image.asset(
-                'assets/images/ai_logo.png',
-                fit: BoxFit.contain,
-                errorBuilder: (c, o, s) => const Icon(
-                  Icons.smart_toy_rounded,
-                  color: AppColors.brandGreen,
-                  size: 32,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+    // Alerts placeholder removed.
+    // This widget should eventually render real alerts from NotificationService.
+    return const SizedBox.shrink();
   }
 
   void _showLoadingDialog(BuildContext context) {
@@ -1771,7 +1705,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ElevatedButton(
               onPressed: () async {
                 Navigator.pop(ctx);
-                final result = await Navigator.pushNamed(context, routeName);
+                if (routeName == AppRoutes.onboardingPersonal) {
+                  await context
+                      .read<OnboardingController>()
+                      .allowPersonalOnboardingFromHome(context);
+                }
+
+                await Navigator.pushNamed(context, routeName);
                 // Refresh data when returning from onboarding screens
                 // Add small delay to ensure data is saved
                 await Future.delayed(const Duration(milliseconds: 300));
