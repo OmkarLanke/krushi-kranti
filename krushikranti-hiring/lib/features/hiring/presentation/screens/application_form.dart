@@ -172,6 +172,18 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
               hint: AppStrings.tr('enter_full_name'),
               required: true,
               prefixIcon: Icons.person_outline,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r"[A-Za-z\s]")),
+              ],
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) {
+                  return AppStrings.tr('required');
+                }
+                if (!RegExp(r'^[A-Za-z\s]+$').hasMatch(val.trim())) {
+                  return AppStrings.tr('alphabets_only');
+                }
+                return null;
+              },
             ),
 
             HiringLabel(AppStrings.tr('mobile_no'), required: true),
