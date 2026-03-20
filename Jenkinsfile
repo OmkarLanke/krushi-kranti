@@ -50,9 +50,22 @@ pipeline {
 
         stage('Deploy Backend (Test)') {
             steps {
-                // Deploys the java microservices using the test compose file
+                // Deploys the Java microservices sequentially to avoid 100% CPU starvation 
+                // which was causing the 40s healthchecks to randomly fail on the EC2 server
                 dir('microservices') {
-                    sh 'docker compose --env-file .env.test -f docker-compose-test.yml up --build -d'
+                    // 1. Build all images first
+                    sh 'docker compose --env-file .env.test -f docker-compose-test.yml build'
+
+                    // 2. Start Infrastructure & Core Auth
+                    sh 'docker compose --env-file .env.test -f docker-compose-test.yml up -d redis zookeeper kafka auth-service'
+                    sh 'sleep 40' // Give auth-service 40 seconds of pure CPU to finish waking up!
+
+                    // 3. Start Heavy Data Services
+                    sh 'docker compose --env-file .env.test -f docker-compose-test.yml up -d farmer-service file-service'
+                    sh 'sleep 40' // Give them 40 seconds of pure CPU to wake up!
+
+                    // 4. Start everything else!
+                    sh 'docker compose --env-file .env.test -f docker-compose-test.yml up -d'
                 }
             }
         }
