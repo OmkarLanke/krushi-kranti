@@ -23,15 +23,15 @@ pipeline {
 
         stage('Inject Secrets (.env files)') {
             steps {
-                // Jenkins will securely pull the test server's .env file from your configured Jenkins Secret Files
-                // Create a "Secret file" credential in Jenkins globally with the ID 'microservices-env-test'
-                // Create a "Secret file" credential in Jenkins globally with the ID 'file-service-env-test'
+                // Jenkins will securely pull the test server's .env files from your configured Jenkins Secret Files
                 withCredentials([
                     file(credentialsId: 'microservices-env-test', variable: 'MICROSERVICES_ENV'),
                     file(credentialsId: 'file-service-env-test', variable: 'FILE_SERVICE_ENV')
                 ]) {
-                    sh 'cp $MICROSERVICES_ENV microservices/.env.test'
-                    sh 'cp $FILE_SERVICE_ENV microservices/java-spring-microservices/file-service/.env.test'
+                    // Force copy (-f) because Jenkins Secret files are Read-Only (0400). 
+                    // Without -f, the second build fails because it can't overwrite the read-only file from the first build!
+                    sh 'cp -f $MICROSERVICES_ENV microservices/.env.test'
+                    sh 'cp -f $FILE_SERVICE_ENV microservices/java-spring-microservices/file-service/.env.test'
                 }
             }
         }
@@ -50,9 +50,22 @@ pipeline {
 
         stage('Deploy Backend (Test)') {
             steps {
-                // Deploys the java microservices using the test compose file
+                // Deploys the Java microservices sequentially to avoid 100% CPU starvation 
+                // which was causing the 40s healthchecks to randomly fail on the EC2 server
                 dir('microservices') {
-                    sh 'docker compose -f docker-compose-test.yml up --build -d'
+                    // 1. Build all images first
+                    sh 'docker compose --env-file .env.test -f docker-compose-test.yml build'
+
+                    // 2. Start Infrastructure & Core Auth
+                    sh 'docker compose --env-file .env.test -f docker-compose-test.yml up -d redis zookeeper kafka auth-service'
+                    sh 'sleep 40' // Give auth-service 40 seconds of pure CPU to finish waking up!
+
+                    // 3. Start Heavy Data Services
+                    sh 'docker compose --env-file .env.test -f docker-compose-test.yml up -d farmer-service file-service'
+                    sh 'sleep 40' // Give them 40 seconds of pure CPU to wake up!
+
+                    // 4. Start everything else!
+                    sh 'docker compose --env-file .env.test -f docker-compose-test.yml up -d'
                 }
             }
         }
