@@ -290,9 +290,9 @@ services:
     networks:
       - krushi-kranti-network
     volumes:
-      # Mount entire project root read-only so farmer-service can access Excel files.
+      # Mount repo root read-only (path is relative to this compose file's directory).
       # Use container path /workspace for file-based imports (e.g. filePath=/workspace/Maharashtra.xlsx).
-      - /home/omkar/Desktop/Thynktech/krushi-kranti:/workspace:ro
+      - ..:/workspace:ro
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - WEATHER_API_KEY=${WEATHER_API_KEY}
