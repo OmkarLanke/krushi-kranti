@@ -8,11 +8,13 @@ import '../../../l10n/app_localizations.dart';
 class WeatherCard extends StatefulWidget {
   final int? farmId; // If null, uses primary farm
   final bool showForecast; // Whether to show forecast button
+  final VoidCallback? onAddFarm; // Action for when no farm data is available
 
   const WeatherCard({
     Key? key,
     this.farmId,
     this.showForecast = true,
+    this.onAddFarm,
   }) : super(key: key);
 
   @override
@@ -92,14 +94,14 @@ class _WeatherCardState extends State<WeatherCard> {
           Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
           const SizedBox(height: 8),
           Text(
-            'Unable to load weather',
+            l10n.weatherUnableToLoad,
             style: TextStyle(color: Colors.red[700]),
           ),
           const SizedBox(height: 8),
           TextButton.icon(
             onPressed: _loadWeather,
             icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
+            label: Text(l10n.retry),
           ),
         ],
       ),
@@ -115,16 +117,32 @@ class _WeatherCardState extends State<WeatherCard> {
           Icon(Icons.location_off, size: 48, color: Colors.grey[400]),
           const SizedBox(height: 8),
           Text(
-            'Weather data not available',
+            l10n.weatherDataNotAvailable,
             style: TextStyle(color: Colors.grey[600]),
           ),
           const SizedBox(height: 4),
           Text(
             widget.farmId != null
-                ? 'Add GPS coordinates to farm'
-                : 'Create a farm with GPS location',
-            style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ? l10n.weatherAddGpsToFarm
+                : l10n.weatherAddFarmForInsights,
+            style: TextStyle(color: Colors.grey[500], fontSize: 13),
+            textAlign: TextAlign.center,
           ),
+          if (widget.onAddFarm != null) ...[
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: widget.onAddFarm,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Theme.of(context).primaryColor,
+                side: BorderSide(color: Theme.of(context).primaryColor),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(l10n.addFarm),
+            ),
+          ],
         ],
       ),
     );
@@ -145,7 +163,7 @@ class _WeatherCardState extends State<WeatherCard> {
               const Icon(Icons.wb_sunny, color: Colors.orange, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Weather',
+                l10n.weatherCardTitle,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -185,7 +203,8 @@ class _WeatherCardState extends State<WeatherCard> {
                     ),
                   ),
                   Text(
-                    'Feels like ${current.feelslikeC?.toStringAsFixed(0)}°C',
+                    l10n.weatherFeelsLike(
+                        current.feelslikeC?.toStringAsFixed(0) ?? '--'),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: Colors.grey[600],
                     ),
@@ -216,25 +235,25 @@ class _WeatherCardState extends State<WeatherCard> {
             children: [
               _WeatherDetail(
                 icon: Icons.water_drop,
-                label: 'Humidity',
+                label: l10n.weatherHumidity,
                 value: '${current.humidity}%',
                 color: Colors.blue,
               ),
               _WeatherDetail(
                 icon: Icons.air,
-                label: 'Wind',
+                label: l10n.weatherWind,
                 value: '${current.windKph?.toStringAsFixed(0)} km/h',
                 color: Colors.teal,
               ),
               _WeatherDetail(
                 icon: Icons.wb_sunny_outlined,
-                label: 'UV Index',
+                label: l10n.weatherUvIndex,
                 value: current.uv?.toStringAsFixed(1) ?? '--',
                 color: Colors.orange,
               ),
               _WeatherDetail(
                 icon: Icons.water,
-                label: 'Rain',
+                label: l10n.weatherRain,
                 value: '${current.precipMm?.toStringAsFixed(1) ?? 0} mm',
                 color: Colors.indigo,
               ),
@@ -250,14 +269,14 @@ class _WeatherCardState extends State<WeatherCard> {
                 onPressed: () {
                   // TODO: Navigate to forecast screen
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('7-day forecast feature coming soon!'),
-                      duration: Duration(seconds: 2),
+                    SnackBar(
+                      content: Text(l10n.forecastComingSoon),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 },
                 icon: const Icon(Icons.calendar_today, size: 16),
-                label: const Text('View 7-Day Forecast'),
+                label: Text(l10n.view7DayForecast),
               ),
             ),
           ],

@@ -54,10 +54,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
             return const Center(child: CircularProgressIndicator(color: AppColors.brandGreen));
           }
           if (snapshot.hasError) {
-            return const Center(child: Text("Error loading orders"));
+            return Center(child: Text(l10n.errorLoadingOrders));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No sales found"));
+            return Center(child: Text(l10n.noSalesFound));
           }
 
           final orders = snapshot.data!;

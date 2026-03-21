@@ -139,13 +139,13 @@ abstract class AppLocalizations {
   /// No description provided for @assignedTo.
   ///
   /// In en, this message translates to:
-  /// **'Assigned To:'**
+  /// **'Assigned to:'**
   String get assignedTo;
 
   /// No description provided for @forFarm.
   ///
   /// In en, this message translates to:
-  /// **'For Farm:'**
+  /// **'For:'**
   String get forFarm;
 
   /// No description provided for @moreAssignments.
@@ -2836,6 +2836,1380 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your bank account is already verified. You cannot verify it again.'**
   String get bankAlreadyVerifiedMessage;
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Krushi Kranti'**
+  String get appTitle;
+
+  /// No description provided for @completeSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Setup'**
+  String get completeSetupTitle;
+
+  /// No description provided for @progressPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}%'**
+  String progressPercent(int value);
+
+  /// No description provided for @setupStepCompleteProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Profile'**
+  String get setupStepCompleteProfileTitle;
+
+  /// No description provided for @setupStepCompleteProfileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your basic personal details'**
+  String get setupStepCompleteProfileSubtitle;
+
+  /// No description provided for @setupStepAddFarmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Your First Farm'**
+  String get setupStepAddFarmTitle;
+
+  /// No description provided for @setupStepAddFarmSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup your farm for insights'**
+  String get setupStepAddFarmSubtitle;
+
+  /// No description provided for @setupStepSubscribeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe to Premium'**
+  String get setupStepSubscribeTitle;
+
+  /// No description provided for @setupStepSubscribeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock all exclusive features'**
+  String get setupStepSubscribeSubtitle;
+
+  /// No description provided for @continueSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Setup'**
+  String get continueSetup;
+
+  /// No description provided for @unlockWeatherInsights.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Weather Insights'**
+  String get unlockWeatherInsights;
+
+  /// No description provided for @unlockWeatherInsightsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your farm with GPS location to get daily forecasting and actionable insights.'**
+  String get unlockWeatherInsightsDescription;
+
+  /// No description provided for @addFarmNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Farm Now'**
+  String get addFarmNow;
+
+  /// No description provided for @weatherUnableToLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load weather'**
+  String get weatherUnableToLoad;
+
+  /// No description provided for @weatherDataNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather data not available'**
+  String get weatherDataNotAvailable;
+
+  /// No description provided for @weatherAddGpsToFarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Add GPS coordinates to farm'**
+  String get weatherAddGpsToFarm;
+
+  /// No description provided for @weatherAddFarmForInsights.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your farm to see weather insights'**
+  String get weatherAddFarmForInsights;
+
+  /// No description provided for @weatherCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get weatherCardTitle;
+
+  /// No description provided for @weatherFeelsLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Feels like {temp}°C'**
+  String weatherFeelsLike(String temp);
+
+  /// No description provided for @weatherHumidity.
+  ///
+  /// In en, this message translates to:
+  /// **'Humidity'**
+  String get weatherHumidity;
+
+  /// No description provided for @weatherWind.
+  ///
+  /// In en, this message translates to:
+  /// **'Wind'**
+  String get weatherWind;
+
+  /// No description provided for @weatherUvIndex.
+  ///
+  /// In en, this message translates to:
+  /// **'UV Index'**
+  String get weatherUvIndex;
+
+  /// No description provided for @weatherRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain'**
+  String get weatherRain;
+
+  /// No description provided for @forecastComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'7-day forecast feature coming soon!'**
+  String get forecastComingSoon;
+
+  /// No description provided for @view7DayForecast.
+  ///
+  /// In en, this message translates to:
+  /// **'View 7-Day Forecast'**
+  String get view7DayForecast;
+
+  /// No description provided for @taskScreenComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Screen Coming Soon'**
+  String get taskScreenComingSoon;
+
+  /// No description provided for @sellScreenComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell Screen Coming Soon'**
+  String get sellScreenComingSoon;
+
+  /// No description provided for @onboardingStepCrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop'**
+  String get onboardingStepCrop;
+
+  /// No description provided for @dateInputFormatPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'DD/MM/YYYY'**
+  String get dateInputFormatPlaceholder;
+
+  /// No description provided for @financeScreenComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance Screen Coming Soon'**
+  String get financeScreenComingSoon;
+
+  /// No description provided for @profileSectionAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get profileSectionAccount;
+
+  /// No description provided for @profileSectionServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Services'**
+  String get profileSectionServices;
+
+  /// No description provided for @profileSectionFinancial.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial'**
+  String get profileSectionFinancial;
+
+  /// No description provided for @profileSectionSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get profileSectionSupport;
+
+  /// No description provided for @loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loading;
+
+  /// No description provided for @guestFarmer.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest Farmer'**
+  String get guestFarmer;
+
+  /// No description provided for @noEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'No Email'**
+  String get noEmail;
+
+  /// No description provided for @selectLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Language'**
+  String get selectLanguage;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languageHindi.
+  ///
+  /// In en, this message translates to:
+  /// **'हिंदी'**
+  String get languageHindi;
+
+  /// No description provided for @languageMarathi.
+  ///
+  /// In en, this message translates to:
+  /// **'मराठी'**
+  String get languageMarathi;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get saveChanges;
+
+  /// No description provided for @otpResentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP resent successfully'**
+  String get otpResentSuccess;
+
+  /// No description provided for @pleaseEnterFull6DigitOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter full 6-digit OTP'**
+  String get pleaseEnterFull6DigitOtp;
+
+  /// No description provided for @otpCopiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP copied to clipboard: {otp}'**
+  String otpCopiedToClipboard(String otp);
+
+  /// No description provided for @errorLoadingOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading orders'**
+  String get errorLoadingOrders;
+
+  /// No description provided for @noSalesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No sales found'**
+  String get noSalesFound;
+
+  /// No description provided for @failedToLoadDataWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load data: {message}'**
+  String failedToLoadDataWithDetails(String message);
+
+  /// No description provided for @productsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Products'**
+  String get productsHeader;
+
+  /// No description provided for @cropInformationSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop Information'**
+  String get cropInformationSection;
+
+  /// No description provided for @cultivationDetailsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Cultivation Details'**
+  String get cultivationDetailsSection;
+
+  /// No description provided for @basicInformationSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Information'**
+  String get basicInformationSection;
+
+  /// No description provided for @locationDetailsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Details'**
+  String get locationDetailsSection;
+
+  /// No description provided for @soilAndWaterSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Soil & Water'**
+  String get soilAndWaterSection;
+
+  /// No description provided for @ownershipLegalInfoSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Ownership & Legal Info'**
+  String get ownershipLegalInfoSection;
+
+  /// No description provided for @emailHintExample.
+  ///
+  /// In en, this message translates to:
+  /// **'your.email@example.com'**
+  String get emailHintExample;
+
+  /// No description provided for @assessmentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assessment'**
+  String get assessmentTitle;
+
+  /// No description provided for @assessmentPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Assessment details will be shown here'**
+  String get assessmentPlaceholder;
+
+  /// No description provided for @requestFundsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Funds'**
+  String get requestFundsTitle;
+
+  /// No description provided for @fundRequestComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Fund Request Form Coming Soon'**
+  String get fundRequestComingSoon;
+
+  /// No description provided for @fieldOfficerNavHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get fieldOfficerNavHome;
+
+  /// No description provided for @fieldOfficerNavFarmer.
+  ///
+  /// In en, this message translates to:
+  /// **'Farmer'**
+  String get fieldOfficerNavFarmer;
+
+  /// No description provided for @fieldOfficerNavAssessment.
+  ///
+  /// In en, this message translates to:
+  /// **'Assessment'**
+  String get fieldOfficerNavAssessment;
+
+  /// No description provided for @fieldOfficerNavProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get fieldOfficerNavProfile;
+
+  /// No description provided for @searchByFarmerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by farmer name...'**
+  String get searchByFarmerName;
+
+  /// No description provided for @otpHintSixDigits.
+  ///
+  /// In en, this message translates to:
+  /// **'000000'**
+  String get otpHintSixDigits;
+
+  /// No description provided for @verificationPhotosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification Photos - {farmName}'**
+  String verificationPhotosTitle(String farmName);
+
+  /// No description provided for @viewGeoTaggedPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'View Geo Tagged Photo'**
+  String get viewGeoTaggedPhoto;
+
+  /// No description provided for @photoCaptureTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo capture timed out. Please try again.'**
+  String get photoCaptureTimeout;
+
+  /// No description provided for @photoCaptureFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to capture photo: {error}'**
+  String photoCaptureFailed(String error);
+
+  /// No description provided for @otpSentToFarmer.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP sent successfully to farmer. Please ask the farmer for the OTP.'**
+  String get otpSentToFarmer;
+
+  /// No description provided for @otpValidatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP validated successfully! You can now submit verification.'**
+  String get otpValidatedSuccess;
+
+  /// No description provided for @selectVerificationStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select verification status (Verify or Reject)'**
+  String get selectVerificationStatus;
+
+  /// No description provided for @captureGpsBeforeVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Please capture GPS location before verifying the farm'**
+  String get captureGpsBeforeVerify;
+
+  /// No description provided for @captureGeotaggedPhotoBeforeVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Please capture a geotagged photo of the farm before verification'**
+  String get captureGeotaggedPhotoBeforeVerify;
+
+  /// No description provided for @requestValidateOtpBeforeSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Please request and validate OTP before submitting verification.'**
+  String get requestValidateOtpBeforeSubmit;
+
+  /// No description provided for @uploadingPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading photo...'**
+  String get uploadingPhoto;
+
+  /// No description provided for @photoUploadedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo uploaded successfully!'**
+  String get photoUploadedSuccess;
+
+  /// No description provided for @authFailedRelogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Please login again and try verifying the farm.'**
+  String get authFailedRelogin;
+
+  /// No description provided for @photoUploadFailedProceeding.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo upload failed, but proceeding with verification: {error}'**
+  String photoUploadFailedProceeding(String error);
+
+  /// No description provided for @farmVerifiedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm verified successfully!'**
+  String get farmVerifiedSuccess;
+
+  /// No description provided for @loadingPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading photos...'**
+  String get loadingPhotos;
+
+  /// No description provided for @noVerificationPhotosForFarm.
+  ///
+  /// In en, this message translates to:
+  /// **'No verification photos found for this farm.'**
+  String get noVerificationPhotosForFarm;
+
+  /// No description provided for @errorLoadingPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading photos: {error}'**
+  String errorLoadingPhotos(String error);
+
+  /// No description provided for @verificationSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification successful'**
+  String get verificationSuccessful;
+
+  /// No description provided for @allKycCompletedTestMode.
+  ///
+  /// In en, this message translates to:
+  /// **'All KYC verifications completed (TEST MODE)'**
+  String get allKycCompletedTestMode;
+
+  /// No description provided for @genericErrorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {message}'**
+  String genericErrorWithMessage(String message);
+
+  /// No description provided for @onboardingPincodeAndVillage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter pincode and select village'**
+  String get onboardingPincodeAndVillage;
+
+  /// No description provided for @failedToLoadProfileWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load profile: {message}'**
+  String failedToLoadProfileWithDetails(String message);
+
+  /// No description provided for @myDetailsStepAddFarmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your farm (Step 2)'**
+  String get myDetailsStepAddFarmTitle;
+
+  /// No description provided for @myDetailsStepAddFarmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one farm to unlock farm-specific insights and funding options.'**
+  String get myDetailsStepAddFarmBody;
+
+  /// No description provided for @myDetailsStepAddFarmCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to farms'**
+  String get myDetailsStepAddFarmCta;
+
+  /// No description provided for @myDetailsStepAddCropsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your crops (Step 3)'**
+  String get myDetailsStepAddCropsTitle;
+
+  /// No description provided for @myDetailsStepAddCropsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add crops for your farms to start tracking growth, sales, and alerts.'**
+  String get myDetailsStepAddCropsBody;
+
+  /// No description provided for @myDetailsStepAddCropsCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to crops'**
+  String get myDetailsStepAddCropsCta;
+
+  /// No description provided for @homeOnboardingCompleteProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile'**
+  String get homeOnboardingCompleteProfileTitle;
+
+  /// No description provided for @homeOnboardingCompleteProfileMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Before using this feature, please add your basic personal details.'**
+  String get homeOnboardingCompleteProfileMessage;
+
+  /// No description provided for @homeOnboardingCompleteProfileCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete now'**
+  String get homeOnboardingCompleteProfileCta;
+
+  /// No description provided for @homeOnboardingAddFarmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first farm'**
+  String get homeOnboardingAddFarmTitle;
+
+  /// No description provided for @homeOnboardingAddFarmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one farm to start using this feature for your land.'**
+  String get homeOnboardingAddFarmMessage;
+
+  /// No description provided for @homeOnboardingAddFarmCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Add farm'**
+  String get homeOnboardingAddFarmCta;
+
+  /// No description provided for @homeOnboardingAddCropTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first crop'**
+  String get homeOnboardingAddCropTitle;
+
+  /// No description provided for @homeOnboardingAddCropMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one crop on your farm to start tracking it here.'**
+  String get homeOnboardingAddCropMessage;
+
+  /// No description provided for @homeOnboardingAddCropCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Add crop'**
+  String get homeOnboardingAddCropCta;
+
+  /// No description provided for @otpCheckNotificationSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'You will get the OTP. Please check it at notification'**
+  String get otpCheckNotificationSnackbar;
+
+  /// No description provided for @allFarmsVerifiedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All Farms Verified!'**
+  String get allFarmsVerifiedTitle;
+
+  /// No description provided for @allFarmsVerifiedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Congratulations! All your {farmCount} {farmWord} ({verified}/{farmCount} verified) have been successfully verified by field officers.'**
+  String allFarmsVerifiedBody(int farmCount, String farmWord, int verified);
+
+  /// No description provided for @farmWordSingular.
+  ///
+  /// In en, this message translates to:
+  /// **'farm'**
+  String get farmWordSingular;
+
+  /// No description provided for @farmWordPlural.
+  ///
+  /// In en, this message translates to:
+  /// **'farms'**
+  String get farmWordPlural;
+
+  /// No description provided for @fieldOfficerDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'Field Officer'**
+  String get fieldOfficerDefaultName;
+
+  /// No description provided for @farmFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm {id}'**
+  String farmFallbackName(String id);
+
+  /// No description provided for @statusLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get statusLocked;
+
+  /// No description provided for @farmVerificationOtpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm Verification OTP'**
+  String get farmVerificationOtpTitle;
+
+  /// No description provided for @fieldOfficerVerifyingFarm.
+  ///
+  /// In en, this message translates to:
+  /// **'{officer} is verifying \"{farm}\"'**
+  String fieldOfficerVerifyingFarm(String officer, String farm);
+
+  /// No description provided for @yourOtpCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your OTP Code'**
+  String get yourOtpCodeLabel;
+
+  /// No description provided for @copyOtpTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy OTP'**
+  String get copyOtpTooltip;
+
+  /// No description provided for @expiresInTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in: {time}'**
+  String expiresInTimer(String time);
+
+  /// No description provided for @shareOtpWithFieldOfficer.
+  ///
+  /// In en, this message translates to:
+  /// **'Please share this OTP with the field officer to complete verification.'**
+  String get shareOtpWithFieldOfficer;
+
+  /// No description provided for @logoutConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Out'**
+  String get logoutConfirmTitle;
+
+  /// No description provided for @logoutConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to logout?'**
+  String get logoutConfirmMessage;
+
+  /// No description provided for @fieldOfficerEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Address'**
+  String get fieldOfficerEmailLabel;
+
+  /// No description provided for @fieldOfficerPhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get fieldOfficerPhoneLabel;
+
+  /// No description provided for @fieldOfficerAlternateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Alternate Number'**
+  String get fieldOfficerAlternateLabel;
+
+  /// No description provided for @fieldOfficerDobLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of Birth'**
+  String get fieldOfficerDobLabel;
+
+  /// No description provided for @fieldOfficerGenderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get fieldOfficerGenderLabel;
+
+  /// No description provided for @loginWithPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in with Phone'**
+  String get loginWithPhone;
+
+  /// No description provided for @reconnectWithGoodness.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect With Goodness'**
+  String get reconnectWithGoodness;
+
+  /// No description provided for @letsGetYouStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s get you started'**
+  String get letsGetYouStarted;
+
+  /// No description provided for @phoneHintYourNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'your phone number'**
+  String get phoneHintYourNumber;
+
+  /// No description provided for @otpSentToThisNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP will be sent on this number'**
+  String get otpSentToThisNumber;
+
+  /// No description provided for @getOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Get OTP'**
+  String get getOtp;
+
+  /// No description provided for @termsAgreementLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing you agree to our Terms & Conditions and Privacy & Legal Policy'**
+  String get termsAgreementLogin;
+
+  /// No description provided for @orSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **'or '**
+  String get orSeparator;
+
+  /// No description provided for @signUpCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get signUpCta;
+
+  /// No description provided for @enterOtpShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter OTP'**
+  String get enterOtpShort;
+
+  /// No description provided for @phoneNumberNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number not found. Please try again.'**
+  String get phoneNumberNotFound;
+
+  /// No description provided for @failedToLoadCropNamesWithDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load crop names: {message}'**
+  String failedToLoadCropNamesWithDetails(String message);
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min ago'**
+  String minutesAgo(int minutes);
+
+  /// No description provided for @justNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get justNow;
+
+  /// No description provided for @hoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 hour ago} other{{count} hours ago}}'**
+  String hoursAgo(int count);
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 day ago} other{{count} days ago}}'**
+  String daysAgo(int count);
+
+  /// No description provided for @expiredLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get expiredLabel;
+
+  /// No description provided for @noNotificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No Notifications'**
+  String get noNotificationsTitle;
+
+  /// No description provided for @noOtpNotificationsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You will receive OTP notifications here'**
+  String get noOtpNotificationsHint;
+
+  /// No description provided for @loginFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Login failed. Please try again.'**
+  String get loginFailedRetry;
+
+  /// No description provided for @otpVerificationFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP verification failed. Please try again.'**
+  String get otpVerificationFailedRetry;
+
+  /// No description provided for @noPhotosAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No Photos Available'**
+  String get noPhotosAvailable;
+
+  /// No description provided for @verificationPhotosHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification Photos'**
+  String get verificationPhotosHeader;
+
+  /// No description provided for @contactInformationHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Information'**
+  String get contactInformationHeader;
+
+  /// No description provided for @locationSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get locationSectionTitle;
+
+  /// No description provided for @farmersScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Farmers'**
+  String get farmersScreenTitle;
+
+  /// No description provided for @verifyFarmAppBarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Farm'**
+  String get verifyFarmAppBarTitle;
+
+  /// No description provided for @farmerLabelDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Farmer'**
+  String get farmerLabelDefault;
+
+  /// No description provided for @farmsToVerifySectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Farms to Verify'**
+  String get farmsToVerifySectionTitle;
+
+  /// No description provided for @noFarmsInAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'No farms found in this assignment'**
+  String get noFarmsInAssignment;
+
+  /// No description provided for @locationNotAvailableShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Location not available'**
+  String get locationNotAvailableShort;
+
+  /// No description provided for @farmNameFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm'**
+  String get farmNameFallback;
+
+  /// No description provided for @verificationStatusVerifiedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get verificationStatusVerifiedBadge;
+
+  /// No description provided for @submitVerificationButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Verification'**
+  String get submitVerificationButton;
+
+  /// No description provided for @farmAlreadyVerifiedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This farm has already been verified.'**
+  String get farmAlreadyVerifiedNotice;
+
+  /// No description provided for @verificationStatusSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification Status *'**
+  String get verificationStatusSectionTitle;
+
+  /// No description provided for @verifyFarmStatusOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verifyFarmStatusOption;
+
+  /// No description provided for @feedbackNotesSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback / Notes'**
+  String get feedbackNotesSectionTitle;
+
+  /// No description provided for @feedbackNotesHintVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Add any notes or observations about the farm verification...'**
+  String get feedbackNotesHintVerified;
+
+  /// No description provided for @feedbackNotesHintRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Add feedback about why the farm is being rejected...'**
+  String get feedbackNotesHintRejected;
+
+  /// No description provided for @locationPhotoVerificationSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Location & Photo Verification'**
+  String get locationPhotoVerificationSectionTitle;
+
+  /// No description provided for @gpsLocationSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Location'**
+  String get gpsLocationSectionTitle;
+
+  /// No description provided for @latitudeDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Lat: {degrees}°'**
+  String latitudeDisplay(String degrees);
+
+  /// No description provided for @longitudeDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Lon: {degrees}°'**
+  String longitudeDisplay(String degrees);
+
+  /// No description provided for @accuracyDisplayMeters.
+  ///
+  /// In en, this message translates to:
+  /// **'Accuracy: {meters}m'**
+  String accuracyDisplayMeters(String meters);
+
+  /// No description provided for @farmPhotoGeotaggedSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Farm Photo (Geotagged)'**
+  String get farmPhotoGeotaggedSectionTitle;
+
+  /// No description provided for @retakeFarmPhotoButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Retake Photo'**
+  String get retakeFarmPhotoButton;
+
+  /// No description provided for @captureFarmPhotoButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture Farm Photo'**
+  String get captureFarmPhotoButton;
+
+  /// No description provided for @otpVerificationSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP Verification'**
+  String get otpVerificationSectionTitle;
+
+  /// No description provided for @requestingOtpButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Requesting OTP...'**
+  String get requestingOtpButton;
+
+  /// No description provided for @gpsValidationRequiredButton.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Validation Required'**
+  String get gpsValidationRequiredButton;
+
+  /// No description provided for @fieldOfficerRequestOtpCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Request OTP'**
+  String get fieldOfficerRequestOtpCta;
+
+  /// No description provided for @enterSixDigitOtpFromFarmer.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit OTP received by the farmer:'**
+  String get enterSixDigitOtpFromFarmer;
+
+  /// No description provided for @otpExpiresInCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP expires in: {time}'**
+  String otpExpiresInCountdown(String time);
+
+  /// No description provided for @validatingOtpButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Validating...'**
+  String get validatingOtpButton;
+
+  /// No description provided for @validateOtpButtonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Validate OTP'**
+  String get validateOtpButtonLabel;
+
+  /// No description provided for @locationCapturedDistanceMeters.
+  ///
+  /// In en, this message translates to:
+  /// **'Location captured! Distance from farm: {meters}m (within 100m threshold)'**
+  String locationCapturedDistanceMeters(String meters);
+
+  /// No description provided for @locationCapturedSuccessShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Location captured successfully!'**
+  String get locationCapturedSuccessShort;
+
+  /// No description provided for @geotaggedPhotoCapturedDistanceMeters.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo captured! Distance from farm: {meters}m (within 100m threshold)'**
+  String geotaggedPhotoCapturedDistanceMeters(String meters);
+
+  /// No description provided for @geotaggedPhotoCapturedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Geotagged photo captured successfully!'**
+  String get geotaggedPhotoCapturedSuccess;
+
+  /// No description provided for @gpsValidationFailedFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS validation failed'**
+  String get gpsValidationFailedFallback;
+
+  /// No description provided for @gpsValidationFailedOtpBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS validation failed. OTP request will be blocked.'**
+  String get gpsValidationFailedOtpBlocked;
+
+  /// No description provided for @photoFileNotSavedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo file was not saved properly. Please try again.'**
+  String get photoFileNotSavedRetry;
+
+  /// No description provided for @locationCaptureFailedWithError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to capture location: {error}'**
+  String locationCaptureFailedWithError(String error);
+
+  /// No description provided for @captureGpsBeforeOtpRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Please capture GPS location first before requesting OTP.'**
+  String get captureGpsBeforeOtpRequest;
+
+  /// No description provided for @farmMissingGpsCoordinatesAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'This farm does not have GPS coordinates. Please contact admin to add farm location before verification.'**
+  String get farmMissingGpsCoordinatesAdmin;
+
+  /// No description provided for @invalidFarmGpsCoordinatesAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid farm GPS coordinates. Please contact admin.'**
+  String get invalidFarmGpsCoordinatesAdmin;
+
+  /// No description provided for @tooFarFromFarmMeters.
+  ///
+  /// In en, this message translates to:
+  /// **'You are too far from the farm location. Distance: {meters}m (required: within 100m). Please move closer to the farm location.'**
+  String tooFarFromFarmMeters(String meters);
+
+  /// No description provided for @invalidOtpPleaseTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid OTP. Please try again.'**
+  String get invalidOtpPleaseTryAgain;
+
+  /// No description provided for @pincodeRowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pincode: {code}'**
+  String pincodeRowLabel(String code);
+
+  /// No description provided for @pleaseEnterValidSixDigitOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid 6-digit OTP'**
+  String get pleaseEnterValidSixDigitOtp;
+
+  /// No description provided for @verificationFailureMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{message}'**
+  String verificationFailureMessage(String message);
+
+  /// No description provided for @authOtpAppBarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification'**
+  String get authOtpAppBarTitle;
+
+  /// No description provided for @authOtpHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter verification code'**
+  String get authOtpHeadline;
+
+  /// No description provided for @authOtpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a 6-digit code to your phone.'**
+  String get authOtpDescription;
+
+  /// No description provided for @authOtpSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit code'**
+  String get authOtpSubmit;
+
+  /// No description provided for @authOtpResendCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String authOtpResendCountdown(int seconds);
+
+  /// No description provided for @authOtpResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get authOtpResend;
+
+  /// No description provided for @signupHey.
+  ///
+  /// In en, this message translates to:
+  /// **'Hey,'**
+  String get signupHey;
+
+  /// No description provided for @signupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up now'**
+  String get signupTitle;
+
+  /// No description provided for @signupUsernameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get signupUsernameLabel;
+
+  /// No description provided for @signupUsernameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter username'**
+  String get signupUsernameHint;
+
+  /// No description provided for @signupEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get signupEmailLabel;
+
+  /// No description provided for @signupEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter email address'**
+  String get signupEmailHint;
+
+  /// No description provided for @signupPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get signupPasswordLabel;
+
+  /// No description provided for @signupPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter password'**
+  String get signupPasswordHint;
+
+  /// No description provided for @signupPasswordHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters with upper & lower case, a number, and a symbol.'**
+  String get signupPasswordHelper;
+
+  /// No description provided for @signupPhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile number'**
+  String get signupPhoneLabel;
+
+  /// No description provided for @signupPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 10-digit mobile number'**
+  String get signupPhoneHint;
+
+  /// No description provided for @signupGetCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Get verification code'**
+  String get signupGetCode;
+
+  /// No description provided for @signupErrorUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least 3 characters'**
+  String get signupErrorUsername;
+
+  /// No description provided for @signupErrorEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address'**
+  String get signupErrorEmail;
+
+  /// No description provided for @signupErrorPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 10-digit mobile number'**
+  String get signupErrorPhone;
+
+  /// No description provided for @signupErrorPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 8+ characters with A–Z, a–z, 0–9 and a symbol'**
+  String get signupErrorPassword;
+
+  /// No description provided for @signupShowPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get signupShowPassword;
+
+  /// No description provided for @signupHidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get signupHidePassword;
+
+  /// No description provided for @signupErrorPhoneRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone number is already registered. Try another number or log in.'**
+  String get signupErrorPhoneRegistered;
+
+  /// No description provided for @signupErrorEmailRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already registered. Try another email or log in.'**
+  String get signupErrorEmailRegistered;
+
+  /// No description provided for @signupErrorUsernameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'This username is already taken. Please choose another.'**
+  String get signupErrorUsernameTaken;
+
+  /// No description provided for @signupErrorCheckInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your details and try again.'**
+  String get signupErrorCheckInfo;
+
+  /// No description provided for @signupErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Check your internet and try again.'**
+  String get signupErrorNetwork;
+
+  /// No description provided for @signupPasswordWeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Weak'**
+  String get signupPasswordWeak;
+
+  /// No description provided for @signupPasswordFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get signupPasswordFair;
+
+  /// No description provided for @signupPasswordStrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get signupPasswordStrong;
 }
 
 class _AppLocalizationsDelegate

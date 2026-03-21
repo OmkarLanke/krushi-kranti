@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:krushikranti_farmer/core/constants/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/http_service.dart';
 import '../../../core/widgets/custom_text_field.dart';
@@ -80,8 +81,8 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
     // Validate required fields
     if (pincodeController.text.trim().isEmpty || selectedVillage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter pincode and select village"),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.onboardingPincodeAndVillage),
           backgroundColor: Colors.red,
         ),
       );
@@ -166,8 +167,8 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
 
     if (pincode.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter a valid 6-digit pincode"),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.validPincode),
           backgroundColor: Colors.red,
         ),
       );
@@ -265,9 +266,7 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              FormStepper(
-                stepStatuses: context.watch<OnboardingController>().stepStatuses,
-              ),
+              const OnboardingStepProgressBarConnected(),
               const SizedBox(height: 24),
               Center(
                 child: Container(

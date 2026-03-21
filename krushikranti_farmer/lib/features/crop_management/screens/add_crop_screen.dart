@@ -113,11 +113,9 @@ class _AddCropScreenState extends State<AddCropScreen> {
         // Check if it's a profile not found error
         if (errorMsg.contains("Farmer profile not found") ||
             errorMsg.contains("complete your profile")) {
-          displayMsg =
-              "Please complete your profile first before adding crops.";
-
           // Show dialog with option to go to profile
           final l10n = AppLocalizations.of(context)!;
+          displayMsg = l10n.completeProfileFirst;
           showDialog(
             context: context,
             builder: (dialogContext) => AlertDialog(
@@ -144,9 +142,12 @@ class _AddCropScreenState extends State<AddCropScreen> {
             ),
           );
         } else {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to load data: $displayMsg'),
+              content: Text(
+                l10n.failedToLoadDataWithDetails(displayMsg),
+              ),
               backgroundColor: Colors.red,
             ),
           );
@@ -180,7 +181,10 @@ class _AddCropScreenState extends State<AddCropScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Failed to load crop names: ${e.toString().replaceFirst("Exception: ", "")}'),
+              AppLocalizations.of(context)!.failedToLoadCropNamesWithDetails(
+                e.toString().replaceFirst("Exception: ", ""),
+              ),
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -243,13 +247,11 @@ class _AddCropScreenState extends State<AddCropScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 10),
-                  FormStepper(
-                    stepStatuses: context.watch<OnboardingController>().stepStatuses,
-                  ),
+                  const OnboardingStepProgressBarConnected(),
                   const SizedBox(height: 24),
 
                   SectionContainer(
-                    title: "Crop Information",
+                    title: l10n.cropInformationSection,
                     icon: Icons.grass_rounded,
                     child: Column(
                       children: [
@@ -350,7 +352,7 @@ class _AddCropScreenState extends State<AddCropScreen> {
                   ),
                   const SizedBox(height: 24),
                   SectionContainer(
-                    title: "Cultivation Details",
+                    title: l10n.cultivationDetailsSection,
                     icon: Icons.square_foot_rounded,
                     child: Column(
                       children: [

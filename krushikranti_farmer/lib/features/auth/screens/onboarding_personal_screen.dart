@@ -10,6 +10,7 @@ import '../../../core/widgets/custom_text_field.dart';
 import '../../../core/widgets/custom_dropdown_field.dart';
 import '../../../core/widgets/form_stepper.dart';
 import '../../../core/onboarding/onboarding_controller.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 class OnboardingPersonalScreen extends StatefulWidget {
@@ -168,6 +169,7 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
@@ -196,7 +198,7 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
                   .skipPersonalAndEndOnboarding(context);
             },
             child: Text(
-              'Skip',
+              l10n.skip,
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 14,
@@ -228,10 +230,7 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
                 const SizedBox(height: 10),
 
                 // ✅ GLOBAL ONBOARDING STEPPER (Steps 1–5)
-                  FormStepper(
-                    stepStatuses:
-                        context.watch<OnboardingController>().stepStatuses,
-                  ),
+                  const OnboardingStepProgressBarConnected(),
 
                 const SizedBox(height: 30),
 
@@ -299,7 +298,7 @@ class _OnboardingPersonalScreenState extends State<OnboardingPersonalScreen> {
                     child: CustomTextField(
                       controller: dobController,
                       label: text[appLang]!["dob"]!,
-                      hint: text[appLang]!["dobHint"]!,
+                      hint: l10n.dateInputFormatPlaceholder,
                       prefixIcon: Icons.calendar_month_rounded,
                     ),
                   ),

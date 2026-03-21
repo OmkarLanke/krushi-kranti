@@ -20,7 +20,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String userName = "Loading...";
+  String userName = "";
   String userEmail = "";
   String userPicPath = "";
   bool _isLoading = true;
@@ -79,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             String last = data['lastName'] ?? "";
             
             if (first.isEmpty && last.isEmpty) {
-              userName = "Guest Farmer";
+              userName = "";
             } else {
               userName = "$first $last";
             }
@@ -117,7 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           String last = userData['lastName'] ?? "";
           
           if (first.isEmpty && last.isEmpty) {
-            userName = "Guest Farmer";
+            userName = "";
           } else {
             userName = "$first $last"; 
           }
@@ -130,8 +130,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          userName = "Guest Farmer";
-          userEmail = "No Email";
+          userName = "";
+          userEmail = "";
           _isLoading = false;
         });
       }
@@ -192,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Account Section
-                  _buildSectionTitle("Account", l10n),
+                  _buildSectionTitle(l10n.profileSectionAccount, l10n),
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     children: [
@@ -213,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
 
                   // Services Section
-                  _buildSectionTitle("Services", l10n),
+                  _buildSectionTitle(l10n.profileSectionServices, l10n),
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     children: [
@@ -226,7 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
             
                   // Financial Section
-                  _buildSectionTitle("Financial", l10n),
+                  _buildSectionTitle(l10n.profileSectionFinancial, l10n),
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     children: [
@@ -239,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
             
                   // Support Section
-                  _buildSectionTitle("Support", l10n),
+                  _buildSectionTitle(l10n.profileSectionSupport, l10n),
                   const SizedBox(height: 12),
                   _buildMenuCard(
                     children: [
@@ -334,7 +334,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                           Expanded(
                     child: Text(
-                      userName, 
+                      userName.trim().isEmpty
+                          ? l10n.guestFarmer
+                          : userName,
                       style: GoogleFonts.poppins(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w600,
@@ -762,7 +764,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                     Text(
-                      "Select Language",
+                      AppLocalizations.of(context)!.selectLanguage,
                       style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
@@ -774,7 +776,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildLanguageOption(
                     context: dialogContext,
                     code: "en",
-                    name: "English",
+                    name: AppLocalizations.of(context)!.languageEnglish,
                     selectedLang: selectedLang,
                     onTap: () {
                       setState(() {
@@ -786,7 +788,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildLanguageOption(
                     context: dialogContext,
                     code: "hi",
-                    name: "हिंदी",
+                    name: AppLocalizations.of(context)!.languageHindi,
                     selectedLang: selectedLang,
                     onTap: () {
                       setState(() {
@@ -798,7 +800,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildLanguageOption(
                     context: dialogContext,
                     code: "mr",
-                    name: "मराठी",
+                    name: AppLocalizations.of(context)!.languageMarathi,
                     selectedLang: selectedLang,
                     onTap: () {
                       setState(() {
@@ -825,7 +827,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                   child: Text(
-                    "Cancel",
+                    AppLocalizations.of(context)!.cancel,
                     style: GoogleFonts.poppins(
                                 color: Colors.grey.shade700,
                                 fontWeight: FontWeight.w500,
@@ -851,7 +853,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               elevation: 0,
                             ),
                   child: Text(
-                    "Save",
+                    AppLocalizations.of(context)!.saveChanges,
                     style: GoogleFonts.poppins(
                                 color: Colors.white,
                       fontWeight: FontWeight.w600,

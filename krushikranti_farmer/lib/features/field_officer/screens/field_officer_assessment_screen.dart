@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 
 class FieldOfficerAssessmentScreen extends StatefulWidget {
   const FieldOfficerAssessmentScreen({super.key});
@@ -12,6 +13,7 @@ class FieldOfficerAssessmentScreen extends StatefulWidget {
 class _FieldOfficerAssessmentScreenState extends State<FieldOfficerAssessmentScreen> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -19,7 +21,7 @@ class _FieldOfficerAssessmentScreenState extends State<FieldOfficerAssessmentScr
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
-          'Assessment',
+          l10n.assessmentTitle,
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 20,
@@ -61,7 +63,7 @@ class _FieldOfficerAssessmentScreenState extends State<FieldOfficerAssessmentScr
               ),
               const SizedBox(height: 24),
               Text(
-                'Assessment',
+                l10n.assessmentTitle,
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -71,7 +73,7 @@ class _FieldOfficerAssessmentScreenState extends State<FieldOfficerAssessmentScr
               ),
               const SizedBox(height: 12),
               Text(
-                'Assessment details will be shown here',
+                l10n.assessmentPlaceholder,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 15,

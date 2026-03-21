@@ -470,13 +470,11 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
-              FormStepper(
-                stepStatuses: context.watch<OnboardingController>().stepStatuses,
-              ),
+              const OnboardingStepProgressBarConnected(),
               const SizedBox(height: 24),
 
               SectionContainer(
-                title: "Basic Information",
+                title: l10n.basicInformationSection,
                 icon: Icons.info_outline_rounded,
                 child: Column(
                   children: [
@@ -526,7 +524,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
               ),
 
               SectionContainer(
-                title: "Location Details",
+                title: l10n.locationDetailsSection,
                 icon: Icons.location_on_rounded,
                 child: Column(
                   children: [
@@ -642,7 +640,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
               ),
 
               SectionContainer(
-                title: "Soil & Water",
+                title: l10n.soilAndWaterSection,
                 icon: Icons.water_drop_rounded,
                 child: Column(
                   children: [
@@ -673,7 +671,7 @@ class _AddFarmScreenState extends State<AddFarmScreen> {
               ),
 
               SectionContainer(
-                title: "Ownership & Legal Info",
+                title: l10n.ownershipLegalInfoSection,
                 icon: Icons.gavel_rounded,
                 child: Column(
                   children: [

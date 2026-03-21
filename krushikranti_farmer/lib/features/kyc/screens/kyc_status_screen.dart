@@ -73,10 +73,10 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Verification successful'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.verificationSuccessful),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
       setState(() {});
@@ -141,7 +141,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('All KYC verifications completed (TEST MODE)'),
+            content: Text(AppLocalizations.of(context)!.allKycCompletedTestMode),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -154,7 +154,11 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(
+              AppLocalizations.of(context)!.genericErrorWithMessage(
+                e.toString(),
+              ),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -190,8 +194,9 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final onboarding = context.watch<OnboardingController>();
-    final isKycComplete = onboarding.kycStatus == StepStatus.completed;
+    final isKycComplete = context.select<OnboardingController, bool>(
+      (c) => c.kycStatus == StepStatus.completed,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -245,10 +250,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
-                              FormStepper(
-                                stepStatuses:
-                                    context.watch<OnboardingController>().stepStatuses,
-                              ),
+                              const OnboardingStepProgressBarConnected(),
                               
                               const SizedBox(height: 24),
           

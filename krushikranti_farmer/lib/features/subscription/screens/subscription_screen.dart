@@ -491,10 +491,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
-                                  FormStepper(
-                                    stepStatuses:
-                                        context.watch<OnboardingController>().stepStatuses,
-                                  ),
+                                  const OnboardingStepProgressBarConnected(),
 
                                   const SizedBox(height: 32),
 
@@ -519,7 +516,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                   // Profile Completion Status
                                   if (_profileCompletion != null &&
                                       !(_profileCompletion!['canSubscribe'] ?? false))
-                                    _buildProfileWarning(),
+                                    _buildProfileWarning(l10n),
 
                                   // Extra padding to ensure smooth scroll
                                   const SizedBox(height: 16),
@@ -596,7 +593,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return _parseDate(dateStr);
   }
 
-  Widget _buildProfileWarning() {
+  Widget _buildProfileWarning(AppLocalizations l10n) {
     final missingDetails = _profileCompletion?['missingDetails'] as List<dynamic>? ?? [];
     
     return Container(
@@ -622,7 +619,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Complete Your Profile',
+                  l10n.profileIncomplete,
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -634,7 +631,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Please complete the following details before proceeding to subscription:',
+            l10n.completeProfileDetails,
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: Colors.orange.shade900,
@@ -678,7 +675,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('My Details'),
+                child: Text(l10n.myDetails),
               ),
               OutlinedButton(
                 onPressed: () => Navigator.pushNamed(context, AppRoutes.farmList),
@@ -689,7 +686,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('Farm Details'),
+                child: Text(l10n.farmDetails),
               ),
               OutlinedButton(
                 onPressed: () => Navigator.pushNamed(context, AppRoutes.cropList),
@@ -700,7 +697,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('Crop Details'),
+                child: Text(l10n.cropDetails),
               ),
             ],
           ),

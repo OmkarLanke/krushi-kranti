@@ -22,6 +22,14 @@ class OnboardingRouteGuard extends StatefulWidget {
 class _OnboardingRouteGuardState extends State<OnboardingRouteGuard> {
   bool _redirectQueued = false;
   bool _activeStepQueued = false;
+  Future<void>? _readyFuture;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Stable future identity so [FutureBuilder] does not restart every rebuild.
+    _readyFuture ??= context.read<OnboardingController>().ensureReady();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +43,7 @@ class _OnboardingRouteGuardState extends State<OnboardingRouteGuard> {
     return Consumer<OnboardingController>(
       builder: (context, onboarding, _) {
         return FutureBuilder(
-          future: onboarding.ensureReady(),
+          future: _readyFuture,
           builder: (context, snapshot) {
             final ready =
                 onboarding.isReady || snapshot.connectionState == ConnectionState.done;

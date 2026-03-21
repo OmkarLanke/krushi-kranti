@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
-import '../../../core/onboarding/onboarding_controller.dart';
 import '../../../core/widgets/form_stepper.dart';
 
 class OnboardingContactScreen extends StatefulWidget {
@@ -96,9 +94,7 @@ class _OnboardingContactScreenState extends State<OnboardingContactScreen> {
           children: [
             const SizedBox(height: 10),
             // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
-            FormStepper(
-              stepStatuses: context.watch<OnboardingController>().stepStatuses,
-            ),
+            const OnboardingStepProgressBarConnected(),
             const SizedBox(height: 32),
 
             // --- 1. EMAIL (Read Only) - First ---

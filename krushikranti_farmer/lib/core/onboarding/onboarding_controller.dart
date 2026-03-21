@@ -63,13 +63,36 @@ class OnboardingController extends ChangeNotifier {
     return StepStatus.pending;
   }
 
-  List<StepStatus> get stepStatuses => [
+  /// Cached so [OnboardingStepProgressBar] does not see a new list identity on every rebuild
+  /// (avoids unnecessary repaints / flicker).
+  List<StepStatus>? _stepStatusesCache;
+
+  List<StepStatus> _computeStepStatuses() => [
         personalStatus,
         farmStatus,
         cropStatus,
         subscriptionStatus,
         kycStatus,
       ];
+
+  List<StepStatus> get stepStatuses =>
+      _stepStatusesCache ?? _computeStepStatuses();
+
+  /// Value for [Selector] / [context.select] — only changes when any step’s
+  /// [StepStatus] changes (avoids subscribing to the whole notifier).
+  int get stepProgressSignature => Object.hash(
+        _statusForStep(OnboardingStep.personal).index,
+        _statusForStep(OnboardingStep.farm).index,
+        _statusForStep(OnboardingStep.crop).index,
+        _statusForStep(OnboardingStep.subscription).index,
+        _statusForStep(OnboardingStep.kyc).index,
+      );
+
+  @override
+  void notifyListeners() {
+    _stepStatusesCache = _computeStepStatuses();
+    super.notifyListeners();
+  }
 
   StepStatus get personalStatus => _statusForStep(OnboardingStep.personal);
   StepStatus get farmStatus => _statusForStep(OnboardingStep.farm);
