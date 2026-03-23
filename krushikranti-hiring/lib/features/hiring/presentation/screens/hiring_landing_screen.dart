@@ -3,8 +3,37 @@ import 'package:google_fonts/google_fonts.dart';
 import 'application_form.dart';
 import '../../../../core/app_localizations.dart';
 
-class HiringLandingScreen extends StatelessWidget {
+enum _HiringRole {
+  fieldOfficer,
+  tadnya,
+  shopkeeper,
+}
+
+class HiringLandingScreen extends StatefulWidget {
   const HiringLandingScreen({super.key});
+
+  @override
+  State<HiringLandingScreen> createState() => _HiringLandingScreenState();
+}
+
+class _HiringLandingScreenState extends State<HiringLandingScreen> {
+  _HiringRole? _selectedRole;
+
+  void _handleContinue(BuildContext context, _HiringRole role) {
+    // Currently only FIELD_OFFICER has a complete flow.
+    if (role == _HiringRole.fieldOfficer) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              const ApplicationFormScreen(roleType: 'FIELD_OFFICER'),
+        ),
+      );
+      return;
+    }
+
+    _showComingSoon(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,8 +44,7 @@ class HiringLandingScreen extends StatelessWidget {
           backgroundColor: Colors.white,
           body: LayoutBuilder(
             builder: (context, constraints) {
-              // Check if screen width is greater than 800px (Desktop/Tablet)
-              bool isDesktop = constraints.maxWidth > 800;
+              final bool isDesktop = constraints.maxWidth > 800;
 
               if (isDesktop) {
                 // 🖥️ DESKTOP LAYOUT (Side-by-Side)
@@ -32,17 +60,20 @@ class HiringLandingScreen extends StatelessWidget {
                             height: double.infinity,
                             decoration: const BoxDecoration(
                               image: DecorationImage(
-                                image: AssetImage('assets/images/hiring_intro.jpg'),
+                                image:
+                                    AssetImage('assets/images/hiring_intro.jpg'),
                                 fit: BoxFit.cover,
                               ),
                             ),
                           ),
                           // Dark overlay for style
-                          Container(color: Colors.black.withValues(alpha: 0.1)),
+                          Container(
+                            color: Colors.black.withValues(alpha: 0.1),
+                          ),
                         ],
                       ),
                     ),
-                    
+
                     // Right Side: Content
                     Expanded(
                       flex: 1,
@@ -61,13 +92,12 @@ class HiringLandingScreen extends StatelessWidget {
                                   child: _buildLanguageDropdown(lang),
                                 ),
                                 const Spacer(),
-                                
+
                                 _buildTitle(),
                                 const SizedBox(height: 24),
                                 _buildSubtitle(),
-                                const SizedBox(height: 48),
-                                _buildRoleCards(context),
-                                
+                                const SizedBox(height: 32),
+                                _buildRoleCards(context, isDesktop: true),
                                 const Spacer(),
                               ],
                             ),
@@ -78,64 +108,81 @@ class HiringLandingScreen extends StatelessWidget {
                   ],
                 );
               } else {
-                // 📱 MOBILE LAYOUT (Vertical Stack)
-                return Column(
-                  children: [
-                    // Top Image Section
-                    Expanded(
-                      flex: 5, 
-                      child: Stack(
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            decoration: const BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage('assets/images/hiring_intro.jpg'),
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topCenter,
-                              ),
-                              borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(30),
-                                bottomRight: Radius.circular(30),
+                // 📱 MOBILE LAYOUT (Scroll + Card)
+                return SafeArea(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 12.0,
+                      ),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Image card
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: Stack(
+                                children: [
+                                  AspectRatio(
+                                    aspectRatio: 4 / 3,
+                                    child: Image.asset(
+                                      'assets/images/hiring_intro.jpg',
+                                      fit: BoxFit.cover,
+                                      alignment: Alignment.topCenter,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 12,
+                                    right: 12,
+                                    child: _buildLanguageDropdown(lang),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          // Language Switcher Positioned
-                          Positioned(
-                            top: 40,
-                            right: 20,
-                            child: _buildLanguageDropdown(lang),
-                          ),
-                        ],
-                      ),
-                    ),
+                            const SizedBox(height: 20),
 
-                    // Bottom Content Section
-                    Expanded(
-                      flex: 4, 
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 10),
-                            _buildTitle(),
-                            const SizedBox(height: 16),
-                            _buildSubtitle(),
-                            const SizedBox(height: 40), 
-                            _buildRoleCards(context),
-                            const SizedBox(height: 20), 
+                            // Content card
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 18,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 20,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildTitle(),
+                                  const SizedBox(height: 12),
+                                  _buildSubtitle(),
+                                  const SizedBox(height: 24),
+                                  _buildRoleCards(context, isDesktop: false),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 );
               }
             },
           ),
         );
-      }
+      },
     );
   }
 
@@ -211,7 +258,7 @@ class HiringLandingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRoleCards(BuildContext context) {
+  Widget _buildRoleCards(BuildContext context, {required bool isDesktop}) {
     return Column(
       children: [
         _buildRoleCard(
@@ -221,11 +268,12 @@ class HiringLandingScreen extends StatelessWidget {
           avatarColor: Colors.purple.shade100,
           icon: Icons.nature_people, // 🌿 Nature/Field
           iconColor: Colors.deepPurple,
+          role: _HiringRole.fieldOfficer,
+          isSelected: _selectedRole == _HiringRole.fieldOfficer,
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ApplicationFormScreen(roleType: 'FIELD_OFFICER')),
-            );
+            setState(() {
+              _selectedRole = _HiringRole.fieldOfficer;
+            });
           },
         ),
         const SizedBox(height: 20),
@@ -236,7 +284,13 @@ class HiringLandingScreen extends StatelessWidget {
           avatarColor: Colors.orange.shade100,
           icon: Icons.psychology, // 🧠 Knowledge/Expert
           iconColor: Colors.deepOrange,
-          onTap: () => _showComingSoon(context),
+          role: _HiringRole.tadnya,
+          isSelected: _selectedRole == _HiringRole.tadnya,
+          onTap: () {
+            setState(() {
+              _selectedRole = _HiringRole.tadnya;
+            });
+          },
         ),
         const SizedBox(height: 20),
         _buildRoleCard(
@@ -246,7 +300,13 @@ class HiringLandingScreen extends StatelessWidget {
           avatarColor: Colors.blue.shade100,
           icon: Icons.storefront, // 🏪 Shop
           iconColor: Colors.blue[800]!,
-          onTap: () => _showComingSoon(context),
+          role: _HiringRole.shopkeeper,
+          isSelected: _selectedRole == _HiringRole.shopkeeper,
+          onTap: () {
+            setState(() {
+              _selectedRole = _HiringRole.shopkeeper;
+            });
+          },
         ),
       ],
     );
@@ -255,7 +315,7 @@ class HiringLandingScreen extends StatelessWidget {
   void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(AppStrings.tr('coming_soon') ?? "Coming Soon"),
+        content: Text(AppStrings.tr('coming_soon')),
         behavior: SnackBarBehavior.floating,
         backgroundColor: Colors.black87,
       ),
@@ -269,17 +329,28 @@ class HiringLandingScreen extends StatelessWidget {
     required Color avatarColor,
     required IconData icon,
     required Color iconColor,
+    required _HiringRole role,
+    required bool isSelected,
     required VoidCallback onTap,
   }) {
-    return Container(
+    final Color selectedBorderColor = const Color(0xFF1B5E20);
+    final Color baseBorderColor = Colors.grey.withValues(alpha: 0.2);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isSelected ? Colors.green.shade50 : Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isSelected ? selectedBorderColor : baseBorderColor,
+          width: isSelected ? 1.6 : 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.grey.withValues(alpha: 0.08),
             spreadRadius: 1,
-            blurRadius: 10,
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -294,7 +365,8 @@ class HiringLandingScreen extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  height: 60, width: 60,
+                  height: 60,
+                  width: 60,
                   decoration: BoxDecoration(
                     color: avatarColor,
                     shape: BoxShape.circle,
@@ -306,14 +378,40 @@ class HiringLandingScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title.toUpperCase(),
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.deepPurple,
-                          letterSpacing: 0.5,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title.toUpperCase(),
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.deepPurple,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          if (isSelected)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.check_circle,
+                                  size: 18,
+                                  color: Color(0xFF1B5E20),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'निवडलेले',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF1B5E20),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -324,6 +422,34 @@ class HiringLandingScreen extends StatelessWidget {
                           fontSize: 13,
                           color: Colors.grey[700],
                           height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF1B5E20),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 8,
+                            ),
+                            minimumSize: const Size(0, 34),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                          onPressed: () {
+                            onTap();
+                            _handleContinue(context, role);
+                          },
+                          child: Text(
+                            AppStrings.tr('apply'),
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ],

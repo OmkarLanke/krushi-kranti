@@ -87,8 +87,7 @@ class _OtpScreenState extends State<OtpScreen> {
       }
 
       // Get 'isLogin' Flag to determine which endpoint to call
-      final bool isLogin =
-          ModalRoute.of(context)?.settings.arguments as bool? ?? false;
+      final bool isLogin = ModalRoute.of(context)?.settings.arguments as bool? ?? false;
 
       if (isLogin) {
         // For login: use /auth/request-login-otp
@@ -148,7 +147,7 @@ class _OtpScreenState extends State<OtpScreen> {
   Future<void> _submitOtp() async {
     // 1. Combine OTP from controllers
     String otp = otpControllers.map((e) => e.text).join();
-
+    
     if (otp.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please enter full 6-digit OTP")),
@@ -171,8 +170,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
       // 3. Get 'isLogin' Flag passed from Login/Signup screen
       // Default to false (Signup) if arguments are null
-      final bool isLogin =
-          ModalRoute.of(context)?.settings.arguments as bool? ?? false;
+      final bool isLogin = ModalRoute.of(context)?.settings.arguments as bool? ?? false;
 
       if (isLogin) {
         // CASE A: User is Logging In -> Call /auth/login with phone/OTP
@@ -216,13 +214,13 @@ class _OtpScreenState extends State<OtpScreen> {
         try {
           final subStatus = await SubscriptionService.getSubscriptionStatus();
           // Check multiple possible fields to determine subscription status
-          isSubscribed = subStatus['isSubscribed'] == true ||
-              subStatus['subscriptionStatus'] == 'ACTIVE' ||
-              subStatus['subscriptionStatus'] == 'active';
-
+          isSubscribed = subStatus['isSubscribed'] == true || 
+                        subStatus['subscriptionStatus'] == 'ACTIVE' ||
+                        subStatus['subscriptionStatus'] == 'active';
+          
           if (isSubscribed) {
-            final endDate = subStatus['subscriptionEndDate']?.toString() ??
-                subStatus['expiresAt']?.toString();
+            final endDate = subStatus['subscriptionEndDate']?.toString() ?? 
+                           subStatus['expiresAt']?.toString();
             await StorageService.saveSubscriptionStatus(
               true,
               endDate: endDate,
@@ -270,7 +268,7 @@ class _OtpScreenState extends State<OtpScreen> {
           }
         }
       } else {
-        // CASE B: User is Signing Up -> Call /auth/verify-otp (returns tokens directly)
+        // CASE B: User is Signing Up -> Call /auth/verify-otp, then login to get token
         final response = await HttpService.post(
           "auth/verify-otp",
           {
@@ -279,34 +277,65 @@ class _OtpScreenState extends State<OtpScreen> {
           },
         );
 
-        // verify-otp now returns AuthResponse with tokens and user info
-        final String accessToken = response['accessToken'] ?? '';
-        final String refreshToken = response['refreshToken'] ?? '';
-        final userInfo = response['user'] ?? {};
-
-        if (accessToken.isEmpty) {
+        // Extract user info from response
+        final data = response['data'] ?? {};
+        if (data.isEmpty) {
           throw Exception("OTP verification failed. Please try again.");
         }
 
-        // Save tokens
-        await StorageService.saveToken(accessToken);
-        if (refreshToken.isNotEmpty) {
-          await StorageService.saveRefreshToken(refreshToken);
-        }
-
-        // Save user details
+        // Save basic user details
         await StorageService.saveAuthDetails(
-          email: userInfo['email'] ?? '',
-          phone: userInfo['phoneNumber'] ?? phoneNumber,
+          email: data['email'] ?? '',
+          phone: data['phoneNumber'] ?? phoneNumber,
         );
 
         // Save username as first name initially
         await StorageService.savePersonalDetails(
-          firstName: userInfo['username'] ?? '',
+          firstName: data['username'] ?? '',
           lastName: "",
           dob: "",
           gender: "",
           profilePicPath: null,
+        );
+
+        // Request a new login OTP (since the registration OTP was consumed)
+        await HttpService.post(
+          "auth/request-login-otp",
+          {"phoneNumber": phoneNumber},
+        );
+
+        // Get the new OTP for login (using test endpoint for now)
+        // In production, this would be sent via SMS and user would enter it
+        // For now, we'll fetch it from the test endpoint
+        final otpResponse = await HttpService.get("auth/get-otp/$phoneNumber");
+        final String loginOtp = otpResponse['data'] ?? '';
+        
+        if (loginOtp.isEmpty) {
+          throw Exception("Failed to get login OTP. Please try logging in manually.");
+        }
+
+        // Use the new OTP to login and get JWT token
+        final loginResp = await HttpService.post(
+          "auth/login",
+          {
+            "phoneNumber": phoneNumber,
+            "otp": loginOtp,
+          },
+        );
+        final String accessToken = loginResp['accessToken'] ?? '';
+        final String refreshToken = loginResp['refreshToken'] ?? '';
+        final userInfo = loginResp['user'] ?? {};
+        if (accessToken.isEmpty) {
+          throw Exception("Login failed after signup. Please try again.");
+        }
+
+        await StorageService.saveToken(accessToken);
+        if (refreshToken.isNotEmpty) {
+          await StorageService.saveRefreshToken(refreshToken);
+        }
+        await StorageService.saveAuthDetails(
+          email: userInfo['email'] ?? data['email'] ?? '',
+          phone: userInfo['phoneNumber'] ?? phoneNumber,
         );
 
         // Save user role and ID
@@ -352,8 +381,7 @@ class _OtpScreenState extends State<OtpScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -407,8 +435,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       ),
                     ],
                   ),
-                  child: Icon(Icons.lock_rounded,
-                      size: 50, color: AppColors.brandGreen),
+                  child: Icon(Icons.lock_rounded, size: 50, color: AppColors.brandGreen),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -430,13 +457,13 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
+                
                 // OTP Input Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: List.generate(6, (i) => _otpBox(i)),
                 ),
-
+                
                 const SizedBox(height: 16),
                 // Resend OTP - Show timer or button
                 timerSeconds > 0
@@ -455,8 +482,7 @@ class _OtpScreenState extends State<OtpScreen> {
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      AppColors.brandGreen),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
                                 ),
                               )
                             : Text(
@@ -470,7 +496,7 @@ class _OtpScreenState extends State<OtpScreen> {
                               ),
                       ),
                 const SizedBox(height: 32),
-
+                
                 // SUBMIT BUTTON
                 SizedBox(
                   width: double.infinity,
@@ -490,12 +516,10 @@ class _OtpScreenState extends State<OtpScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : const Icon(Icons.verified_rounded,
-                            color: Colors.white, size: 20),
+                        : const Icon(Icons.verified_rounded, color: Colors.white, size: 20),
                     label: Text(
                       submitButtonText[appLang]!,
                       style: GoogleFonts.poppins(
