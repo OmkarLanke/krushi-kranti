@@ -84,7 +84,8 @@ services:
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 10s
-      timeout: 5s
+      timeout: 30s
+      start_period: 30s
       retries: 5
     restart: unless-stopped
 
