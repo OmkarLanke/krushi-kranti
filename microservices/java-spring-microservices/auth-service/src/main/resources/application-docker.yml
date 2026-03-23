@@ -4,12 +4,21 @@ server:
 spring:
   application:
     name: auth-service
-  
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://auth-db:5432/auth_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    # HikariCP optimizations for Neon (serverless Postgres)
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+      idle-timeout: 300000
+      max-lifetime: 600000
+      connection-timeout: 20000
+      keepalive-time: 60000
+      pool-name: auth-service-pool
   
   jpa:
     hibernate:
@@ -55,6 +64,12 @@ app:
     rate-limit: 3 # Max requests per hour per email
   services:
     notification-service: ${NOTIFICATION_SERVICE_URL:http://notification-service:4016}
+  # Admin user initialization (reads from env vars)
+  admin:
+    username: ${ADMIN_USERNAME:admin1}
+    email: ${ADMIN_EMAIL:admin@krushikranti.com}
+    phone: ${ADMIN_PHONE:9999999999}
+    password: ${ADMIN_PASSWORD:admin123}
 
 # Kafka Configuration
 spring.kafka:

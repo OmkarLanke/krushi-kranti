@@ -65,22 +65,25 @@ class HiringScreenWrapper extends StatelessWidget {
                     // Left Side: Dynamic Side Panel OR Image (Full Height)
                     Expanded(
                       flex: 5,
-                      child: sidePanel ?? Stack(
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            height: double.infinity,
-                            decoration: const BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage('assets/images/hiring_intro.jpg'),
-                                fit: BoxFit.cover,
+                      child: sidePanel ??
+                          Stack(
+                            children: [
+                              Container(
+                                width: double.infinity,
+                                height: double.infinity,
+                                decoration: const BoxDecoration(
+                                  image: DecorationImage(
+                                    image: AssetImage('assets/images/hiring_intro.jpg'),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                               ),
-                            ),
+                              Container(color: Colors.black.withOpacity(0.1)),
+                            ],
                           ),
-                          Container(color: Colors.black.withOpacity(0.1)),
-                        ],
-                      ),
                     ),
+                    // Fixed spacer to prevent form from touching image section
+                    const SizedBox(width: 32),
                     // Right Side: Form Content
                     Expanded(
                       flex: 4,
