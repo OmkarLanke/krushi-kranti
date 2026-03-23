@@ -27,10 +27,6 @@ The Farmer Service manages farmer profiles including:
 - Links to `farmers` via `farmer_id`
 - Used for loan collateral verification
 
-### pincode_master table
-- Stores pincode → address mapping (district, taluka, state, villages)
-- Populated from Excel file import
-
 ### crop_types table (Master)
 - Stores crop categories (Vegetables, Fruits, Grains, etc.)
 - Admin can add/edit/delete - reflects on farmer app
@@ -102,19 +98,9 @@ Get farms that are valid for loan collateral.
 ### Address Lookup
 
 #### GET `/farmer/profile/address/lookup?pincode={pincode}`
-Lookup address details by pincode.
+Lookup address details by pincode via data.gov.in India Post API.
 - **Query Params**: `pincode` (6 digits)
 - **Response**: `AddressLookupResponse` with district, taluka, state, and list of villages
-
-### Admin/Development
-
-#### POST `/farmer/admin/pincode/import`
-Import pincode data from Excel file.
-- **Body**: `{ "filePath": "path/to/file.xlsx" }`
-- **Response**: Number of records imported
-
-#### GET `/farmer/admin/pincode/count`
-Get count of pincode records in database.
 
 ### Crop Management
 
@@ -217,7 +203,7 @@ docker-compose up farmer-service
 - Spring Boot 3.2.0
 - PostgreSQL
 - gRPC Client (for Auth Service)
-- Apache POI (for Excel import)
+- WebClient (for data.gov.in pincode API)
 - Flyway (for database migrations)
 - Lombok
 

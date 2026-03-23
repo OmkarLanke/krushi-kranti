@@ -3,140 +3,6 @@ services:
   # Infrastructure Services
   # ============================================
 
-  # PostgreSQL Databases (Schema-per-Service)
-  auth-db:
-    image: postgres:16-alpine
-    container_name: auth-db
-    environment:
-      POSTGRES_DB: auth_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ....
-    ports:
-      - "5433:5432"
-    volumes:
-      - auth-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  farmer-db:
-    image: postgres:16-alpine
-    container_name: farmer-db
-    environment:
-      POSTGRES_DB: farmer_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ....
-    ports:
-      - "5450:5432"
-    volumes:
-      - farmer-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  notification-db:
-    image: postgres:16-alpine
-    container_name: notification-db
-    environment:
-      POSTGRES_DB: notification_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5441:5432"
-    volumes:
-      - notification-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  subscription-db:
-    image: postgres:16-alpine
-    container_name: subscription-db
-    environment:
-      POSTGRES_DB: subscription_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5451:5432"
-    volumes:
-      - subscription-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  kyc-db:
-    image: postgres:16-alpine
-    container_name: kyc-db
-    environment:
-      POSTGRES_DB: kyc_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5452:5432"
-    volumes:
-      - kyc-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  field-officer-db:
-    image: postgres:16-alpine
-    container_name: field-officer-db
-    environment:
-      POSTGRES_DB: field_officer_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5453:5432"
-    volumes:
-      - field-officer-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  job-application-db:
-    image: postgres:16-alpine
-    container_name: job-application-db
-    environment:
-      POSTGRES_DB: job_applications
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5454:5432"
-    volumes:
-      - job-application-db-data:/var/lib/postgresql/data
-    networks:
-      - krushi-kranti-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # Redis
   redis:
     image: redis:7-alpine
@@ -249,8 +115,6 @@ services:
       - "4005:4005"
       - "9090:9090"  # gRPC port
     depends_on:
-      auth-db:
-        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -281,18 +145,14 @@ services:
     ports:
       - "4000:4000"
     depends_on:
-      farmer-db:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
       - krushi-kranti-network
-    volumes:
-      # Mount repo root read-only (path is relative to this compose file's directory).
-      # Use container path /workspace for file-based imports (e.g. filePath=/workspace/Maharashtra.xlsx).
-      - ..:/workspace:ro
+    env_file:
+      - .env
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - WEATHER_API_KEY=${WEATHER_API_KEY}
@@ -300,6 +160,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/actuator/health"]
       interval: 30s
@@ -316,8 +177,6 @@ services:
     ports:
       - "4015:4015"
     depends_on:
-      field-officer-db:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
       kafka:
@@ -349,8 +208,6 @@ services:
       - "4013:4013"
       - "9093:9093"  # gRPC port
     depends_on:
-      subscription-db:
-        condition: service_healthy
       farmer-service:
         condition: service_healthy
       kafka:
@@ -380,8 +237,6 @@ services:
       - "4014:4014"
       - "9094:9094"  # gRPC port
     depends_on:
-      kyc-db:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
       kafka:
@@ -411,8 +266,6 @@ services:
     ports:
       - "4016:4016"
     depends_on:
-      notification-db:
-        condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
@@ -472,8 +325,6 @@ services:
     ports:
       - "4017:4017"
     depends_on:
-      job-application-db:
-        condition: service_healthy
       file-service:
         condition: service_healthy
     networks:
@@ -498,13 +349,6 @@ networks:
     name: krushi-kranti-network
 
 volumes:
-  auth-db-data:
-  farmer-db-data:
-  notification-db-data:
-  subscription-db-data:
-  kyc-db-data:
-  field-officer-db-data:
-  job-application-db-data:
   redis-data:
   kafka-data:
   zookeeper-data:
