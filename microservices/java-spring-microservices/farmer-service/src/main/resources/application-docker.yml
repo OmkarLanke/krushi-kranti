@@ -4,12 +4,21 @@ server:
 spring:
   application:
     name: farmer-service
-  
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://farmer-db:5432/farmer_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    # HikariCP optimizations for Neon (serverless Postgres)
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+      idle-timeout: 300000
+      max-lifetime: 600000
+      connection-timeout: 20000
+      keepalive-time: 60000
+      pool-name: farmer-service-pool
   
   jpa:
     hibernate:
@@ -62,6 +71,11 @@ services:
     url: http://auth-service:4005
   field-officer-service:
     url: http://field-officer-service:4015
+
+# data.gov.in India Post Pincode API
+datagovin:
+  api:
+    key: ${DATAGOVIN_API_KEY:}
 
 logging:
   level:

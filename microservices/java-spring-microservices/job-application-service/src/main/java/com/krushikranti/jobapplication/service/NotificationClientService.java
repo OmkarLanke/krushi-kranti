@@ -45,6 +45,31 @@ public class NotificationClientService {
     }
 
     /**
+     * Send OTP verification email
+     */
+    public Mono<Void> sendOtpEmail(String recipientEmail, String otp, int expirationMinutes) {
+        log.info("Sending OTP email to: {}", recipientEmail);
+
+        Map<String, Object> emailRequest = new HashMap<>();
+        emailRequest.put("to", recipientEmail);
+        emailRequest.put("subject", "Your KrushiKranti Verification Code");
+        emailRequest.put("body", buildOtpEmailBody(otp, expirationMinutes));
+        emailRequest.put("isHtml", true);
+
+        WebClient client = webClientBuilder.baseUrl(notificationServiceUrl).build();
+
+        return client.post()
+                .uri("/notification/send-email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(emailRequest)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .doOnSuccess(response -> log.info("OTP email sent successfully to: {}", recipientEmail))
+                .doOnError(error -> log.error("Failed to send OTP email to: {}", recipientEmail, error))
+                .then();
+    }
+
+    /**
      * Send HR interview invitation email
      */
     public Mono<Void> sendHRInvitationEmail(
@@ -157,6 +182,32 @@ public class NotificationClientService {
                 "</div>" +
                 "<p>We look forward to meeting you. If you have any questions, please don't hesitate to contact us.</p>" +
                 "<p style=\"margin-top: 30px;\">Best regards,<br><strong>KrushiKranti HR Team</strong></p>" +
+                "</div>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+    }
+
+    private String buildOtpEmailBody(String otp, int expirationMinutes) {
+        // OTP is numeric-only (digits 0-9), so HTML injection is not a concern here
+        return "<!DOCTYPE html>" +
+                "<html>" +
+                "<head><meta charset=\"UTF-8\"></head>" +
+                "<body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">" +
+                "<div style=\"max-width: 600px; margin: 0 auto; padding: 20px;\">" +
+                "<div style=\"background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;\">" +
+                "<h1 style=\"margin: 0;\">🔐 Email Verification</h1>" +
+                "</div>" +
+                "<div style=\"background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;\">" +
+                "<p>Dear User,</p>" +
+                "<p>Use the one-time password (OTP) below to verify your email address. This code is valid for <strong>" + expirationMinutes + " minutes</strong>.</p>" +
+                "<div style=\"text-align: center; margin: 30px 0;\">" +
+                "<div style=\"display: inline-block; background: #ffffff; border: 2px solid #4CAF50; border-radius: 10px; padding: 20px 40px;\">" +
+                "<span style=\"font-size: 36px; font-weight: bold; letter-spacing: 10px; color: #4CAF50;\">" + otp + "</span>" +
+                "</div>" +
+                "</div>" +
+                "<p style=\"color: #888; font-size: 13px;\">If you did not request this code, please ignore this email. Do not share this OTP with anyone.</p>" +
+                "<p style=\"margin-top: 30px;\">Best regards,<br><strong>KrushiKranti Team</strong></p>" +
                 "</div>" +
                 "</div>" +
                 "</body>" +
