@@ -32,6 +32,12 @@ class StorageService {
   // --- SUBSCRIPTION KEYS ---
   static const String _subscriptionStatusKey = 'subscription_status';
   static const String _subscriptionEndDateKey = 'subscription_end_date';
+
+  // --- ONBOARDING FLOW KEYS ---
+  static const String _onboardingPersonalSkippedKey = 'onboarding_personal_skipped';
+  static const String _onboardingFarmSkippedKey = 'onboarding_farm_skipped';
+  static const String _onboardingPersonalCompletedKey = 'onboarding_personal_completed';
+  static const String _onboardingKycCompletedKey = 'onboarding_kyc_completed';
   
   // --- USER ROLE KEY ---
   static const String _userRoleKey = 'user_role';
@@ -175,6 +181,57 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_subscriptionStatusKey);
     await prefs.remove(_subscriptionEndDateKey);
+  }
+
+  // ===========================================================================
+  // ONBOARDING FLOW (Skip / Completion)
+  // ===========================================================================
+
+  static Future<void> saveOnboardingPersonalSkipped(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_onboardingPersonalSkippedKey, value);
+  }
+
+  static Future<bool?> getOnboardingPersonalSkipped() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey(_onboardingPersonalSkippedKey)) return null;
+    return prefs.getBool(_onboardingPersonalSkippedKey);
+  }
+
+  static Future<void> saveOnboardingFarmSkipped(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_onboardingFarmSkippedKey, value);
+  }
+
+  static Future<bool?> getOnboardingFarmSkipped() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey(_onboardingFarmSkippedKey)) return null;
+    return prefs.getBool(_onboardingFarmSkippedKey);
+  }
+
+  static Future<void> saveOnboardingPersonalCompleted(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_onboardingPersonalCompletedKey, value);
+  }
+
+  static Future<bool?> getOnboardingPersonalCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey(_onboardingPersonalCompletedKey)) return null;
+    return prefs.getBool(_onboardingPersonalCompletedKey);
+  }
+
+  // ===========================================================================
+  // KYC COMPLETION
+  // ===========================================================================
+  static Future<void> saveOnboardingKycCompleted(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_onboardingKycCompletedKey, value);
+  }
+
+  static Future<bool?> getOnboardingKycCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey(_onboardingKycCompletedKey)) return null;
+    return prefs.getBool(_onboardingKycCompletedKey);
   }
 
   // ===========================================================================

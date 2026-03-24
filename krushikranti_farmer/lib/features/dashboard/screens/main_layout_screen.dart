@@ -14,7 +14,6 @@ import '../../../core/services/deep_link_service.dart';
 // --- IMPORT YOUR TABS ---
 import 'home_screen.dart';
 import 'profile_screen.dart';
-import '../../sell/screens/sell_screen.dart'; 
 // import '../../finance/screens/finance_screen.dart'; // Finance placeholder for now
 // import '../../crop_management/screens/crop_list_screen.dart'; // Keep commented until Crop List is built
 
@@ -31,21 +30,25 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
   StreamSubscription? _notificationSubscription;
   final Set<String> _shownNotificationIds = {}; // Track which notifications we've shown
 
-  final List<String> _featureNames = const [
-    "Home",
-    "Task",
-    "Sell",
-    "Finance",
-    "Account",
-  ];
-
   // --- LIST OF SCREENS ---
   // The order must match the BottomNavigationBar items below
-  final List<Widget> _screens = [
+  late final List<Widget> _screens = [
     const HomeScreen(),
-    const Center(child: Text("Task Screen Coming Soon")), // Placeholder for Task
-    const SellScreen(), 
-    const Center(child: Text("Finance Screen Coming Soon")), // Placeholder for Finance
+    Builder(
+      builder: (context) => Center(
+        child: Text(AppLocalizations.of(context)!.taskScreenComingSoon),
+      ),
+    ),
+    Builder(
+      builder: (context) => Center(
+        child: Text(AppLocalizations.of(context)!.sellScreenComingSoon),
+      ),
+    ),
+    Builder(
+      builder: (context) => Center(
+        child: Text(AppLocalizations.of(context)!.financeScreenComingSoon),
+      ),
+    ),
     const ProfileScreen(),
   ];
 

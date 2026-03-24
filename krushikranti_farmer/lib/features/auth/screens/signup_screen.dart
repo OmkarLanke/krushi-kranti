@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/widgets/app_primary_button.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/http_service.dart';
 
@@ -15,125 +17,87 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  // ✅ ADDED: Username Controller
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
 
-  String appLang = "en"; // default
+  final _formKey = GlobalKey<FormState>();
+  final _usernameFocus = FocusNode();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _phoneFocus = FocusNode();
+
   bool _isLoading = false;
-  bool _obscurePassword = true; // ✅ ADDED: Password visibility toggle
+  bool _obscurePassword = true;
 
-  String? usernameError; // ✅ ADDED: Username Error
-  String? emailError;
-  String? passwordError;
-  String? phoneError;
-
-  // 🌍 UI TRANSLATIONS
-  final Map<String, Map<String, String>> translations = {
-    "en": {
-      "hey": "Hey,",
-      "signupNow": "Sign Up Now !",
-      "username": "Username",           // ✅ New
-      "usernameHint": "Enter username", // ✅ New
-      "email": "E-Mail",
-      "emailHint": "Enter e-mail address",
-      "password": "Password",
-      "passwordHint": "Enter password",
-      "phone": "Phone Number",
-      "phoneHint": "Enter phone number",
-      "getOtp": "Get OTP",
-    },
-    "hi": {
-      "hey": "नमस्ते,",
-      "signupNow": "अभी साइन अप करें !",
-      "username": "उपयोगकर्ता नाम",           // ✅ New
-      "usernameHint": "उपयोगकर्ता नाम दर्ज करें", // ✅ New
-      "email": "ई-मेल",
-      "emailHint": "ई-मेल दर्ज करें",
-      "password": "पासवर्ड",
-      "passwordHint": "पासवर्ड दर्ज करें",
-      "phone": "फोन नंबर",
-      "phoneHint": "फोन नंबर दर्ज करें",
-      "getOtp": "OTP प्राप्त करें",
-    },
-    "mr": {
-      "hey": "नमस्कार,",
-      "signupNow": "आता साइन अप करा !",
-      "username": "वापरकर्तानाव",           // ✅ New
-      "usernameHint": "वापरकर्तानाव टाका",   // ✅ New
-      "email": "ई-मेल",
-      "emailHint": "ई-मेल टाका",
-      "password": "पासवर्ड",
-      "passwordHint": "पासवर्ड टाका",
-      "phone": "फोन नंबर",
-      "phoneHint": "फोन नंबर टाका",
-      "getOtp": "OTP मिळवा",
-    }
-  };
-
-  // 🌍 ERROR TRANSLATIONS
-  final Map<String, Map<String, String>> translationsErr = {
-    "en": {
-      "usernameErr": "Please enter a username", // ✅ New
-      "emailErr": "Enter a valid email address",
-      "passErr": "Password must contain 8+ chars, A-Z, a-z, number & special character",
-      "phoneErr": "Enter a valid 10-digit phone number",
-    },
-    "hi": {
-      "usernameErr": "कृपया उपयोगकर्ता नाम दर्ज करें", // ✅ New
-      "emailErr": "कृपया मान्य ई-मेल दर्ज करें",
-      "passErr": "पासवर्ड में 8+ अक्षर, A-Z, a-z, संख्या और विशेष वर्ण शामिल होने चाहिए",
-      "phoneErr": "कृपया 10 अंकों का मान्य फ़ोन नंबर दर्ज करें",
-    },
-    "mr": {
-      "usernameErr": "कृपया वापरकर्तानाव प्रविष्ट करा", // ✅ New
-      "emailErr": "कृपया वैध ई-मेल पत्ता प्रविष्ट करा",
-      "passErr": "पासवर्डमध्ये 8+ अक्षरे, A-Z, a-z, संख्या व विशेष चिन्ह असणे आवश्यक आहे",
-      "phoneErr": "कृपया वैध 10 अंकी मोबाईल नंबर टाका",
-    }
-  };
+  void _onFormFieldChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
-    loadLanguage();
+    usernameController.addListener(_onFormFieldChanged);
+    emailController.addListener(_onFormFieldChanged);
+    passwordController.addListener(_onFormFieldChanged);
+    phoneController.addListener(_onFormFieldChanged);
   }
 
-  Future<void> loadLanguage() async {
-    String? lang = await StorageService.getLanguage();
-    setState(() => appLang = lang ?? "en");
+  @override
+  void dispose() {
+    usernameController.removeListener(_onFormFieldChanged);
+    emailController.removeListener(_onFormFieldChanged);
+    passwordController.removeListener(_onFormFieldChanged);
+    phoneController.removeListener(_onFormFieldChanged);
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    phoneController.dispose();
+    _usernameFocus.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _phoneFocus.dispose();
+    super.dispose();
   }
 
-  // VALIDATIONS
-  bool validateUsername(String name) {
-    return name.trim().length >= 3; // Simple check
-  }
+  bool validateUsername(String name) => name.trim().length >= 3;
 
   bool validateEmail(String email) {
-    final regex = RegExp(r"^[\w\.-]+@[\w\.-]+\.\w+$");
+    final regex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
     return regex.hasMatch(email);
   }
 
-  bool validatePhone(String phone) {
-    final regex = RegExp(r"^[0-9]{10}$");
-    return regex.hasMatch(phone);
-  }
+  bool validatePhone(String phone) => RegExp(r'^[0-9]{10}$').hasMatch(phone);
 
   bool validatePassword(String password) {
-    final regex = RegExp(r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#\$%\^&\*\-_]).{8,}$");
-    return regex.hasMatch(password);
+    return RegExp(
+      r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#\$%\^&\*\-_]).{8,}$',
+    ).hasMatch(password);
   }
 
-  // Helper method to generate user-friendly error messages
+  int _passwordStrengthScore(String p) {
+    if (p.isEmpty) return 0;
+    int s = 0;
+    if (p.length >= 8) s++;
+    if (RegExp(r'[A-Z]').hasMatch(p)) s++;
+    if (RegExp(r'[a-z]').hasMatch(p)) s++;
+    if (RegExp(r'\d').hasMatch(p)) s++;
+    if (RegExp(r'[!@#$%^&*\-_]').hasMatch(p)) s++;
+    return s;
+  }
+
+  bool get _isFormValid =>
+      validateUsername(usernameController.text) &&
+      validateEmail(emailController.text) &&
+      validatePhone(phoneController.text) &&
+      validatePassword(passwordController.text);
+
   String _getUserFriendlyErrorMessage(dynamic error) {
     final errorString = error.toString();
     String actualMessage = errorString;
-    
-    // Try to extract JSON message from error string
+
     try {
-      // Look for JSON in the error string (format: {...})
       final jsonMatch = RegExp(r'\{[^}]+\}').firstMatch(errorString);
       if (jsonMatch != null) {
         final jsonString = jsonMatch.group(0);
@@ -144,345 +108,394 @@ class _SignUpScreenState extends State<SignUpScreen> {
           }
         }
       }
-    } catch (e) {
-      // If JSON parsing fails, use the original error string
-    }
-    
+    } catch (_) {}
+
     final errorLower = actualMessage.toLowerCase();
-    
-    // Map common error messages to user-friendly text
-    if (errorLower.contains('phone number already exists') || 
+    final l10n = AppLocalizations.of(context)!;
+
+    if (errorLower.contains('phone number already exists') ||
         errorLower.contains('phone already exists') ||
         errorLower.contains('phone number is already registered')) {
-      return _getLocalizedError('phoneExists');
+      return l10n.signupErrorPhoneRegistered;
     }
-    
-    if (errorLower.contains('email already exists') || 
+
+    if (errorLower.contains('email already exists') ||
         errorLower.contains('email is already registered') ||
         errorLower.contains('email already in use')) {
-      return _getLocalizedError('emailExists');
+      return l10n.signupErrorEmailRegistered;
     }
-    
-    if (errorLower.contains('username already exists') || 
+
+    if (errorLower.contains('username already exists') ||
         errorLower.contains('username is already taken')) {
-      return _getLocalizedError('usernameExists');
+      return l10n.signupErrorUsernameTaken;
     }
-    
+
     if (errorLower.contains('invalid') || errorLower.contains('validation')) {
-      return _getLocalizedError('invalidData');
+      return l10n.signupErrorCheckInfo;
     }
-    
+
     if (errorLower.contains('network') || errorLower.contains('connection')) {
-      return _getLocalizedError('networkError');
+      return l10n.signupErrorNetwork;
     }
-    
-    // Return the actual message (cleaned up)
+
     return actualMessage
-        .replaceFirst("Exception: ", "")
-        .replaceFirst("Network Error: ", "")
-        .replaceFirst("Error: ", "")
-        .replaceFirst("error: ", "");
-  }
-  
-  String _getLocalizedError(String key) {
-    final errorMessages = {
-      "en": {
-        "phoneExists": "This phone number is already registered. Please use a different number or try logging in.",
-        "emailExists": "This email address is already registered. Please use a different email or try logging in.",
-        "usernameExists": "This username is already taken. Please choose a different username.",
-        "invalidData": "Please check your information and try again.",
-        "networkError": "Network connection error. Please check your internet and try again.",
-      },
-      "hi": {
-        "phoneExists": "यह फोन नंबर पहले से पंजीकृत है। कृपया कोई अन्य नंबर उपयोग करें या लॉग इन करने का प्रयास करें।",
-        "emailExists": "यह ई-मेल पता पहले से पंजीकृत है। कृपया कोई अन्य ई-मेल उपयोग करें या लॉग इन करने का प्रयास करें।",
-        "usernameExists": "यह उपयोगकर्ता नाम पहले से लिया गया है। कृपया कोई अन्य नाम चुनें।",
-        "invalidData": "कृपया अपनी जानकारी जांचें और पुनः प्रयास करें।",
-        "networkError": "नेटवर्क कनेक्शन त्रुटि। कृपया अपना इंटरनेट जांचें और पुनः प्रयास करें।",
-      },
-      "mr": {
-        "phoneExists": "हा फोन नंबर आधीच नोंदणीकृत आहे. कृपया वेगळा नंबर वापरा किंवा लॉग इन करण्याचा प्रयत्न करा.",
-        "emailExists": "हा ई-मेल पत्ता आधीच नोंदणीकृत आहे. कृपया वेगळा ई-मेल वापरा किंवा लॉग इन करण्याचा प्रयत्न करा.",
-        "usernameExists": "हे वापरकर्तानाव आधीच घेतले आहे. कृपया वेगळे नाव निवडा.",
-        "invalidData": "कृपया आपली माहिती तपासा आणि पुन्हा प्रयत्न करा.",
-        "networkError": "नेटवर्क कनेक्शन त्रुटी. कृपया आपले इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.",
-      },
-    };
-    
-    return errorMessages[appLang]?[key] ?? errorMessages["en"]![key]!;
+        .replaceFirst('Exception: ', '')
+        .replaceFirst('Network Error: ', '')
+        .replaceFirst('Error: ', '')
+        .replaceFirst('error: ', '');
   }
 
-  // ✅ UPDATED: Async function to save data
   Future<void> validateForm() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
+
     setState(() {
-      usernameError = validateUsername(usernameController.text)
-          ? null
-          : translationsErr[appLang]!["usernameErr"];
-
-      emailError = validateEmail(emailController.text.trim())
-          ? null
-          : translationsErr[appLang]!["emailErr"];
-
-      passwordError = validatePassword(passwordController.text.trim())
-          ? null
-          : translationsErr[appLang]!["passErr"];
-
-      phoneError = validatePhone(phoneController.text.trim())
-          ? null
-          : translationsErr[appLang]!["phoneErr"];
+      _isLoading = true;
     });
 
-    if (usernameError == null && 
-        emailError == null && 
-        passwordError == null && 
-        phoneError == null) {
-      
+    try {
+      await HttpService.post(
+        'auth/register',
+        {
+          'username': usernameController.text.trim(),
+          'email': emailController.text.trim(),
+          'phoneNumber': phoneController.text.trim(),
+          'password': passwordController.text.trim(),
+          'role': 'FARMER',
+        },
+      );
+
+      await StorageService.saveAuthDetails(
+        email: emailController.text.trim(),
+        phone: phoneController.text.trim(),
+      );
+
+      await StorageService.savePersonalDetails(
+        firstName: usernameController.text.trim(),
+        lastName: '',
+        dob: '',
+        gender: '',
+        profilePicPath: null,
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      Navigator.pushNamed(context, AppRoutes.otp, arguments: false);
+    } catch (e) {
+      if (!mounted) return;
+
       setState(() {
-        _isLoading = true;
+        _isLoading = false;
       });
 
-      try {
-        // 1. Call /auth/register endpoint
-        final response = await HttpService.post(
-          "auth/register",
-          {
-            "username": usernameController.text.trim(),
-            "email": emailController.text.trim(),
-            "phoneNumber": phoneController.text.trim(),
-            "password": passwordController.text.trim(),
-            "role": "FARMER",
-          },
-        );
+      final errorMessage = _getUserFriendlyErrorMessage(e);
 
-        // 2. Save Auth Details (Email/Phone) for OTP screen
-        await StorageService.saveAuthDetails(
-          email: emailController.text.trim(),
-          phone: phoneController.text.trim(),
-        );
-
-        // 3. Save Username as First Name initially (so Profile isn't empty)
-        await StorageService.savePersonalDetails(
-          firstName: usernameController.text.trim(),
-          lastName: "",
-          dob: "",
-          gender: "",
-          profilePicPath: null,
-        );
-
-        if (!mounted) return;
-
-        // 4. Navigate to OTP (Pass 'false' because this is Signup)
-        Navigator.pushNamed(context, AppRoutes.otp, arguments: false);
-      } catch (e) {
-        if (!mounted) return;
-
-        setState(() {
-          _isLoading = false;
-        });
-
-        // Get user-friendly error message
-        final errorMessage = _getUserFriendlyErrorMessage(e);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    errorMessage,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  errorMessage,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
                   ),
                 ),
-              ],
-            ),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'OK',
-              textColor: Colors.white,
-              onPressed: () {},
-            ),
+              ),
+            ],
           ),
-        );
-      }
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: AppLocalizations.of(context)!.ok,
+            textColor: Colors.white,
+            onPressed: () {},
+          ),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          translations[appLang]!["signupNow"]!,
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+    final l10n = AppLocalizations.of(context)!;
+    final media = MediaQuery.of(context);
+    final isCompactHeight = media.size.height < 700;
+    final horizontalPadding = media.size.width >= 600 ? 24.0 : 16.0;
+    final titleSize = media.size.width >= 600 ? 26.0 : 22.0;
+    final pw = passwordController.text;
+    final strength = _passwordStrengthScore(pw);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F7FA),
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            icon: const Icon(Icons.arrow_back_ios_new,
+                color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
           ),
-        ),
-        centerTitle: true,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.brandGreen,
-                AppColors.brandGreen.withOpacity(0.8),
-              ],
+          title: Text(
+            l10n.signupTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
+          ),
+          centerTitle: true,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.brandGreen,
+                  AppColors.brandGreen.withOpacity(0.85),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth =
+                  constraints.maxWidth >= 700 ? 520.0 : double.infinity;
 
-                Text(
-                  translations[appLang]!["hey"]!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                    letterSpacing: 0.3,
-                  ),
+              return SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  isCompactHeight ? 12 : 16,
+                  horizontalPadding,
+                  20 + media.viewInsets.bottom,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  translations[appLang]!["signupNow"]!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.brandGreen,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // --- 1. USERNAME FIELD (ADDED BACK) ---
-                _label(translations[appLang]!["username"]!),
-                _inputField(
-                  controller: usernameController,
-                  hint: translations[appLang]!["usernameHint"]!,
-                  icon: Icons.person_outline,
-                ),
-                if (usernameError != null) _errorText(usernameError!),
-
-                const SizedBox(height: 20),
-
-                // --- 2. EMAIL FIELD ---
-                _label(translations[appLang]!["email"]!),
-                _inputField(
-                  controller: emailController,
-                  hint: translations[appLang]!["emailHint"]!,
-                  icon: Icons.email_outlined,
-                ),
-                if (emailError != null) _errorText(emailError!),
-
-                const SizedBox(height: 20),
-
-                // --- 3. PASSWORD FIELD ---
-                _label(translations[appLang]!["password"]!),
-                _inputField(
-                  controller: passwordController,
-                  hint: translations[appLang]!["passwordHint"]!,
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                  obscureText: _obscurePassword,
-                  onTogglePassword: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-                if (passwordError != null) _errorText(passwordError!),
-
-                const SizedBox(height: 20),
-
-                // --- 4. PHONE FIELD ---
-                _label(translations[appLang]!["phone"]!),
-                _inputField(
-                  controller: phoneController,
-                  hint: translations[appLang]!["phoneHint"]!,
-                  icon: Icons.phone_outlined,
-                  keyboardType: TextInputType.phone,
-                  maxLength: 10,
-                ),
-                if (phoneError != null) _errorText(phoneError!),
-
-                const SizedBox(height: 40),
-
-                // SUBMIT BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brandGreen,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    icon: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: AutofillGroup(
+                      child: Form(
+                        key: _formKey,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.signupHey,
+                              style: GoogleFonts.poppins(
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                                height: 1.15,
+                              ),
                             ),
-                          )
-                        : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                    label: Text(
-                      translations[appLang]!["getOtp"]!,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
+                            const SizedBox(height: 4),
+                            Text(
+                              l10n.signupTitle,
+                              style: GoogleFonts.poppins(
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.brandGreen,
+                                height: 1.15,
+                              ),
+                            ),
+                            SizedBox(height: isCompactHeight ? 16 : 20),
+                            _fieldLabel(l10n.signupUsernameLabel),
+                            const SizedBox(height: 6),
+                            _textField(
+                              l10n: l10n,
+                              controller: usernameController,
+                              focusNode: _usernameFocus,
+                              nextFocusNode: _emailFocus,
+                              hint: l10n.signupUsernameHint,
+                              icon: Icons.person_outline,
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.username],
+                              validator: (value) {
+                                final v = value?.trim() ?? '';
+                                if (!validateUsername(v)) {
+                                  return l10n.signupErrorUsername;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 14),
+                            _fieldLabel(l10n.signupEmailLabel),
+                            const SizedBox(height: 6),
+                            _textField(
+                              l10n: l10n,
+                              controller: emailController,
+                              focusNode: _emailFocus,
+                              nextFocusNode: _passwordFocus,
+                              hint: l10n.signupEmailHint,
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.email],
+                              validator: (value) {
+                                final v = value?.trim() ?? '';
+                                if (!validateEmail(v)) {
+                                  return l10n.signupErrorEmail;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 14),
+                            _fieldLabel(l10n.signupPasswordLabel),
+                            const SizedBox(height: 6),
+                            _textField(
+                              l10n: l10n,
+                              controller: passwordController,
+                              focusNode: _passwordFocus,
+                              nextFocusNode: _phoneFocus,
+                              hint: l10n.signupPasswordHint,
+                              icon: Icons.lock_outline,
+                              isPassword: true,
+                              obscureText: _obscurePassword,
+                              onTogglePassword: () {
+                                setState(
+                                    () => _obscurePassword = !_obscurePassword);
+                              },
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.newPassword],
+                              validator: (value) {
+                                final v = value?.trim() ?? '';
+                                if (!validatePassword(v)) {
+                                  return l10n.signupErrorPassword;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              l10n.signupPasswordHelper,
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.grey.shade800,
+                                height: 1.35,
+                              ),
+                            ),
+                            if (pw.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  _strengthDot(strength >= 1, strength),
+                                  _strengthDot(strength >= 2, strength),
+                                  _strengthDot(strength >= 3, strength),
+                                  _strengthDot(strength >= 4, strength),
+                                  _strengthDot(strength >= 5, strength),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _strengthLabel(l10n, strength),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: _strengthColor(strength),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 14),
+                            _fieldLabel(l10n.signupPhoneLabel),
+                            const SizedBox(height: 6),
+                            _textField(
+                              l10n: l10n,
+                              controller: phoneController,
+                              focusNode: _phoneFocus,
+                              hint: l10n.signupPhoneHint,
+                              icon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              textInputAction: TextInputAction.done,
+                              maxLength: 10,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10),
+                              ],
+                              autofillHints: const [
+                                AutofillHints.telephoneNumber
+                              ],
+                              onFieldSubmitted: (_) => validateForm(),
+                              validator: (value) {
+                                final v = value?.trim() ?? '';
+                                if (!validatePhone(v)) {
+                                  return l10n.signupErrorPhone;
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: isCompactHeight ? 18 : 22),
+                            AppPrimaryButton(
+                              label: l10n.signupGetCode,
+                              icon: Icons.send_rounded,
+                              isLoading: _isLoading,
+                              onPressed: (_isLoading || !_isFormValid)
+                                  ? null
+                                  : validateForm,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    onPressed: _isLoading ? null : validateForm,
                   ),
                 ),
-
-                const SizedBox(height: 30),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _label(String text) {
+  Widget _strengthDot(bool filled, int strength) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: filled ? _strengthColor(strength) : Colors.grey.shade300,
+        ),
+      ),
+    );
+  }
+
+  Color _strengthColor(int s) {
+    if (s >= 4) return Colors.green.shade700;
+    if (s >= 2) return Colors.orange.shade800;
+    return Colors.red.shade700;
+  }
+
+  String _strengthLabel(AppLocalizations l10n, int s) {
+    if (s >= 4) return l10n.signupPasswordStrong;
+    if (s >= 2) return l10n.signupPasswordFair;
+    return l10n.signupPasswordWeak;
+  }
+
+  Widget _fieldLabel(String text) {
     return Text(
       text,
       style: GoogleFonts.poppins(
@@ -494,115 +507,100 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _errorText(String msg) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8, left: 0),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.red.shade200, width: 1),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.red.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.error_outline_rounded, size: 16, color: Colors.red.shade700),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                msg,
-                style: GoogleFonts.poppins(
-                  color: Colors.red.shade700,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _inputField({
+  Widget _textField({
+    required AppLocalizations l10n,
     required TextEditingController controller,
     required String hint,
     required IconData icon,
+    FocusNode? focusNode,
+    FocusNode? nextFocusNode,
     bool isPassword = false,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
     int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    TextInputAction textInputAction = TextInputAction.next,
     VoidCallback? onTogglePassword,
+    ValueChanged<String>? onFieldSubmitted,
+    String? Function(String?)? validator,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300, width: 1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            margin: const EdgeInsets.only(right: 10),
+    final borderRadius = BorderRadius.circular(12);
+    final baseBorder = OutlineInputBorder(
+      borderRadius: borderRadius,
+      borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+    );
+
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      autofillHints: autofillHints,
+      obscureText: isPassword ? obscureText : false,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      maxLength: maxLength,
+      inputFormatters: inputFormatters,
+      style: GoogleFonts.poppins(fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        counterText: '',
+        filled: true,
+        fillColor: Colors.white,
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 12, right: 8),
+          child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.brandGreen.withOpacity(0.1),
+              color: AppColors.brandGreen.withOpacity(0.10),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 20, color: AppColors.brandGreen),
           ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              obscureText: isPassword ? obscureText : false,
-              keyboardType: keyboardType,
-              maxLength: maxLength,
-              style: GoogleFonts.poppins(fontSize: 14),
-              inputFormatters: maxLength != null
-                  ? [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(maxLength),
-                    ]
-                  : null,
-              decoration: InputDecoration(
-                hintText: hint,
-                border: InputBorder.none,
-                hintStyle: GoogleFonts.poppins(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+        hintStyle: GoogleFonts.poppins(
+          color: Colors.grey.shade600,
+          fontSize: 14,
+        ),
+        enabledBorder: baseBorder,
+        focusedBorder: baseBorder.copyWith(
+          borderSide: const BorderSide(color: AppColors.brandGreen, width: 1.4),
+        ),
+        errorBorder: baseBorder.copyWith(
+          borderSide: BorderSide(color: Colors.red.shade400, width: 1.2),
+        ),
+        focusedErrorBorder: baseBorder.copyWith(
+          borderSide: BorderSide(color: Colors.red.shade500, width: 1.4),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        suffixIcon: isPassword && onTogglePassword != null
+            ? IconButton(
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                counterText: '',
-                suffixIcon: isPassword && onTogglePassword != null
-                    ? IconButton(
-                        icon: Icon(
-                          obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                          color: AppColors.brandGreen,
-                          size: 20,
-                        ),
-                        onPressed: onTogglePassword,
-                      )
-                    : null,
-              ),
-              onChanged: (_) {
-                setState(() {
-                  usernameError = null;
-                  emailError = null;
-                  passwordError = null;
-                  phoneError = null;
-                });
-              },
-            ),
-          ),
-        ],
+                tooltip: obscureText
+                    ? l10n.signupShowPassword
+                    : l10n.signupHidePassword,
+                icon: Icon(
+                  obscureText
+                      ? Icons.visibility_off_rounded
+                      : Icons.visibility_rounded,
+                  color: AppColors.brandGreen,
+                  size: 22,
+                ),
+                onPressed: onTogglePassword,
+              )
+            : null,
       ),
+      validator: validator,
+      onFieldSubmitted: (value) {
+        onFieldSubmitted?.call(value);
+        if (nextFocusNode != null) {
+          FocusScope.of(context).requestFocus(nextFocusNode);
+        }
+      },
     );
   }
 }

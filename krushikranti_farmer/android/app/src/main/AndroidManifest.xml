@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
     
     <application
-        android:label="krushikranti_farmer"
+        android:label="KrushiKranti"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"

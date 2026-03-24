@@ -209,9 +209,9 @@
   "verifyNumber": "तुमचा नंबर सत्यापित करा",
   "verifyNumberSubtitle": "OTP कोड मिळवण्यासाठी तुमचा नोंदणीकृत मोबाईल नंबर टाका.",
   "nextBtn": "पुढे",
-  "enterOtp": "कृपया OTP टाका",
+  "enterOtp": "कृपया ओटीपी टाका",
   "otpSubtitle": "तुमच्या नंबरवर पाठवलेला 4-अंकी कोड टाका",
-  "submitOtp": "OTP सबमिट करा",
+  "submitOtp": "ओटीपी सबमिट करा",
   "resetPassword": "पासवर्ड रीसेट करा",
   "newPassword": "नवीन पासवर्ड तयार करा",
   "confirmPassword": "नवीन पासवर्डची पुष्टी करा",
@@ -528,5 +528,473 @@
   "panAlreadyVerified": "PAN आधीच पडताळलेला आहे",
   "panAlreadyVerifiedMessage": "तुमचा PAN आधीच पडताळलेला आहे. तुम्ही तो पुन्हा पडताळू शकत नाही.",
   "bankAlreadyVerified": "बँक खाते आधीच पडताळलेले आहे",
-  "bankAlreadyVerifiedMessage": "तुमचे बँक खाते आधीच पडताळलेले आहे. तुम्ही ते पुन्हा पडताळू शकत नाही."
+  "bankAlreadyVerifiedMessage": "तुमचे बँक खाते आधीच पडताळलेले आहे. तुम्ही ते पुन्हा पडताळू शकत नाही.",
+
+  "appTitle": "कृषी क्रांती",
+  "completeSetupTitle": "सेटअप पूर्ण करा",
+  "progressPercent": "{value}%",
+  "@progressPercent": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "setupStepCompleteProfileTitle": "प्रोफाइल पूर्ण करा",
+  "setupStepCompleteProfileSubtitle": "तुमची मूलभूत वैयक्तिक माहिती जोडा",
+  "setupStepAddFarmTitle": "तुमचे पहिले शेत जोडा",
+  "setupStepAddFarmSubtitle": "अंतर्दृष्टीसाठी तुमचे शेत सेट करा",
+  "setupStepSubscribeTitle": "प्रीमियमला सबस्क्राइब करा",
+  "setupStepSubscribeSubtitle": "सर्व वैशिष्ट्ये अनलॉक करा",
+  "continueSetup": "सेटअप सुरू ठेवा",
+  "unlockWeatherInsights": "हवामान अंतर्दृष्टी अनलॉक करा",
+  "unlockWeatherInsightsDescription": "दैनंदिन अंदाज आणि कृतीसूचना मिळवण्यासाठी GPS स्थानासह तुमचे शेत जोडा.",
+  "addFarmNow": "आता शेत जोडा",
+  "weatherUnableToLoad": "हवामान लोड करता आले नाही",
+  "weatherDataNotAvailable": "हवामान डेटा उपलब्ध नाही",
+  "weatherAddGpsToFarm": "शेतासाठी GPS निर्देशांक जोडा",
+  "weatherAddFarmForInsights": "अंतर्दृष्टीसाठी तुमचे शेत जोडा",
+  "weatherCardTitle": "हवामान",
+  "weatherFeelsLike": "{temp}°C वाटते",
+  "@weatherFeelsLike": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherHumidity": "आर्द्रता",
+  "weatherWind": "वारा",
+  "weatherUvIndex": "UV निर्देशांक",
+  "weatherRain": "पाऊस",
+  "forecastComingSoon": "७-दिवसीय अंदाज लवकरच येत आहे!",
+  "view7DayForecast": "७-दिवसीय अंदाज पहा",
+  "taskScreenComingSoon": "कार्य स्क्रीन लवकरच येत आहे",
+  "sellScreenComingSoon": "विक्री स्क्रीन लवकरच येत आहे",
+  "onboardingStepCrop": "पिक",
+  "dateInputFormatPlaceholder": "DD/MM/YYYY",
+  "financeScreenComingSoon": "आर्थिक स्क्रीन लवकरच येत आहे",
+  "profileSectionAccount": "खाते",
+  "profileSectionServices": "सेवा",
+  "profileSectionFinancial": "आर्थिक",
+  "profileSectionSupport": "सहाय्य",
+  "loading": "लोड होत आहे...",
+  "guestFarmer": "अतिथी शेतकरी",
+  "noEmail": "ईमेल नाही",
+  "selectLanguage": "भाषा निवडा",
+  "languageEnglish": "English",
+  "languageHindi": "हिंदी",
+  "languageMarathi": "मराठी",
+  "saveChanges": "जतन करा",
+  "otpResentSuccess": "OTP पुन्हा पाठवला",
+  "pleaseEnterFull6DigitOtp": "कृपया पूर्ण ६-अंकी OTP टाका",
+  "otpCopiedToClipboard": "OTP क्लिपबोर्डवर कॉपी केला: {otp}",
+  "@otpCopiedToClipboard": {
+    "placeholders": {
+      "otp": {
+        "type": "String"
+      }
+    }
+  },
+  "errorLoadingOrders": "ऑर्डर लोड करताना त्रुटी",
+  "noSalesFound": "कोणतीही विक्री सापडली नाही",
+  "failedToLoadDataWithDetails": "डेटा लोड करणे अयशस्वी: {message}",
+  "@failedToLoadDataWithDetails": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "productsHeader": "उत्पादने",
+  "cropInformationSection": "पिकाची माहिती",
+  "cultivationDetailsSection": "लागवड तपशील",
+  "basicInformationSection": "मूलभूत माहिती",
+  "locationDetailsSection": "स्थान तपशील",
+  "soilAndWaterSection": "माती आणि पाणी",
+  "ownershipLegalInfoSection": "मालकी आणि कायदेशीर माहिती",
+  "emailHintExample": "your.email@example.com",
+  "assessmentTitle": "मूल्यांकन",
+  "assessmentPlaceholder": "मूल्यांकन तपशील येथे दाखवले जातील",
+  "requestFundsTitle": "निधी विनंती",
+  "fundRequestComingSoon": "निधी विनंती फॉर्म लवकरच येत आहे",
+  "fieldOfficerNavHome": "होम",
+  "fieldOfficerNavFarmer": "शेतकरी",
+  "fieldOfficerNavAssessment": "मूल्यांकन",
+  "fieldOfficerNavProfile": "प्रोफाइल",
+  "searchByFarmerName": "शेतकऱ्याच्या नावाने शोधा...",
+  "otpHintSixDigits": "000000",
+  "verificationPhotosTitle": "पडताळणी फोटो - {farmName}",
+  "@verificationPhotosTitle": {
+    "placeholders": {
+      "farmName": {
+        "type": "String"
+      }
+    }
+  },
+  "viewGeoTaggedPhoto": "जिओटॅग केलेला फोटो पहा",
+  "photoCaptureTimeout": "फोटो कॅप्चर वेळ संपली. पुन्हा प्रयत्न करा.",
+  "photoCaptureFailed": "फोटो कॅप्चर अयशस्वी: {error}",
+  "@photoCaptureFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "otpSentToFarmer": "OTP शेतकऱ्याला पाठवला. कृपया OTP विचारा.",
+  "otpValidatedSuccess": "OTP पडताळला! आता पडताळणी सबमिट करू शकता.",
+  "selectVerificationStatus": "कृपया पडताळणी स्थिती निवडा (सत्यापित किंवा नकार)",
+  "captureGpsBeforeVerify": "शेत पडताळण्यापूर्वी GPS स्थान कॅप्चर करा",
+  "captureGeotaggedPhotoBeforeVerify": "पडताळणीपूर्वी शेताचा जिओटॅग फोटो कॅप्चर करा",
+  "requestValidateOtpBeforeSubmit": "सबमिट करण्यापूर्वी OTP विनंती आणि पडताळणी करा.",
+  "uploadingPhoto": "फोटो अपलोड होत आहे...",
+  "photoUploadedSuccess": "फोटो यशस्वीरित्या अपलोड झाला!",
+  "authFailedRelogin": "प्रमाणीकरण अयशस्वी. पुन्हा लॉग इन करा आणि पडताळणी करा.",
+  "photoUploadFailedProceeding": "फोटो अपलोड अयशस्वी, पण पडताळणी सुरू: {error}",
+  "@photoUploadFailedProceeding": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "farmVerifiedSuccess": "शेत यशस्वीरित्या पडताळले!",
+  "loadingPhotos": "फोटो लोड होत आहेत...",
+  "noVerificationPhotosForFarm": "या शेतासाठी पडताळणी फोटो सापडले नाहीत.",
+  "errorLoadingPhotos": "फोटो लोड करताना त्रुटी: {error}",
+  "@errorLoadingPhotos": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "verificationSuccessful": "पडताळणी यशस्वी",
+  "allKycCompletedTestMode": "सर्व KYC पडताळणी पूर्ण (चाचणी मोड)",
+  "genericErrorWithMessage": "त्रुटी: {message}",
+  "@genericErrorWithMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingPincodeAndVillage": "कृपया पिनकोड टाका आणि गाव निवडा",
+  "failedToLoadProfileWithDetails": "प्रोफाइल लोड अयशस्वी: {message}",
+  "@failedToLoadProfileWithDetails": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "myDetailsStepAddFarmTitle": "तुमचे शेत जोडा (टप्पा २)",
+  "myDetailsStepAddFarmBody": "शेत-विशिष्ट अंतर्दृष्टी आणि निधी पर्याय अनलॉक करण्यासाठी किमान एक शेत जोडा.",
+  "myDetailsStepAddFarmCta": "शेतांकडे जा",
+  "myDetailsStepAddCropsTitle": "तुमची पिके जोडा (टप्पा ३)",
+  "myDetailsStepAddCropsBody": "वाढ, विक्री आणि सूचना ट्रॅक करण्यासाठी तुमच्या शेतांसाठी पिके जोडा.",
+  "myDetailsStepAddCropsCta": "पिकांकडे जा",
+  "homeOnboardingCompleteProfileTitle": "तुमचे प्रोफाइल पूर्ण करा",
+  "homeOnboardingCompleteProfileMessage": "हे वैशिष्ट्य वापरण्यापूर्वी, कृपया तुमची मूलभूत वैयक्तिक माहिती जोडा.",
+  "homeOnboardingCompleteProfileCta": "आता पूर्ण करा",
+  "homeOnboardingAddFarmTitle": "तुमचे पहिले शेत जोडा",
+  "homeOnboardingAddFarmMessage": "तुमच्या जमिनीसाठी हे वैशिष्ट्य वापरण्यासाठी किमान एक शेत जोडा.",
+  "homeOnboardingAddFarmCta": "शेत जोडा",
+  "homeOnboardingAddCropTitle": "तुमचे पहिले पीक जोडा",
+  "homeOnboardingAddCropMessage": "येथे ट्रॅक करण्यासाठी तुमच्या शेतावर किमान एक पीक जोडा.",
+  "homeOnboardingAddCropCta": "पीक जोडा",
+  "otpCheckNotificationSnackbar": "तुम्हाला OTP मिळेल. कृपया सूचना तपासा",
+  "allFarmsVerifiedTitle": "सर्व शीते पडताळली!",
+  "allFarmsVerifiedBody": "अभिनंदन! तुमची सर्व {farmCount} {farmWord} ({verified}/{farmCount} पडताळले) फील्ड ऑफिसरांनी यशस्वीरित्या पडताळली.",
+  "@allFarmsVerifiedBody": {
+    "placeholders": {
+      "farmCount": {
+        "type": "int"
+      },
+      "farmWord": {
+        "type": "String"
+      },
+      "verified": {
+        "type": "int"
+      }
+    }
+  },
+  "farmWordSingular": "शेत",
+  "farmWordPlural": "शीते",
+  "fieldOfficerDefaultName": "फील्ड ऑफिसर",
+  "farmFallbackName": "शेत {id}",
+  "@farmFallbackName": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "statusLocked": "लॉक केले",
+  "farmVerificationOtpTitle": "शेत पडताळणी OTP",
+  "fieldOfficerVerifyingFarm": "{officer} \"{farm}\" पडताळत आहे",
+  "@fieldOfficerVerifyingFarm": {
+    "placeholders": {
+      "officer": {
+        "type": "String"
+      },
+      "farm": {
+        "type": "String"
+      }
+    }
+  },
+  "yourOtpCodeLabel": "तुमचा OTP कोड",
+  "copyOtpTooltip": "OTP कॉपी करा",
+  "expiresInTimer": "कालबाह्य: {time}",
+  "@expiresInTimer": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "shareOtpWithFieldOfficer": "पडताळणी पूर्ण करण्यासाठी हा OTP फील्ड ऑफिसरसोबत शेअर करा.",
+  "logoutConfirmTitle": "लॉग आउट",
+  "logoutConfirmMessage": "तुम्हाला खात्रीने लॉग आउट करायचे आहे?",
+  "fieldOfficerEmailLabel": "ईमेल पत्ता",
+  "fieldOfficerPhoneLabel": "फोन नंबर",
+  "fieldOfficerAlternateLabel": "पर्यायी नंबर",
+  "fieldOfficerDobLabel": "जन्मतारीख",
+  "fieldOfficerGenderLabel": "लिंग",
+  "loginWithPhone": "फोनने लॉग इन करा",
+  "reconnectWithGoodness": "चांगुलपणाशी पुन्हा जोडा",
+  "letsGetYouStarted": "चला सुरुवात करूया",
+  "phoneHintYourNumber": "तुमचा फोन नंबर",
+  "otpSentToThisNumber": "OTP या नंबरवर पाठविला जाईल",
+  "getOtp": "ओटीपी मिळवा",
+  "termsAgreementLogin": "पुढे जाताना तुम्ही आमच्या अटी आणि गोपनीयता धोरणास सहमती देता",
+  "orSeparator": "किंवा ",
+  "signUpCta": "साइन अप",
+  "enterOtpShort": "ओटीपी टाका",
+  "phoneNumberNotFound": "फोन नंबर सापडला नाही. पुन्हा प्रयत्न करा.",
+  "failedToLoadCropNamesWithDetails": "पिकांची नावे लोड अयशस्वी: {message}",
+  "@failedToLoadCropNamesWithDetails": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "minutesAgo": "{minutes} मि. आधी",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "justNow": "आत्ताच",
+  "hoursAgo": "{count, plural, one{1 तास आधी} other{{count} तास आधी}}",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{count, plural, one{1 दिवस आधी} other{{count} दिवस आधी}}",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "expiredLabel": "कालबाह्य",
+  "noNotificationsTitle": "कोणत्याही सूचना नाहीत",
+  "noOtpNotificationsHint": "तुम्हाला येथे OTP सूचना मिळतील",
+  "loginFailedRetry": "लॉग इन अयशस्वी. कृपया पुन्हा प्रयत्न करा.",
+  "otpVerificationFailedRetry": "OTP पडताळणी अयशस्वी. कृपया पुन्हा प्रयत्न करा.",
+  "noPhotosAvailable": "कोणतेही फोटो उपलब्ध नाहीत",
+  "verificationPhotosHeader": "पडताळणी फोटो",
+  "contactInformationHeader": "संपर्क माहिती",
+  "locationSectionTitle": "स्थान",
+  "farmersScreenTitle": "शेतकरी",
+
+  "viewFieldOfficerDetails": "फील्ड ऑफिसर तपशील पहा",
+  "fieldOfficerDetails": "फील्ड ऑफिसर तपशील",
+  "fieldOfficerName": "फील्ड ऑफिसरचे नाव",
+  "fieldOfficerPhone": "फोन नंबर",
+  "fieldOfficerLocation": "स्थान",
+  "assignedOn": "नियुक्त केले",
+  "completed": "पूर्ण",
+  "cancelled": "रद्द",
+  "noFieldOfficerAssigned": "अद्याप फील्ड ऑफिसर नियुक्त नाही",
+  "close": "बंद करा",
+  "farmLocationGPS": "शेत स्थान (GPS)",
+  "captureFarmLocationDesc": "तुमच्या शेताचे GPS निर्देशांक कॅप्चर करा. यामुळे फील्ड ऑफिसर तुमचे शेत स्थान पडताळू शकतात.",
+  "captureFarmLocation": "शेत स्थान कॅप्चर करा",
+  "retakeLocation": "स्थान पुन्हा घ्या",
+  "locationCaptured": "स्थान कॅप्चर झाले",
+  "latitude": "अक्षांश",
+  "longitude": "रेखांश",
+  "accuracy": "अचूकता",
+  "meters": "मीटर",
+  "locationPermissionRequired": "स्थान परवानगी आवश्यक",
+  "locationPermissionMessage": "शेत GPS निर्देशांक कॅप्चर करण्यासाठी स्थान सेवा सुरू करा आणि स्थान परवानगी द्या.",
+  "openSettings": "सेटिंग्ज उघडा",
+  "locationCapturedSuccess": "शेत स्थान यशस्वीरित्या कॅप्चर झाले!",
+  "capturedOn": "कॅप्चर तारीख",
+  "gpsCoordinates": "GPS निर्देशांक",
+  "verifyFarmAppBarTitle": "शेत पडताळा",
+  "farmerLabelDefault": "शेतकरी",
+  "farmsToVerifySectionTitle": "पडताळणीसाठी शेत",
+  "noFarmsInAssignment": "या नियुक्तीत शेत सापडले नाही",
+  "locationNotAvailableShort": "स्थान उपलब्ध नाही",
+  "farmNameFallback": "शेत",
+  "verificationStatusVerifiedBadge": "पडताळले",
+  "submitVerificationButton": "पडताळणी सबमिट करा",
+  "farmAlreadyVerifiedNotice": "हे शेत आधीच पडताळले आहे.",
+  "verificationStatusSectionTitle": "पडताळणी स्थिती *",
+  "verifyFarmStatusOption": "पडताळा",
+  "feedbackNotesSectionTitle": "अभिप्राय / नोंदी",
+  "feedbackNotesHintVerified": "शेत पडताळणीबद्दल कोणतेही निरीक्षण किंवा नोंदी जोडा...",
+  "feedbackNotesHintRejected": "शेत नाकारण्यामागील कारणांचा अभिप्राय जोडा...",
+  "locationPhotoVerificationSectionTitle": "स्थान आणि फोटो पडताळणी",
+  "gpsLocationSectionTitle": "GPS स्थान",
+  "latitudeDisplay": "अक्षांश: {degrees}°",
+  "@latitudeDisplay": {
+    "placeholders": {
+      "degrees": {
+        "type": "String"
+      }
+    }
+  },
+  "longitudeDisplay": "रेखांश: {degrees}°",
+  "@longitudeDisplay": {
+    "placeholders": {
+      "degrees": {
+        "type": "String"
+      }
+    }
+  },
+  "accuracyDisplayMeters": "अचूकता: {meters}m",
+  "@accuracyDisplayMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "farmPhotoGeotaggedSectionTitle": "शेत फोटो (जिओटॅग)",
+  "retakeFarmPhotoButton": "फोटो पुन्हा घ्या",
+  "captureFarmPhotoButton": "शेत फोटो कॅप्चर करा",
+  "otpVerificationSectionTitle": "OTP पडताळणी",
+  "requestingOtpButton": "OTP विनंती करत आहे...",
+  "gpsValidationRequiredButton": "GPS पडताळणी आवश्यक",
+  "fieldOfficerRequestOtpCta": "OTP विनंती करा",
+  "enterSixDigitOtpFromFarmer": "शेतकऱ्याला मिळालेला 6 अंकी OTP टाका:",
+  "otpExpiresInCountdown": "OTP कालबाह्य होईल: {time}",
+  "@otpExpiresInCountdown": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "validatingOtpButton": "पडताळत आहे...",
+  "validateOtpButtonLabel": "OTP पडताळा",
+  "locationCapturedDistanceMeters": "स्थान कॅप्चर झाले! शेतापासून अंतर: {meters}m (100m मर्यादेत)",
+  "@locationCapturedDistanceMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "locationCapturedSuccessShort": "स्थान यशस्वीरित्या कॅप्चर झाले!",
+  "geotaggedPhotoCapturedDistanceMeters": "फोटो कॅप्चर झाला! शेतापासून अंतर: {meters}m (100m मर्यादेत)",
+  "@geotaggedPhotoCapturedDistanceMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "geotaggedPhotoCapturedSuccess": "जिओटॅग फोटो यशस्वीरित्या कॅप्चर झाला!",
+  "gpsValidationFailedFallback": "GPS पडताळणी अयशस्वी",
+  "gpsValidationFailedOtpBlocked": "GPS पडताळणी अयशस्वी. OTP विनंती अडचणीत आहे.",
+  "photoFileNotSavedRetry": "फोटो फाइल योग्यरीत्या सेव्ह झाली नाही. कृपया पुन्हा प्रयत्न करा.",
+  "locationCaptureFailedWithError": "स्थान कॅप्चर अयशस्वी: {error}",
+  "@locationCaptureFailedWithError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "captureGpsBeforeOtpRequest": "OTP विनंती करण्यापूर्वी कृपया GPS स्थान कॅप्चर करा.",
+  "farmMissingGpsCoordinatesAdmin": "या शेताला GPS निर्देशांक नाहीत. पडताळणीपूर्वी शेत स्थान जोडण्यासाठी प्रशासनाशी संपर्क साधा.",
+  "invalidFarmGpsCoordinatesAdmin": "अवैध शेत GPS निर्देशांक. कृपया प्रशासनाशी संपर्क साधा.",
+  "tooFarFromFarmMeters": "तुम्ही शेत स्थानापासून खूप दूर आहात. अंतर: {meters}m (आवश्यक: 100m आत). कृपया शेताजवळ या.",
+  "@tooFarFromFarmMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidOtpPleaseTryAgain": "अवैध OTP. कृपया पुन्हा प्रयत्न करा.",
+  "pincodeRowLabel": "पिनकोड: {code}",
+  "@pincodeRowLabel": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "pleaseEnterValidSixDigitOtp": "कृपया वैध 6 अंकी OTP टाका",
+  "verificationFailureMessage": "{message}",
+  "@verificationFailureMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "authOtpAppBarTitle": "ओटीपी टाका",
+  "authOtpHeadline": "कृपया ओटीपी टाका",
+  "authOtpDescription": "आम्ही तुमच्या फोनवर ६ अंकी कोड पाठवला आहे.",
+  "authOtpSubmit": "ओटीपी सबमिट करा",
+  "authOtpResendCountdown": "पुन्हा पाठवा: {seconds} सेकंद",
+  "@authOtpResendCountdown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "authOtpResend": "ओटीपी पुन्हा पाठवा",
+  "signupHey": "नमस्कार,",
+  "signupTitle": "आता साइन अप करा !",
+  "signupUsernameLabel": "वापरकर्तानाव",
+  "signupUsernameHint": "वापरकर्तानाव टाका",
+  "signupEmailLabel": "ई-मेल",
+  "signupEmailHint": "ई-मेल टाका",
+  "signupPasswordLabel": "पासवर्ड",
+  "signupPasswordHint": "पासवर्ड टाका",
+  "signupPasswordHelper": "किमान ८ अक्षरे: मोठे, लहान, अंक आणि विशेष चिन्ह.",
+  "signupPhoneLabel": "मोबाईल नंबर",
+  "signupPhoneHint": "१० अंकी मोबाईल नंबर टाका",
+  "signupGetCode": "ओटीपी मिळवा",
+  "signupErrorUsername": "किमान ३ अक्षरे टाका",
+  "signupErrorEmail": "कृपया वैध ई-मेल टाका",
+  "signupErrorPhone": "कृपया वैध १० अंकी मोबाईल नंबर टाका",
+  "signupErrorPassword": "८+ अक्षरे, मोठे, लहान, अंक आणि विशेष चिन्ह वापरा",
+  "signupShowPassword": "पासवर्ड दाखवा",
+  "signupHidePassword": "पासवर्ड लपवा",
+  "signupErrorPhoneRegistered": "हा मोबाईल नंबर आधीच नोंदणीकृत आहे. दुसरा नंबर वापरा किंवा लॉग इन करा.",
+  "signupErrorEmailRegistered": "हा ई-मेल आधीच नोंदणीकृत आहे. दुसरा ई-मेल वापरा किंवा लॉग इन करा.",
+  "signupErrorUsernameTaken": "हे वापरकर्तानाव आधीच घेतले आहे. कृपया दुसरे नाव निवडा.",
+  "signupErrorCheckInfo": "कृपया तुमची माहिती तपासा आणि पुन्हा प्रयत्न करा.",
+  "signupErrorNetwork": "नेटवर्क त्रुटी. इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.",
+  "signupPasswordWeak": "कमजोर",
+  "signupPasswordFair": "मध्यम",
+  "signupPasswordStrong": "मजबूत"
 }

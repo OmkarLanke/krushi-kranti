@@ -15,6 +15,9 @@ import '../../features/auth/screens/onboarding_address_screen.dart';
 import '../../features/auth/screens/onboarding_contact_screen.dart';
 import '../../features/auth/screens/email_login_screen.dart';
 
+import '../../core/onboarding/onboarding_route_guard.dart';
+import '../../core/onboarding/onboarding_models.dart';
+
 // --- YOUR SCREENS (Dashboard) ---
 import '../../features/dashboard/screens/main_layout_screen.dart';
 import '../../features/dashboard/screens/profile_screen.dart'; // ✅ This import is now used below
@@ -106,18 +109,33 @@ class AppRoutes {
     },
     signup: (context) => const SignUpScreen(),
     otp: (context) => const OtpScreen(),
-    onboardingPersonal: (context) => const OnboardingPersonalScreen(),
-    onboardingContact: (context) => const OnboardingContactScreen(),
-    onboardingAddress: (context) => const OnboardingAddressScreen(),
+    onboardingPersonal: (context) => const OnboardingRouteGuard(
+          step: OnboardingStep.personal,
+          child: OnboardingPersonalScreen(),
+        ),
+    onboardingContact: (context) => const OnboardingRouteGuard(
+          step: OnboardingStep.personal,
+          child: OnboardingContactScreen(),
+        ),
+    onboardingAddress: (context) => const OnboardingRouteGuard(
+          step: OnboardingStep.personal,
+          child: OnboardingAddressScreen(),
+        ),
 
     dashboard: (context) => const MainLayoutScreen(),
     profile: (context) => const ProfileScreen(), // ✅ ADDED PROFILE WIDGET
     myDetails: (context) => const MyDetailsScreen(),
     notifications: (context) => const NotificationsScreen(),
     farmList: (context) => const FarmListScreen(),
-    addFarm: (context) => const AddFarmScreen(),
+    addFarm: (context) => const OnboardingRouteGuard(
+          step: OnboardingStep.farm,
+          child: AddFarmScreen(),
+        ),
     cropList: (context) => const CropListScreen(),
-    addCrop: (context) => const AddCropScreen(),
+    addCrop: (context) => const OnboardingRouteGuard(
+          step: OnboardingStep.crop,
+          child: AddCropScreen(),
+        ),
     requestFunds: (context) => const RequestFundsScreen(),
     sell: (context) => const SellScreen(),
     addOrder: (context) => const AddOrderScreen(),
@@ -126,10 +144,16 @@ class AppRoutes {
     
     // Subscription routes
     welcome: (context) => const WelcomeScreen(),
-    subscription: (context) => const SubscriptionScreen(),
+    subscription: (context) => const OnboardingRouteGuard(
+          step: OnboardingStep.subscription,
+          child: SubscriptionScreen(),
+        ),
     
     // KYC routes
-    kycStatus: (context) => const KycStatusScreen(),
+    kycStatus: (context) => const OnboardingRouteGuard(
+          step: OnboardingStep.kyc,
+          child: KycStatusScreen(),
+        ),
     aadhaarVerification: (context) => const AadhaarVerificationScreen(),
     panVerification: (context) => const PanVerificationScreen(),
     kycBankVerification: (context) => const BankVerificationScreen(),

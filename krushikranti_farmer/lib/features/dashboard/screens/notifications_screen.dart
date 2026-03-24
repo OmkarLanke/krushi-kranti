@@ -85,30 +85,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.dispose();
   }
 
-  String _formatTimeAgo(DateTime timestamp) {
+  String _formatTimeAgo(DateTime timestamp, AppLocalizations l10n) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return l10n.justNow;
     } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} min ago';
+      return l10n.minutesAgo(difference.inMinutes);
     } else if (difference.inHours < 24) {
-      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+      return l10n.hoursAgo(difference.inHours);
     } else if (difference.inDays < 7) {
-      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+      return l10n.daysAgo(difference.inDays);
     } else {
       return DateFormat('dd MMM yyyy').format(timestamp);
     }
   }
 
-  String _formatExpiryTime(DateTime timestamp) {
+  String _formatExpiryCountdown(DateTime timestamp) {
     final now = DateTime.now();
     final expiresAt = timestamp.add(const Duration(minutes: 10));
     final difference = expiresAt.difference(now);
 
     if (difference.inSeconds <= 0) {
-      return 'Expired';
+      return '00:00';
     }
 
     final minutes = difference.inMinutes;
@@ -131,7 +131,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Notifications',
+          l10n.notifications,
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 20,
@@ -172,7 +172,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'No Notifications',
+                    l10n.noNotificationsTitle,
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -181,7 +181,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'You will receive OTP notifications here',
+                    l10n.noOtpNotificationsHint,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       color: Colors.grey.shade600,
@@ -209,8 +209,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildOtpNotificationCard(NotificationModel notification, AppLocalizations l10n) {
     final otp = notification.data?['otp']?.toString() ?? '000000';
-    final fieldOfficerName = notification.data?['fieldOfficerName']?.toString() ?? 'Field Officer';
-    final farmName = notification.data?['farmName']?.toString() ?? 'Farm';
+    final fieldOfficerName = notification.data?['fieldOfficerName']?.toString() ??
+        l10n.fieldOfficerDefaultName;
+    final farmName =
+        notification.data?['farmName']?.toString() ?? l10n.farmWordSingular;
     final expiresAt = notification.timestamp.add(const Duration(minutes: 10));
     final isExpired = DateTime.now().isAfter(expiresAt);
 
@@ -253,7 +255,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Farm Verification OTP',
+                        l10n.farmVerificationOtpTitle,
                         style: GoogleFonts.poppins(    
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -262,7 +264,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '$fieldOfficerName is verifying "$farmName"',
+                        l10n.fieldOfficerVerifyingFarm(fieldOfficerName, farmName),
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -274,9 +276,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      _formatTimeAgo(notification.timestamp),
-                      style: GoogleFonts.poppins(
+                      Text(
+                        _formatTimeAgo(notification.timestamp, l10n),
+                        style: GoogleFonts.poppins(
                         fontSize: 11,
                         color: Colors.grey.shade600,
                         fontWeight: FontWeight.w500,
@@ -316,7 +318,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Your OTP Code',
+                        l10n.yourOtpCodeLabel,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -341,13 +343,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       Clipboard.setData(ClipboardData(text: otp));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('OTP copied to clipboard: $otp'),
+                          content: Text(l10n.otpCopiedToClipboard(otp)),
                           backgroundColor: AppColors.brandGreen,
                           duration: const Duration(seconds: 2),
                         ),
                       );
                     },
-                    tooltip: 'Copy OTP',
+                    tooltip: l10n.copyOtpTooltip,
                   ),
                 ],
               ),
@@ -373,9 +375,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isExpired 
-                        ? 'Expired' 
-                        : 'Expires in: ${_formatExpiryTime(notification.timestamp)}',
+                    isExpired
+                        ? l10n.expiredLabel
+                        : l10n.expiresInTimer(
+                            _formatExpiryCountdown(notification.timestamp),
+                          ),
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -390,7 +394,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             
             // Instruction
             Text(
-              'Please share this OTP with the field officer to complete verification.',
+              l10n.shareOtpWithFieldOfficer,
               style: GoogleFonts.poppins(
                 fontSize: 11,
                 color: Colors.grey.shade600,

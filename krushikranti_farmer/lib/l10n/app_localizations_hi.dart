@@ -50,22 +50,22 @@ class AppLocalizationsHi extends AppLocalizations {
   String get fieldOfficerAssignedMsg => 'आपके नियुक्त फील्ड ऑफिसर';
 
   @override
-  String get viewFieldOfficerDetails => 'View Field Officer Details';
+  String get viewFieldOfficerDetails => 'फील्ड अधिकारी विवरण देखें';
 
   @override
-  String get fieldOfficerDetails => 'Field Officer Details';
+  String get fieldOfficerDetails => 'फील्ड अधिकारी विवरण';
 
   @override
-  String get fieldOfficerName => 'Field Officer Name';
+  String get fieldOfficerName => 'फील्ड अधिकारी का नाम';
 
   @override
-  String get fieldOfficerPhone => 'Phone Number';
+  String get fieldOfficerPhone => 'फ़ोन नंबर';
 
   @override
-  String get fieldOfficerLocation => 'Location';
+  String get fieldOfficerLocation => 'स्थान';
 
   @override
-  String get assignedOn => 'Assigned On';
+  String get assignedOn => 'नियुक्त किया गया';
 
   @override
   String get status => 'स्थिति';
@@ -77,16 +77,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pending => 'लंबित';
 
   @override
-  String get completed => 'Completed';
+  String get completed => 'पूर्ण';
 
   @override
-  String get cancelled => 'Cancelled';
+  String get cancelled => 'रद्द';
 
   @override
-  String get noFieldOfficerAssigned => 'No field officer assigned yet';
+  String get noFieldOfficerAssigned => 'अभी तक कोई फील्ड अधिकारी नियुक्त नहीं';
 
   @override
-  String get close => 'Close';
+  String get close => 'बंद करें';
 
   @override
   String get quickAction => 'त्वरित कार्य';
@@ -494,13 +494,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get nextBtn => 'आगे बढ़ें';
 
   @override
-  String get enterOtp => 'कृपया OTP दर्ज करें';
+  String get enterOtp => 'कृपया ओटीपी दर्ज करें';
 
   @override
   String get otpSubtitle => 'आपके नंबर पर भेजा गया 4-अंकीय कोड दर्ज करें';
 
   @override
-  String get submitOtp => 'OTP जमा करें';
+  String get submitOtp => 'ओटीपी जमा करें';
 
   @override
   String get resetPassword => 'पासवर्ड रीसेट करें';
@@ -803,51 +803,51 @@ class AppLocalizationsHi extends AppLocalizations {
       'खेत जोड़ा गया! अब आप फसलें जोड़ सकते हैं।';
 
   @override
-  String get farmLocationGPS => 'Farm Location (GPS)';
+  String get farmLocationGPS => 'खेत स्थान (GPS)';
 
   @override
   String get captureFarmLocationDesc =>
-      'Capture your farm\'s GPS coordinates. This helps field officers verify your farm location.';
+      'अपने खेत के GPS निर्देशांक कैप्चर करें। इससे फील्ड अधिकारी आपके खेत का स्थान सत्यापित कर सकते हैं।';
 
   @override
-  String get captureFarmLocation => 'Capture Farm Location';
+  String get captureFarmLocation => 'खेत स्थान कैप्चर करें';
 
   @override
-  String get retakeLocation => 'Retake Location';
+  String get retakeLocation => 'स्थान फिर से लें';
 
   @override
-  String get locationCaptured => 'Location Captured';
+  String get locationCaptured => 'स्थान कैप्चर हो गया';
 
   @override
-  String get latitude => 'Latitude';
+  String get latitude => 'अक्षांश';
 
   @override
-  String get longitude => 'Longitude';
+  String get longitude => 'देशांतर';
 
   @override
-  String get accuracy => 'Accuracy';
+  String get accuracy => 'शुद्धता';
 
   @override
-  String get meters => 'meters';
+  String get meters => 'मीटर';
 
   @override
-  String get locationPermissionRequired => 'Location Permission Required';
+  String get locationPermissionRequired => 'स्थान अनुमति आवश्यक';
 
   @override
   String get locationPermissionMessage =>
-      'Please enable location services and grant location permission to capture farm GPS coordinates.';
+      'खेत GPS निर्देशांक कैप्चर करने के लिए स्थान सेवाएँ सक्षम करें और अनुमति दें।';
 
   @override
-  String get openSettings => 'Open Settings';
+  String get openSettings => 'सेटिंग्स खोलें';
 
   @override
-  String get locationCapturedSuccess => 'Farm location captured successfully!';
+  String get locationCapturedSuccess => 'खेत स्थान सफलतापूर्वक कैप्चर हुआ!';
 
   @override
-  String get capturedOn => 'Captured On';
+  String get capturedOn => 'कैप्चर दिनांक';
 
   @override
-  String get gpsCoordinates => 'GPS Coordinates';
+  String get gpsCoordinates => 'GPS निर्देशांक';
 
   @override
   String get noFarmsAdded => 'अभी तक कोई खेत नहीं जोड़ा गया';
@@ -1416,4 +1416,799 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get bankAlreadyVerifiedMessage =>
       'आपका बैंक खाता पहले से सत्यापित है। आप इसे दोबारा सत्यापित नहीं कर सकते।';
+
+  @override
+  String get appTitle => 'कृषी क्रांति';
+
+  @override
+  String get completeSetupTitle => 'सेटअप पूरा करें';
+
+  @override
+  String progressPercent(int value) {
+    return '$value%';
+  }
+
+  @override
+  String get setupStepCompleteProfileTitle => 'प्रोफ़ाइल पूरा करें';
+
+  @override
+  String get setupStepCompleteProfileSubtitle =>
+      'अपनी बुनियादी व्यक्तिगत जानकारी जोड़ें';
+
+  @override
+  String get setupStepAddFarmTitle => 'अपना पहला खेत जोड़ें';
+
+  @override
+  String get setupStepAddFarmSubtitle => 'अंतर्दृष्टि के लिए अपना खेत सेट करें';
+
+  @override
+  String get setupStepSubscribeTitle => 'प्रीमियम की सदस्यता लें';
+
+  @override
+  String get setupStepSubscribeSubtitle => 'सभी विशेष सुविधाएँ अनलॉक करें';
+
+  @override
+  String get continueSetup => 'सेटअप जारी रखें';
+
+  @override
+  String get unlockWeatherInsights => 'मौसम की अंतर्दृष्टि अनलॉक करें';
+
+  @override
+  String get unlockWeatherInsightsDescription =>
+      'दैनिक पूर्वानुमान और कार्रवाई योग्य जानकारी के लिए GPS स्थान के साथ अपना खेत जोड़ें।';
+
+  @override
+  String get addFarmNow => 'अभी खेत जोड़ें';
+
+  @override
+  String get weatherUnableToLoad => 'मौसम लोड नहीं हो सका';
+
+  @override
+  String get weatherDataNotAvailable => 'मौसम डेटा उपलब्ध नहीं है';
+
+  @override
+  String get weatherAddGpsToFarm => 'खेत के लिए GPS निर्देशांक जोड़ें';
+
+  @override
+  String get weatherAddFarmForInsights => 'अंतर्दृष्टि के लिए अपना खेत जोड़ें';
+
+  @override
+  String get weatherCardTitle => 'मौसम';
+
+  @override
+  String weatherFeelsLike(String temp) {
+    return '$temp°C जैसा अनुभव';
+  }
+
+  @override
+  String get weatherHumidity => 'आर्द्रता';
+
+  @override
+  String get weatherWind => 'हवा';
+
+  @override
+  String get weatherUvIndex => 'UV सूचकांक';
+
+  @override
+  String get weatherRain => 'वर्षा';
+
+  @override
+  String get forecastComingSoon => '7-दिन का पूर्वानुमान जल्द आ रहा है!';
+
+  @override
+  String get view7DayForecast => '7-दिन का पूर्वानुमान देखें';
+
+  @override
+  String get taskScreenComingSoon => 'कार्य स्क्रीन जल्द आ रही है';
+
+  @override
+  String get sellScreenComingSoon => 'बिक्री स्क्रीन जल्द आ रही है';
+
+  @override
+  String get onboardingStepCrop => 'फसल';
+
+  @override
+  String get dateInputFormatPlaceholder => 'DD/MM/YYYY';
+
+  @override
+  String get financeScreenComingSoon => 'वित्त स्क्रीन जल्द आ रही है';
+
+  @override
+  String get profileSectionAccount => 'खाता';
+
+  @override
+  String get profileSectionServices => 'सेवाएँ';
+
+  @override
+  String get profileSectionFinancial => 'वित्तीय';
+
+  @override
+  String get profileSectionSupport => 'सहायता';
+
+  @override
+  String get loading => 'लोड हो रहा है...';
+
+  @override
+  String get guestFarmer => 'अतिथि किसान';
+
+  @override
+  String get noEmail => 'कोई ईमेल नहीं';
+
+  @override
+  String get selectLanguage => 'भाषा चुनें';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageHindi => 'हिंदी';
+
+  @override
+  String get languageMarathi => 'मराठी';
+
+  @override
+  String get saveChanges => 'सहेजें';
+
+  @override
+  String get otpResentSuccess => 'OTP फिर से भेजा गया';
+
+  @override
+  String get pleaseEnterFull6DigitOtp => 'कृपया पूरा 6-अंकीय OTP दर्ज करें';
+
+  @override
+  String otpCopiedToClipboard(String otp) {
+    return 'OTP क्लिपबोर्ड पर कॉपी किया गया: $otp';
+  }
+
+  @override
+  String get errorLoadingOrders => 'ऑर्डर लोड करने में त्रुटि';
+
+  @override
+  String get noSalesFound => 'कोई बिक्री नहीं मिली';
+
+  @override
+  String failedToLoadDataWithDetails(String message) {
+    return 'डेटा लोड करने में विफल: $message';
+  }
+
+  @override
+  String get productsHeader => 'उत्पाद';
+
+  @override
+  String get cropInformationSection => 'फसल की जानकारी';
+
+  @override
+  String get cultivationDetailsSection => 'खेती विवरण';
+
+  @override
+  String get basicInformationSection => 'बुनियादी जानकारी';
+
+  @override
+  String get locationDetailsSection => 'स्थान विवरण';
+
+  @override
+  String get soilAndWaterSection => 'मिट्टी और पानी';
+
+  @override
+  String get ownershipLegalInfoSection => 'स्वामित्व और कानूनी जानकारी';
+
+  @override
+  String get emailHintExample => 'your.email@example.com';
+
+  @override
+  String get assessmentTitle => 'मूल्यांकन';
+
+  @override
+  String get assessmentPlaceholder => 'मूल्यांकन विवरण यहाँ दिखाया जाएगा';
+
+  @override
+  String get requestFundsTitle => 'निधि अनुरोध';
+
+  @override
+  String get fundRequestComingSoon => 'निधि अनुरोध फॉर्म जल्द आ रहा है';
+
+  @override
+  String get fieldOfficerNavHome => 'होम';
+
+  @override
+  String get fieldOfficerNavFarmer => 'किसान';
+
+  @override
+  String get fieldOfficerNavAssessment => 'मूल्यांकन';
+
+  @override
+  String get fieldOfficerNavProfile => 'प्रोफ़ाइल';
+
+  @override
+  String get searchByFarmerName => 'किसान के नाम से खोजें...';
+
+  @override
+  String get otpHintSixDigits => '000000';
+
+  @override
+  String verificationPhotosTitle(String farmName) {
+    return 'सत्यापन फ़ोटो - $farmName';
+  }
+
+  @override
+  String get viewGeoTaggedPhoto => 'जियोटैग्ड फ़ोटो देखें';
+
+  @override
+  String get photoCaptureTimeout =>
+      'फ़ोटो कैप्चर का समय समाप्त। कृपया पुनः प्रयास करें।';
+
+  @override
+  String photoCaptureFailed(String error) {
+    return 'फ़ोटो कैप्चर विफल: $error';
+  }
+
+  @override
+  String get otpSentToFarmer =>
+      'OTP किसान को सफलतापूर्वक भेजा गया। कृपया किसान से OTP माँगें।';
+
+  @override
+  String get otpValidatedSuccess =>
+      'OTP सत्यापित! अब सत्यापन सबमिट कर सकते हैं।';
+
+  @override
+  String get selectVerificationStatus =>
+      'कृपया सत्यापन स्थिति चुनें (सत्यापित या अस्वीकृत)';
+
+  @override
+  String get captureGpsBeforeVerify =>
+      'खेत सत्यापित करने से पहले GPS स्थान कैप्चर करें';
+
+  @override
+  String get captureGeotaggedPhotoBeforeVerify =>
+      'सत्यापन से पहले खेत का जियोटैग्ड फ़ोटो कैप्चर करें';
+
+  @override
+  String get requestValidateOtpBeforeSubmit =>
+      'सबमिट करने से पहले OTP का अनुरोध और सत्यापन करें।';
+
+  @override
+  String get uploadingPhoto => 'फ़ोटो अपलोड हो रहा है...';
+
+  @override
+  String get photoUploadedSuccess => 'फ़ोटो सफलतापूर्वक अपलोड हुआ!';
+
+  @override
+  String get authFailedRelogin =>
+      'प्रमाणीकरण विफल। कृपया फिर लॉग इन करें और सत्यापित करें।';
+
+  @override
+  String photoUploadFailedProceeding(String error) {
+    return 'फ़ोटो अपलोड विफल, पर सत्यापन जारी: $error';
+  }
+
+  @override
+  String get farmVerifiedSuccess => 'खेत सफलतापूर्वक सत्यापित!';
+
+  @override
+  String get loadingPhotos => 'फ़ोटो लोड हो रहे हैं...';
+
+  @override
+  String get noVerificationPhotosForFarm =>
+      'इस खेत के लिए कोई सत्यापन फ़ोटो नहीं मिला।';
+
+  @override
+  String errorLoadingPhotos(String error) {
+    return 'फ़ोटो लोड करने में त्रुटि: $error';
+  }
+
+  @override
+  String get verificationSuccessful => 'सत्यापन सफल';
+
+  @override
+  String get allKycCompletedTestMode => 'सभी KYC सत्यापन पूर्ण (परीक्षण मोड)';
+
+  @override
+  String genericErrorWithMessage(String message) {
+    return 'त्रुटि: $message';
+  }
+
+  @override
+  String get onboardingPincodeAndVillage =>
+      'कृपया पिनकोड दर्ज करें और गाँव चुनें';
+
+  @override
+  String failedToLoadProfileWithDetails(String message) {
+    return 'प्रोफ़ाइल लोड विफल: $message';
+  }
+
+  @override
+  String get myDetailsStepAddFarmTitle => 'अपना खेत जोड़ें (चरण 2)';
+
+  @override
+  String get myDetailsStepAddFarmBody =>
+      'खेत-विशिष्ट अंतर्दृष्टि और वित्त विकल्प अनलॉक करने के लिए कम से कम एक खेत जोड़ें।';
+
+  @override
+  String get myDetailsStepAddFarmCta => 'खेतों पर जाएँ';
+
+  @override
+  String get myDetailsStepAddCropsTitle => 'अपनी फसलें जोड़ें (चरण 3)';
+
+  @override
+  String get myDetailsStepAddCropsBody =>
+      'वृद्धि, बिक्री और अलर्ट ट्रैक करने के लिए अपने खेतों के लिए फसलें जोड़ें।';
+
+  @override
+  String get myDetailsStepAddCropsCta => 'फसलों पर जाएँ';
+
+  @override
+  String get homeOnboardingCompleteProfileTitle => 'अपनी प्रोफ़ाइल पूरा करें';
+
+  @override
+  String get homeOnboardingCompleteProfileMessage =>
+      'इस सुविधा का उपयोग करने से पहले, कृपया अपनी बुनियादी व्यक्तिगत जानकारी जोड़ें।';
+
+  @override
+  String get homeOnboardingCompleteProfileCta => 'अभी पूरा करें';
+
+  @override
+  String get homeOnboardingAddFarmTitle => 'अपना पहला खेत जोड़ें';
+
+  @override
+  String get homeOnboardingAddFarmMessage =>
+      'अपनी जमीन के लिए इस सुविधा का उपयोग करने के लिए कम से कम एक खेत जोड़ें।';
+
+  @override
+  String get homeOnboardingAddFarmCta => 'खेत जोड़ें';
+
+  @override
+  String get homeOnboardingAddCropTitle => 'अपनी पहली फसल जोड़ें';
+
+  @override
+  String get homeOnboardingAddCropMessage =>
+      'यहाँ ट्रैक करने के लिए अपने खेत पर कम से कम एक फसल जोड़ें।';
+
+  @override
+  String get homeOnboardingAddCropCta => 'फसल जोड़ें';
+
+  @override
+  String get otpCheckNotificationSnackbar =>
+      'आपको OTP मिलेगा। कृपया सूचना देखें';
+
+  @override
+  String get allFarmsVerifiedTitle => 'सभी खेत सत्यापित!';
+
+  @override
+  String allFarmsVerifiedBody(int farmCount, String farmWord, int verified) {
+    return 'बधाई! आपके सभी $farmCount $farmWord ($verified/$farmCount सत्यापित) फील्ड अधिकारियों द्वारा सफलतापूर्वक सत्यापित किए गए।';
+  }
+
+  @override
+  String get farmWordSingular => 'खेत';
+
+  @override
+  String get farmWordPlural => 'खेत';
+
+  @override
+  String get fieldOfficerDefaultName => 'फील्ड अधिकारी';
+
+  @override
+  String farmFallbackName(String id) {
+    return 'खेत $id';
+  }
+
+  @override
+  String get statusLocked => 'लॉक';
+
+  @override
+  String get farmVerificationOtpTitle => 'खेत सत्यापन OTP';
+
+  @override
+  String fieldOfficerVerifyingFarm(String officer, String farm) {
+    return '$officer \"$farm\" सत्यापित कर रहे हैं';
+  }
+
+  @override
+  String get yourOtpCodeLabel => 'आपका OTP कोड';
+
+  @override
+  String get copyOtpTooltip => 'OTP कॉपी करें';
+
+  @override
+  String expiresInTimer(String time) {
+    return 'समाप्ति: $time';
+  }
+
+  @override
+  String get shareOtpWithFieldOfficer =>
+      'सत्यापन पूरा करने के लिए यह OTP फील्ड अधिकारी के साथ साझा करें।';
+
+  @override
+  String get logoutConfirmTitle => 'लॉग आउट';
+
+  @override
+  String get logoutConfirmMessage => 'क्या आप वाकई लॉग आउट करना चाहते हैं?';
+
+  @override
+  String get fieldOfficerEmailLabel => 'ईमेल पता';
+
+  @override
+  String get fieldOfficerPhoneLabel => 'फ़ोन नंबर';
+
+  @override
+  String get fieldOfficerAlternateLabel => 'वैकल्पिक नंबर';
+
+  @override
+  String get fieldOfficerDobLabel => 'जन्म तिथि';
+
+  @override
+  String get fieldOfficerGenderLabel => 'लिंग';
+
+  @override
+  String get loginWithPhone => 'फ़ोन से लॉग इन करें';
+
+  @override
+  String get reconnectWithGoodness => 'भलाई से फिर जुड़ें';
+
+  @override
+  String get letsGetYouStarted => 'चलें शुरू करते हैं';
+
+  @override
+  String get phoneHintYourNumber => 'अपना मोबाइल नंबर';
+
+  @override
+  String get otpSentToThisNumber => 'OTP इस नंबर पर भेजा जाएगा';
+
+  @override
+  String get getOtp => 'OTP प्राप्त करें';
+
+  @override
+  String get termsAgreementLogin =>
+      'आगे बढ़ते हुआ आप हमारी शर्तों और गोपनीयता नीति से सहमत हैं';
+
+  @override
+  String get orSeparator => 'या ';
+
+  @override
+  String get signUpCta => 'साइन अप करें';
+
+  @override
+  String get enterOtpShort => 'ओटीपी दर्ज करें';
+
+  @override
+  String get phoneNumberNotFound =>
+      'फ़ोन नंबर नहीं मिला। कृपया पुनः प्रयास करें।';
+
+  @override
+  String failedToLoadCropNamesWithDetails(String message) {
+    return 'फसल नाम लोड विफल: $message';
+  }
+
+  @override
+  String minutesAgo(int minutes) {
+    return '$minutes मि. पहले';
+  }
+
+  @override
+  String get justNow => 'अभी';
+
+  @override
+  String hoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count घंटे पहले',
+      one: '1 घंटे पहले',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String daysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count दिन पहले',
+      one: '1 दिन पहले',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get expiredLabel => 'समाप्त';
+
+  @override
+  String get noNotificationsTitle => 'कोई सूचना नहीं';
+
+  @override
+  String get noOtpNotificationsHint => 'आपको यहाँ OTP सूचनाएँ मिलेंगी';
+
+  @override
+  String get loginFailedRetry => 'लॉग इन विफल। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get otpVerificationFailedRetry =>
+      'OTP सत्यापन विफल। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get noPhotosAvailable => 'कोई फ़ोटो उपलब्ध नहीं';
+
+  @override
+  String get verificationPhotosHeader => 'सत्यापन फ़ोटो';
+
+  @override
+  String get contactInformationHeader => 'संपर्क जानकारी';
+
+  @override
+  String get locationSectionTitle => 'स्थान';
+
+  @override
+  String get farmersScreenTitle => 'किसान';
+
+  @override
+  String get verifyFarmAppBarTitle => 'खेत सत्यापित करें';
+
+  @override
+  String get farmerLabelDefault => 'किसान';
+
+  @override
+  String get farmsToVerifySectionTitle => 'सत्यापन के लिए खेत';
+
+  @override
+  String get noFarmsInAssignment => 'इस असाइनमेंट में कोई खेत नहीं मिला';
+
+  @override
+  String get locationNotAvailableShort => 'स्थान उपलब्ध नहीं';
+
+  @override
+  String get farmNameFallback => 'खेत';
+
+  @override
+  String get verificationStatusVerifiedBadge => 'सत्यापित';
+
+  @override
+  String get submitVerificationButton => 'सत्यापन जमा करें';
+
+  @override
+  String get farmAlreadyVerifiedNotice => 'यह खेत पहले ही सत्यापित हो चुका है।';
+
+  @override
+  String get verificationStatusSectionTitle => 'सत्यापन स्थिति *';
+
+  @override
+  String get verifyFarmStatusOption => 'सत्यापित करें';
+
+  @override
+  String get feedbackNotesSectionTitle => 'प्रतिक्रिया / नोट्स';
+
+  @override
+  String get feedbackNotesHintVerified =>
+      'खेत सत्यापन के बारे में कोई नोट्स या अवलोकन जोड़ें...';
+
+  @override
+  String get feedbackNotesHintRejected => 'खेत अस्वीकार करने का कारण बताएं...';
+
+  @override
+  String get locationPhotoVerificationSectionTitle => 'स्थान और फोटो सत्यापन';
+
+  @override
+  String get gpsLocationSectionTitle => 'GPS स्थान';
+
+  @override
+  String latitudeDisplay(String degrees) {
+    return 'अक्षांश: $degrees°';
+  }
+
+  @override
+  String longitudeDisplay(String degrees) {
+    return 'देशांतर: $degrees°';
+  }
+
+  @override
+  String accuracyDisplayMeters(String meters) {
+    return 'शुद्धता: ${meters}m';
+  }
+
+  @override
+  String get farmPhotoGeotaggedSectionTitle => 'खेत फोटो (जियोटैग)';
+
+  @override
+  String get retakeFarmPhotoButton => 'फोटो फिर से लें';
+
+  @override
+  String get captureFarmPhotoButton => 'खेत फोटो कैप्चर करें';
+
+  @override
+  String get otpVerificationSectionTitle => 'OTP सत्यापन';
+
+  @override
+  String get requestingOtpButton => 'OTP अनुरोध किया जा रहा है...';
+
+  @override
+  String get gpsValidationRequiredButton => 'GPS सत्यापन आवश्यक';
+
+  @override
+  String get fieldOfficerRequestOtpCta => 'OTP अनुरोध करें';
+
+  @override
+  String get enterSixDigitOtpFromFarmer =>
+      'किसान को मिला 6 अंकों का OTP दर्ज करें:';
+
+  @override
+  String otpExpiresInCountdown(String time) {
+    return 'OTP समाप्त होगा: $time';
+  }
+
+  @override
+  String get validatingOtpButton => 'सत्यापित किया जा रहा है...';
+
+  @override
+  String get validateOtpButtonLabel => 'OTP सत्यापित करें';
+
+  @override
+  String locationCapturedDistanceMeters(String meters) {
+    return 'स्थान कैप्चर हुआ! खेत से दूरी: ${meters}m (100m के भीतर)';
+  }
+
+  @override
+  String get locationCapturedSuccessShort => 'स्थान सफलतापूर्वक कैप्चर हुआ!';
+
+  @override
+  String geotaggedPhotoCapturedDistanceMeters(String meters) {
+    return 'फोटो कैप्चर हुआ! खेत से दूरी: ${meters}m (100m के भीतर)';
+  }
+
+  @override
+  String get geotaggedPhotoCapturedSuccess =>
+      'जियोटैग फोटो सफलतापूर्वक कैप्चर हुआ!';
+
+  @override
+  String get gpsValidationFailedFallback => 'GPS सत्यापन विफल';
+
+  @override
+  String get gpsValidationFailedOtpBlocked =>
+      'GPS सत्यापन विफल। OTP अनुरोध अवरुद्ध है।';
+
+  @override
+  String get photoFileNotSavedRetry =>
+      'फोटो फ़ाइल सही से सेव नहीं हुई। कृपया पुनः प्रयास करें।';
+
+  @override
+  String locationCaptureFailedWithError(String error) {
+    return 'स्थान कैप्चर विफल: $error';
+  }
+
+  @override
+  String get captureGpsBeforeOtpRequest =>
+      'OTP अनुरोध से पहले कृपया GPS स्थान कैप्चर करें।';
+
+  @override
+  String get farmMissingGpsCoordinatesAdmin =>
+      'इस खेत के GPS निर्देशांक नहीं हैं। सत्यापन से पहले खेत स्थान जोड़ने के लिए व्यवस्थापक से संपर्क करें।';
+
+  @override
+  String get invalidFarmGpsCoordinatesAdmin =>
+      'अमान्य खेत GPS निर्देशांक। कृपया व्यवस्थापक से संपर्क करें।';
+
+  @override
+  String tooFarFromFarmMeters(String meters) {
+    return 'आप खेत स्थान से बहुत दूर हैं। दूरी: ${meters}m (आवश्यक: 100m के भीतर)। कृपया खेत के पास जाएं।';
+  }
+
+  @override
+  String get invalidOtpPleaseTryAgain => 'अमान्य OTP। कृपया पुनः प्रयास करें।';
+
+  @override
+  String pincodeRowLabel(String code) {
+    return 'पिनकोड: $code';
+  }
+
+  @override
+  String get pleaseEnterValidSixDigitOtp =>
+      'कृपया वैध 6 अंकों का OTP दर्ज करें';
+
+  @override
+  String verificationFailureMessage(String message) {
+    return '$message';
+  }
+
+  @override
+  String get authOtpAppBarTitle => 'ओटीपी दर्ज करें';
+
+  @override
+  String get authOtpHeadline => 'कृपया ओटीपी दर्ज करें';
+
+  @override
+  String get authOtpDescription => 'हमने आपके फोन पर ६ अंकों का कोड भेजा है।';
+
+  @override
+  String get authOtpSubmit => 'ओटीपी जमा करें';
+
+  @override
+  String authOtpResendCountdown(int seconds) {
+    return 'पुनः भेजें: $seconds सेकंड';
+  }
+
+  @override
+  String get authOtpResend => 'ओटीपी पुनः भेजें';
+
+  @override
+  String get signupHey => 'नमस्ते,';
+
+  @override
+  String get signupTitle => 'अभी साइन अप करें !';
+
+  @override
+  String get signupUsernameLabel => 'उपयोगकर्ता नाम';
+
+  @override
+  String get signupUsernameHint => 'उपयोगकर्ता नाम दर्ज करें';
+
+  @override
+  String get signupEmailLabel => 'ई-मेल';
+
+  @override
+  String get signupEmailHint => 'ई-मेल दर्ज करें';
+
+  @override
+  String get signupPasswordLabel => 'पासवर्ड';
+
+  @override
+  String get signupPasswordHint => 'पासवर्ड दर्ज करें';
+
+  @override
+  String get signupPasswordHelper =>
+      'कम से कम ८ अक्षर, बड़ा, छोटा, अंक और विशेष चिन्ह।';
+
+  @override
+  String get signupPhoneLabel => 'मोबाइल नंबर';
+
+  @override
+  String get signupPhoneHint => '१० अंकों का मोबाइल नंबर दर्ज करें';
+
+  @override
+  String get signupGetCode => 'ओटीपी प्राप्त करें';
+
+  @override
+  String get signupErrorUsername => 'कम से कम ३ अक्षर दर्ज करें';
+
+  @override
+  String get signupErrorEmail => 'कृपया वैध ई-मेल दर्ज करें';
+
+  @override
+  String get signupErrorPhone => 'कृपया वैध १० अंकों का मोबाइल नंबर दर्ज करें';
+
+  @override
+  String get signupErrorPassword =>
+      '८+ अक्षर, बड़ा, छोटा, अंक और विशेष चिन्ह का उपयोग करें';
+
+  @override
+  String get signupShowPassword => 'पासवर्ड दिखाएँ';
+
+  @override
+  String get signupHidePassword => 'पासवर्ड छिपाएँ';
+
+  @override
+  String get signupErrorPhoneRegistered =>
+      'यह फोन नंबर पहले से पंजीकृत है। दूसरा नंबर आज़माएँ या लॉग इन करें।';
+
+  @override
+  String get signupErrorEmailRegistered =>
+      'यह ई-मेल पहले से पंजीकृत है। दूसरा ई-मेल आज़माएँ या लॉग इन करें।';
+
+  @override
+  String get signupErrorUsernameTaken =>
+      'यह उपयोगकर्ता नाम पहले से लिया गया है। कृपया दूसरा नाम चुनें।';
+
+  @override
+  String get signupErrorCheckInfo =>
+      'कृपया अपनी जानकारी जाँचें और पुनः प्रयास करें।';
+
+  @override
+  String get signupErrorNetwork =>
+      'नेटवर्क त्रुटि। इंटरनेट जाँचें और पुनः प्रयास करें।';
+
+  @override
+  String get signupPasswordWeak => 'कमजोर';
+
+  @override
+  String get signupPasswordFair => 'ठीक';
+
+  @override
+  String get signupPasswordStrong => 'मजबूत';
 }

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:krushikranti_farmer/core/constants/app_colors.dart';
-import 'package:krushikranti_farmer/core/constants/app_routes.dart';
-import 'package:krushikranti_farmer/core/services/storage_service.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../core/services/storage_service.dart';
 import '../../../core/services/http_service.dart';
+import '../../../core/widgets/custom_text_field.dart';
+import '../../../core/widgets/custom_dropdown_field.dart';
+import '../../../core/widgets/form_stepper.dart';
+import '../../../core/onboarding/onboarding_controller.dart';
+import 'package:provider/provider.dart';
 
 class OnboardingAddressScreen extends StatefulWidget {
   const OnboardingAddressScreen({super.key});
@@ -51,8 +56,7 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
     },
     "mr": {
       "title": "आपले स्थान निवडा",
-      "subtitle":
-          "आपल्या परिसरात काय चालले आहे हे समजण्यासाठी लोकेशन ऑन ठेवा",
+      "subtitle": "आपल्या परिसरात काय चालले आहे हे समजण्यासाठी लोकेशन ऑन ठेवा",
       "pincode": "पिनकोड",
       "village": "गाव",
       "taluka": "तालुका",
@@ -77,8 +81,8 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
     // Validate required fields
     if (pincodeController.text.trim().isEmpty || selectedVillage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter pincode and select village"),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.onboardingPincodeAndVillage),
           backgroundColor: Colors.red,
         ),
       );
@@ -104,7 +108,8 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
         try {
           final parts = dob.split("/");
           if (parts.length == 3) {
-            dateOfBirth = "${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}";
+            dateOfBirth =
+                "${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}";
           }
         } catch (e) {
           throw Exception("Invalid date format. Please use DD/MM/YYYY");
@@ -131,21 +136,16 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
       };
 
       // Call PUT /farmer/profile/my-details
-      final response = await HttpService.put(
+      await HttpService.put(
         "farmer/profile/my-details",
         requestBody,
       );
 
       if (!mounted) return;
 
-      // Personal & contact details are now saved (Step 1 complete).
-      // Move to Step 2 (Add Farm). User can still skip there if they want.
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.addFarm,
-        (route) => false,
-        arguments: {'fromOnboarding': true},
-      );
+      await context
+          .read<OnboardingController>()
+          .completePersonalAndGoToFarm(context);
     } catch (e) {
       if (!mounted) return;
 
@@ -164,11 +164,11 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
 
   Future<void> _lookupAddress() async {
     final pincode = pincodeController.text.trim();
-    
+
     if (pincode.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter a valid 6-digit pincode"),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.validPincode),
           backgroundColor: Colors.red,
         ),
       );
@@ -180,9 +180,10 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
     });
 
     try {
-      final response = await HttpService.get("farmer/profile/address/lookup?pincode=$pincode");
+      final response = await HttpService.get(
+          "farmer/profile/address/lookup?pincode=$pincode");
       final data = response['data'] ?? {};
-      
+
       if (mounted && data.isNotEmpty) {
         setState(() {
           districtController.text = data['district'] ?? "";
@@ -200,7 +201,7 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
         setState(() {
           _isLookingUp = false;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceFirst("Exception: ", "")),
@@ -211,7 +212,6 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -220,7 +220,8 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -252,9 +253,7 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               const SizedBox(height: 10),
-
               Center(
                 child: Text(
                   t[appLang]!["subtitle"]!,
@@ -266,91 +265,9 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // --- GLOBAL ONBOARDING STEPPER (Steps 1–5) ---
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Step 1: Active – Profile (Personal + Contact + Address)
-                  const CircleAvatar(
-                    radius: 14,
-                    backgroundColor: AppColors.brandGreen,
-                    child: Text(
-                      "1",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Container(height: 2, width: 20, color: Colors.grey.shade300),
-
-                  // Step 2: Inactive – Farm details
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundColor: Colors.grey.shade300,
-                    child: const Text(
-                      "2",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Container(height: 2, width: 20, color: Colors.grey.shade300),
-
-                  // Step 3: Inactive – Crop details
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundColor: Colors.grey.shade300,
-                    child: const Text(
-                      "3",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Container(height: 2, width: 20, color: Colors.grey.shade300),
-
-                  // Step 4: Inactive – Subscription
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundColor: Colors.grey.shade300,
-                    child: const Text(
-                      "4",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Container(height: 2, width: 20, color: Colors.grey.shade300),
-
-                  // Step 5: Inactive – KYC
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundColor: Colors.grey.shade300,
-                    child: const Text(
-                      "5",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
+              const OnboardingStepProgressBarConnected(),
               const SizedBox(height: 24),
-
               Center(
                 child: Container(
                   padding: const EdgeInsets.all(20),
@@ -376,25 +293,39 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
                     "assets/images/auth/location.png",
                     height: 100,
                     fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Icon(Icons.location_on_rounded, size: 60, color: AppColors.brandGreen),
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.location_on_rounded,
+                        size: 60,
+                        color: AppColors.brandGreen),
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              _label(t[appLang]!["pincode"]!),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
-                    child: _textField(pincodeController, t[appLang]!["pincode"]!),
+                    child: CustomTextField(
+                      controller: pincodeController,
+                      label: t[appLang]!["pincode"]!,
+                      hint: t[appLang]!["pincode"]!,
+                      prefixIcon: Icons.location_on_outlined,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      onChanged: (value) {
+                        if (value.length == 6) {
+                          _lookupAddress();
+                        }
+                      },
+                    ),
                   ),
                   const SizedBox(width: 12),
                   _isLookingUp
                       ? Container(
                           width: 50,
                           height: 50,
+                          margin: const EdgeInsets.only(
+                              bottom: 2), // align with text field roughly
                           decoration: BoxDecoration(
                             color: AppColors.brandGreen.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
@@ -405,57 +336,83 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.brandGreen),
                               ),
                             ),
                           ),
                         )
-                      : ElevatedButton.icon(
-                          onPressed: _lookupAddress,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.brandGreen,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          icon: const Icon(Icons.search_rounded, color: Colors.white, size: 18),
-                          label: Text(
-                            "Lookup",
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                      : Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: SizedBox(
+                            height: 50,
+                            child: ElevatedButton.icon(
+                              onPressed: _lookupAddress,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.brandGreen,
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              icon: const Icon(Icons.search_rounded,
+                                  color: Colors.white, size: 18),
+                              label: Text(
+                                "Lookup",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                 ],
               ),
-
               const SizedBox(height: 16),
-
-              _label(t[appLang]!["village"]!),
-              _villageDropdown(),
-
+              CustomDropdownField<String>(
+                items: villageList,
+                value: selectedVillage,
+                enabled: villageList.isNotEmpty,
+                onChanged: villageList.isEmpty
+                    ? null
+                    : (v) => setState(() => selectedVillage = v),
+                hint: villageList.isEmpty
+                    ? "Enter pincode to load villages"
+                    : t[appLang]!["village"]!,
+                label: t[appLang]!["village"]!,
+                prefixIcon: Icons.home_outlined,
+                itemLabelBuilder: (v) => v,
+              ),
               const SizedBox(height: 16),
-
-              _label(t[appLang]!["taluka"]!),
-              _textField(talukaController, t[appLang]!["taluka"]!, enabled: false),
-
+              CustomTextField(
+                controller: talukaController,
+                label: t[appLang]!["taluka"]!,
+                hint: t[appLang]!["taluka"]!,
+                prefixIcon: Icons.business_outlined,
+                enabled: false,
+              ),
               const SizedBox(height: 16),
-
-              _label(t[appLang]!["district"]!),
-              _textField(districtController, t[appLang]!["district"]!, enabled: false),
-
+              CustomTextField(
+                controller: districtController,
+                label: t[appLang]!["district"]!,
+                hint: t[appLang]!["district"]!,
+                prefixIcon: Icons.map_outlined,
+                enabled: false,
+              ),
               const SizedBox(height: 16),
-
-              _label(t[appLang]!["state"]!),
-              _textField(stateController, t[appLang]!["state"]!, enabled: false),
-
+              CustomTextField(
+                controller: stateController,
+                label: t[appLang]!["state"]!,
+                hint: t[appLang]!["state"]!,
+                prefixIcon: Icons.public_outlined,
+                enabled: false,
+              ),
               const SizedBox(height: 32),
-
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -474,10 +431,12 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                      : const Icon(Icons.check_circle_rounded,
+                          color: Colors.white, size: 20),
                   label: Text(
                     t[appLang]!["done"]!,
                     style: GoogleFonts.poppins(
@@ -493,182 +452,6 @@ class _OnboardingAddressScreenState extends State<OnboardingAddressScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _textField(TextEditingController controller, String hint, {bool enabled = true}) {
-    IconData? icon;
-    if (hint.toLowerCase().contains("pincode")) {
-      icon = Icons.location_on_outlined;
-    } else if (hint.toLowerCase().contains("taluka")) {
-      icon = Icons.business_outlined;
-    } else if (hint.toLowerCase().contains("district")) {
-      icon = Icons.map_outlined;
-    } else if (hint.toLowerCase().contains("state")) {
-      icon = Icons.public_outlined;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: enabled ? Colors.white : Colors.grey.shade200,
-        border: Border.all(
-          color: enabled ? Colors.grey.shade300 : Colors.grey.shade400,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          if (icon != null) ...[
-            Container(
-              margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: enabled
-                    ? AppColors.brandGreen.withOpacity(0.1)
-                    : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                size: 18,
-                color: enabled ? AppColors.brandGreen : Colors.grey.shade600,
-              ),
-            ),
-          ],
-          Expanded(
-            child: TextField(
-              controller: controller,
-              enabled: enabled,
-              keyboardType: hint.toLowerCase().contains("pincode") ? TextInputType.number : TextInputType.text,
-              maxLength: hint.toLowerCase().contains("pincode") ? 6 : null,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: enabled ? Colors.black87 : Colors.grey.shade700,
-              ),
-              decoration: InputDecoration(
-                hintText: hint,
-                border: InputBorder.none,
-                counterText: "",
-                hintStyle: GoogleFonts.poppins(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
-                ),
-              ),
-              onChanged: hint.toLowerCase().contains("pincode") && enabled
-                  ? (value) {
-                      if (value.length == 6) {
-                        _lookupAddress();
-                      }
-                    }
-                  : null,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _label(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
-        text,
-        style: GoogleFonts.poppins(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-          letterSpacing: 0.2,
-        ),
-      ),
-    );
-  }
-
-  Widget _villageDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: villageList.isEmpty ? Colors.grey.shade200 : Colors.white,
-        border: Border.all(
-          color: villageList.isEmpty ? Colors.grey.shade400 : Colors.grey.shade300,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            margin: const EdgeInsets.only(right: 10),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: villageList.isEmpty
-                  ? Colors.grey.shade200
-                  : AppColors.brandGreen.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.home_outlined,
-              size: 18,
-              color: villageList.isEmpty ? Colors.grey.shade600 : AppColors.brandGreen,
-            ),
-          ),
-          Expanded(
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                hint: Text(
-                  villageList.isEmpty 
-                      ? "Enter pincode to load villages" 
-                      : t[appLang]!["village"]!,
-                  style: GoogleFonts.poppins(
-                    color: Colors.grey.shade400,
-                    fontSize: 14,
-                  ),
-                ),
-                value: selectedVillage,
-                isExpanded: true,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.black87,
-                ),
-                icon: Icon(
-                  Icons.arrow_drop_down_rounded,
-                  color: villageList.isEmpty ? Colors.grey.shade600 : AppColors.brandGreen,
-                ),
-                dropdownColor: Colors.white,
-                items: villageList.map((v) {
-                  return DropdownMenuItem(
-                    value: v,
-                    child: Text(
-                      v,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  );
-                }).toList(),
-                selectedItemBuilder: (BuildContext context) {
-                  return villageList.map((v) {
-                    return Text(
-                      v,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    );
-                  }).toList();
-                },
-                onChanged: villageList.isEmpty ? null : (v) {
-                  setState(() => selectedVillage = v);
-                },
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

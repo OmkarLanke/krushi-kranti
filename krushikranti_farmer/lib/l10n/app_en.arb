@@ -19,17 +19,6 @@
   "fieldOfficerAssignMsg": "We'll assign",
   "fieldOfficerSoonMsg": "Field Officer for verification soon",
   "fieldOfficerAssignedMsg": "Your assigned Field Officer",
-  "assignedTo": "Assigned To:",
-  "forFarm": "For Farm:",
-  "pincodeLabel": "Pincode:",
-  "moreAssignments": "+ {count} more",
-  "@moreAssignments": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "viewFieldOfficerDetails": "View Field Officer Details",
   "fieldOfficerDetails": "Field Officer Details",
   "fieldOfficerName": "Field Officer Name",
@@ -567,5 +556,447 @@
   "panAlreadyVerified": "PAN already verified",
   "panAlreadyVerifiedMessage": "Your PAN is already verified. You cannot verify it again.",
   "bankAlreadyVerified": "Bank already verified",
-  "bankAlreadyVerifiedMessage": "Your bank account is already verified. You cannot verify it again."
+  "bankAlreadyVerifiedMessage": "Your bank account is already verified. You cannot verify it again.",
+
+  "appTitle": "Krushi Kranti",
+  "completeSetupTitle": "Complete Setup",
+  "progressPercent": "{value}%",
+  "@progressPercent": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "setupStepCompleteProfileTitle": "Complete Profile",
+  "setupStepCompleteProfileSubtitle": "Add your basic personal details",
+  "setupStepAddFarmTitle": "Add Your First Farm",
+  "setupStepAddFarmSubtitle": "Setup your farm for insights",
+  "setupStepSubscribeTitle": "Subscribe to Premium",
+  "setupStepSubscribeSubtitle": "Unlock all exclusive features",
+  "continueSetup": "Continue Setup",
+  "unlockWeatherInsights": "Unlock Weather Insights",
+  "unlockWeatherInsightsDescription": "Add your farm with GPS location to get daily forecasting and actionable insights.",
+  "addFarmNow": "Add Farm Now",
+  "weatherUnableToLoad": "Unable to load weather",
+  "weatherDataNotAvailable": "Weather data not available",
+  "weatherAddGpsToFarm": "Add GPS coordinates to farm",
+  "weatherAddFarmForInsights": "Add your farm to see weather insights",
+  "weatherCardTitle": "Weather",
+  "weatherFeelsLike": "Feels like {temp}°C",
+  "@weatherFeelsLike": {
+    "placeholders": {
+      "temp": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherHumidity": "Humidity",
+  "weatherWind": "Wind",
+  "weatherUvIndex": "UV Index",
+  "weatherRain": "Rain",
+  "forecastComingSoon": "7-day forecast feature coming soon!",
+  "view7DayForecast": "View 7-Day Forecast",
+  "taskScreenComingSoon": "Task Screen Coming Soon",
+  "sellScreenComingSoon": "Sell Screen Coming Soon",
+  "onboardingStepCrop": "Crop",
+  "dateInputFormatPlaceholder": "DD/MM/YYYY",
+  "financeScreenComingSoon": "Finance Screen Coming Soon",
+  "profileSectionAccount": "Account",
+  "profileSectionServices": "Services",
+  "profileSectionFinancial": "Financial",
+  "profileSectionSupport": "Support",
+  "loading": "Loading...",
+  "guestFarmer": "Guest Farmer",
+  "noEmail": "No Email",
+  "selectLanguage": "Select Language",
+  "languageEnglish": "English",
+  "languageHindi": "हिंदी",
+  "languageMarathi": "मराठी",
+  "saveChanges": "Save",
+  "otpResentSuccess": "OTP resent successfully",
+  "pleaseEnterFull6DigitOtp": "Please enter full 6-digit OTP",
+  "otpCopiedToClipboard": "OTP copied to clipboard: {otp}",
+  "@otpCopiedToClipboard": {
+    "placeholders": {
+      "otp": {
+        "type": "String"
+      }
+    }
+  },
+  "errorLoadingOrders": "Error loading orders",
+  "noSalesFound": "No sales found",
+  "failedToLoadDataWithDetails": "Failed to load data: {message}",
+  "@failedToLoadDataWithDetails": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "productsHeader": "Products",
+  "cropInformationSection": "Crop Information",
+  "cultivationDetailsSection": "Cultivation Details",
+  "basicInformationSection": "Basic Information",
+  "locationDetailsSection": "Location Details",
+  "soilAndWaterSection": "Soil & Water",
+  "ownershipLegalInfoSection": "Ownership & Legal Info",
+  "emailHintExample": "your.email@example.com",
+  "assessmentTitle": "Assessment",
+  "assessmentPlaceholder": "Assessment details will be shown here",
+  "requestFundsTitle": "Request Funds",
+  "fundRequestComingSoon": "Fund Request Form Coming Soon",
+  "fieldOfficerNavHome": "Home",
+  "fieldOfficerNavFarmer": "Farmer",
+  "fieldOfficerNavAssessment": "Assessment",
+  "fieldOfficerNavProfile": "Profile",
+  "searchByFarmerName": "Search by farmer name...",
+  "otpHintSixDigits": "000000",
+  "verificationPhotosTitle": "Verification Photos - {farmName}",
+  "@verificationPhotosTitle": {
+    "placeholders": {
+      "farmName": {
+        "type": "String"
+      }
+    }
+  },
+  "viewGeoTaggedPhoto": "View Geo Tagged Photo",
+  "photoCaptureTimeout": "Photo capture timed out. Please try again.",
+  "photoCaptureFailed": "Failed to capture photo: {error}",
+  "@photoCaptureFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "otpSentToFarmer": "OTP sent successfully to farmer. Please ask the farmer for the OTP.",
+  "otpValidatedSuccess": "OTP validated successfully! You can now submit verification.",
+  "selectVerificationStatus": "Please select verification status (Verify or Reject)",
+  "captureGpsBeforeVerify": "Please capture GPS location before verifying the farm",
+  "captureGeotaggedPhotoBeforeVerify": "Please capture a geotagged photo of the farm before verification",
+  "requestValidateOtpBeforeSubmit": "Please request and validate OTP before submitting verification.",
+  "uploadingPhoto": "Uploading photo...",
+  "photoUploadedSuccess": "Photo uploaded successfully!",
+  "authFailedRelogin": "Authentication failed. Please login again and try verifying the farm.",
+  "photoUploadFailedProceeding": "Photo upload failed, but proceeding with verification: {error}",
+  "@photoUploadFailedProceeding": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "farmVerifiedSuccess": "Farm verified successfully!",
+  "loadingPhotos": "Loading photos...",
+  "noVerificationPhotosForFarm": "No verification photos found for this farm.",
+  "errorLoadingPhotos": "Error loading photos: {error}",
+  "@errorLoadingPhotos": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "verificationSuccessful": "Verification successful",
+  "allKycCompletedTestMode": "All KYC verifications completed (TEST MODE)",
+  "genericErrorWithMessage": "Error: {message}",
+  "@genericErrorWithMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingPincodeAndVillage": "Please enter pincode and select village",
+  "failedToLoadProfileWithDetails": "Failed to load profile: {message}",
+  "@failedToLoadProfileWithDetails": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "myDetailsStepAddFarmTitle": "Add your farm (Step 2)",
+  "myDetailsStepAddFarmBody": "Add at least one farm to unlock farm-specific insights and funding options.",
+  "myDetailsStepAddFarmCta": "Go to farms",
+  "myDetailsStepAddCropsTitle": "Add your crops (Step 3)",
+  "myDetailsStepAddCropsBody": "Add crops for your farms to start tracking growth, sales, and alerts.",
+  "myDetailsStepAddCropsCta": "Go to crops",
+  "homeOnboardingCompleteProfileTitle": "Complete your profile",
+  "homeOnboardingCompleteProfileMessage": "Before using this feature, please add your basic personal details.",
+  "homeOnboardingCompleteProfileCta": "Complete now",
+  "homeOnboardingAddFarmTitle": "Add your first farm",
+  "homeOnboardingAddFarmMessage": "Add at least one farm to start using this feature for your land.",
+  "homeOnboardingAddFarmCta": "Add farm",
+  "homeOnboardingAddCropTitle": "Add your first crop",
+  "homeOnboardingAddCropMessage": "Add at least one crop on your farm to start tracking it here.",
+  "homeOnboardingAddCropCta": "Add crop",
+  "otpCheckNotificationSnackbar": "You will get the OTP. Please check it at notification",
+  "allFarmsVerifiedTitle": "All Farms Verified!",
+  "allFarmsVerifiedBody": "Congratulations! All your {farmCount} {farmWord} ({verified}/{farmCount} verified) have been successfully verified by field officers.",
+  "@allFarmsVerifiedBody": {
+    "placeholders": {
+      "farmCount": {
+        "type": "int"
+      },
+      "farmWord": {
+        "type": "String"
+      },
+      "verified": {
+        "type": "int"
+      }
+    }
+  },
+  "farmWordSingular": "farm",
+  "farmWordPlural": "farms",
+  "fieldOfficerDefaultName": "Field Officer",
+  "farmFallbackName": "Farm {id}",
+  "@farmFallbackName": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "statusLocked": "Locked",
+  "farmVerificationOtpTitle": "Farm Verification OTP",
+  "fieldOfficerVerifyingFarm": "{officer} is verifying \"{farm}\"",
+  "@fieldOfficerVerifyingFarm": {
+    "placeholders": {
+      "officer": {
+        "type": "String"
+      },
+      "farm": {
+        "type": "String"
+      }
+    }
+  },
+  "yourOtpCodeLabel": "Your OTP Code",
+  "copyOtpTooltip": "Copy OTP",
+  "expiresInTimer": "Expires in: {time}",
+  "@expiresInTimer": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "shareOtpWithFieldOfficer": "Please share this OTP with the field officer to complete verification.",
+  "logoutConfirmTitle": "Log Out",
+  "logoutConfirmMessage": "Are you sure you want to logout?",
+  "fieldOfficerEmailLabel": "Email Address",
+  "fieldOfficerPhoneLabel": "Phone Number",
+  "fieldOfficerAlternateLabel": "Alternate Number",
+  "fieldOfficerDobLabel": "Date of Birth",
+  "fieldOfficerGenderLabel": "Gender",
+  "loginWithPhone": "Log in with Phone",
+  "reconnectWithGoodness": "Reconnect With Goodness",
+  "letsGetYouStarted": "Let's get you started",
+  "phoneHintYourNumber": "your phone number",
+  "otpSentToThisNumber": "OTP will be sent on this number",
+  "getOtp": "Get OTP",
+  "termsAgreementLogin": "By continuing you agree to our Terms & Conditions and Privacy & Legal Policy",
+  "orSeparator": "or ",
+  "signUpCta": "Sign Up",
+  "enterOtpShort": "Enter OTP",
+  "phoneNumberNotFound": "Phone number not found. Please try again.",
+  "failedToLoadCropNamesWithDetails": "Failed to load crop names: {message}",
+  "@failedToLoadCropNamesWithDetails": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "minutesAgo": "{minutes} min ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "justNow": "Just now",
+  "hoursAgo": "{count, plural, one{1 hour ago} other{{count} hours ago}}",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{count, plural, one{1 day ago} other{{count} days ago}}",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "expiredLabel": "Expired",
+  "noNotificationsTitle": "No Notifications",
+  "noOtpNotificationsHint": "You will receive OTP notifications here",
+  "loginFailedRetry": "Login failed. Please try again.",
+  "otpVerificationFailedRetry": "OTP verification failed. Please try again.",
+  "noPhotosAvailable": "No Photos Available",
+  "verificationPhotosHeader": "Verification Photos",
+  "contactInformationHeader": "Contact Information",
+  "locationSectionTitle": "Location",
+  "farmersScreenTitle": "Farmers",
+  "verifyFarmAppBarTitle": "Verify Farm",
+  "farmerLabelDefault": "Farmer",
+  "farmsToVerifySectionTitle": "Farms to Verify",
+  "noFarmsInAssignment": "No farms found in this assignment",
+  "locationNotAvailableShort": "Location not available",
+  "farmNameFallback": "Farm",
+  "verificationStatusVerifiedBadge": "Verified",
+  "submitVerificationButton": "Submit Verification",
+  "farmAlreadyVerifiedNotice": "This farm has already been verified.",
+  "verificationStatusSectionTitle": "Verification Status *",
+  "verifyFarmStatusOption": "Verify",
+  "feedbackNotesSectionTitle": "Feedback / Notes",
+  "feedbackNotesHintVerified": "Add any notes or observations about the farm verification...",
+  "feedbackNotesHintRejected": "Add feedback about why the farm is being rejected...",
+  "locationPhotoVerificationSectionTitle": "Location & Photo Verification",
+  "gpsLocationSectionTitle": "GPS Location",
+  "latitudeDisplay": "Lat: {degrees}°",
+  "@latitudeDisplay": {
+    "placeholders": {
+      "degrees": {
+        "type": "String"
+      }
+    }
+  },
+  "longitudeDisplay": "Lon: {degrees}°",
+  "@longitudeDisplay": {
+    "placeholders": {
+      "degrees": {
+        "type": "String"
+      }
+    }
+  },
+  "accuracyDisplayMeters": "Accuracy: {meters}m",
+  "@accuracyDisplayMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "farmPhotoGeotaggedSectionTitle": "Farm Photo (Geotagged)",
+  "retakeFarmPhotoButton": "Retake Photo",
+  "captureFarmPhotoButton": "Capture Farm Photo",
+  "otpVerificationSectionTitle": "OTP Verification",
+  "requestingOtpButton": "Requesting OTP...",
+  "gpsValidationRequiredButton": "GPS Validation Required",
+  "fieldOfficerRequestOtpCta": "Request OTP",
+  "enterSixDigitOtpFromFarmer": "Enter the 6-digit OTP received by the farmer:",
+  "otpExpiresInCountdown": "OTP expires in: {time}",
+  "@otpExpiresInCountdown": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "validatingOtpButton": "Validating...",
+  "validateOtpButtonLabel": "Validate OTP",
+  "locationCapturedDistanceMeters": "Location captured! Distance from farm: {meters}m (within 100m threshold)",
+  "@locationCapturedDistanceMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "locationCapturedSuccessShort": "Location captured successfully!",
+  "geotaggedPhotoCapturedDistanceMeters": "Photo captured! Distance from farm: {meters}m (within 100m threshold)",
+  "@geotaggedPhotoCapturedDistanceMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "geotaggedPhotoCapturedSuccess": "Geotagged photo captured successfully!",
+  "gpsValidationFailedFallback": "GPS validation failed",
+  "gpsValidationFailedOtpBlocked": "GPS validation failed. OTP request will be blocked.",
+  "photoFileNotSavedRetry": "Photo file was not saved properly. Please try again.",
+  "locationCaptureFailedWithError": "Failed to capture location: {error}",
+  "@locationCaptureFailedWithError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "captureGpsBeforeOtpRequest": "Please capture GPS location first before requesting OTP.",
+  "farmMissingGpsCoordinatesAdmin": "This farm does not have GPS coordinates. Please contact admin to add farm location before verification.",
+  "invalidFarmGpsCoordinatesAdmin": "Invalid farm GPS coordinates. Please contact admin.",
+  "tooFarFromFarmMeters": "You are too far from the farm location. Distance: {meters}m (required: within 100m). Please move closer to the farm location.",
+  "@tooFarFromFarmMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidOtpPleaseTryAgain": "Invalid OTP. Please try again.",
+  "pincodeRowLabel": "Pincode: {code}",
+  "@pincodeRowLabel": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "pleaseEnterValidSixDigitOtp": "Please enter a valid 6-digit OTP",
+  "verificationFailureMessage": "{message}",
+  "@verificationFailureMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "authOtpAppBarTitle": "Verification",
+  "authOtpHeadline": "Enter verification code",
+  "authOtpDescription": "We sent a 6-digit code to your phone.",
+  "authOtpSubmit": "Submit code",
+  "authOtpResendCountdown": "Resend in {seconds}s",
+  "@authOtpResendCountdown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "authOtpResend": "Resend code",
+  "signupHey": "Hey,",
+  "signupTitle": "Sign up now",
+  "signupUsernameLabel": "Username",
+  "signupUsernameHint": "Enter username",
+  "signupEmailLabel": "Email",
+  "signupEmailHint": "Enter email address",
+  "signupPasswordLabel": "Password",
+  "signupPasswordHint": "Enter password",
+  "signupPasswordHelper": "At least 8 characters with upper & lower case, a number, and a symbol.",
+  "signupPhoneLabel": "Mobile number",
+  "signupPhoneHint": "Enter 10-digit mobile number",
+  "signupGetCode": "Get verification code",
+  "signupErrorUsername": "Enter at least 3 characters",
+  "signupErrorEmail": "Enter a valid email address",
+  "signupErrorPhone": "Enter a valid 10-digit mobile number",
+  "signupErrorPassword": "Use 8+ characters with A–Z, a–z, 0–9 and a symbol",
+  "signupShowPassword": "Show password",
+  "signupHidePassword": "Hide password",
+  "signupErrorPhoneRegistered": "This phone number is already registered. Try another number or log in.",
+  "signupErrorEmailRegistered": "This email is already registered. Try another email or log in.",
+  "signupErrorUsernameTaken": "This username is already taken. Please choose another.",
+  "signupErrorCheckInfo": "Please check your details and try again.",
+  "signupErrorNetwork": "Network error. Check your internet and try again.",
+  "signupPasswordWeak": "Weak",
+  "signupPasswordFair": "Fair",
+  "signupPasswordStrong": "Strong"
 }

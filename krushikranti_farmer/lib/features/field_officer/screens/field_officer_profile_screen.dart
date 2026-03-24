@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/http_service.dart';
 
@@ -156,18 +157,25 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
   Future<void> _handleLogout() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogContext)!.logoutConfirmTitle),
+        content:
+            Text(AppLocalizations.of(dialogContext)!.logoutConfirmMessage),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(
+              AppLocalizations.of(dialogContext)!.cancel,
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              AppLocalizations.of(dialogContext)!.logout,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -187,6 +195,7 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background, 
       appBar: AppBar(
@@ -195,7 +204,7 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
         centerTitle: true,
         automaticallyImplyLeading: false,
         title: Text(
-          'Profile',
+          l10n.profile,
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 20,
@@ -225,37 +234,37 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
                   _buildProfileHeader(),
                   const SizedBox(height: 30),
                   
-                  _buildSectionHeader('Contact Information'),
+                  _buildSectionHeader(l10n.contactInformationHeader),
                   _buildModernField(
-                    label: 'Email Address',
+                    label: l10n.fieldOfficerEmailLabel,
                     value: _profileData['email']?.toString() ?? '',
                     icon: Icons.email_rounded,
-                    placeholder: 'Not provided',
+                    placeholder: l10n.notProvided,
                   ),
                   _buildModernField(
-                    label: 'Phone Number',
+                    label: l10n.fieldOfficerPhoneLabel,
                     value: _profileData['phoneNumber']?.toString() ?? '',
                     icon: Icons.phone_rounded,
                     placeholder: '--',
                   ),
                   _buildModernField(
-                    label: 'Alternate Number',
+                    label: l10n.fieldOfficerAlternateLabel,
                     value: _profileData['alternatePhone']?.toString() ?? '',
                     icon: Icons.phone_iphone_rounded,
-                    placeholder: 'Not provided',
+                    placeholder: l10n.notProvided,
                   ),
 
                   const SizedBox(height: 24),
                   
-                  _buildSectionHeader('Personal Details'),
+                  _buildSectionHeader(l10n.personalDetails),
                   _buildModernField(
-                    label: 'Date of Birth',
+                    label: l10n.fieldOfficerDobLabel,
                     value: _formatDate(_profileData['dateOfBirth']?.toString()) ?? '',
                     icon: Icons.calendar_month_rounded,
                     placeholder: '--',
                   ),
                   _buildModernField(
-                    label: 'Gender',
+                    label: l10n.fieldOfficerGenderLabel,
                     value: _formatGender(_profileData['gender']?.toString()) ?? '',
                     icon: Icons.person_outline_rounded,
                     placeholder: '--',
@@ -263,7 +272,7 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
 
                   const SizedBox(height: 24),
                   
-                  _buildSectionHeader('Location'),
+                  _buildSectionHeader(l10n.locationSectionTitle),
                   _buildAddressCard(),
 
                   const SizedBox(height: 40),
