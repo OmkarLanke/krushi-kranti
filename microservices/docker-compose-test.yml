@@ -84,7 +84,8 @@ services:
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 10s
-      timeout: 5s
+      timeout: 30s
+      start_period: 30s
       retries: 5
     restart: unless-stopped
 
@@ -179,6 +180,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true
     env_file:
       - .env.test
     healthcheck:
@@ -323,7 +325,7 @@ services:
       dockerfile: file-service/Dockerfile
     container_name: file-service
     env_file:
-      - ./java-spring-microservices/file-service/.env
+      - ./java-spring-microservices/file-service/.env.test
     ports:
       - "4008:4008"
     depends_on:

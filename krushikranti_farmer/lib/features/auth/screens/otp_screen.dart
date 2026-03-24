@@ -75,6 +75,9 @@ class _OtpScreenState extends State<OtpScreen> {
         throw Exception(l10n.phoneNumberNotFound);
       }
 
+      // Get 'isLogin' Flag to determine which endpoint to call
+      final bool isLogin = ModalRoute.of(context)?.settings.arguments as bool? ?? false;
+
       if (isLogin) {
         await HttpService.post(
           "auth/request-login-otp",
@@ -180,7 +183,7 @@ class _OtpScreenState extends State<OtpScreen> {
     final bool isLogin =
         ModalRoute.of(context)?.settings.arguments as bool? ?? false;
     String otp = otpControllers.map((e) => e.text).join();
-
+    
     if (otp.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.pleaseEnterFull6DigitOtp)),
@@ -199,6 +202,10 @@ class _OtpScreenState extends State<OtpScreen> {
       if (phoneNumber.isEmpty) {
         throw Exception(l10n.phoneNumberNotFound);
       }
+
+      // 3. Get 'isLogin' Flag passed from Login/Signup screen
+      // Default to false (Signup) if arguments are null
+      final bool isLogin = ModalRoute.of(context)?.settings.arguments as bool? ?? false;
 
       if (isLogin) {
         final response = await HttpService.post(
@@ -236,13 +243,14 @@ class _OtpScreenState extends State<OtpScreen> {
         bool isSubscribed = false;
         try {
           final subStatus = await SubscriptionService.getSubscriptionStatus();
-          isSubscribed = subStatus['isSubscribed'] == true ||
-              subStatus['subscriptionStatus'] == 'ACTIVE' ||
-              subStatus['subscriptionStatus'] == 'active';
-
+          // Check multiple possible fields to determine subscription status
+          isSubscribed = subStatus['isSubscribed'] == true || 
+                        subStatus['subscriptionStatus'] == 'ACTIVE' ||
+                        subStatus['subscriptionStatus'] == 'active';
+          
           if (isSubscribed) {
-            final endDate = subStatus['subscriptionEndDate']?.toString() ??
-                subStatus['expiresAt']?.toString();
+            final endDate = subStatus['subscriptionEndDate']?.toString() ?? 
+                           subStatus['expiresAt']?.toString();
             await StorageService.saveSubscriptionStatus(
               true,
               endDate: endDate,
@@ -284,6 +292,8 @@ class _OtpScreenState extends State<OtpScreen> {
           }
         }
       } else {
+        // CASE B: User is Signing Up -> Call /auth/verify-otp
+        // verify-otp returns AuthResponse directly (accessToken, refreshToken, user)
         final response = await HttpService.post(
           "auth/verify-otp",
           {
@@ -304,7 +314,6 @@ class _OtpScreenState extends State<OtpScreen> {
         if (refreshToken.isNotEmpty) {
           await StorageService.saveRefreshToken(refreshToken);
         }
-
         await StorageService.saveAuthDetails(
           email: userInfo['email'] ?? '',
           phone: userInfo['phoneNumber'] ?? phoneNumber,
@@ -365,9 +374,7 @@ class _OtpScreenState extends State<OtpScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -421,8 +428,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.lock_rounded,
-                      size: 44, color: AppColors.brandGreen),
+                  child: Icon(Icons.lock_rounded, size: 50, color: AppColors.brandGreen),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -445,12 +451,16 @@ class _OtpScreenState extends State<OtpScreen> {
                     height: 1.35,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
+                
+                // OTP Input Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(6, (i) => _otpBox(i)),
                 ),
-                const SizedBox(height: 14),
+                
+                const SizedBox(height: 16),
+                // Resend OTP - Show timer or button
                 timerSeconds > 0
                     ? Text(
                         l10n.authOtpResendCountdown(timerSeconds),
@@ -461,35 +471,59 @@ class _OtpScreenState extends State<OtpScreen> {
                           fontWeight: FontWeight.w500,
                         ),
                       )
-                    : Semantics(
-                        button: true,
-                        label: l10n.authOtpResend,
-                        child: SizedBox(
-                          height: 48,
-                          child: TextButton(
-                            onPressed: _isResending ? null : _resendOtp,
-                            child: _isResending
-                                ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          AppColors.brandGreen),
-                                    ),
-                                  )
-                                : Text(
-                                    l10n.authOtpResend,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 15,
-                                      color: AppColors.brandGreen,
-                                      fontWeight: FontWeight.w600,
-                                      decoration: TextDecoration.underline,
-                                      decorationColor: AppColors.brandGreen,
-                                    ),
-                                  ),
-                          ),
-                        ),
+                    : TextButton(
+                        onPressed: _isResending ? null : _resendOtp,
+                        child: _isResending
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
+                                ),
+                              )
+                            : Text(
+                                resendText[appLang]!,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: AppColors.brandGreen,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                      ),
+                const SizedBox(height: 32),
+                
+                // SUBMIT BUTTON
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    icon: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.verified_rounded, color: Colors.white, size: 20),
+                    label: Text(
+                      submitButtonText[appLang]!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
                       ),
                 const SizedBox(height: 20),
                 AppPrimaryButton(

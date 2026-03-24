@@ -24,6 +24,11 @@ public class OtpService {
         this.redisTemplate = redisTemplate;
     }
 
+    public int getOtpExpirationMinutes() {
+        // Convert seconds to minutes; minimum of 1 minute displayed
+        return Math.max(1, otpExpiration / 60);
+    }
+
     public String generateOtp(String email) {
         String otp = generateRandomOtp();
         String key = "otp:email:" + email;

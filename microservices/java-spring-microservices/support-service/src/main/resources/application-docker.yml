@@ -10,6 +10,15 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    # HikariCP optimizations for Neon (serverless Postgres)
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+      idle-timeout: 300000
+      max-lifetime: 600000
+      connection-timeout: 20000
+      keepalive-time: 60000
+      pool-name: support-service-pool
 
   jpa:
     hibernate:
