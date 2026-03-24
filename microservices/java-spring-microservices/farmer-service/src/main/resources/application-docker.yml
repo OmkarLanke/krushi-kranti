@@ -72,6 +72,11 @@ services:
   field-officer-service:
     url: http://field-officer-service:4015
 
+# data.gov.in India Post Pincode API
+datagovin:
+  api:
+    key: ${DATAGOVIN_API_KEY:}
+
 logging:
   level:
     root: INFO
