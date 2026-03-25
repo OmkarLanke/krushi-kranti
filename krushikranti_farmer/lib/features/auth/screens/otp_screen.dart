@@ -180,7 +180,7 @@ class _OtpScreenState extends State<OtpScreen> {
     final bool isLogin =
         ModalRoute.of(context)?.settings.arguments as bool? ?? false;
     String otp = otpControllers.map((e) => e.text).join();
-
+    
     if (otp.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.pleaseEnterFull6DigitOtp)),
@@ -241,8 +241,8 @@ class _OtpScreenState extends State<OtpScreen> {
               subStatus['subscriptionStatus'] == 'active';
 
           if (isSubscribed) {
-            final endDate = subStatus['subscriptionEndDate']?.toString() ??
-                subStatus['expiresAt']?.toString();
+            final endDate = subStatus['subscriptionEndDate']?.toString() ?? 
+                           subStatus['expiresAt']?.toString();
             await StorageService.saveSubscriptionStatus(
               true,
               endDate: endDate,

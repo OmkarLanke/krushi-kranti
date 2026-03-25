@@ -1,7 +1,6 @@
 package com.krushikranti.farmer.service;
 
 import com.krushikranti.farmer.dto.AddressLookupResponse;
-import com.krushikranti.farmer.repository.PincodeMasterRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,7 +13,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -22,7 +20,7 @@ import static org.mockito.Mockito.*;
 class PincodeServiceTest {
 
     @Mock
-    private PincodeMasterRepository pincodeMasterRepository;
+    private DataGovPincodeClient dataGovPincodeClient;
 
     @InjectMocks
     private PincodeService pincodeService;
@@ -39,68 +37,45 @@ class PincodeServiceTest {
     @Test
     @DisplayName("Get address by pincode - success")
     void getAddressByPincode_Success_ReturnsAddressLookupResponse() {
-        // Given
-        String district = "Pune";
-        String taluka = "Pune";
-        String state = "Maharashtra";
-        List<String> villages = List.of("Village1", "Village2", "Village3");
+        AddressLookupResponse expected = AddressLookupResponse.builder()
+                .pincode(validPincode)
+                .district("Pune")
+                .taluka("Pune")
+                .state("Maharashtra")
+                .villages(List.of("Village1", "Village2", "Village3"))
+                .build();
 
-        when(pincodeMasterRepository.findDistrictsByPincode(validPincode))
-                .thenReturn(List.of(district));
-        when(pincodeMasterRepository.findTalukasByPincode(validPincode))
-                .thenReturn(List.of(taluka));
-        when(pincodeMasterRepository.findStatesByPincode(validPincode))
-                .thenReturn(List.of(state));
-        when(pincodeMasterRepository.findVillagesByPincode(validPincode))
-                .thenReturn(villages);
+        when(dataGovPincodeClient.lookup(validPincode)).thenReturn(expected);
 
-        // When
         AddressLookupResponse response = pincodeService.getAddressByPincode(validPincode);
 
-        // Then
         assertThat(response).isNotNull();
         assertThat(response.getPincode()).isEqualTo(validPincode);
-        assertThat(response.getDistrict()).isEqualTo(district);
-        assertThat(response.getTaluka()).isEqualTo(taluka);
-        assertThat(response.getState()).isEqualTo(state);
+        assertThat(response.getDistrict()).isEqualTo("Pune");
+        assertThat(response.getTaluka()).isEqualTo("Pune");
+        assertThat(response.getState()).isEqualTo("Maharashtra");
         assertThat(response.getVillages()).hasSize(3);
         assertThat(response.getVillages()).containsExactlyInAnyOrder("Village1", "Village2", "Village3");
 
-        verify(pincodeMasterRepository).findDistrictsByPincode(validPincode);
-        verify(pincodeMasterRepository).findTalukasByPincode(validPincode);
-        verify(pincodeMasterRepository).findStatesByPincode(validPincode);
-        verify(pincodeMasterRepository).findVillagesByPincode(validPincode);
+        verify(dataGovPincodeClient).lookup(validPincode);
     }
 
     @Test
     @DisplayName("Get address by pincode - pincode not found")
     void getAddressByPincode_PincodeNotFound_ThrowsException() {
-        // Given
-        // Service calls all repository methods before checking, so we need to mock all
-        when(pincodeMasterRepository.findDistrictsByPincode(invalidPincode))
-                .thenReturn(List.of());
-        when(pincodeMasterRepository.findTalukasByPincode(invalidPincode))
-                .thenReturn(List.of());
-        when(pincodeMasterRepository.findStatesByPincode(invalidPincode))
-                .thenReturn(List.of());
-        when(pincodeMasterRepository.findVillagesByPincode(invalidPincode))
-                .thenReturn(List.of());
+        when(dataGovPincodeClient.lookup(invalidPincode))
+                .thenThrow(new IllegalArgumentException("Pincode not found: " + invalidPincode));
 
-        // When/Then
         assertThatThrownBy(() -> pincodeService.getAddressByPincode(invalidPincode))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Pincode not found: " + invalidPincode);
 
-        verify(pincodeMasterRepository).findDistrictsByPincode(invalidPincode);
-        verify(pincodeMasterRepository).findTalukasByPincode(invalidPincode);
-        verify(pincodeMasterRepository).findStatesByPincode(invalidPincode);
-        verify(pincodeMasterRepository).findVillagesByPincode(invalidPincode);
+        verify(dataGovPincodeClient).lookup(invalidPincode);
     }
 
     @Test
     @DisplayName("Get address by pincode - empty pincode")
     void getAddressByPincode_EmptyPincode_ThrowsException() {
-        // When/Then
         assertThatThrownBy(() -> pincodeService.getAddressByPincode(""))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Pincode cannot be empty");
@@ -109,37 +84,28 @@ class PincodeServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Pincode cannot be empty");
 
-        verify(pincodeMasterRepository, never()).findDistrictsByPincode(anyString());
+        verify(dataGovPincodeClient, never()).lookup(anyString());
     }
 
     @Test
     @DisplayName("Pincode exists - returns true")
     void pincodeExists_ValidPincode_ReturnsTrue() {
-        // Given
-        when(pincodeMasterRepository.findDistrictsByPincode(validPincode))
-                .thenReturn(List.of("Pune"));
+        AddressLookupResponse response = AddressLookupResponse.builder()
+                .pincode(validPincode).district("Pune").taluka("Pune")
+                .state("Maharashtra").villages(List.of("V1")).build();
+        when(dataGovPincodeClient.lookup(validPincode)).thenReturn(response);
 
-        // When
-        boolean exists = pincodeService.pincodeExists(validPincode);
-
-        // Then
-        assertThat(exists).isTrue();
-        verify(pincodeMasterRepository).findDistrictsByPincode(validPincode);
+        assertThat(pincodeService.pincodeExists(validPincode)).isTrue();
+        verify(dataGovPincodeClient).lookup(validPincode);
     }
 
     @Test
     @DisplayName("Pincode exists - returns false")
     void pincodeExists_InvalidPincode_ReturnsFalse() {
-        // Given
-        when(pincodeMasterRepository.findDistrictsByPincode(invalidPincode))
-                .thenReturn(List.of());
+        when(dataGovPincodeClient.lookup(invalidPincode))
+                .thenThrow(new IllegalArgumentException("Pincode not found: " + invalidPincode));
 
-        // When
-        boolean exists = pincodeService.pincodeExists(invalidPincode);
-
-        // Then
-        assertThat(exists).isFalse();
-        verify(pincodeMasterRepository).findDistrictsByPincode(invalidPincode);
+        assertThat(pincodeService.pincodeExists(invalidPincode)).isFalse();
+        verify(dataGovPincodeClient).lookup(invalidPincode);
     }
 }
-

@@ -3,13 +3,22 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://notification-db:5432/notification_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
-  
+    # HikariCP optimizations for Neon (serverless Postgres)
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+      idle-timeout: 300000
+      max-lifetime: 600000
+      connection-timeout: 20000
+      keepalive-time: 60000
+      pool-name: notification-service-pool
+
   kafka:
     bootstrap-servers: kafka:9092
 
-  # Email Configuration (SMTP)
+  # Email Configuration (SMTP) - default to GoDaddy TLS on 587
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
+    host: ${MAIL_HOST:smtpout.secureserver.net}
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
@@ -17,11 +26,13 @@ spring:
       mail:
         smtp:
           auth: true
+          ssl:
+            enable: ${MAIL_SSL_ENABLE:false}
           starttls:
-            enable: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
+            enable: ${MAIL_STARTTLS_ENABLE:true}
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
 
 # Application Email Settings
 app:
