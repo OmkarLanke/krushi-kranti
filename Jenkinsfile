@@ -14,6 +14,16 @@ pipeline {
             }
         }
 
+        stage('Pre-Cleanup') {
+            steps {
+                dir('microservices') {
+                    sh '''
+                    docker compose -p $COMPOSE_PROJECT_NAME -f docker-compose-test.yml down --remove-orphans || true
+                    '''
+                }
+            }
+        }
+
         stage('Network Setup') {
             steps {
                 // Since test environments expect 'krushi-kranti-network' to exist
@@ -35,6 +45,7 @@ pipeline {
                 }
             }
         }
+        
 
         /* 
         stage('Build Backend & SonarQube Prep') {
@@ -53,18 +64,14 @@ pipeline {
                 // Deploys the Java microservices sequentially to avoid 100% CPU starvation 
                 // which was causing the 40s healthchecks to randomly fail on the EC2 server
                 dir('microservices') {
-                    // 1. Build all images first
                     sh 'docker compose --env-file .env.test -f docker-compose-test.yml build'
 
-                    // 2. Start Infrastructure & Core Auth
                     sh 'docker compose --env-file .env.test -f docker-compose-test.yml up -d redis zookeeper kafka auth-service'
-                    sh 'sleep 40' // Give auth-service 40 seconds of pure CPU to finish waking up!
+                    sh 'sleep 40'
 
-                    // 3. Start Heavy Data Services
                     sh 'docker compose --env-file .env.test -f docker-compose-test.yml up -d farmer-service file-service'
-                    sh 'sleep 40' // Give them 40 seconds of pure CPU to wake up!
+                    sh 'sleep 40' 
 
-                    // 4. Start everything else!
                     sh 'docker compose --env-file .env.test -f docker-compose-test.yml up -d'
                 }
             }
@@ -72,15 +79,12 @@ pipeline {
 
         stage('Deploy Frontend (Test)') {
             steps {
-                // Deploys the React frontend and Nginx using the test compose file
                 sh 'docker compose -f docker-compose.frontend.test.yml up --build -d'
             }
         }
 
         stage('Cleanup') {
             steps {
-                // Clean up old images ONLY for this specific project to protect other applications on the server
-                // Deleting only images older than 3 weeks (504 hours)
                 sh 'docker image prune -af --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" --filter "until=504h"'
             }
         }
