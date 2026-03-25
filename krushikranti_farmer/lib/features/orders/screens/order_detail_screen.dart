@@ -174,7 +174,7 @@ class OrderDetailScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(flex: 2, child: Text("Products", style: _headerStyle())),
+                      Expanded(flex: 2, child: Text(l10n.productsHeader, style: _headerStyle())),
                       Expanded(flex: 1, child: Text(l10n.weight, style: _headerStyle())),
                       Expanded(flex: 1, child: Text(l10n.price, style: _headerStyle())),
                       Expanded(flex: 1, child: Text(l10n.total, textAlign: TextAlign.right, style: _headerStyle())),

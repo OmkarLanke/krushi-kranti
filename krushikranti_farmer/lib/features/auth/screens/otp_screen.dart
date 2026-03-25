@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/http_service.dart';
+import '../../../core/widgets/app_primary_button.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../subscription/services/subscription_service.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -17,51 +20,35 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   final List<TextEditingController> otpControllers =
       List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> focusNodes = List.generate(6, (_) => FocusNode());
 
   int timerSeconds = 30;
   Timer? countdownTimer;
   bool _isLoading = false;
   bool _isResending = false;
-
-  String appLang = "en"; // default
-
-  final Map<String, String> titleText = {
-    "en": "Please Input OTP",
-    "hi": "कृपया OTP दर्ज करें",
-    "mr": "कृपया OTP प्रविष्ट करा",
-  };
-
-  final Map<String, String> enterOtpText = {
-    "en": "Enter OTP",
-    "hi": "OTP दर्ज करें",
-    "mr": "OTP प्रविष्ट करा",
-  };
-
-  final Map<String, String> resendText = {
-    "en": "Resend OTP",
-    "hi": "OTP पुनः भेजें",
-    "mr": "OTP पुन्हा पाठवा",
-  };
-
-  final Map<String, String> submitButtonText = {
-    "en": "Submit OTP",
-    "hi": "OTP सबमिट करें",
-    "mr": "OTP सबमिट करा",
-  };
+  bool _autoSubmitScheduled = false;
 
   @override
   void initState() {
     super.initState();
-    loadLanguage();
+    for (var i = 0; i < 6; i++) {
+      focusNodes[i].addListener(_onFocusChanged);
+    }
     startTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) focusNodes[0].requestFocus();
+    });
   }
 
-  Future<void> loadLanguage() async {
-    String? lang = await StorageService.getLanguage();
-    setState(() => appLang = lang ?? "en");
+  void _onFocusChanged() {
+    if (mounted) setState(() {});
   }
+
+  bool get _otpComplete =>
+      otpControllers.every((c) => c.text.trim().length == 1);
 
   void startTimer() {
+    countdownTimer?.cancel();
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       if (timerSeconds > 0) {
@@ -73,40 +60,37 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   Future<void> _resendOtp() async {
+    final l10n = AppLocalizations.of(context)!;
+    final bool isLogin =
+        ModalRoute.of(context)?.settings.arguments as bool? ?? false;
     setState(() {
       _isResending = true;
     });
 
     try {
-      // Get phone number from storage
       final userData = await StorageService.getUserDetails();
       final String phoneNumber = userData['phone'] ?? '';
 
       if (phoneNumber.isEmpty) {
-        throw Exception("Phone number not found. Please try again.");
+        throw Exception(l10n.phoneNumberNotFound);
       }
 
-      // Get 'isLogin' Flag to determine which endpoint to call
-      final bool isLogin = ModalRoute.of(context)?.settings.arguments as bool? ?? false;
-
       if (isLogin) {
-        // For login: use /auth/request-login-otp
         await HttpService.post(
           "auth/request-login-otp",
           {"phoneNumber": phoneNumber},
         );
       } else {
-        // For signup: use /auth/resend-otp
         await HttpService.post(
           "auth/resend-otp",
           {"phoneNumber": phoneNumber},
         );
       }
 
-      // Reset timer
       setState(() {
         timerSeconds = 30;
         _isResending = false;
+        _autoSubmitScheduled = false;
       });
       startTimer();
 
@@ -114,7 +98,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("OTP resent successfully"),
+          content: Text(l10n.otpResentSuccess),
           backgroundColor: Colors.green,
         ),
       );
@@ -137,20 +121,69 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   void dispose() {
     countdownTimer?.cancel();
+    for (var i = 0; i < 6; i++) {
+      focusNodes[i].removeListener(_onFocusChanged);
+      focusNodes[i].dispose();
+    }
     for (var c in otpControllers) {
       c.dispose();
     }
     super.dispose();
   }
 
-  // ✅ LOGIC: Verify and Navigate based on flow
+  void _handleOtpChanged(int index, String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    _autoSubmitScheduled = false;
+
+    if (digits.length > 1) {
+      for (var i = 0; i < 6; i++) {
+        otpControllers[i].text = i < digits.length ? digits[i] : '';
+      }
+      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final last = digits.length >= 6 ? 5 : digits.length.clamp(0, 5);
+        focusNodes[last].requestFocus();
+        if (digits.length >= 6) _tryAutoSubmit();
+      });
+      return;
+    }
+
+    final ch = digits.isEmpty ? '' : digits[0];
+    if (otpControllers[index].text != ch) {
+      otpControllers[index].value = TextEditingValue(
+        text: ch,
+        selection: TextSelection.collapsed(offset: ch.length),
+      );
+    }
+    setState(() {});
+
+    if (ch.isNotEmpty && index < 5) {
+      focusNodes[index + 1].requestFocus();
+    }
+    if (_otpComplete) _tryAutoSubmit();
+  }
+
+  void _tryAutoSubmit() {
+    if (!_otpComplete || _isLoading || _autoSubmitScheduled) return;
+    _autoSubmitScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (_otpComplete && !_isLoading) {
+        await _submitOtp();
+      }
+    });
+  }
+
   Future<void> _submitOtp() async {
-    // 1. Combine OTP from controllers
+    final l10n = AppLocalizations.of(context)!;
+    final bool isLogin =
+        ModalRoute.of(context)?.settings.arguments as bool? ?? false;
     String otp = otpControllers.map((e) => e.text).join();
     
     if (otp.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter full 6-digit OTP")),
+        SnackBar(content: Text(l10n.pleaseEnterFull6DigitOtp)),
       );
       return;
     }
@@ -160,20 +193,14 @@ class _OtpScreenState extends State<OtpScreen> {
     });
 
     try {
-      // 2. Get phone number from storage
       final userData = await StorageService.getUserDetails();
       final String phoneNumber = userData['phone'] ?? '';
 
       if (phoneNumber.isEmpty) {
-        throw Exception("Phone number not found. Please try again.");
+        throw Exception(l10n.phoneNumberNotFound);
       }
 
-      // 3. Get 'isLogin' Flag passed from Login/Signup screen
-      // Default to false (Signup) if arguments are null
-      final bool isLogin = ModalRoute.of(context)?.settings.arguments as bool? ?? false;
-
       if (isLogin) {
-        // CASE A: User is Logging In -> Call /auth/login with phone/OTP
         final response = await HttpService.post(
           "auth/login",
           {
@@ -182,16 +209,14 @@ class _OtpScreenState extends State<OtpScreen> {
           },
         );
 
-        // Extract token and user info from response
         final String accessToken = response['accessToken'] ?? '';
         final String refreshToken = response['refreshToken'] ?? '';
         final userInfo = response['user'] ?? {};
 
         if (accessToken.isEmpty) {
-          throw Exception("Login failed. Please try again.");
+          throw Exception(l10n.loginFailedRetry);
         }
 
-        // Save tokens and user details
         await StorageService.saveToken(accessToken);
         if (refreshToken.isNotEmpty) {
           await StorageService.saveRefreshToken(refreshToken);
@@ -201,7 +226,6 @@ class _OtpScreenState extends State<OtpScreen> {
           phone: userInfo['phoneNumber'] ?? phoneNumber,
         );
 
-        // Save user role and ID
         final userRole = userInfo['role'] ?? 'FARMER';
         final userId = userInfo['id']?.toString() ?? '';
         await StorageService.saveRole(userRole);
@@ -209,15 +233,13 @@ class _OtpScreenState extends State<OtpScreen> {
           await StorageService.saveUserId(userId);
         }
 
-        // Check subscription status
         bool isSubscribed = false;
         try {
           final subStatus = await SubscriptionService.getSubscriptionStatus();
-          // Check multiple possible fields to determine subscription status
-          isSubscribed = subStatus['isSubscribed'] == true || 
-                        subStatus['subscriptionStatus'] == 'ACTIVE' ||
-                        subStatus['subscriptionStatus'] == 'active';
-          
+          isSubscribed = subStatus['isSubscribed'] == true ||
+              subStatus['subscriptionStatus'] == 'ACTIVE' ||
+              subStatus['subscriptionStatus'] == 'active';
+
           if (isSubscribed) {
             final endDate = subStatus['subscriptionEndDate']?.toString() ?? 
                            subStatus['expiresAt']?.toString();
@@ -229,30 +251,24 @@ class _OtpScreenState extends State<OtpScreen> {
             await StorageService.saveSubscriptionStatus(false);
           }
         } catch (_) {
-          // If we can't determine, treat as not subscribed to show welcome
           await StorageService.saveSubscriptionStatus(false);
         }
 
         if (!mounted) return;
 
-        // Navigate based on user role
         if (userRole == 'FIELD_OFFICER') {
-          // Field Officer -> Navigate to Field Officer Dashboard
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.fieldOfficerDashboard,
             (route) => false,
           );
         } else if (userRole == 'ADMIN') {
-          // Admin -> Navigate to Admin Dashboard (if implemented in this app)
-          // For now, redirect to farmer dashboard or show error
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.dashboard,
             (route) => false,
           );
         } else {
-          // Farmer -> Navigate based on subscription status
           if (isSubscribed) {
             Navigator.pushNamedAndRemoveUntil(
               context,
@@ -268,8 +284,6 @@ class _OtpScreenState extends State<OtpScreen> {
           }
         }
       } else {
-        // CASE B: User is Signing Up -> Call /auth/verify-otp
-        // verify-otp returns AuthResponse directly (accessToken, refreshToken, user)
         final response = await HttpService.post(
           "auth/verify-otp",
           {
@@ -283,19 +297,19 @@ class _OtpScreenState extends State<OtpScreen> {
         final userInfo = response['user'] ?? {};
 
         if (accessToken.isEmpty) {
-          throw Exception("OTP verification failed. Please try again.");
+          throw Exception(l10n.otpVerificationFailedRetry);
         }
 
         await StorageService.saveToken(accessToken);
         if (refreshToken.isNotEmpty) {
           await StorageService.saveRefreshToken(refreshToken);
         }
+
         await StorageService.saveAuthDetails(
           email: userInfo['email'] ?? '',
           phone: userInfo['phoneNumber'] ?? phoneNumber,
         );
 
-        // Save username as first name initially
         await StorageService.savePersonalDetails(
           firstName: userInfo['username'] ?? '',
           lastName: "",
@@ -304,7 +318,6 @@ class _OtpScreenState extends State<OtpScreen> {
           profilePicPath: null,
         );
 
-        // Save user role and ID
         final userRole = userInfo['role'] ?? 'FARMER';
         final userId = userInfo['id']?.toString() ?? '';
         await StorageService.saveRole(userRole);
@@ -312,12 +325,15 @@ class _OtpScreenState extends State<OtpScreen> {
           await StorageService.saveUserId(userId);
         }
 
-        // New users are unsubscribed by default
         await StorageService.saveSubscriptionStatus(false);
+
+        await StorageService.saveOnboardingPersonalSkipped(false);
+        await StorageService.saveOnboardingFarmSkipped(false);
+        await StorageService.saveOnboardingPersonalCompleted(false);
+        await StorageService.saveOnboardingKycCompleted(false);
 
         if (!mounted) return;
 
-        // Navigate to Onboarding (then welcome will show after completion flow)
         Navigator.pushReplacementNamed(
           context,
           AppRoutes.onboardingPersonal,
@@ -328,6 +344,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
       setState(() {
         _isLoading = false;
+        _autoSubmitScheduled = false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -341,22 +358,25 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          titleText[appLang]!,
+          l10n.authOtpAppBarTitle,
           style: GoogleFonts.poppins(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+            letterSpacing: 0.3,
           ),
         ),
         centerTitle: true,
@@ -375,14 +395,14 @@ class _OtpScreenState extends State<OtpScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: SingleChildScrollView(
             child: Column(
               children: [
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 Container(
-                  width: 100,
-                  height: 100,
+                  width: 88,
+                  height: 88,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -401,104 +421,84 @@ class _OtpScreenState extends State<OtpScreen> {
                       ),
                     ],
                   ),
-                  child: Icon(Icons.lock_rounded, size: 50, color: AppColors.brandGreen),
+                  child: const Icon(Icons.lock_rounded,
+                      size: 44, color: AppColors.brandGreen),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 Text(
-                  titleText[appLang]!,
+                  l10n.authOtpHeadline,
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
-                    letterSpacing: 0.3,
+                    letterSpacing: 0.2,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  enterOtpText[appLang]!,
+                  l10n.authOtpDescription,
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey.shade600,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                
-                // OTP Input Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(6, (i) => _otpBox(i)),
-                ),
-                
-                const SizedBox(height: 16),
-                // Resend OTP - Show timer or button
-                timerSeconds > 0
-                    ? Text(
-                        "${resendText[appLang]}: ${timerSeconds.toString().padLeft(2, '0')}s",
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      )
-                    : TextButton(
-                        onPressed: _isResending ? null : _resendOtp,
-                        child: _isResending
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
-                                ),
-                              )
-                            : Text(
-                                resendText[appLang]!,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: AppColors.brandGreen,
-                                  fontWeight: FontWeight.w600,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                      ),
-                const SizedBox(height: 32),
-                
-                // SUBMIT BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brandGreen,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    icon: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Icon(Icons.verified_rounded, color: Colors.white, size: 20),
-                    label: Text(
-                      submitButtonText[appLang]!,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    onPressed: _isLoading ? null : _submitOtp,
+                    color: Colors.grey.shade800,
+                    height: 1.35,
                   ),
                 ),
                 const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(6, (i) => _otpBox(i)),
+                ),
+                const SizedBox(height: 14),
+                timerSeconds > 0
+                    ? Text(
+                        l10n.authOtpResendCountdown(timerSeconds),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      )
+                    : Semantics(
+                        button: true,
+                        label: l10n.authOtpResend,
+                        child: SizedBox(
+                          height: 48,
+                          child: TextButton(
+                            onPressed: _isResending ? null : _resendOtp,
+                            child: _isResending
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          AppColors.brandGreen),
+                                    ),
+                                  )
+                                : Text(
+                                    l10n.authOtpResend,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 15,
+                                      color: AppColors.brandGreen,
+                                      fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: AppColors.brandGreen,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                const SizedBox(height: 20),
+                AppPrimaryButton(
+                  label: l10n.authOtpSubmit,
+                  icon: Icons.verified_rounded,
+                  isLoading: _isLoading,
+                  onPressed: (!_otpComplete || _isLoading) ? null : _submitOtp,
+                ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -508,41 +508,59 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   Widget _otpBox(int index) {
-    return SizedBox(
-      width: 48,
-      child: TextField(
-        controller: otpControllers[index],
-        textAlign: TextAlign.center,
-        keyboardType: TextInputType.number,
-        maxLength: 1,
-        style: GoogleFonts.poppins(
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          color: Colors.black87,
+    return Expanded(
+      child: Padding(
+        padding: EdgeInsets.only(left: index == 0 ? 0 : 4, right: 4),
+        child: Focus(
+          onKeyEvent: (node, event) {
+            if (event is! KeyDownEvent) return KeyEventResult.ignored;
+            if (event.logicalKey == LogicalKeyboardKey.backspace) {
+              if (otpControllers[index].text.isEmpty && index > 0) {
+                otpControllers[index - 1].clear();
+                focusNodes[index - 1].requestFocus();
+                setState(() {});
+                return KeyEventResult.handled;
+              }
+            }
+            return KeyEventResult.ignored;
+          },
+          child: Semantics(
+            label: '${index + 1} / 6',
+            textField: true,
+            child: SizedBox(
+              height: 56,
+              child: TextField(
+                controller: otpControllers[index],
+                focusNode: focusNodes[index],
+                textAlign: TextAlign.center,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.white,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        BorderSide(color: Colors.grey.shade400, width: 1),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                        color: AppColors.brandGreen, width: 2.4),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onChanged: (v) => _handleOtpChanged(index, v),
+              ),
+            ),
+          ),
         ),
-        decoration: InputDecoration(
-          counterText: "",
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.brandGreen, width: 2),
-          ),
-          contentPadding: EdgeInsets.zero,
-        ),
-        onChanged: (value) {
-          if (value.isNotEmpty && index < 5) {
-            FocusScope.of(context).nextFocus();
-          }
-        },
       ),
     );
   }

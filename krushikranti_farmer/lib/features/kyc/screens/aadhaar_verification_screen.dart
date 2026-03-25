@@ -304,14 +304,20 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header illustration
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header illustration
               Center(
                 child: Container(
                   width: 100,
@@ -654,12 +660,51 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
                 ),
               ],
               
-              const SizedBox(height: 32),
-              
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               // Action Button
-              SizedBox(
+              Container(
                 width: double.infinity,
-                height: 50,
+                height: 54,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.brandGreen, Colors.green.shade600],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.brandGreen.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: ElevatedButton.icon(
                   onPressed: _isLoading ? null : (_otpSent ? _verifyOtp : _generateOtp),
                   icon: _isLoading
@@ -686,18 +731,18 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandGreen,
-                    disabledBackgroundColor: Colors.grey.shade300,
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    disabledBackgroundColor: Colors.transparent,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    elevation: 0,
-                        ),
+                  ),
                 ),
               ),
               
               if (_otpSent) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 // Change Aadhaar button
                 Center(
                   child: TextButton(
@@ -710,11 +755,17 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
                         _successMessage = null;
                       });
                     },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                     child: Text(
                       l10n.changeAadhaarNumber,
                       style: GoogleFonts.poppins(
+                        fontSize: 13,
                         color: Colors.grey.shade600,
-                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
