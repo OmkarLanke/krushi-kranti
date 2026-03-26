@@ -88,5 +88,15 @@ pipeline {
                 sh 'docker image prune -af --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" --filter "until=504h"'
             }
         }
+
+        stage('Pre-Cleanup') {
+            steps {
+                dir('microservices') {
+                    sh '''
+                    docker compose -p $COMPOSE_PROJECT_NAME -f docker-compose-test.yml down --remove-orphans || true
+                    '''
+                }
+            }
+        }
     }
 }
