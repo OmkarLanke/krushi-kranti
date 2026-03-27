@@ -89,14 +89,6 @@ pipeline {
             }
         }
 
-        stage('Pre-Cleanupv2') {
-            steps {
-                dir('microservices') {
-                    sh '''
-                    docker compose -p $COMPOSE_PROJECT_NAME -f docker-compose-test.yml down --remove-orphans || true
-                    '''
-                }
-            }
-        }
+       
     }
 }
