@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
-import '../../../core/constants/api_endpoints.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/http_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,67 +17,14 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController phoneController = TextEditingController();
-  String appLang = "en";
   bool _isLoading = false;
 
   String? phoneFormatError; // Format validation errors (shown on phone field)
   String? authError; // Authentication error (shown at bottom)
 
-  final Map<String, Map<String, String>> translations = {
-    "en": {
-      "tagline": "Reconnect With Goodness",
-      "start": "Let’s get you started",
-      "phoneHint": "your phone number",
-      "otpInfo": "OTP will be sent on this number",
-      "otpBtn": "Get OTP",
-      "emailLogin": "Log in with Email & Password",
-      "terms": "By continuing you agree to our Terms & Conditions and Privacy & Legal Policy",
-      "signUp": "Sign Up",
-      "phoneError": "Please enter a valid 10-digit phone number",
-      "networkError": "Network error. Please check your connection and try again.",
-      "incorrectPhoneError": "Incorrect phone number. Please try again."
-    },
-    "hi": {
-      "tagline": "भलाई से फिर जुड़ें",
-      "start": "चलें शुरू करते हैं",
-      "phoneHint": "अपना मोबाइल नंबर",
-      "otpInfo": "OTP इस नंबर पर भेजा जाएगा",
-      "otpBtn": "OTP प्राप्त करें",
-      "emailLogin": "ईमेल और पासवर्ड से लॉग इन करें",
-      "terms": "आगे बढ़ते हुए आप हमारी शर्तों और गोपनीयता नीति से सहमत हैं",
-      "signUp": "साइन अप करें",
-      "phoneError": "कृपया 10 अंकों का मान्य मोबाइल नंबर दर्ज करें",
-      "networkError": "नेटवर्क त्रुटि। कृपया अपना कनेक्शन जांचें और पुनः प्रयास करें।",
-      "incorrectPhoneError": "गलत मोबाइल नंबर। कृपया पुनः प्रयास करें।"
-    },
-    "mr": {
-      "tagline": "चांगुलपणाशी पुन्हा जोडले जा",
-      "start": "चला सुरुवात करूया",
-      "phoneHint": "आपला मोबाईल नंबर",
-      "otpInfo": "OTP या नंबरवर पाठविला जाईल",
-      "otpBtn": "OTP मिळवा",
-      "emailLogin": "ईमेल आणि पासवर्डसह लॉग इन करा",
-      "terms": "पुढे जाताना आपण आमच्या अटी आणि गोपनीयता धोरणास सहमती देता",
-      "signUp": "साइन अप",
-      "phoneError": "कृपया वैध 10 अंकी मोबाईल नंबर प्रविष्ट करा",
-      "networkError": "नेटवर्क त्रुटी. कृपया आपले कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.",
-      "incorrectPhoneError": "चुकीचा मोबाईल नंबर. कृपया पुन्हा प्रयत्न करा."
-    }
-  };
-
   @override
   void initState() {
     super.initState();
-    loadLanguage();
-  }
-
-  Future<void> loadLanguage() async {
-    String? lang = await StorageService.getLanguage();
-    if (mounted) {
-      setState(() {
-        appLang = lang ?? "en";
-      });
-    }
   }
 
   bool validatePhoneNumber(String phone) {
@@ -87,6 +34,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final langCode = Localizations.localeOf(context).languageCode;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
@@ -103,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
           },
         ),
         title: Text(
-          "Log in with Phone",
+          l10n.loginWithPhone,
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 20,
@@ -174,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    translations[appLang]!["tagline"]!,
+                    l10n.reconnectWithGoodness,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       color: AppColors.brandGreen,
@@ -201,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        translations[appLang]!["start"]!,
+                        l10n.letsGetYouStarted,
                         style: GoogleFonts.poppins(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
@@ -265,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ],
                                 decoration: InputDecoration(
                                   counterText: "",
-                                  hintText: translations[appLang]!["phoneHint"]!,
+                                  hintText: l10n.phoneHintYourNumber,
                                   border: InputBorder.none,
                                   hintStyle: GoogleFonts.poppins(
                                     color: Colors.grey.shade400,
@@ -323,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 12),
 
                       Text(
-                        translations[appLang]!["otpInfo"]!,
+                        l10n.otpSentToThisNumber,
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           color: Colors.grey.shade600,
@@ -356,7 +306,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 )
                               : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
                           label: Text(
-                            translations[appLang]!["otpBtn"]!,
+                            l10n.getOtp,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -376,7 +326,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             // Validate phone format
                             if (!validatePhoneNumber(phone)) {
                               setState(() {
-                                phoneFormatError = translations[appLang]!["phoneError"];
+                                phoneFormatError = l10n.phoneFormatError;
                               });
                               return;
                             }
@@ -387,7 +337,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             try {
                               // 1. Save language preference
-                              await StorageService.saveLanguage(appLang);
+                              await StorageService.saveLanguage(langCode);
 
                               // 2. Save phone number for OTP screen
                               await StorageService.saveAuthDetails(
@@ -396,7 +346,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
 
                               // 3. Request OTP from backend
-                              final response = await HttpService.post(
+                              await HttpService.post(
                                 "auth/request-login-otp",
                                 {"phoneNumber": phone},
                               );
@@ -440,13 +390,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               
                               if (isRealNetworkError) {
                                 setState(() {
-                                  authError = translations[appLang]!["networkError"];
+                                  authError = l10n.networkError;
                                 });
                               } else {
                                 // ✅ For ALL authentication failures (phone not found, etc.):
                                 // Show generic "Incorrect phone number. Please try again" message
                                 setState(() {
-                                  authError = translations[appLang]!["incorrectPhoneError"];
+                                  authError = l10n.incorrectPhoneError;
                                 });
                               }
                             } finally {
@@ -476,7 +426,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.pushNamed(context, AppRoutes.emailLogin);
                           },
                           child: Text(
-                            translations[appLang]!["emailLogin"]!,
+                            l10n.emailLoginLink,
                             style: GoogleFonts.poppins(
                               color: AppColors.brandGreen,
                               fontWeight: FontWeight.w600,
@@ -490,7 +440,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 16),
 
                       Text(
-                        translations[appLang]!["terms"]!,
+                        l10n.termsAgreementLogin,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
@@ -506,7 +456,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "or ",
+                              l10n.orSeparator,
                               style: GoogleFonts.poppins(
                                 color: Colors.grey.shade600,
                                 fontSize: 14,
@@ -517,7 +467,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Navigator.pushNamed(context, AppRoutes.signup);
                               },
                               child: Text(
-                                translations[appLang]!["signUp"]!,
+                                l10n.signUpCta,
                                 style: GoogleFonts.poppins(
                                   color: AppColors.brandGreen,
                                   fontWeight: FontWeight.w600,

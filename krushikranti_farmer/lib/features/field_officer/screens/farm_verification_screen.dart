@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/geotagged_photo_service.dart';
@@ -109,6 +110,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
   /// Capture GPS location for verification
   Future<void> _captureVerificationLocation(int farmId) async {
+    final l10n = AppLocalizations.of(context)!;
     final state = _farmVerificationStates[farmId];
     if (state == null) return;
 
@@ -139,7 +141,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
           (f) => (f['farmId'] ?? f['id']) == farmId,
           orElse: () => <String, dynamic>{},
         );
-        final validationResult = _validateGpsCoordinates(farmId, farm);
+        final validationResult = _validateGpsCoordinates(farmId, farm, l10n);
         
         if (validationResult['isValid']) {
           final distance = validationResult['distance'] as double?;
@@ -147,8 +149,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             SnackBar(
               content: Text(
                 distance != null
-                    ? 'Location captured! Distance from farm: ${distance.toStringAsFixed(0)}m (within 100m threshold)'
-                    : 'Location captured successfully!',
+                    ? l10n.locationCapturedDistanceMeters(distance.toStringAsFixed(0))
+                    : l10n.locationCapturedSuccessShort,
               ),
               backgroundColor: AppColors.success,
               duration: const Duration(seconds: 3),
@@ -158,7 +160,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
           // Show warning even after capture if validation fails
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(validationResult['errorMessage'] ?? 'GPS validation failed'),
+              content: Text(validationResult['errorMessage'] ?? l10n.gpsValidationFailedFallback),
               backgroundColor: AppColors.error,
               duration: const Duration(seconds: 5),
             ),
@@ -175,7 +177,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          state.locationError = 'Failed to capture location: ${e.toString()}';
+          state.locationError = l10n.locationCaptureFailedWithError(e.toString());
           state.isCapturingLocation = false;
         });
       }
@@ -184,6 +186,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
   /// Capture geotagged photo for verification
   Future<void> _captureGeotaggedPhoto(int farmId) async {
+    final l10n = AppLocalizations.of(context)!;
     final state = _farmVerificationStates[farmId];
     if (state == null) return;
 
@@ -202,7 +205,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         const Duration(seconds: 60), // Total timeout for entire process
         onTimeout: () {
           throw GeotaggedPhotoException(
-            'Photo capture timed out. Please try again.',
+            l10n.photoCaptureTimeout,
           );
         },
       );
@@ -228,7 +231,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             (f) => (f['farmId'] ?? f['id']) == farmId,
             orElse: () => <String, dynamic>{},
           );
-          final validationResult = _validateGpsCoordinates(farmId, farm);
+          final validationResult = _validateGpsCoordinates(farmId, farm, l10n);
           
           if (validationResult['isValid']) {
             final distance = validationResult['distance'] as double?;
@@ -236,8 +239,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
               SnackBar(
                 content: Text(
                   distance != null
-                      ? 'Photo captured! Distance from farm: ${distance.toStringAsFixed(0)}m (within 100m threshold)'
-                      : 'Geotagged photo captured successfully!',
+                      ? l10n.geotaggedPhotoCapturedDistanceMeters(distance.toStringAsFixed(0))
+                      : l10n.geotaggedPhotoCapturedSuccess,
                 ),
                 backgroundColor: AppColors.success,
                 duration: const Duration(seconds: 3),
@@ -247,7 +250,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             // Show warning even after photo capture if validation fails
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(validationResult['errorMessage'] ?? 'GPS validation failed. OTP request will be blocked.'),
+                content: Text(validationResult['errorMessage'] ?? l10n.gpsValidationFailedOtpBlocked),
                 backgroundColor: AppColors.error,
                 duration: const Duration(seconds: 5),
               ),
@@ -255,7 +258,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
           }
         } else {
           throw GeotaggedPhotoException(
-            'Photo file was not saved properly. Please try again.',
+            l10n.photoFileNotSavedRetry,
           );
         }
       }
@@ -274,16 +277,16 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
           ),
         );
       }
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       if (mounted) {
         setState(() {
-          state.photoError = 'Photo capture timed out. Please try again.';
+          state.photoError = l10n.photoCaptureTimeout;
           state.isCapturingPhoto = false;
         });
         
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Photo capture timed out. Please try again.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.photoCaptureTimeout),
             backgroundColor: AppColors.error,
             duration: Duration(seconds: 3),
           ),
@@ -292,13 +295,13 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          state.photoError = 'Failed to capture photo: ${e.toString()}';
+          state.photoError = l10n.photoCaptureFailed(e.toString());
           state.isCapturingPhoto = false;
         });
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to capture photo: ${e.toString()}'),
+            content: Text(AppLocalizations.of(context)!.photoCaptureFailed(e.toString())),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 3),
           ),
@@ -309,6 +312,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
   /// Request OTP for farm verification
   Future<void> _requestOtp(int farmId) async {
+    final l10n = AppLocalizations.of(context)!;
     final state = _farmVerificationStates[farmId];
     if (state == null) {
       return;
@@ -322,11 +326,11 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     );
 
     // Validate GPS coordinates before allowing OTP request
-    final validationResult = _validateGpsCoordinates(farmId, farm);
+    final validationResult = _validateGpsCoordinates(farmId, farm, l10n);
     if (!validationResult['isValid']) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(validationResult['errorMessage'] ?? 'GPS validation failed'),
+          content: Text(validationResult['errorMessage'] ?? l10n.gpsValidationFailedFallback),
           backgroundColor: AppColors.error,
           duration: const Duration(seconds: 5),
         ),
@@ -356,8 +360,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('OTP sent successfully to farmer. Please ask the farmer for the OTP.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.otpSentToFarmer),
             backgroundColor: AppColors.success,
             duration: Duration(seconds: 3),
           ),
@@ -386,6 +390,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
   /// Validate OTP entered by field officer
   Future<void> _validateOtp(int farmId) async {
+    final l10n = AppLocalizations.of(context)!;
     final state = _farmVerificationStates[farmId];
     if (state == null) {
       return;
@@ -394,7 +399,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     final otp = state.otpController.text.trim();
     if (otp.isEmpty || otp.length != 6) {
       setState(() {
-        state.otpError = 'Please enter a valid 6-digit OTP';
+        state.otpError = l10n.pleaseEnterValidSixDigitOtp;
       });
       return;
     }
@@ -435,7 +440,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             state.otpController.clear();
             state.otpCountdownSeconds = null;
           } else {
-            state.otpError = response['message'] ?? 'Invalid OTP. Please try again.';
+            state.otpError = response['message'] ?? l10n.invalidOtpPleaseTryAgain;
           }
         });
         
@@ -443,8 +448,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
         if (isValid) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('OTP validated successfully! You can now submit verification.'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.otpValidatedSuccess),
               backgroundColor: AppColors.success,
               duration: Duration(seconds: 3),
             ),
@@ -452,7 +457,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(response['message'] ?? 'Invalid OTP. Please try again.'),
+              content: Text(response['message'] ?? l10n.invalidOtpPleaseTryAgain),
               backgroundColor: AppColors.error,
               duration: const Duration(seconds: 3),
             ),
@@ -471,7 +476,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
+            content: Text(l10n.verificationFailureMessage(errorMessage)),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 5),
           ),
@@ -520,14 +525,18 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
   /// Validate GPS coordinates match farm location (100m threshold)
   /// Returns a map with 'isValid' boolean and 'errorMessage' string
-  Map<String, dynamic> _validateGpsCoordinates(int farmId, Map<String, dynamic> farm) {
+  Map<String, dynamic> _validateGpsCoordinates(
+    int farmId,
+    Map<String, dynamic> farm,
+    AppLocalizations l10n,
+  ) {
     final state = _farmVerificationStates[farmId];
     
     // Check if field officer has captured GPS location
     if (state == null || state.verificationLatitude == null || state.verificationLongitude == null) {
       return {
         'isValid': false,
-        'errorMessage': 'Please capture GPS location first before requesting OTP.',
+        'errorMessage': l10n.captureGpsBeforeOtpRequest,
       };
     }
 
@@ -558,7 +567,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       print('DEBUG: GPS coordinates are null - farmLat: $farmLat, farmLon: $farmLon');
       return {
         'isValid': false,
-        'errorMessage': 'This farm does not have GPS coordinates. Please contact admin to add farm location before verification.',
+        'errorMessage': l10n.farmMissingGpsCoordinatesAdmin,
       };
     }
 
@@ -568,7 +577,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     if (farmLatDouble == null || farmLonDouble == null) {
       return {
         'isValid': false,
-        'errorMessage': 'Invalid farm GPS coordinates. Please contact admin.',
+        'errorMessage': l10n.invalidFarmGpsCoordinatesAdmin,
       };
     }
 
@@ -584,7 +593,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     if (distance > 100.0) {
       return {
         'isValid': false,
-        'errorMessage': 'You are too far from the farm location. Distance: ${distance.toStringAsFixed(0)}m (required: within 100m). Please move closer to the farm location.',
+        'errorMessage': l10n.tooFarFromFarmMeters(distance.toStringAsFixed(0)),
         'distance': distance,
       };
     }
@@ -598,6 +607,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
   Future<void> _submitVerification(
       int farmId, Map<String, dynamic> farm) async {
+    final l10n = AppLocalizations.of(context)!;
     final state = _farmVerificationStates[farmId];
     if (state == null) {
       return;
@@ -605,8 +615,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
     if (state.selectedStatus == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select verification status (Verify or Reject)'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.selectVerificationStatus),
           backgroundColor: AppColors.error,
         ),
       );
@@ -617,8 +627,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     if (state.selectedStatus == 'VERIFIED') {
       if (state.verificationLatitude == null || state.verificationLongitude == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please capture GPS location before verifying the farm'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.captureGpsBeforeVerify),
             backgroundColor: AppColors.error,
           ),
         );
@@ -627,8 +637,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
       if (state.geotaggedPhoto == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please capture a geotagged photo of the farm before verification'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.captureGeotaggedPhotoBeforeVerify),
             backgroundColor: AppColors.error,
           ),
         );
@@ -636,11 +646,11 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       }
 
       // Validate GPS coordinates match farm location
-      final validationResult = _validateGpsCoordinates(farmId, farm);
+      final validationResult = _validateGpsCoordinates(farmId, farm, l10n);
       if (!validationResult['isValid']) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(validationResult['errorMessage'] ?? 'GPS validation failed'),
+            content: Text(validationResult['errorMessage'] ?? l10n.gpsValidationFailedFallback),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 5),
           ),
@@ -656,8 +666,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       if (!state.isOtpValidated) {
         print('ERROR: OTP not validated! Blocking submission.');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please request and validate OTP before submitting verification.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.requestValidateOtpBeforeSubmit),
             backgroundColor: AppColors.error,
             duration: Duration(seconds: 5),
           ),
@@ -682,8 +692,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
           // Show uploading message
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Uploading photo...'),
+              SnackBar(
+                content: Text(AppLocalizations.of(context)!.uploadingPhoto),
                 duration: Duration(seconds: 2),
               ),
             );
@@ -703,8 +713,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Photo uploaded successfully!'),
+                SnackBar(
+                  content: Text(AppLocalizations.of(context)!.photoUploadedSuccess),
                   backgroundColor: AppColors.success,
                   duration: Duration(seconds: 2),
                 ),
@@ -722,8 +732,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   state.isSubmitting = false;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Authentication failed. Please login again and try verifying the farm.'),
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context)!.authFailedRelogin),
                     backgroundColor: AppColors.error,
                     duration: Duration(seconds: 5),
                   ),
@@ -737,7 +747,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Photo upload failed, but proceeding with verification: ${uploadError.toString()}'),
+                  content: Text(AppLocalizations.of(context)!.photoUploadFailedProceeding(uploadError.toString())),
                   backgroundColor: Colors.orange,
                   duration: const Duration(seconds: 3),
                 ),
@@ -770,8 +780,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Farm verified successfully!'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.farmVerifiedSuccess),
             backgroundColor: AppColors.success,
           ),
         );
@@ -807,7 +817,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_error!),
+            content: Text(l10n.verificationFailureMessage(_error!)),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 5),
           ),
@@ -818,6 +828,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -828,7 +839,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Verify Farm',
+          l10n.verifyFarmAppBarTitle,
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 20,
@@ -912,7 +923,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                     children: [
                                       Text(
                                         widget.assignment['farmerName'] ??
-                                            'Farmer',
+                                            l10n.farmerLabelDefault,
                                         style: GoogleFonts.poppins(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
@@ -976,7 +987,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'Farms to Verify',
+                        l10n.farmsToVerifySectionTitle,
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -1000,6 +1011,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
   }
 
   List<Widget> _buildFarmsList() {
+    final l10n = AppLocalizations.of(context)!;
     final farms = widget.assignment['farms'] as List? ?? [];
     if (farms.isEmpty) {
       return [
@@ -1007,7 +1019,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
           child: Padding(
             padding: const EdgeInsets.all(32.0),
             child: Text(
-              'No farms found in this assignment',
+              l10n.noFarmsInAssignment,
               style: GoogleFonts.poppins(
                 color: AppColors.textSecondary,
               ),
@@ -1061,8 +1073,9 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     FarmVerificationState state,
     int index,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     // Build location string
-    String locationStr = 'Location not available';
+    String locationStr = l10n.locationNotAvailableShort;
     final village = farm['village'] ?? '';
     final district = farm['district'] ?? '';
     final stateName = farm['state'] ?? '';
@@ -1145,7 +1158,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                           const SizedBox(width: 14),
                           Expanded(
                             child: Text(
-                              farm['farmName'] ?? 'Farm',
+                              farm['farmName'] ?? l10n.farmNameFallback,
                               style: GoogleFonts.poppins(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -1212,7 +1225,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                           Flexible(
                                             child: Text(
                                               state.selectedStatus ??
-                                                  'Verified',
+                                                  l10n.verificationStatusVerifiedBadge,
                                               style: GoogleFonts.poppins(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w700,
@@ -1241,7 +1254,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                 _buildInfoRow(Icons.location_on, locationStr),
                 if (pincode.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  _buildInfoRow(Icons.pin, 'Pincode: $pincode'),
+                  _buildInfoRow(Icons.pin, l10n.pincodeRowLabel(pincode.toString())),
                 ],
 
                 // View Geo Tagged Photo button for verified farms
@@ -1249,7 +1262,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   const SizedBox(height: 24),
                   const Divider(),
                   const SizedBox(height: 16),
-                  _buildViewPhotoButton(farmId, farm['farmName'] ?? 'Farm'),
+                  _buildViewPhotoButton(farmId, farm['farmName'] ?? l10n.farmNameFallback),
                 ],
 
                 if (!state.isVerified) ...[
@@ -1333,7 +1346,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            'Submit Verification',
+                                            l10n.submitVerificationButton,
                                             style: GoogleFonts.poppins(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w600,
@@ -1403,7 +1416,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    'This farm has already been verified.',
+                                    l10n.farmAlreadyVerifiedNotice,
                                     style: GoogleFonts.poppins(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -1434,7 +1447,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       child: ElevatedButton.icon(
         onPressed: () => _showVerificationPhotos(farmId, farmName),
         icon: const Icon(Icons.photo_camera_rounded, size: 18),
-        label: const Text('View Geo Tagged Photo'),
+        label: Text(AppLocalizations.of(context)!.viewGeoTaggedPhoto),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.brandGreen,
           foregroundColor: Colors.white,
@@ -1453,16 +1466,16 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
+        builder: (context) => Center(
           child: Card(
             child: Padding(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Loading photos...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(AppLocalizations.of(context)!.loadingPhotos),
                 ],
               ),
             ),
@@ -1486,16 +1499,17 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       if (mounted && photoUrls.isNotEmpty) {
         showDialog(
           context: context,
-          builder: (context) => PhotoViewerDialog(
+          builder: (dialogContext) => PhotoViewerDialog(
             photoUrls: photoUrls,
-            title: 'Verification Photos - $farmName',
+            title: AppLocalizations.of(dialogContext)!
+                .verificationPhotosTitle(farmName),
           ),
         );
       } else if (mounted) {
         // Show error if no photos
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('No verification photos found for this farm.'),
+            content: Text(AppLocalizations.of(context)!.noVerificationPhotosForFarm),
             backgroundColor: Colors.orange,
           ),
         );
@@ -1508,7 +1522,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading photos: ${e.toString()}'),
+            content: Text(AppLocalizations.of(context)!.errorLoadingPhotos(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -1550,6 +1564,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
   }
 
   Widget _buildStatusSelection(int farmId, FarmVerificationState state) {
+    final l10n = AppLocalizations.of(context)!;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 500),
@@ -1578,7 +1593,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'Verification Status *',
+                      l10n.verificationStatusSectionTitle,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -1594,7 +1609,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   farmId,
                   state,
                   'VERIFIED',
-                  'Verify',
+                  l10n.verifyFarmStatusOption,
                   Icons.check_circle,
                   AppColors.success,
                   state.selectedStatus == 'VERIFIED',
@@ -1706,6 +1721,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
   }
 
   Widget _buildFeedbackSection(int farmId, FarmVerificationState state) {
+    final l10n = AppLocalizations.of(context)!;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 400),
@@ -1734,7 +1750,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'Feedback / Notes',
+                      l10n.feedbackNotesSectionTitle,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -1754,8 +1770,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   ),
                   decoration: InputDecoration(
                     hintText: state.selectedStatus == 'VERIFIED'
-                        ? 'Add any notes or observations about the farm verification...'
-                        : 'Add feedback about why the farm is being rejected...',
+                        ? l10n.feedbackNotesHintVerified
+                        : l10n.feedbackNotesHintRejected,
                     hintStyle: GoogleFonts.poppins(
                       fontSize: 14,
                       color: AppColors.textSecondary,
@@ -1793,6 +1809,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
     FarmVerificationState state,
     Map<String, dynamic> farm,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1808,7 +1825,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
             ),
             const SizedBox(width: 10),
             Text(
-              'Location & Photo Verification',
+              l10n.locationPhotoVerificationSectionTitle,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -1849,7 +1866,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'GPS Location',
+                    l10n.gpsLocationSectionTitle,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -1864,16 +1881,16 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
               if (state.verificationLatitude != null) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Lat: ${state.verificationLatitude!.toStringAsFixed(6)}°',
+                  l10n.latitudeDisplay(state.verificationLatitude!.toStringAsFixed(6)),
                   style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700),
                 ),
                 Text(
-                  'Lon: ${state.verificationLongitude!.toStringAsFixed(6)}°',
+                  l10n.longitudeDisplay(state.verificationLongitude!.toStringAsFixed(6)),
                   style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700),
                 ),
                 if (state.verificationAccuracy != null)
                   Text(
-                    'Accuracy: ${state.verificationAccuracy!.toStringAsFixed(1)}m',
+                    l10n.accuracyDisplayMeters(state.verificationAccuracy!.toStringAsFixed(1)),
                     style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700),
                   ),
               ],
@@ -1905,8 +1922,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                         ),
                   label: Text(
                     state.verificationLatitude != null
-                        ? 'Retake Location'
-                        : 'Capture GPS Location',
+                        ? l10n.retakeLocation
+                        : l10n.captureFarmLocation,
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.brandGreen,
@@ -1949,7 +1966,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Farm Photo (Geotagged)',
+                    l10n.farmPhotoGeotaggedSectionTitle,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -2001,8 +2018,8 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                         ),
                   label: Text(
                     state.geotaggedPhoto != null
-                        ? 'Retake Photo'
-                        : 'Capture Farm Photo',
+                        ? l10n.retakeFarmPhotoButton
+                        : l10n.captureFarmPhotoButton,
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.brandGreen,
@@ -2055,7 +2072,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'OTP Verification',
+                      l10n.otpVerificationSectionTitle,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -2079,7 +2096,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                         (f) => (f['farmId'] ?? f['id']) == farmId,
                         orElse: () => <String, dynamic>{},
                       );
-                      final validationResult = _validateGpsCoordinates(farmId, farm);
+                      final validationResult = _validateGpsCoordinates(farmId, farm, AppLocalizations.of(context)!);
                       final bool canRequestOtp = validationResult['isValid'] == true;
                       final String? validationError = validationResult['errorMessage'];
                       
@@ -2135,10 +2152,10 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                                   : const Icon(Icons.send, size: 18),
                               label: Text(
                                 state.isRequestingOtp 
-                                    ? 'Requesting OTP...' 
+                                    ? l10n.requestingOtpButton
                                     : (!canRequestOtp 
-                                        ? 'GPS Validation Required' 
-                                        : 'Request OTP'),
+                                        ? l10n.gpsValidationRequiredButton
+                                        : l10n.fieldOfficerRequestOtpCta),
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: canRequestOtp ? Colors.orange : Colors.grey,
@@ -2158,7 +2175,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                 // OTP Input Section (after OTP is requested)
                 if (state.isOtpRequested && !state.isOtpValidated) ...[
                   Text(
-                    'Enter the 6-digit OTP received by the farmer:',
+                    l10n.enterSixDigitOtpFromFarmer,
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -2176,7 +2193,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                       letterSpacing: 8,
                     ),
                     decoration: InputDecoration(
-                      hintText: '000000',
+                      hintText: AppLocalizations.of(context)!.otpHintSixDigits,
                       hintStyle: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -2212,7 +2229,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                   if (state.otpCountdownSeconds != null && state.otpCountdownSeconds! > 0) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'OTP expires in: ${_formatCountdown(state.otpCountdownSeconds!)}',
+                      l10n.otpExpiresInCountdown(_formatCountdown(state.otpCountdownSeconds!)),
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: Colors.orange.shade700,
@@ -2242,7 +2259,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                             )
                           : const Icon(Icons.verified, size: 18),
                       label: Text(
-                        state.isValidatingOtp ? 'Validating...' : 'Validate OTP',
+                        state.isValidatingOtp ? l10n.validatingOtpButton : l10n.validateOtpButtonLabel,
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.brandGreen,
@@ -2270,7 +2287,7 @@ class _FarmVerificationScreenState extends State<FarmVerificationScreen>
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'OTP validated successfully! You can now submit verification.',
+                            l10n.otpValidatedSuccess,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               color: AppColors.success,

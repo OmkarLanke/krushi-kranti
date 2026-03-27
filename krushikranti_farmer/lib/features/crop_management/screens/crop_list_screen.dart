@@ -162,7 +162,7 @@ class _CropListScreenState extends State<CropListScreen> {
                       ElevatedButton.icon(
                         onPressed: _loadCrops,
                         icon: const Icon(Icons.refresh_rounded, size: 20),
-                        label: const Text("Retry"),
+                        label: Text(l10n.retry),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.brandGreen,
                           foregroundColor: Colors.white,

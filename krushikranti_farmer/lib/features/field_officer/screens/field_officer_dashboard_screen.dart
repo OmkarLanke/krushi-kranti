@@ -145,7 +145,7 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Loading...',
+                          l10n.loading,
                           style: GoogleFonts.poppins(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -180,25 +180,25 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
                 _buildNavItem(
                   icon: Icons.home_outlined,
                   activeIcon: Icons.home_rounded,
-                  label: 'Home',
+                  label: l10n.fieldOfficerNavHome,
                   index: 0,
                 ),
                 _buildNavItem(
                   icon: Icons.people_outline,
                   activeIcon: Icons.people_rounded,
-                  label: 'Farmer',
+                  label: l10n.fieldOfficerNavFarmer,
                   index: 1,
                 ),
                 _buildNavItem(
                   icon: Icons.assignment_outlined,
                   activeIcon: Icons.assignment_rounded,
-                  label: 'Assessment',
+                  label: l10n.fieldOfficerNavAssessment,
                   index: 2,
                 ),
                 _buildNavItem(
                   icon: Icons.person_outline,
                   activeIcon: Icons.person_rounded,
-                  label: 'Profile',
+                  label: l10n.fieldOfficerNavProfile,
                   index: 3,
                 ),
               ],

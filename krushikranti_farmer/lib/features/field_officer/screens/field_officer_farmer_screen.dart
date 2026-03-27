@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../services/field_officer_service.dart';
 import '../services/field_officer_cache.dart';
 import 'farm_verification_screen.dart';
@@ -295,6 +296,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -303,7 +305,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
         automaticallyImplyLeading: false,
         titleSpacing: 24,
         title: Text(
-          'Farmers',
+          l10n.farmersScreenTitle,
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 20,
@@ -531,6 +533,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
+        final l10n = AppLocalizations.of(context)!;
         return Transform.scale(
           scale: 0.9 + (0.1 * value),
           child: Opacity(
@@ -543,7 +546,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                 _applyFilters();
                               },
                               decoration: InputDecoration(
-                                hintText: 'Search by farmer name...',
+                                hintText: l10n.searchByFarmerName,
                                 prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
                                 suffixIcon: _searchQuery.isNotEmpty
                                     ? IconButton(

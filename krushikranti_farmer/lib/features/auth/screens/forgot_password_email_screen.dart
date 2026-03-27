@@ -21,16 +21,16 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
   String? _authError;
   bool _emailSent = false;
 
-  String? _validateEmailFormat(String email) {
+  String? _validateEmailFormat(String email, AppLocalizations l10n) {
     final trimmedEmail = email.trim();
     
     if (trimmedEmail.isEmpty) {
-      return "Email is required";
+      return l10n.emailRequired;
     }
     
     final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
     if (!emailRegex.hasMatch(trimmedEmail)) {
-      return "Please enter a valid email address";
+      return l10n.incorrectEmailFormat;
     }
     
     return null;
@@ -132,7 +132,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
             style: GoogleFonts.poppins(fontSize: 14),
             decoration: InputDecoration(
               border: InputBorder.none,
-              hintText: "your.email@example.com",
+              hintText: l10n.emailHintExample,
               hintStyle: GoogleFonts.poppins(
                 color: Colors.grey.shade400,
                 fontSize: 14,
@@ -229,7 +229,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
               });
 
               // Validate email format
-              final emailError = _validateEmailFormat(email);
+              final emailError = _validateEmailFormat(email, l10n);
               if (emailError != null) {
                 setState(() {
                   _emailFormatError = emailError;

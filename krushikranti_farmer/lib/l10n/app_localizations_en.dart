@@ -27,10 +27,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assignedMsg => 'Your assigned Krushi Tadnya';
 
   @override
-  String get assignedTo => 'Assigned To:';
+  String get assignedTo => 'Assigned to:';
 
   @override
-  String get forFarm => 'For Farm:';
+  String get forFarm => 'For:';
 
   @override
   String moreAssignments(int count) {
@@ -1414,4 +1414,802 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bankAlreadyVerifiedMessage =>
       'Your bank account is already verified. You cannot verify it again.';
+
+  @override
+  String get appTitle => 'Krushi Kranti';
+
+  @override
+  String get completeSetupTitle => 'Complete Setup';
+
+  @override
+  String progressPercent(int value) {
+    return '$value%';
+  }
+
+  @override
+  String get setupStepCompleteProfileTitle => 'Complete Profile';
+
+  @override
+  String get setupStepCompleteProfileSubtitle =>
+      'Add your basic personal details';
+
+  @override
+  String get setupStepAddFarmTitle => 'Add Your First Farm';
+
+  @override
+  String get setupStepAddFarmSubtitle => 'Setup your farm for insights';
+
+  @override
+  String get setupStepSubscribeTitle => 'Subscribe to Premium';
+
+  @override
+  String get setupStepSubscribeSubtitle => 'Unlock all exclusive features';
+
+  @override
+  String get continueSetup => 'Continue Setup';
+
+  @override
+  String get unlockWeatherInsights => 'Unlock Weather Insights';
+
+  @override
+  String get unlockWeatherInsightsDescription =>
+      'Add your farm with GPS location to get daily forecasting and actionable insights.';
+
+  @override
+  String get addFarmNow => 'Add Farm Now';
+
+  @override
+  String get weatherUnableToLoad => 'Unable to load weather';
+
+  @override
+  String get weatherDataNotAvailable => 'Weather data not available';
+
+  @override
+  String get weatherAddGpsToFarm => 'Add GPS coordinates to farm';
+
+  @override
+  String get weatherAddFarmForInsights =>
+      'Add your farm to see weather insights';
+
+  @override
+  String get weatherCardTitle => 'Weather';
+
+  @override
+  String weatherFeelsLike(String temp) {
+    return 'Feels like $temp°C';
+  }
+
+  @override
+  String get weatherHumidity => 'Humidity';
+
+  @override
+  String get weatherWind => 'Wind';
+
+  @override
+  String get weatherUvIndex => 'UV Index';
+
+  @override
+  String get weatherRain => 'Rain';
+
+  @override
+  String get forecastComingSoon => '7-day forecast feature coming soon!';
+
+  @override
+  String get view7DayForecast => 'View 7-Day Forecast';
+
+  @override
+  String get taskScreenComingSoon => 'Task Screen Coming Soon';
+
+  @override
+  String get sellScreenComingSoon => 'Sell Screen Coming Soon';
+
+  @override
+  String get onboardingStepCrop => 'Crop';
+
+  @override
+  String get dateInputFormatPlaceholder => 'DD/MM/YYYY';
+
+  @override
+  String get financeScreenComingSoon => 'Finance Screen Coming Soon';
+
+  @override
+  String get profileSectionAccount => 'Account';
+
+  @override
+  String get profileSectionServices => 'Services';
+
+  @override
+  String get profileSectionFinancial => 'Financial';
+
+  @override
+  String get profileSectionSupport => 'Support';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String get guestFarmer => 'Guest Farmer';
+
+  @override
+  String get noEmail => 'No Email';
+
+  @override
+  String get selectLanguage => 'Select Language';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageHindi => 'हिंदी';
+
+  @override
+  String get languageMarathi => 'मराठी';
+
+  @override
+  String get saveChanges => 'Save';
+
+  @override
+  String get otpResentSuccess => 'OTP resent successfully';
+
+  @override
+  String get pleaseEnterFull6DigitOtp => 'Please enter full 6-digit OTP';
+
+  @override
+  String otpCopiedToClipboard(String otp) {
+    return 'OTP copied to clipboard: $otp';
+  }
+
+  @override
+  String get errorLoadingOrders => 'Error loading orders';
+
+  @override
+  String get noSalesFound => 'No sales found';
+
+  @override
+  String failedToLoadDataWithDetails(String message) {
+    return 'Failed to load data: $message';
+  }
+
+  @override
+  String get productsHeader => 'Products';
+
+  @override
+  String get cropInformationSection => 'Crop Information';
+
+  @override
+  String get cultivationDetailsSection => 'Cultivation Details';
+
+  @override
+  String get basicInformationSection => 'Basic Information';
+
+  @override
+  String get locationDetailsSection => 'Location Details';
+
+  @override
+  String get soilAndWaterSection => 'Soil & Water';
+
+  @override
+  String get ownershipLegalInfoSection => 'Ownership & Legal Info';
+
+  @override
+  String get emailHintExample => 'your.email@example.com';
+
+  @override
+  String get assessmentTitle => 'Assessment';
+
+  @override
+  String get assessmentPlaceholder => 'Assessment details will be shown here';
+
+  @override
+  String get requestFundsTitle => 'Request Funds';
+
+  @override
+  String get fundRequestComingSoon => 'Fund Request Form Coming Soon';
+
+  @override
+  String get fieldOfficerNavHome => 'Home';
+
+  @override
+  String get fieldOfficerNavFarmer => 'Farmer';
+
+  @override
+  String get fieldOfficerNavAssessment => 'Assessment';
+
+  @override
+  String get fieldOfficerNavProfile => 'Profile';
+
+  @override
+  String get searchByFarmerName => 'Search by farmer name...';
+
+  @override
+  String get otpHintSixDigits => '000000';
+
+  @override
+  String verificationPhotosTitle(String farmName) {
+    return 'Verification Photos - $farmName';
+  }
+
+  @override
+  String get viewGeoTaggedPhoto => 'View Geo Tagged Photo';
+
+  @override
+  String get photoCaptureTimeout =>
+      'Photo capture timed out. Please try again.';
+
+  @override
+  String photoCaptureFailed(String error) {
+    return 'Failed to capture photo: $error';
+  }
+
+  @override
+  String get otpSentToFarmer =>
+      'OTP sent successfully to farmer. Please ask the farmer for the OTP.';
+
+  @override
+  String get otpValidatedSuccess =>
+      'OTP validated successfully! You can now submit verification.';
+
+  @override
+  String get selectVerificationStatus =>
+      'Please select verification status (Verify or Reject)';
+
+  @override
+  String get captureGpsBeforeVerify =>
+      'Please capture GPS location before verifying the farm';
+
+  @override
+  String get captureGeotaggedPhotoBeforeVerify =>
+      'Please capture a geotagged photo of the farm before verification';
+
+  @override
+  String get requestValidateOtpBeforeSubmit =>
+      'Please request and validate OTP before submitting verification.';
+
+  @override
+  String get uploadingPhoto => 'Uploading photo...';
+
+  @override
+  String get photoUploadedSuccess => 'Photo uploaded successfully!';
+
+  @override
+  String get authFailedRelogin =>
+      'Authentication failed. Please login again and try verifying the farm.';
+
+  @override
+  String photoUploadFailedProceeding(String error) {
+    return 'Photo upload failed, but proceeding with verification: $error';
+  }
+
+  @override
+  String get farmVerifiedSuccess => 'Farm verified successfully!';
+
+  @override
+  String get loadingPhotos => 'Loading photos...';
+
+  @override
+  String get noVerificationPhotosForFarm =>
+      'No verification photos found for this farm.';
+
+  @override
+  String errorLoadingPhotos(String error) {
+    return 'Error loading photos: $error';
+  }
+
+  @override
+  String get verificationSuccessful => 'Verification successful';
+
+  @override
+  String get allKycCompletedTestMode =>
+      'All KYC verifications completed (TEST MODE)';
+
+  @override
+  String genericErrorWithMessage(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get onboardingPincodeAndVillage =>
+      'Please enter pincode and select village';
+
+  @override
+  String failedToLoadProfileWithDetails(String message) {
+    return 'Failed to load profile: $message';
+  }
+
+  @override
+  String get myDetailsStepAddFarmTitle => 'Add your farm (Step 2)';
+
+  @override
+  String get myDetailsStepAddFarmBody =>
+      'Add at least one farm to unlock farm-specific insights and funding options.';
+
+  @override
+  String get myDetailsStepAddFarmCta => 'Go to farms';
+
+  @override
+  String get myDetailsStepAddCropsTitle => 'Add your crops (Step 3)';
+
+  @override
+  String get myDetailsStepAddCropsBody =>
+      'Add crops for your farms to start tracking growth, sales, and alerts.';
+
+  @override
+  String get myDetailsStepAddCropsCta => 'Go to crops';
+
+  @override
+  String get homeOnboardingCompleteProfileTitle => 'Complete your profile';
+
+  @override
+  String get homeOnboardingCompleteProfileMessage =>
+      'Before using this feature, please add your basic personal details.';
+
+  @override
+  String get homeOnboardingCompleteProfileCta => 'Complete now';
+
+  @override
+  String get homeOnboardingAddFarmTitle => 'Add your first farm';
+
+  @override
+  String get homeOnboardingAddFarmMessage =>
+      'Add at least one farm to start using this feature for your land.';
+
+  @override
+  String get homeOnboardingAddFarmCta => 'Add farm';
+
+  @override
+  String get homeOnboardingAddCropTitle => 'Add your first crop';
+
+  @override
+  String get homeOnboardingAddCropMessage =>
+      'Add at least one crop on your farm to start tracking it here.';
+
+  @override
+  String get homeOnboardingAddCropCta => 'Add crop';
+
+  @override
+  String get otpCheckNotificationSnackbar =>
+      'You will get the OTP. Please check it at notification';
+
+  @override
+  String get allFarmsVerifiedTitle => 'All Farms Verified!';
+
+  @override
+  String allFarmsVerifiedBody(int farmCount, String farmWord, int verified) {
+    return 'Congratulations! All your $farmCount $farmWord ($verified/$farmCount verified) have been successfully verified by field officers.';
+  }
+
+  @override
+  String get farmWordSingular => 'farm';
+
+  @override
+  String get farmWordPlural => 'farms';
+
+  @override
+  String get fieldOfficerDefaultName => 'Field Officer';
+
+  @override
+  String farmFallbackName(String id) {
+    return 'Farm $id';
+  }
+
+  @override
+  String get statusLocked => 'Locked';
+
+  @override
+  String get farmVerificationOtpTitle => 'Farm Verification OTP';
+
+  @override
+  String fieldOfficerVerifyingFarm(String officer, String farm) {
+    return '$officer is verifying \"$farm\"';
+  }
+
+  @override
+  String get yourOtpCodeLabel => 'Your OTP Code';
+
+  @override
+  String get copyOtpTooltip => 'Copy OTP';
+
+  @override
+  String expiresInTimer(String time) {
+    return 'Expires in: $time';
+  }
+
+  @override
+  String get shareOtpWithFieldOfficer =>
+      'Please share this OTP with the field officer to complete verification.';
+
+  @override
+  String get logoutConfirmTitle => 'Log Out';
+
+  @override
+  String get logoutConfirmMessage => 'Are you sure you want to logout?';
+
+  @override
+  String get fieldOfficerEmailLabel => 'Email Address';
+
+  @override
+  String get fieldOfficerPhoneLabel => 'Phone Number';
+
+  @override
+  String get fieldOfficerAlternateLabel => 'Alternate Number';
+
+  @override
+  String get fieldOfficerDobLabel => 'Date of Birth';
+
+  @override
+  String get fieldOfficerGenderLabel => 'Gender';
+
+  @override
+  String get loginWithPhone => 'Log in with Phone';
+
+  @override
+  String get reconnectWithGoodness => 'Reconnect With Goodness';
+
+  @override
+  String get letsGetYouStarted => 'Let\'s get you started';
+
+  @override
+  String get phoneHintYourNumber => 'your phone number';
+
+  @override
+  String get otpSentToThisNumber => 'OTP will be sent on this number';
+
+  @override
+  String get getOtp => 'Get OTP';
+
+  @override
+  String get termsAgreementLogin =>
+      'By continuing you agree to our Terms & Conditions and Privacy & Legal Policy';
+
+  @override
+  String get orSeparator => 'or ';
+
+  @override
+  String get signUpCta => 'Sign Up';
+
+  @override
+  String get enterOtpShort => 'Enter OTP';
+
+  @override
+  String get phoneNumberNotFound => 'Phone number not found. Please try again.';
+
+  @override
+  String failedToLoadCropNamesWithDetails(String message) {
+    return 'Failed to load crop names: $message';
+  }
+
+  @override
+  String minutesAgo(int minutes) {
+    return '$minutes min ago';
+  }
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String hoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours ago',
+      one: '1 hour ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String daysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: '1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get expiredLabel => 'Expired';
+
+  @override
+  String get noNotificationsTitle => 'No Notifications';
+
+  @override
+  String get noOtpNotificationsHint =>
+      'You will receive OTP notifications here';
+
+  @override
+  String get loginFailedRetry => 'Login failed. Please try again.';
+
+  @override
+  String get otpVerificationFailedRetry =>
+      'OTP verification failed. Please try again.';
+
+  @override
+  String get noPhotosAvailable => 'No Photos Available';
+
+  @override
+  String get verificationPhotosHeader => 'Verification Photos';
+
+  @override
+  String get contactInformationHeader => 'Contact Information';
+
+  @override
+  String get locationSectionTitle => 'Location';
+
+  @override
+  String get farmersScreenTitle => 'Farmers';
+
+  @override
+  String get verifyFarmAppBarTitle => 'Verify Farm';
+
+  @override
+  String get farmerLabelDefault => 'Farmer';
+
+  @override
+  String get farmsToVerifySectionTitle => 'Farms to Verify';
+
+  @override
+  String get noFarmsInAssignment => 'No farms found in this assignment';
+
+  @override
+  String get locationNotAvailableShort => 'Location not available';
+
+  @override
+  String get farmNameFallback => 'Farm';
+
+  @override
+  String get verificationStatusVerifiedBadge => 'Verified';
+
+  @override
+  String get submitVerificationButton => 'Submit Verification';
+
+  @override
+  String get farmAlreadyVerifiedNotice =>
+      'This farm has already been verified.';
+
+  @override
+  String get verificationStatusSectionTitle => 'Verification Status *';
+
+  @override
+  String get verifyFarmStatusOption => 'Verify';
+
+  @override
+  String get feedbackNotesSectionTitle => 'Feedback / Notes';
+
+  @override
+  String get feedbackNotesHintVerified =>
+      'Add any notes or observations about the farm verification...';
+
+  @override
+  String get feedbackNotesHintRejected =>
+      'Add feedback about why the farm is being rejected...';
+
+  @override
+  String get locationPhotoVerificationSectionTitle =>
+      'Location & Photo Verification';
+
+  @override
+  String get gpsLocationSectionTitle => 'GPS Location';
+
+  @override
+  String latitudeDisplay(String degrees) {
+    return 'Lat: $degrees°';
+  }
+
+  @override
+  String longitudeDisplay(String degrees) {
+    return 'Lon: $degrees°';
+  }
+
+  @override
+  String accuracyDisplayMeters(String meters) {
+    return 'Accuracy: ${meters}m';
+  }
+
+  @override
+  String get farmPhotoGeotaggedSectionTitle => 'Farm Photo (Geotagged)';
+
+  @override
+  String get retakeFarmPhotoButton => 'Retake Photo';
+
+  @override
+  String get captureFarmPhotoButton => 'Capture Farm Photo';
+
+  @override
+  String get otpVerificationSectionTitle => 'OTP Verification';
+
+  @override
+  String get requestingOtpButton => 'Requesting OTP...';
+
+  @override
+  String get gpsValidationRequiredButton => 'GPS Validation Required';
+
+  @override
+  String get fieldOfficerRequestOtpCta => 'Request OTP';
+
+  @override
+  String get enterSixDigitOtpFromFarmer =>
+      'Enter the 6-digit OTP received by the farmer:';
+
+  @override
+  String otpExpiresInCountdown(String time) {
+    return 'OTP expires in: $time';
+  }
+
+  @override
+  String get validatingOtpButton => 'Validating...';
+
+  @override
+  String get validateOtpButtonLabel => 'Validate OTP';
+
+  @override
+  String locationCapturedDistanceMeters(String meters) {
+    return 'Location captured! Distance from farm: ${meters}m (within 100m threshold)';
+  }
+
+  @override
+  String get locationCapturedSuccessShort => 'Location captured successfully!';
+
+  @override
+  String geotaggedPhotoCapturedDistanceMeters(String meters) {
+    return 'Photo captured! Distance from farm: ${meters}m (within 100m threshold)';
+  }
+
+  @override
+  String get geotaggedPhotoCapturedSuccess =>
+      'Geotagged photo captured successfully!';
+
+  @override
+  String get gpsValidationFailedFallback => 'GPS validation failed';
+
+  @override
+  String get gpsValidationFailedOtpBlocked =>
+      'GPS validation failed. OTP request will be blocked.';
+
+  @override
+  String get photoFileNotSavedRetry =>
+      'Photo file was not saved properly. Please try again.';
+
+  @override
+  String locationCaptureFailedWithError(String error) {
+    return 'Failed to capture location: $error';
+  }
+
+  @override
+  String get captureGpsBeforeOtpRequest =>
+      'Please capture GPS location first before requesting OTP.';
+
+  @override
+  String get farmMissingGpsCoordinatesAdmin =>
+      'This farm does not have GPS coordinates. Please contact admin to add farm location before verification.';
+
+  @override
+  String get invalidFarmGpsCoordinatesAdmin =>
+      'Invalid farm GPS coordinates. Please contact admin.';
+
+  @override
+  String tooFarFromFarmMeters(String meters) {
+    return 'You are too far from the farm location. Distance: ${meters}m (required: within 100m). Please move closer to the farm location.';
+  }
+
+  @override
+  String get invalidOtpPleaseTryAgain => 'Invalid OTP. Please try again.';
+
+  @override
+  String pincodeRowLabel(String code) {
+    return 'Pincode: $code';
+  }
+
+  @override
+  String get pleaseEnterValidSixDigitOtp => 'Please enter a valid 6-digit OTP';
+
+  @override
+  String verificationFailureMessage(String message) {
+    return '$message';
+  }
+
+  @override
+  String get authOtpAppBarTitle => 'Verification';
+
+  @override
+  String get authOtpHeadline => 'Enter verification code';
+
+  @override
+  String get authOtpDescription => 'We sent a 6-digit code to your phone.';
+
+  @override
+  String get authOtpSubmit => 'Submit code';
+
+  @override
+  String authOtpResendCountdown(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get authOtpResend => 'Resend code';
+
+  @override
+  String get signupHey => 'Hey,';
+
+  @override
+  String get signupTitle => 'Sign up now';
+
+  @override
+  String get signupUsernameLabel => 'Username';
+
+  @override
+  String get signupUsernameHint => 'Enter username';
+
+  @override
+  String get signupEmailLabel => 'Email';
+
+  @override
+  String get signupEmailHint => 'Enter email address';
+
+  @override
+  String get signupPasswordLabel => 'Password';
+
+  @override
+  String get signupPasswordHint => 'Enter password';
+
+  @override
+  String get signupPasswordHelper =>
+      'At least 8 characters with upper & lower case, a number, and a symbol.';
+
+  @override
+  String get signupPhoneLabel => 'Mobile number';
+
+  @override
+  String get signupPhoneHint => 'Enter 10-digit mobile number';
+
+  @override
+  String get signupGetCode => 'Get verification code';
+
+  @override
+  String get signupErrorUsername => 'Enter at least 3 characters';
+
+  @override
+  String get signupErrorEmail => 'Enter a valid email address';
+
+  @override
+  String get signupErrorPhone => 'Enter a valid 10-digit mobile number';
+
+  @override
+  String get signupErrorPassword =>
+      'Use 8+ characters with A–Z, a–z, 0–9 and a symbol';
+
+  @override
+  String get signupShowPassword => 'Show password';
+
+  @override
+  String get signupHidePassword => 'Hide password';
+
+  @override
+  String get signupErrorPhoneRegistered =>
+      'This phone number is already registered. Try another number or log in.';
+
+  @override
+  String get signupErrorEmailRegistered =>
+      'This email is already registered. Try another email or log in.';
+
+  @override
+  String get signupErrorUsernameTaken =>
+      'This username is already taken. Please choose another.';
+
+  @override
+  String get signupErrorCheckInfo => 'Please check your details and try again.';
+
+  @override
+  String get signupErrorNetwork =>
+      'Network error. Check your internet and try again.';
+
+  @override
+  String get signupPasswordWeak => 'Weak';
+
+  @override
+  String get signupPasswordFair => 'Fair';
+
+  @override
+  String get signupPasswordStrong => 'Strong';
 }

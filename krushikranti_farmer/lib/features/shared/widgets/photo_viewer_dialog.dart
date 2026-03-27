@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 
 class PhotoViewerDialog extends StatefulWidget {
   final List<String> photoUrls;
@@ -34,6 +35,7 @@ class _PhotoViewerDialogState extends State<PhotoViewerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (widget.photoUrls.isEmpty) {
       return Dialog(
         child: Container(
@@ -48,7 +50,7 @@ class _PhotoViewerDialogState extends State<PhotoViewerDialog> {
               ),
               const SizedBox(height: 16),
               Text(
-                'No Photos Available',
+                l10n.noPhotosAvailable,
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -57,7 +59,7 @@ class _PhotoViewerDialogState extends State<PhotoViewerDialog> {
               ),
               const SizedBox(height: 8),
               Text(
-                'No verification photos found for this farm.',
+                l10n.noVerificationPhotosForFarm,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   color: Colors.grey.shade600,
@@ -71,7 +73,7 @@ class _PhotoViewerDialogState extends State<PhotoViewerDialog> {
                   backgroundColor: AppColors.brandGreen,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Close'),
+                child: Text(l10n.close),
               ),
             ],
           ),
@@ -102,7 +104,7 @@ class _PhotoViewerDialogState extends State<PhotoViewerDialog> {
                 children: [
                   Expanded(
                     child: Text(
-                      widget.title ?? 'Verification Photos',
+                      widget.title ?? l10n.verificationPhotosHeader,
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -179,7 +181,7 @@ class _PhotoViewerDialogState extends State<PhotoViewerDialog> {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Failed to load image',
+                                    l10n.imageNotFound,
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,

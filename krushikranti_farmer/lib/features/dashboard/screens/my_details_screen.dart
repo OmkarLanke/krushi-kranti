@@ -88,7 +88,11 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
         print("Error loading profile: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Failed to load profile: ${e.toString().replaceFirst("Exception: ", "")}"),
+            content: Text(
+              AppLocalizations.of(context)!.failedToLoadProfileWithDetails(
+                e.toString().replaceFirst("Exception: ", ""),
+              ),
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -360,10 +364,9 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
         if (!_hasFarm)
           _buildStepActionCard(
             icon: Icons.agriculture_rounded,
-            title: 'Add your farm (Step 2)',
-            message:
-                'Add at least one farm to unlock farm-specific insights and funding options.',
-            ctaLabel: 'Go to farms',
+            title: l10n.myDetailsStepAddFarmTitle,
+            message: l10n.myDetailsStepAddFarmBody,
+            ctaLabel: l10n.myDetailsStepAddFarmCta,
             onTap: () {
               Navigator.pushNamed(context, AppRoutes.farmList);
             },
@@ -372,10 +375,9 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
           const SizedBox(height: 12),
           _buildStepActionCard(
             icon: Icons.grass_rounded,
-            title: 'Add your crops (Step 3)',
-            message:
-                'Add crops for your farms to start tracking growth, sales, and alerts.',
-            ctaLabel: 'Go to crops',
+            title: l10n.myDetailsStepAddCropsTitle,
+            message: l10n.myDetailsStepAddCropsBody,
+            ctaLabel: l10n.myDetailsStepAddCropsCta,
             onTap: () {
               Navigator.pushNamed(context, AppRoutes.cropList);
             },
