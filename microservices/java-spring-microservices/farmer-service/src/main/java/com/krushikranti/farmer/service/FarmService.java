@@ -29,6 +29,7 @@ public class FarmService {
     private final FarmRepository farmRepository;
     private final FarmerRepository farmerRepository;
     private final PincodeService pincodeService;
+    private final AdminFarmerService adminFarmerService;
 
     /**
      * Get all active farms for a farmer.
@@ -36,8 +37,9 @@ public class FarmService {
     @Transactional(readOnly = true)
     public List<FarmResponse> getFarmsByUserId(Long userId) {
         Farmer farmer = getFarmerByUserId(userId);
-        List<Farm> farms = farmRepository.findByFarmerIdAndIsActiveTrue(farmer.getId());
-        
+        // Use optimized query with JOIN FETCH to avoid N+1
+        List<Farm> farms = farmRepository.findByFarmerIdAndIsActiveTrueWithFarmer(farmer.getId());
+
         log.debug("Found {} active farms for userId: {}", farms.size(), userId);
         return farms.stream()
                 .map(this::mapToResponse)
@@ -115,6 +117,7 @@ public class FarmService {
                 .build();
         
         Farm savedFarm = farmRepository.save(farm);
+        adminFarmerService.invalidateAdminFarmerListCache();
         log.info("Created farm {} for userId: {}", savedFarm.getId(), userId);
         
         return mapToResponse(savedFarm);
@@ -194,6 +197,7 @@ public class FarmService {
         }
         
         Farm updatedFarm = farmRepository.save(farm);
+        adminFarmerService.invalidateAdminFarmerListCache();
         log.info("Updated farm {} for userId: {}", farmId, userId);
         
         return mapToResponse(updatedFarm);
@@ -210,6 +214,7 @@ public class FarmService {
         
         farm.setIsActive(false);
         farmRepository.save(farm);
+        adminFarmerService.invalidateAdminFarmerListCache();
         
         log.info("Soft deleted farm {} for userId: {}", farmId, userId);
     }
@@ -260,6 +265,7 @@ public class FarmService {
         }
         
         farmRepository.save(farm);
+        adminFarmerService.invalidateAdminFarmerListCache();
         log.info("Updated verification status for farm {}: isVerified={}, verifiedBy={}", 
                 farmId, isVerified, verifiedByOfficerId);
     }

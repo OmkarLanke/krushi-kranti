@@ -43,6 +43,23 @@ class JobApplicationService {
             .toList();
       }
 
+      // New paginated response format:
+      // {
+      //   "applications": [...],
+      //   "currentPage": 0,
+      //   "totalPages": 1,
+      //   ...
+      // }
+      if (response is Map<String, dynamic> &&
+          response['applications'] is List) {
+        final applications = response['applications'] as List<dynamic>;
+        return applications
+            .map(
+              (json) => JobApplication.fromJson(json as Map<String, dynamic>),
+            )
+            .toList();
+      }
+
       return [];
     } catch (e) {
       print('Error fetching job applications: $e');
@@ -62,23 +79,24 @@ class JobApplicationService {
   }
 
   // Get statistics
-  Future<JobApplicationStats> getStats() async {
+  Future<JobApplicationStats> getStats({
+    List<JobApplication>? applications,
+  }) async {
     try {
-      // Get all applications and calculate stats from them
-      final applications = await getAllApplications();
+      final sourceApplications = applications ?? await getAllApplications();
 
       return JobApplicationStats(
-        total: applications.length,
-        screening: applications
+        total: sourceApplications.length,
+        screening: sourceApplications
             .where((a) => a.currentStatus == 'SCREENING')
             .length,
-        selectedForHR: applications
+        selectedForHR: sourceApplications
             .where((a) => a.currentStatus == 'SELECTED_FOR_HR')
             .length,
-        selected: applications
+        selected: sourceApplications
             .where((a) => a.currentStatus == 'SELECTED')
             .length,
-        rejected: applications
+        rejected: sourceApplications
             .where((a) => a.currentStatus == 'REJECTED')
             .length,
       );

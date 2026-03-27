@@ -12,6 +12,8 @@ import com.krushikranti.farmer.repository.CropRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,12 +21,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -56,41 +59,44 @@ public class AdminFarmerService {
     /**
      * Get paginated list of all farmers with summary info
      */
+        @Cacheable(
+            value = "adminFarmerList",
+            key = "#page + ':' + #size + ':' + (#search ?: '') + ':' + (#kycStatus ?: '') + ':' + (#subscriptionStatus ?: '') + ':' + (#pincode ?: '')")
     public AdminFarmerListResponse getAllFarmers(int page, int size, String search, String kycStatus, String subscriptionStatus, String pincode) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        
-        Page<Farmer> farmerPage;
-        
-        if (search != null && !search.trim().isEmpty()) {
-            farmerPage = farmerRepository.searchFarmers(search.trim(), pageable);
-        } else {
-            farmerPage = farmerRepository.findAll(pageable);
-        }
+        Page<Farmer> farmerPage = farmerRepository.findWithAdminFilters(
+            normalize(search),
+            normalize(pincode),
+            pageable);
 
-        // Filter by pincode if provided
         List<Farmer> filteredFarmers = farmerPage.getContent();
-        if (pincode != null && !pincode.trim().isEmpty()) {
-            filteredFarmers = filteredFarmers.stream()
-                    .filter(farmer -> farmer.getPincode() != null && 
-                            farmer.getPincode().equalsIgnoreCase(pincode.trim()))
-                    .collect(Collectors.toList());
-        }
 
         List<Long> userIds = filteredFarmers.stream()
                 .map(Farmer::getUserId)
                 .collect(Collectors.toList());
 
-        // Fetch KYC status for all users
-        Map<Long, Map<String, Object>> kycMap = fetchKycStatusBatch(userIds);
-        
-        // Fetch subscription status for all users
-        Map<Long, Map<String, Object>> subscriptionMap = fetchSubscriptionStatusBatch(userIds);
-        
-        // Fetch user details (username, email, phone) from auth service
-        Map<Long, Map<String, Object>> userMap = fetchUserDetailsBatch(userIds);
+        List<Long> farmerIds = filteredFarmers.stream()
+            .map(Farmer::getId)
+            .collect(Collectors.toList());
 
-        // Fetch assignment summaries for all farmers
-        Map<Long, AssignmentSummary> assignmentMap = fetchAssignmentSummariesBatch(userIds);
+        Map<Long, Long> totalFarmCountMap = mapCountRows(farmRepository.countByFarmerIdsGrouped(farmerIds));
+        Map<Long, Long> verifiedFarmCountMap = mapCountRows(farmRepository.countVerifiedByFarmerIdsGrouped(farmerIds));
+
+        CompletableFuture<Map<Long, Map<String, Object>>> kycFuture =
+            CompletableFuture.supplyAsync(() -> fetchKycStatusBatch(userIds));
+        CompletableFuture<Map<Long, Map<String, Object>>> subscriptionFuture =
+            CompletableFuture.supplyAsync(() -> fetchSubscriptionStatusBatch(userIds));
+        CompletableFuture<Map<Long, Map<String, Object>>> userFuture =
+            CompletableFuture.supplyAsync(() -> fetchUserDetailsBatch(userIds));
+        CompletableFuture<Map<Long, AssignmentSummary>> assignmentFuture =
+            CompletableFuture.supplyAsync(() -> fetchAssignmentSummariesBatch(userIds));
+
+        CompletableFuture.allOf(kycFuture, subscriptionFuture, userFuture, assignmentFuture).join();
+
+        Map<Long, Map<String, Object>> kycMap = kycFuture.join();
+        Map<Long, Map<String, Object>> subscriptionMap = subscriptionFuture.join();
+        Map<Long, Map<String, Object>> userMap = userFuture.join();
+        Map<Long, AssignmentSummary> assignmentMap = assignmentFuture.join();
 
         List<AdminFarmerSummaryDto> summaries = new ArrayList<>();
         
@@ -110,11 +116,9 @@ public class AdminFarmerService {
                 continue;
             }
             
-            // Count farms
-            long farmCount = farmRepository.countByFarmerId(farmer.getId());
-            long verifiedFarmCount = farmRepository.countByFarmerIdAndIsVerifiedTrue(farmer.getId());
+                long farmCount = totalFarmCountMap.getOrDefault(farmer.getId(), 0L);
+                long verifiedFarmCount = verifiedFarmCountMap.getOrDefault(farmer.getId(), 0L);
             
-            // Get assignment summary
             AssignmentSummary assignmentSummary = assignmentMap.getOrDefault(farmer.getUserId(), 
                     AssignmentSummary.empty((int) farmCount));
             
@@ -122,6 +126,12 @@ public class AdminFarmerService {
             int totalFarmsForAssignment = assignmentSummary.totalFarmsCount > 0 
                     ? assignmentSummary.totalFarmsCount 
                     : (int) farmCount;
+
+                boolean hasAllFarmsAssigned = assignmentSummary.hasAllFarmsAssigned ||
+                    (totalFarmsForAssignment > 0 && assignmentSummary.assignedFarmsCount >= totalFarmsForAssignment);
+                boolean hasPartialAssignment = !hasAllFarmsAssigned &&
+                    assignmentSummary.assignedFarmsCount > 0 &&
+                    assignmentSummary.assignedFarmsCount < totalFarmsForAssignment;
             
             AdminFarmerSummaryDto summary = AdminFarmerSummaryDto.builder()
                     .farmerId(farmer.getId())
@@ -141,8 +151,8 @@ public class AdminFarmerService {
                     .verifiedFarmCount((int) verifiedFarmCount)
                     .assignedFarmsCount(assignmentSummary.assignedFarmsCount)
                     .totalFarmsCount(totalFarmsForAssignment)
-                    .hasAllFarmsAssigned(assignmentSummary.hasAllFarmsAssigned)
-                    .hasPartialAssignment(assignmentSummary.hasPartialAssignment)
+                    .hasAllFarmsAssigned(hasAllFarmsAssigned)
+                    .hasPartialAssignment(hasPartialAssignment)
                     .registeredAt(farmer.getCreatedAt())
                     .lastUpdatedAt(farmer.getUpdatedAt())
                     .build();
@@ -163,6 +173,20 @@ public class AdminFarmerService {
                 .hasPrevious(farmerPage.hasPrevious())
                 .stats(stats)
                 .build();
+    }
+
+    public Map<String, List<String>> getFilterOptions() {
+        Map<String, List<String>> options = new HashMap<>();
+        options.put("states", farmerRepository.findDistinctStates());
+        options.put("districts", farmerRepository.findDistinctDistricts());
+        options.put("villages", farmerRepository.findDistinctVillages());
+        options.put("pincodes", farmerRepository.findDistinctPincodes());
+        return options;
+    }
+
+    @CacheEvict(value = "adminFarmerList", allEntries = true)
+    public void invalidateAdminFarmerListCache() {
+        log.debug("Invalidated admin farmer list cache");
     }
 
     /**
@@ -421,8 +445,7 @@ public class AdminFarmerService {
     }
 
     private Map<Long, Map<String, Object>> fetchKycStatusBatch(List<Long> userIds) {
-        // For now, fetch individually - can be optimized with batch endpoint later
-        return userIds.stream()
+        return userIds.parallelStream()
                 .collect(Collectors.toMap(
                         userId -> userId,
                         this::fetchKycStatus,
@@ -431,8 +454,7 @@ public class AdminFarmerService {
     }
 
     private Map<Long, Map<String, Object>> fetchSubscriptionStatusBatch(List<Long> userIds) {
-        // For now, fetch individually - can be optimized with batch endpoint later
-        return userIds.stream()
+        return userIds.parallelStream()
                 .collect(Collectors.toMap(
                         userId -> userId,
                         this::fetchSubscriptionStatus,
@@ -441,25 +463,91 @@ public class AdminFarmerService {
     }
 
     private Map<Long, Map<String, Object>> fetchUserDetailsBatch(List<Long> userIds) {
-        // For now, fetch individually - can be optimized with batch endpoint later
-        return userIds.stream()
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+
+        try {
+            Map<String, Object> requestBody = Map.of("userIds", userIds);
+            Map<String, Object> response = webClientBuilder.build()
+                .post()
+                .uri(authServiceUrl + "/auth/users/batch")
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .onErrorReturn(Map.of())
+                .block();
+
+            Object data = response != null ? response.get("data") : null;
+            if (!(data instanceof List<?> users)) {
+            throw new IllegalStateException("Unexpected auth batch response format");
+            }
+
+            return users.stream()
+                .filter(Map.class::isInstance)
+                .map(user -> (Map<String, Object>) user)
                 .collect(Collectors.toMap(
-                        userId -> userId,
-                        this::fetchUserDetails,
-                        (a, b) -> a
+                    m -> ((Number) m.get("id")).longValue(),
+                    m -> m,
+                    (a, b) -> a));
+        } catch (Exception ex) {
+            log.warn("Batch auth lookup failed, falling back to per-user fetch: {}", ex.getMessage());
+            return userIds.parallelStream()
+                .collect(Collectors.toMap(
+                    userId -> userId,
+                    this::fetchUserDetails,
+                    (a, b) -> a
                 ));
+        }
     }
 
     /**
      * Fetch assignment summaries for multiple farmers from field-officer-service
      */
     private Map<Long, AssignmentSummary> fetchAssignmentSummariesBatch(List<Long> userIds) {
-        return userIds.stream()
-                .collect(Collectors.toMap(
-                        userId -> userId,
-                        this::fetchAssignmentSummary,
-                        (a, b) -> a
-                ));
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+
+        try {
+            Map<String, Object> requestBody = Map.of("farmerUserIds", userIds);
+            Map<String, Object> response = webClientBuilder.build()
+                    .post()
+                    .uri(fieldOfficerServiceUrl + "/admin/field-officers/assignments/summary")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Roles", "ADMIN")
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .onErrorReturn(Map.of())
+                    .block();
+
+            Map<String, Object> payload = unwrapData(response);
+            if (payload.isEmpty()) {
+                return Map.of();
+            }
+
+            Map<Long, AssignmentSummary> result = new HashMap<>();
+            for (Long userId : userIds) {
+                Object raw = payload.get(String.valueOf(userId));
+                if (raw instanceof Map<?, ?> summaryMap) {
+                    Object assignedRaw = summaryMap.get("assignedFarmsCount");
+                    int assigned = assignedRaw instanceof Number ? ((Number) assignedRaw).intValue() : 0;
+                    Object globalRaw = summaryMap.get("hasGlobalAssignment");
+                    boolean hasGlobalAssignment = globalRaw instanceof Boolean && (Boolean) globalRaw;
+                    result.put(userId, new AssignmentSummary(assigned, 0, hasGlobalAssignment, false));
+                }
+            }
+            return result;
+        } catch (Exception ex) {
+            log.warn("Batch assignment summary fetch failed: {}", ex.getMessage());
+            return userIds.stream()
+                    .collect(Collectors.toMap(
+                            userId -> userId,
+                            this::fetchAssignmentSummary,
+                            (a, b) -> a
+                    ));
+        }
     }
 
     /**
@@ -573,6 +661,24 @@ public class AdminFarmerService {
         static AssignmentSummary empty(int totalFarmsCount) {
             return new AssignmentSummary(0, totalFarmsCount, false, false);
         }
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private Map<Long, Long> mapCountRows(List<Object[]> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return Map.of();
+        }
+        return rows.stream().collect(Collectors.toMap(
+                row -> ((Number) row[0]).longValue(),
+                row -> ((Number) row[1]).longValue(),
+                (a, b) -> a));
     }
 
     /**

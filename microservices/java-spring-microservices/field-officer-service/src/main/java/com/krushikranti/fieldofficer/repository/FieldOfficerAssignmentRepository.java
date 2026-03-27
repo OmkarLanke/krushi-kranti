@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -23,6 +24,11 @@ public interface FieldOfficerAssignmentRepository extends JpaRepository<FieldOff
      * Find all assignments for a farmer
      */
     List<FieldOfficerAssignment> findByFarmerUserId(Long farmerUserId);
+
+    /**
+     * Find all assignments for a farmer with pagination
+     */
+    Page<FieldOfficerAssignment> findByFarmerUserId(Long farmerUserId, Pageable pageable);
     
     /**
      * Find active assignment for a field officer and farmer
@@ -45,6 +51,27 @@ public interface FieldOfficerAssignmentRepository extends JpaRepository<FieldOff
      * Count active assignments for a field officer
      */
     long countByFieldOfficerIdAndStatusNot(Long fieldOfficerId, FieldOfficerAssignment.AssignmentStatus status);
+
+    /**
+     * Find all assignments for multiple farmers (batch query for admin dashboard)
+     */
+    @Query("SELECT a FROM FieldOfficerAssignment a WHERE a.farmerUserId IN :farmerUserIds")
+    List<FieldOfficerAssignment> findByFarmerUserIdIn(@Param("farmerUserIds") List<Long> farmerUserIds);
+
+        @Query("SELECT a.fieldOfficerId, COUNT(a) FROM FieldOfficerAssignment a " +
+            "WHERE a.fieldOfficerId IN :fieldOfficerIds AND a.farmId IS NOT NULL AND a.status = 'ASSIGNED' " +
+            "GROUP BY a.fieldOfficerId")
+        List<Object[]> countAssignedByFieldOfficerIds(@Param("fieldOfficerIds") List<Long> fieldOfficerIds);
+
+        @Query("SELECT a.fieldOfficerId, COUNT(a) FROM FieldOfficerAssignment a " +
+            "WHERE a.fieldOfficerId IN :fieldOfficerIds AND a.farmId IS NOT NULL AND a.status = 'COMPLETED' " +
+            "GROUP BY a.fieldOfficerId")
+        List<Object[]> countVerifiedByFieldOfficerIds(@Param("fieldOfficerIds") List<Long> fieldOfficerIds);
+
+            @Query("SELECT a.fieldOfficerId, COUNT(a) FROM FieldOfficerAssignment a " +
+                "WHERE a.fieldOfficerId IN :fieldOfficerIds AND a.farmId IS NOT NULL AND a.status <> 'CANCELLED' " +
+                "GROUP BY a.fieldOfficerId")
+            List<Object[]> countActiveFarmAssignmentsByFieldOfficerIds(@Param("fieldOfficerIds") List<Long> fieldOfficerIds);
     
     /**
      * Find active assignment for a specific farm

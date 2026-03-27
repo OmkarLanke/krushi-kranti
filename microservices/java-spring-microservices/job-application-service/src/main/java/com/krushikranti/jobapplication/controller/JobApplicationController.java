@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -61,11 +62,13 @@ public class JobApplicationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ApplicationResponse>> getAll(
+    public ResponseEntity<Map<String, Object>> getAll(
             @RequestParam(value = "status", required = false) String status,
-            @RequestParam(value = "roleType", required = false) String roleType) {
-        List<ApplicationResponse> applications = service.getAllApplications(status, roleType);
-        return ResponseEntity.ok(applications);
+            @RequestParam(value = "roleType", required = false) String roleType,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Map<String, Object> response = service.getAllApplicationsPaged(status, roleType, page, size);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")

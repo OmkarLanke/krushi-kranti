@@ -18,17 +18,27 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String _currentRoute = 'farmers'; // Default to farmers page
+  final Map<String, int> _routeIndex = const {
+    'dashboard': 0,
+    'farmers': 1,
+    'field-officers': 2,
+    'job-applications': 3,
+  };
 
   Widget _buildCurrentPage() {
+    if (_routeIndex.containsKey(_currentRoute)) {
+      return IndexedStack(
+        index: _routeIndex[_currentRoute]!,
+        children: const [
+          _DashboardOverview(),
+          FarmerListScreen(),
+          FieldOfficerListScreen(),
+          JobApplicationsListScreen(),
+        ],
+      );
+    }
+
     switch (_currentRoute) {
-      case 'dashboard':
-        return const _DashboardOverview();
-      case 'farmers':
-        return const FarmerListScreen();
-      case 'field-officers':
-        return const FieldOfficerListScreen();
-      case 'job-applications':
-        return const JobApplicationsListScreen();
       case 'products':
       case 'inventory':
       case 'orders':

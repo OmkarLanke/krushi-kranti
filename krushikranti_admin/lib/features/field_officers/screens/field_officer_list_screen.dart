@@ -23,10 +23,7 @@ enum SortColumn {
   createdAt,
 }
 
-enum SortDirection {
-  ascending,
-  descending,
-}
+enum SortDirection { ascending, descending }
 
 class FieldOfficerListScreen extends StatefulWidget {
   const FieldOfficerListScreen({super.key});
@@ -38,20 +35,24 @@ class FieldOfficerListScreen extends StatefulWidget {
 class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
   List<FieldOfficerSummary> _fieldOfficers = [];
   List<FieldOfficerSummary> _filteredFieldOfficers = [];
-  List<FieldOfficerSummary> _allFieldOfficers = []; // All field officers for filtering and dropdowns
+  List<FieldOfficerSummary> _allFieldOfficers =
+      []; // All field officers for filtering and dropdowns
+  List<String> _availableStates = [];
+  List<String> _availableDistricts = [];
+  List<String> _availablePincodes = [];
   bool _isLoading = true;
   bool _isLoadingAllFieldOfficers = false;
   String? _error;
-  
+
   int _currentPage = 0;
   int _totalPages = 0;
   int _totalElements = 0;
   final int _pageSize = 100; // Show 100 field officers per page
-  
+
   String? _searchQuery;
   bool? _isActiveFilter;
   String? _pincodeFilter;
-  
+
   // Column-specific search queries (for table header filters)
   String? _fieldOfficerIdSearch;
   String? _fullNameSearch;
@@ -60,7 +61,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
   String? _emailSearch;
   String? _pincodeSearch;
   String? _locationSearch;
-  
+
   // Advanced filters
   String? _stateFilter;
   String? _districtFilter;
@@ -71,16 +72,16 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   bool _showAdvancedFilters = false;
-  
+
   // Sort state
   SortColumn? _sortColumn;
   SortDirection _sortDirection = SortDirection.descending;
-  
+
   // Dropdown overlay state
   OverlayEntry? _dropdownOverlay;
   final Map<String, GlobalKey> _filterKeys = {};
   String? _openDropdownLabel;
-  
+
   final _searchController = TextEditingController();
   final _pincodeController = TextEditingController();
   Timer? _searchDebounce;
@@ -101,7 +102,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
   Timer? _emailSearchDebounce;
   Timer? _pincodeSearchDebounce;
   Timer? _locationSearchDebounce;
-  
+
   // Scroll controllers for table scrolling
   final _horizontalScrollController = ScrollController();
   final _verticalScrollController = ScrollController();
@@ -109,7 +110,22 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
   @override
   void initState() {
     super.initState();
+    _loadFilterOptions();
     _loadFieldOfficers();
+  }
+
+  Future<void> _loadFilterOptions() async {
+    try {
+      final options = await FieldOfficerService.getFilterOptions();
+      if (!mounted) return;
+      setState(() {
+        _availableStates = options['states'] ?? [];
+        _availableDistricts = options['districts'] ?? [];
+        _availablePincodes = options['pincodes'] ?? [];
+      });
+    } catch (_) {
+      // Keep UI usable with empty options if metadata endpoint fails.
+    }
   }
 
   @override
@@ -145,26 +161,25 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
   }
 
   Future<void> _loadAllFieldOfficers() async {
-    if (_allFieldOfficers.isNotEmpty) return; // Already loaded
-    
+    if (_availableStates.isNotEmpty ||
+        _availableDistricts.isNotEmpty ||
+        _availablePincodes.isNotEmpty) {
+      return;
+    }
+
+    if (!mounted) return;
     setState(() {
       _isLoadingAllFieldOfficers = true;
     });
 
     try {
-      // Load all field officers for dropdown population
-      final response = await FieldOfficerService.getFieldOfficers(
-        page: 0,
-        size: 10000, // Large size to get all field officers
-        search: null,
-        isActive: null,
-      );
-
+      await _loadFilterOptions();
+      if (!mounted) return;
       setState(() {
-        _allFieldOfficers = response.fieldOfficers;
         _isLoadingAllFieldOfficers = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoadingAllFieldOfficers = false;
       });
@@ -172,74 +187,59 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
   }
 
   List<String> _getUniqueStates() {
-    final states = _allFieldOfficers
-        .where((fo) => fo.state != null && fo.state!.isNotEmpty)
-        .map((fo) => fo.state!)
-        .toSet()
-        .toList();
+    final states = List<String>.from(_availableStates);
     states.sort();
     return states;
   }
 
   List<String> _getUniqueDistricts() {
-    final districts = _allFieldOfficers
-        .where((fo) => fo.district != null && fo.district!.isNotEmpty)
-        .map((fo) => fo.district!)
-        .toSet()
-        .toList();
+    final districts = List<String>.from(_availableDistricts);
     districts.sort();
     return districts;
   }
 
   List<String> _getUniquePincodes() {
-    final pincodes = _allFieldOfficers
-        .where((fo) => fo.pincode != null && fo.pincode!.isNotEmpty)
-        .map((fo) => fo.pincode!)
-        .toSet()
-        .toList();
+    final pincodes = List<String>.from(_availablePincodes);
     pincodes.sort();
     return pincodes;
   }
 
   Future<void> _loadFieldOfficers({bool forceReload = false}) async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      // Load all field officers for filtering
-      // Always reload if pincode filter is set (to get backend-filtered results)
-      // Or if forceReload is true, or if _allFieldOfficers is empty
-      if (_allFieldOfficers.isEmpty || _pincodeFilter != null || forceReload) {
-        final allResponse = await FieldOfficerService.getFieldOfficers(
-          page: 0,
-          size: 10000,
-          search: null,
-          isActive: null,
-        );
-        
-        // Apply filters and pagination immediately after loading
-        // This reduces the number of setState calls
-        _applyFiltersAndReloadInternal(allResponse.fieldOfficers);
-      } else {
-        // Apply filters and pagination without reloading
-        _applyFiltersAndReload();
-      }
+      final response = await FieldOfficerService.getFieldOfficers(
+        page: _currentPage,
+        size: _pageSize,
+        search: _searchQuery,
+        isActive: _isActiveFilter,
+      );
 
+      _applyFiltersAndReloadInternal(response.fieldOfficers);
+
+      if (!mounted) return;
       setState(() {
+        _totalPages = response.totalPages;
+        _totalElements = response.totalElements;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
       });
     }
   }
-  
+
   /// Internal method to apply filters without triggering setState for allFieldOfficers
-  void _applyFiltersAndReloadInternal(List<FieldOfficerSummary> newFieldOfficers) {
+  void _applyFiltersAndReloadInternal(
+    List<FieldOfficerSummary> newFieldOfficers,
+  ) {
     // Update all field officers in a single setState call
     _allFieldOfficers = newFieldOfficers;
     _applyFiltersAndReload();
@@ -248,10 +248,11 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
   void _onSearchChanged(String query) {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 500), () {
-    setState(() {
-      _searchQuery = query.isEmpty ? null : query;
-      _currentPage = 0;
-    });
+      if (!mounted) return;
+      setState(() {
+        _searchQuery = query.isEmpty ? null : query;
+        _currentPage = 0;
+      });
       _applyFiltersAndReload();
     });
   }
@@ -379,24 +380,39 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
       filtered = filtered.where((fo) {
         final createdDate = fo.createdAt;
         if (createdDate == null) return false;
-        
+
         // Check start date: exclude dates before start date (at start of day)
         if (_startDate != null) {
-          final startOfStartDate = DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
-          final startOfCreatedDate = DateTime(createdDate.year, createdDate.month, createdDate.day);
+          final startOfStartDate = DateTime(
+            _startDate!.year,
+            _startDate!.month,
+            _startDate!.day,
+          );
+          final startOfCreatedDate = DateTime(
+            createdDate.year,
+            createdDate.month,
+            createdDate.day,
+          );
           if (startOfCreatedDate.isBefore(startOfStartDate)) {
             return false;
           }
         }
-        
+
         // Check end date: include dates up to and including end date (at end of day)
         if (_endDate != null) {
-          final endOfEndDate = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
+          final endOfEndDate = DateTime(
+            _endDate!.year,
+            _endDate!.month,
+            _endDate!.day,
+            23,
+            59,
+            59,
+          );
           if (createdDate.isAfter(endOfEndDate)) {
             return false;
           }
         }
-        
+
         return true;
       }).toList();
     }
@@ -445,22 +461,30 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
             comparison = aDate.compareTo(bDate);
             break;
         }
-        return _sortDirection == SortDirection.ascending ? comparison : -comparison;
+        return _sortDirection == SortDirection.ascending
+            ? comparison
+            : -comparison;
       });
     }
 
     // Calculate pagination
     final totalFiltered = filtered.length;
-    final totalPages = totalFiltered > 0 ? (totalFiltered / _pageSize).ceil() : 1;
-    
+    final totalPages = totalFiltered > 0
+        ? (totalFiltered / _pageSize).ceil()
+        : 1;
+
     // Get current page data with proper bounds checking
     final startIndex = (_currentPage * _pageSize).clamp(0, totalFiltered);
     final endIndex = (startIndex + _pageSize).clamp(0, totalFiltered);
-    
+
     // Ensure current page is valid
-    final validCurrentPage = _currentPage.clamp(0, totalPages > 0 ? totalPages - 1 : 0);
-    
-    final List<FieldOfficerSummary> pageData = totalFiltered > 0 && startIndex < endIndex
+    final validCurrentPage = _currentPage.clamp(
+      0,
+      totalPages > 0 ? totalPages - 1 : 0,
+    );
+
+    final List<FieldOfficerSummary> pageData =
+        totalFiltered > 0 && startIndex < endIndex
         ? filtered.sublist(startIndex, endIndex)
         : <FieldOfficerSummary>[];
 
@@ -509,16 +533,21 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
       context,
       MaterialPageRoute(builder: (_) => const AddFieldOfficerScreen()),
     );
-    
+
     if (result == true) {
       _loadFieldOfficers();
     }
   }
 
   int get _totalFieldOfficers => _allFieldOfficers.length;
-  int get _activeFieldOfficers => _allFieldOfficers.where((fo) => fo.isActive).length;
-  int get _inactiveFieldOfficers => _allFieldOfficers.where((fo) => !fo.isActive).length;
-  int get _totalAssignedFarms => _allFieldOfficers.fold(0, (sum, fo) => sum + (fo.assignedFarmsCount ?? 0));
+  int get _activeFieldOfficers =>
+      _allFieldOfficers.where((fo) => fo.isActive).length;
+  int get _inactiveFieldOfficers =>
+      _allFieldOfficers.where((fo) => !fo.isActive).length;
+  int get _totalAssignedFarms => _allFieldOfficers.fold(
+    0,
+    (sum, fo) => sum + (fo.assignedFarmsCount ?? 0),
+  );
 
   // ---------- Shared multi-select dropdown helpers (similar to Farmer screen) ----------
 
@@ -530,8 +559,9 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     required GlobalKey key,
   }) {
     _closeDropdown();
-    
-    final RenderBox? renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+
+    final RenderBox? renderBox =
+        key.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
     final position = renderBox.localToGlobal(Offset.zero);
@@ -608,8 +638,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                     selectedValues.isEmpty
                         ? 'All $label'
                         : selectedValues.length == 1
-                            ? selectedValues.first
-                            : '${selectedValues.length} selected',
+                        ? selectedValues.first
+                        : '${selectedValues.length} selected',
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: selectedValues.isEmpty
@@ -666,20 +696,20 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 // Header
                 _buildHeader(),
                 const SizedBox(height: 28),
-                
+
                 // Stats Cards
                 _buildStatsSection(),
                 const SizedBox(height: 28),
-                
+
                 // Advanced Filters Panel
                 if (_showAdvancedFilters) ...[
                   _buildAdvancedFiltersPanel(),
                   const SizedBox(height: 20),
                 ],
-                
+
                 // Field Officers Table with integrated filters
                 _buildFieldOfficersTable(),
-                
+
                 // Pagination
                 if (_totalPages > 1) ...[
                   const SizedBox(height: 20),
@@ -747,8 +777,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 icon: Icon(
                   Icons.filter_list_rounded,
                   size: 20,
-                  color: _showAdvancedFilters 
-                      ? AppColors.brandGreen 
+                  color: _showAdvancedFilters
+                      ? AppColors.brandGreen
                       : Colors.grey.shade700,
                 ),
                 label: Text(
@@ -756,20 +786,23 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: _showAdvancedFilters 
-                        ? AppColors.brandGreen 
+                    color: _showAdvancedFilters
+                        ? AppColors.brandGreen
                         : Colors.grey.shade700,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.grey.shade700,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(
-                      color: _showAdvancedFilters 
-                          ? AppColors.brandGreen 
+                      color: _showAdvancedFilters
+                          ? AppColors.brandGreen
                           : Colors.grey.shade300,
                       width: _showAdvancedFilters ? 1.5 : 1,
                     ),
@@ -804,7 +837,10 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.brandGreen,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -823,7 +859,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
       builder: (context, constraints) {
         final isWide = constraints.maxWidth > 1200;
         final isMedium = constraints.maxWidth > 800;
-        
+
         if (isWide) {
           return Row(
             children: [
@@ -991,7 +1027,11 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
               ),
               TextButton.icon(
                 onPressed: _clearAdvancedFilters,
-                icon: Icon(Icons.clear_all_rounded, size: 18, color: Colors.grey.shade600),
+                icon: Icon(
+                  Icons.clear_all_rounded,
+                  size: 18,
+                  color: Colors.grey.shade600,
+                ),
                 label: Text(
                   'Clear All',
                   style: GoogleFonts.poppins(
@@ -1032,14 +1072,21 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                         color: Colors.grey.shade400,
                       ),
                     ),
-                    style: GoogleFonts.poppins(fontSize: 13, color: AppColors.textPrimary),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
                     items: const [
                       DropdownMenuItem(value: null, child: Text('All')),
                       DropdownMenuItem(value: true, child: Text('Active')),
                       DropdownMenuItem(value: false, child: Text('Inactive')),
                     ],
                     onChanged: _onActiveFilterChanged,
-                    icon: Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey.shade600),
+                    icon: Icon(
+                      Icons.arrow_drop_down,
+                      size: 20,
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                 ),
               ),
@@ -1057,20 +1104,30 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                       // Clear dependent multi-selects when state changes
                       if (values.isNotEmpty) {
                         final districtsInStates = _allFieldOfficers
-                            .where((fo) => values.contains(fo.state) && fo.district != null)
+                            .where(
+                              (fo) =>
+                                  values.contains(fo.state) &&
+                                  fo.district != null,
+                            )
                             .map((fo) => fo.district!)
                             .toSet()
                             .toList();
-                        _selectedDistricts =
-                            _selectedDistricts.where((d) => districtsInStates.contains(d)).toList();
+                        _selectedDistricts = _selectedDistricts
+                            .where((d) => districtsInStates.contains(d))
+                            .toList();
 
                         final pincodesInStates = _allFieldOfficers
-                            .where((fo) => values.contains(fo.state) && fo.pincode != null)
+                            .where(
+                              (fo) =>
+                                  values.contains(fo.state) &&
+                                  fo.pincode != null,
+                            )
                             .map((fo) => fo.pincode!)
                             .toSet()
                             .toList();
-                        _selectedPincodes =
-                            _selectedPincodes.where((p) => pincodesInStates.contains(p)).toList();
+                        _selectedPincodes = _selectedPincodes
+                            .where((p) => pincodesInStates.contains(p))
+                            .toList();
                       } else {
                         _selectedDistricts = [];
                         _selectedPincodes = [];
@@ -1089,10 +1146,14 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                   icon: Icons.location_city_outlined,
                   options: _selectedStates.isNotEmpty
                       ? _getUniqueDistricts()
-                          .where((d) => _allFieldOfficers
-                              .where((fo) => _selectedStates.contains(fo.state))
-                              .any((fo) => fo.district == d))
-                          .toList()
+                            .where(
+                              (d) => _allFieldOfficers
+                                  .where(
+                                    (fo) => _selectedStates.contains(fo.state),
+                                  )
+                                  .any((fo) => fo.district == d),
+                            )
+                            .toList()
                       : _getUniqueDistricts(),
                   selectedValues: _selectedDistricts,
                   onChanged: (values) {
@@ -1101,20 +1162,30 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                       // Adjust pincodes to stay in selected districts / states
                       if (values.isNotEmpty) {
                         final pincodesInDistricts = _allFieldOfficers
-                            .where((fo) => values.contains(fo.district) && fo.pincode != null)
+                            .where(
+                              (fo) =>
+                                  values.contains(fo.district) &&
+                                  fo.pincode != null,
+                            )
                             .map((fo) => fo.pincode!)
                             .toSet()
                             .toList();
-                        _selectedPincodes =
-                            _selectedPincodes.where((p) => pincodesInDistricts.contains(p)).toList();
+                        _selectedPincodes = _selectedPincodes
+                            .where((p) => pincodesInDistricts.contains(p))
+                            .toList();
                       } else if (_selectedStates.isNotEmpty) {
                         final pincodesInStates = _allFieldOfficers
-                            .where((fo) => _selectedStates.contains(fo.state) && fo.pincode != null)
+                            .where(
+                              (fo) =>
+                                  _selectedStates.contains(fo.state) &&
+                                  fo.pincode != null,
+                            )
                             .map((fo) => fo.pincode!)
                             .toSet()
                             .toList();
-                        _selectedPincodes =
-                            _selectedPincodes.where((p) => pincodesInStates.contains(p)).toList();
+                        _selectedPincodes = _selectedPincodes
+                            .where((p) => pincodesInStates.contains(p))
+                            .toList();
                       }
                       _currentPage = 0;
                     });
@@ -1131,13 +1202,19 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                   options: () {
                     Iterable<FieldOfficerSummary> source = _allFieldOfficers;
                     if (_selectedStates.isNotEmpty) {
-                      source = source.where((fo) => _selectedStates.contains(fo.state));
+                      source = source.where(
+                        (fo) => _selectedStates.contains(fo.state),
+                      );
                     }
                     if (_selectedDistricts.isNotEmpty) {
-                      source = source.where((fo) => _selectedDistricts.contains(fo.district));
+                      source = source.where(
+                        (fo) => _selectedDistricts.contains(fo.district),
+                      );
                     }
                     return source
-                        .where((fo) => fo.pincode != null && fo.pincode!.isNotEmpty)
+                        .where(
+                          (fo) => fo.pincode != null && fo.pincode!.isNotEmpty,
+                        )
                         .map((fo) => fo.pincode!)
                         .toSet()
                         .toList()
@@ -1176,14 +1253,21 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                           }
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade200),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.calendar_today_outlined, size: 18, color: Colors.grey.shade400),
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 18,
+                                color: Colors.grey.shade400,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -1200,7 +1284,11 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                               ),
                               if (_startDate != null)
                                 IconButton(
-                                  icon: Icon(Icons.clear_rounded, size: 16, color: Colors.grey.shade400),
+                                  icon: Icon(
+                                    Icons.clear_rounded,
+                                    size: 16,
+                                    color: Colors.grey.shade400,
+                                  ),
                                   onPressed: () {
                                     setState(() {
                                       _startDate = null;
@@ -1235,14 +1323,21 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                           }
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade200),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.calendar_today_outlined, size: 18, color: Colors.grey.shade400),
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 18,
+                                color: Colors.grey.shade400,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -1259,7 +1354,11 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                               ),
                               if (_endDate != null)
                                 IconButton(
-                                  icon: Icon(Icons.clear_rounded, size: 16, color: Colors.grey.shade400),
+                                  icon: Icon(
+                                    Icons.clear_rounded,
+                                    size: 16,
+                                    color: Colors.grey.shade400,
+                                  ),
                                   onPressed: () {
                                     setState(() {
                                       _endDate = null;
@@ -1284,7 +1383,6 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
       ),
     );
   }
-
 
   Widget _buildFieldOfficersTable() {
     if (_isLoading) {
@@ -1327,59 +1425,59 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.errorBg,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.error_outline_rounded,
-                  size: 48,
-                  color: AppColors.error,
-                ),
-              ),
-              const SizedBox(height: 20),
-            Text(
-                'Error Loading Data',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-              onPressed: _loadFieldOfficers,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Retry'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brandGreen,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.errorBg,
+                    shape: BoxShape.circle,
                   ),
-                  shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: AppColors.error,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                Text(
+                  'Error Loading Data',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _error!,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _loadFieldOfficers,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
         ),
       );
     }
@@ -1412,7 +1510,9 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 child: SingleChildScrollView(
                   controller: _horizontalScrollController,
                   scrollDirection: Axis.horizontal,
-                  child: _buildCustomTable(constraints.maxWidth > 0 ? constraints.maxWidth : 1200),
+                  child: _buildCustomTable(
+                    constraints.maxWidth > 0 ? constraints.maxWidth : 1200,
+                  ),
                 ),
               );
             },
@@ -1427,7 +1527,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     const double rowHeight = 72.0;
     const double headerHeight = 56.0;
     const double filterHeight = 52.0;
-    
+
     // Base column widths - used as ratios for responsive scaling
     const double baseFieldOfficerIdWidth = 120.0;
     const double baseFullNameWidth = 210.0;
@@ -1439,13 +1539,14 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     const double baseStatusWidth = 130.0;
     const double baseFarmAssignmentWidth = 170.0;
     const double baseFarmsVerifiedWidth = 150.0;
-    
+
     // Account for dividers: 10 columns = 9 dividers (1px each)
     const int numberOfDividers = 9;
     const double dividerWidth = 1.0;
     const double totalDividerWidth = numberOfDividers * dividerWidth;
-    
-    final baseTotalWidth = baseFieldOfficerIdWidth +
+
+    final baseTotalWidth =
+        baseFieldOfficerIdWidth +
         baseFullNameWidth +
         baseUsernameWidth +
         basePhoneWidth +
@@ -1456,14 +1557,14 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         baseFarmAssignmentWidth +
         baseFarmsVerifiedWidth +
         totalDividerWidth; // Include divider widths
-    
+
     // Calculate scale factor: use available width if it's larger, otherwise use base widths
     // This allows table to scale up when zoomed in but maintain readable sizes when zoomed out
     double scaleFactor = 1.0;
     if (availableWidth > baseTotalWidth) {
       scaleFactor = availableWidth / baseTotalWidth;
     }
-    
+
     // Apply scale to get effective widths
     final double fieldOfficerIdWidth = baseFieldOfficerIdWidth * scaleFactor;
     final double fullNameWidth = baseFullNameWidth * scaleFactor;
@@ -1475,17 +1576,20 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     final double statusWidth = baseStatusWidth * scaleFactor;
     final double farmAssignmentWidth = baseFarmAssignmentWidth * scaleFactor;
     final double farmsVerifiedWidth = baseFarmsVerifiedWidth * scaleFactor;
-    
+
     // The new total width includes scaled column widths and divider widths
-    final totalWidth = (baseTotalWidth - totalDividerWidth) * scaleFactor + totalDividerWidth;
-    
+    final totalWidth =
+        (baseTotalWidth - totalDividerWidth) * scaleFactor + totalDividerWidth;
+
     // Calculate minimum height for rows (page size)
     // Set max height to show approximately 15-20 rows at a time, then scroll
     const double maxVisibleHeight = 800.0; // Max height for visible area
     // Calculate actual data height based on filtered field officers
     // The Column will be as tall as needed, and the SizedBox will clip it to maxVisibleHeight
     final actualDataHeight = _filteredFieldOfficers.length * rowHeight;
-    final minDataHeight = actualDataHeight > maxVisibleHeight ? maxVisibleHeight : actualDataHeight;
+    final minDataHeight = actualDataHeight > maxVisibleHeight
+        ? maxVisibleHeight
+        : actualDataHeight;
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -1507,25 +1611,70 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
             ),
             child: Row(
               children: [
-                _buildHeaderCell('Field Officer ID', fieldOfficerIdWidth, SortColumn.fieldOfficerId, true),
+                _buildHeaderCell(
+                  'Field Officer ID',
+                  fieldOfficerIdWidth,
+                  SortColumn.fieldOfficerId,
+                  true,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Full Name', fullNameWidth, SortColumn.fullName, false),
+                _buildHeaderCell(
+                  'Full Name',
+                  fullNameWidth,
+                  SortColumn.fullName,
+                  false,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Username', usernameWidth, SortColumn.username, false),
+                _buildHeaderCell(
+                  'Username',
+                  usernameWidth,
+                  SortColumn.username,
+                  false,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Phone No', phoneWidth, SortColumn.phoneNumber, false),
+                _buildHeaderCell(
+                  'Phone No',
+                  phoneWidth,
+                  SortColumn.phoneNumber,
+                  false,
+                ),
                 _buildHeaderDivider(),
                 _buildHeaderCell('Email', emailWidth, SortColumn.email, false),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Pincode', pincodeWidth, SortColumn.pincode, false),
+                _buildHeaderCell(
+                  'Pincode',
+                  pincodeWidth,
+                  SortColumn.pincode,
+                  false,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Location', locationWidth, SortColumn.location, false),
+                _buildHeaderCell(
+                  'Location',
+                  locationWidth,
+                  SortColumn.location,
+                  false,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Status', statusWidth, SortColumn.status, false),
+                _buildHeaderCell(
+                  'Status',
+                  statusWidth,
+                  SortColumn.status,
+                  false,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Farm Assignment', farmAssignmentWidth, SortColumn.assignedFarmsCount, true),
+                _buildHeaderCell(
+                  'Farm Assignment',
+                  farmAssignmentWidth,
+                  SortColumn.assignedFarmsCount,
+                  true,
+                ),
                 _buildHeaderDivider(),
-                _buildHeaderCell('Farms Verified', farmsVerifiedWidth, null, false),
+                _buildHeaderCell(
+                  'Farms Verified',
+                  farmsVerifiedWidth,
+                  null,
+                  false,
+                ),
               ],
             ),
           ),
@@ -1580,7 +1729,9 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            ..._filteredFieldOfficers.asMap().entries.map((entry) {
+                            ..._filteredFieldOfficers.asMap().entries.map((
+                              entry,
+                            ) {
                               final index = entry.key;
                               final fieldOfficer = entry.value;
                               return _buildCustomFieldOfficerRow(
@@ -1596,7 +1747,9 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                                 statusWidth,
                                 farmAssignmentWidth,
                                 farmsVerifiedWidth,
-                                index == _filteredFieldOfficers.length - 1, // Last row
+                                index ==
+                                    _filteredFieldOfficers.length -
+                                        1, // Last row
                               );
                             }),
                           ],
@@ -1686,7 +1839,10 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.brandGreen,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -1715,7 +1871,12 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     );
   }
 
-  Widget _buildHeaderCell(String label, double width, SortColumn? sortColumn, bool isFirstOrLast) {
+  Widget _buildHeaderCell(
+    String label,
+    double width,
+    SortColumn? sortColumn,
+    bool isFirstOrLast,
+  ) {
     final isSorted = _sortColumn == sortColumn;
     return InkWell(
       onTap: sortColumn != null ? () => _onSortChanged(sortColumn) : null,
@@ -1777,110 +1938,185 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 value: _isActiveFilter,
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppColors.brandGreen, width: 1.5),
+                    borderSide: BorderSide(
+                      color: AppColors.brandGreen,
+                      width: 1.5,
+                    ),
                   ),
                   filled: true,
                   fillColor: Colors.white,
                 ),
-                style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textPrimary),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppColors.textPrimary,
+                ),
                 items: const [
                   DropdownMenuItem(value: null, child: Text('All')),
                   DropdownMenuItem(value: true, child: Text('Active')),
                   DropdownMenuItem(value: false, child: Text('Inactive')),
                 ],
                 onChanged: _onActiveFilterChanged,
-                icon: Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey.shade600),
+                icon: Icon(
+                  Icons.arrow_drop_down,
+                  size: 20,
+                  color: Colors.grey.shade600,
+                ),
               ),
             )
           : filterType == 'fieldOfficerId'
-              ? _buildSearchInput(width, _fieldOfficerIdSearchController, 'Search ID...', (value) {
-                  _fieldOfficerIdSearchDebounce?.cancel();
-                  _fieldOfficerIdSearchDebounce = Timer(const Duration(milliseconds: 300), () {
+          ? _buildSearchInput(
+              width,
+              _fieldOfficerIdSearchController,
+              'Search ID...',
+              (value) {
+                _fieldOfficerIdSearchDebounce?.cancel();
+                _fieldOfficerIdSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
                     setState(() {
                       _fieldOfficerIdSearch = value.isEmpty ? null : value;
                       _currentPage = 0;
                     });
                     _applyFiltersAndReload();
-                  });
-                })
-              : filterType == 'fullName'
-                  ? _buildSearchInput(width, _fullNameSearchController, 'Search name...', (value) {
-                      _fullNameSearchDebounce?.cancel();
-                      _fullNameSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                        setState(() {
-                          _fullNameSearch = value.isEmpty ? null : value;
-                          _currentPage = 0;
-                        });
-                        _applyFiltersAndReload();
-                      });
-                    })
-                  : filterType == 'username'
-                      ? _buildSearchInput(width, _usernameSearchController, 'Search username...', (value) {
-                          _usernameSearchDebounce?.cancel();
-                          _usernameSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                            setState(() {
-                              _usernameSearch = value.isEmpty ? null : value;
-                              _currentPage = 0;
-                            });
-                            _applyFiltersAndReload();
-                          });
-                        })
-                      : filterType == 'phone'
-                          ? _buildSearchInput(width, _phoneSearchController, 'Search phone...', (value) {
-                              _phoneSearchDebounce?.cancel();
-                              _phoneSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                                setState(() {
-                                  _phoneSearch = value.isEmpty ? null : value;
-                                  _currentPage = 0;
-                                });
-                                _applyFiltersAndReload();
-                              });
-                            })
-                          : filterType == 'email'
-                              ? _buildSearchInput(width, _emailSearchController, 'Search email...', (value) {
-                                  _emailSearchDebounce?.cancel();
-                                  _emailSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                                    setState(() {
-                                      _emailSearch = value.isEmpty ? null : value;
-                                      _currentPage = 0;
-                                    });
-                                    _applyFiltersAndReload();
-                                  });
-                                })
-                              : filterType == 'pincode'
-                                  ? _buildSearchInput(width, _pincodeSearchController, 'Search pincode...', (value) {
-                                      _pincodeSearchDebounce?.cancel();
-                                      _pincodeSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                                        setState(() {
-                                          _pincodeSearch = value.isEmpty ? null : value;
-                                          _currentPage = 0;
-                                        });
-                                        _applyFiltersAndReload();
-                                      });
-                                    })
-                                  : filterType == 'location'
-                                      ? _buildSearchInput(width, _locationSearchController, 'Search location...', (value) {
-                                          _locationSearchDebounce?.cancel();
-                                          _locationSearchDebounce = Timer(const Duration(milliseconds: 300), () {
-                                            setState(() {
-                                              _locationSearch = value.isEmpty ? null : value;
-                                              _currentPage = 0;
-                                            });
-                                            _applyFiltersAndReload();
-                                          });
-                                        })
-                                      : const SizedBox.shrink(),
+                  },
+                );
+              },
+            )
+          : filterType == 'fullName'
+          ? _buildSearchInput(
+              width,
+              _fullNameSearchController,
+              'Search name...',
+              (value) {
+                _fullNameSearchDebounce?.cancel();
+                _fullNameSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _fullNameSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'username'
+          ? _buildSearchInput(
+              width,
+              _usernameSearchController,
+              'Search username...',
+              (value) {
+                _usernameSearchDebounce?.cancel();
+                _usernameSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _usernameSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'phone'
+          ? _buildSearchInput(
+              width,
+              _phoneSearchController,
+              'Search phone...',
+              (value) {
+                _phoneSearchDebounce?.cancel();
+                _phoneSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _phoneSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'email'
+          ? _buildSearchInput(
+              width,
+              _emailSearchController,
+              'Search email...',
+              (value) {
+                _emailSearchDebounce?.cancel();
+                _emailSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _emailSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'pincode'
+          ? _buildSearchInput(
+              width,
+              _pincodeSearchController,
+              'Search pincode...',
+              (value) {
+                _pincodeSearchDebounce?.cancel();
+                _pincodeSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _pincodeSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : filterType == 'location'
+          ? _buildSearchInput(
+              width,
+              _locationSearchController,
+              'Search location...',
+              (value) {
+                _locationSearchDebounce?.cancel();
+                _locationSearchDebounce = Timer(
+                  const Duration(milliseconds: 300),
+                  () {
+                    setState(() {
+                      _locationSearch = value.isEmpty ? null : value;
+                      _currentPage = 0;
+                    });
+                    _applyFiltersAndReload();
+                  },
+                );
+              },
+            )
+          : const SizedBox.shrink(),
     );
   }
 
@@ -1900,7 +2136,10 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
               setStateLocal(() {});
               onChanged(value);
             },
-            style: GoogleFonts.poppins(fontSize: 12, color: AppColors.textPrimary),
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: AppColors.textPrimary,
+            ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.poppins(
@@ -1908,7 +2147,10 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                 color: Colors.grey.shade400,
               ),
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 8,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
@@ -1925,14 +2167,21 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
               fillColor: Colors.white,
               suffixIcon: controller.text.isNotEmpty
                   ? IconButton(
-                      icon: Icon(Icons.clear_rounded, size: 14, color: Colors.grey.shade400),
+                      icon: Icon(
+                        Icons.clear_rounded,
+                        size: 14,
+                        color: Colors.grey.shade400,
+                      ),
                       onPressed: () {
                         controller.clear();
                         setStateLocal(() {});
                         onChanged('');
                       },
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                     )
                   : null,
             ),
@@ -1964,7 +2213,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(
-            bottom: isLastRow 
+            bottom: isLastRow
                 ? BorderSide.none
                 : BorderSide(color: Colors.grey.shade200, width: 1),
           ),
@@ -1975,119 +2224,161 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
             onTap: () => _showDetailDialog(fieldOfficer),
             hoverColor: AppColors.brandGreen.withOpacity(0.05),
             child: Row(
-            children: [
-                _buildDataCell(fieldOfficerIdWidth, Text(
-                  fieldOfficer.fieldOfficerId.toString(),
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+              children: [
+                _buildDataCell(
+                  fieldOfficerIdWidth,
+                  Text(
+                    fieldOfficer.fieldOfficerId.toString(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ), true),
-                _buildDivider(),
-                _buildDataCell(fullNameWidth, Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: AppColors.brandGreen.withOpacity(0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                child: Text(
-                          fieldOfficer.fullName.isNotEmpty
-                              ? fieldOfficer.fullName[0].toUpperCase()
-                              : '?',
-                  style: GoogleFonts.poppins(
-                    color: AppColors.brandGreen,
-                    fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                  ),
+                  true,
                 ),
-              ),
-                    ),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      child: Text(
-                        fieldOfficer.fullName.isEmpty ? 'Not Set' : fieldOfficer.fullName,
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
+                _buildDivider(),
+                _buildDataCell(
+                  fullNameWidth,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.brandGreen.withOpacity(0.12),
+                          shape: BoxShape.circle,
                         ),
-                        overflow: TextOverflow.ellipsis,
+                        child: Center(
+                          child: Text(
+                            fieldOfficer.fullName.isNotEmpty
+                                ? fieldOfficer.fullName[0].toUpperCase()
+                                : '?',
+                            style: GoogleFonts.poppins(
+                              color: AppColors.brandGreen,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ), false),
-                _buildDivider(),
-                _buildDataCell(usernameWidth, SizedBox(
-                  width: usernameWidth - 24,
-                  child: Text(
-                    fieldOfficer.username,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          fieldOfficer.fullName.isEmpty
+                              ? 'Not Set'
+                              : fieldOfficer.fullName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ), false),
+                  false,
+                ),
                 _buildDivider(),
-                _buildDataCell(phoneWidth, SizedBox(
-                  width: phoneWidth - 24,
-                  child: Text(
-                    fieldOfficer.phoneNumber,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
+                _buildDataCell(
+                  usernameWidth,
+                  SizedBox(
+                    width: usernameWidth - 24,
+                    child: Text(
+                      fieldOfficer.username,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ), false),
+                  false,
+                ),
                 _buildDivider(),
-                _buildDataCell(emailWidth, SizedBox(
-                  width: emailWidth - 24,
-                  child: Text(
-                    fieldOfficer.email,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
+                _buildDataCell(
+                  phoneWidth,
+                  SizedBox(
+                    width: phoneWidth - 24,
+                    child: Text(
+                      fieldOfficer.phoneNumber,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ), false),
+                  false,
+                ),
                 _buildDivider(),
-                _buildDataCell(pincodeWidth, SizedBox(
-                  width: pincodeWidth - 24,
-                  child: Text(
-                    fieldOfficer.pincode ?? '-',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
+                _buildDataCell(
+                  emailWidth,
+                  SizedBox(
+                    width: emailWidth - 24,
+                    child: Text(
+                      fieldOfficer.email,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ), false),
+                  false,
+                ),
                 _buildDivider(),
-                _buildDataCell(locationWidth, SizedBox(
-                  width: locationWidth - 24,
-                  child: Text(
-                    '${fieldOfficer.village ?? '-'}, ${fieldOfficer.district ?? '-'}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
+                _buildDataCell(
+                  pincodeWidth,
+                  SizedBox(
+                    width: pincodeWidth - 24,
+                    child: Text(
+                      fieldOfficer.pincode ?? '-',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ), false),
+                  false,
+                ),
                 _buildDivider(),
-                _buildDataCell(statusWidth, _buildStatusChip(fieldOfficer.isActive), false),
+                _buildDataCell(
+                  locationWidth,
+                  SizedBox(
+                    width: locationWidth - 24,
+                    child: Text(
+                      '${fieldOfficer.village ?? '-'}, ${fieldOfficer.district ?? '-'}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  false,
+                ),
                 _buildDivider(),
-                _buildDataCell(farmAssignmentWidth, _buildFarmAssignmentCell(fieldOfficer), false),
+                _buildDataCell(
+                  statusWidth,
+                  _buildStatusChip(fieldOfficer.isActive),
+                  false,
+                ),
                 _buildDivider(),
-                _buildDataCell(farmsVerifiedWidth, _buildFarmsVerifiedCell(fieldOfficer), true),
+                _buildDataCell(
+                  farmAssignmentWidth,
+                  _buildFarmAssignmentCell(fieldOfficer),
+                  false,
+                ),
+                _buildDivider(),
+                _buildDataCell(
+                  farmsVerifiedWidth,
+                  _buildFarmsVerifiedCell(fieldOfficer),
+                  true,
+                ),
               ],
             ),
           ),
@@ -2131,11 +2422,9 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
 
   Widget _buildFarmAssignmentCell(FieldOfficerSummary fieldOfficer) {
     final count = fieldOfficer.assignedFarmsCount ?? 0;
-    
+
     return InkWell(
-      onTap: count > 0
-          ? () => _showDetailDialog(fieldOfficer)
-          : null,
+      onTap: count > 0 ? () => _showDetailDialog(fieldOfficer) : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
@@ -2183,7 +2472,7 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
 
   Widget _buildFarmsVerifiedCell(FieldOfficerSummary fieldOfficer) {
     final count = fieldOfficer.verifiedFarmsCount ?? 0;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -2224,9 +2513,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => FieldOfficerDetailDialog(
-        fieldOfficer: fieldOfficer,
-      ),
+      builder: (context) =>
+          FieldOfficerDetailDialog(fieldOfficer: fieldOfficer),
     );
   }
 
@@ -2260,13 +2548,13 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 600;
-          
+
           if (isWide) {
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-        Text(
-          'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
+                Text(
+                  'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -2297,13 +2585,16 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.brandGreen.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-            'Page ${_currentPage + 1} of $_totalPages',
+                        'Page ${_currentPage + 1} of $_totalPages',
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -2339,8 +2630,8 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
           } else {
             return Column(
               children: [
-        Text(
-          'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
+                Text(
+                  'Showing ${(_currentPage * _pageSize) + 1}-${(_currentPage + 1) * _pageSize > _totalElements ? _totalElements : (_currentPage + 1) * _pageSize} of $_totalElements',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -2372,7 +2663,10 @@ class _FieldOfficerListScreenState extends State<FieldOfficerListScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.brandGreen.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -2462,9 +2756,7 @@ class _DropdownOverlayState extends State<_DropdownOverlay> {
   @override
   Widget build(BuildContext context) {
     final List<String> filteredOptions = widget.options
-        .where(
-          (o) => o.toLowerCase().contains(searchQuery.toLowerCase()),
-        )
+        .where((o) => o.toLowerCase().contains(searchQuery.toLowerCase()))
         .toList();
 
     return Stack(
@@ -2473,9 +2765,7 @@ class _DropdownOverlayState extends State<_DropdownOverlay> {
         Positioned.fill(
           child: GestureDetector(
             onTap: widget.onClose,
-            child: Container(
-              color: Colors.transparent,
-            ),
+            child: Container(color: Colors.transparent),
           ),
         ),
         // Dropdown content
@@ -2538,15 +2828,11 @@ class _DropdownOverlayState extends State<_DropdownOverlay> {
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                        ),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),

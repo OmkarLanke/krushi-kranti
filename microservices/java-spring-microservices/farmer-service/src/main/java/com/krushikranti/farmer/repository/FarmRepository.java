@@ -22,6 +22,12 @@ public interface FarmRepository extends JpaRepository<Farm, Long> {
     List<Farm> findByFarmerIdAndIsActiveTrue(Long farmerId);
 
     /**
+     * Find all active farms for a farmer with farmer details (N+1 fix).
+     */
+    @Query("SELECT f FROM Farm f JOIN FETCH f.farmer WHERE f.farmer.id = :farmerId AND f.isActive = true")
+    List<Farm> findByFarmerIdAndIsActiveTrueWithFarmer(@Param("farmerId") Long farmerId);
+
+    /**
      * Find all farms for a farmer (including inactive).
      */
     List<Farm> findByFarmerId(Long farmerId);
@@ -97,6 +103,14 @@ public interface FarmRepository extends JpaRepository<Farm, Long> {
      */
     @Query("SELECT COUNT(f) FROM Farm f WHERE f.farmer.id = :farmerId AND f.isVerified = true AND f.isActive = true")
     long countByFarmerIdAndIsVerifiedTrue(@Param("farmerId") Long farmerId);
+
+        @Query("SELECT f.farmer.id, COUNT(f) FROM Farm f WHERE f.farmer.id IN :farmerIds GROUP BY f.farmer.id")
+        List<Object[]> countByFarmerIdsGrouped(@Param("farmerIds") List<Long> farmerIds);
+
+        @Query("SELECT f.farmer.id, COUNT(f) FROM Farm f " +
+            "WHERE f.farmer.id IN :farmerIds AND f.isVerified = true AND f.isActive = true " +
+            "GROUP BY f.farmer.id")
+        List<Object[]> countVerifiedByFarmerIdsGrouped(@Param("farmerIds") List<Long> farmerIds);
     
     /**
      * Count all verified farms
