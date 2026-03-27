@@ -27,7 +27,7 @@ spring:
             maxAge: 3600
       httpclient:
         connect-timeout: 10000
-        response-timeout: 30s
+        response-timeout: 120s
       codec:
         max-in-memory-size: 20MB
 

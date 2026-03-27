@@ -1,8 +1,53 @@
 import '../../../core/services/http_service.dart';
 import '../models/assignment_models.dart';
 
+class _AssignmentPageCacheEntry {
+  final PagedAssignmentsResponse data;
+  final DateTime cachedAt;
+
+  const _AssignmentPageCacheEntry({
+    required this.data,
+    required this.cachedAt,
+  });
+}
+
 class FieldOfficerAssignmentService {
   static const String _basePath = 'admin/field-officers';
+  static final Map<String, _AssignmentPageCacheEntry> _assignmentPageCache = {};
+  static const Duration _assignmentsCacheTtl = Duration(seconds: 90);
+
+  static String _cacheKey(int fieldOfficerId, int page, int size) =>
+      '$fieldOfficerId:$page:$size';
+
+  static PagedAssignmentsResponse? getCachedAssignmentsForFieldOfficer(
+    int fieldOfficerId, {
+    int page = 0,
+    int size = 20,
+  }) {
+    final key = _cacheKey(fieldOfficerId, page, size);
+    final entry = _assignmentPageCache[key];
+    if (entry == null) {
+      return null;
+    }
+
+    final isExpired = DateTime.now().difference(entry.cachedAt) > _assignmentsCacheTtl;
+    if (isExpired) {
+      _assignmentPageCache.remove(key);
+      return null;
+    }
+
+    return entry.data;
+  }
+
+  static void invalidateAssignmentsCache({int? fieldOfficerId}) {
+    if (fieldOfficerId == null) {
+      _assignmentPageCache.clear();
+      return;
+    }
+
+    final prefix = '$fieldOfficerId:';
+    _assignmentPageCache.removeWhere((key, _) => key.startsWith(prefix));
+  }
 
   /// Get suggested field officers for a farmer based on pincode matching.
   /// If farmId is provided, only field officers matching that specific farm's pincode are returned.
@@ -38,6 +83,7 @@ class FieldOfficerAssignmentService {
       );
 
       if (response is Map && response.containsKey('data')) {
+        invalidateAssignmentsCache(fieldOfficerId: request.fieldOfficerId);
         return AssignmentResponse.fromJson(response['data'] as Map<String, dynamic>);
       }
 
@@ -74,27 +120,56 @@ class FieldOfficerAssignmentService {
     }
   }
 
-  /// Get all assignments for a field officer (with farmer and farm details)
-  static Future<List<AssignmentResponse>> getAssignmentsForFieldOfficer(
-      int fieldOfficerId) async {
+  /// Get paginated assignments for a field officer (with farmer and farm details)
+  static Future<PagedAssignmentsResponse> getAssignmentsForFieldOfficer(
+    int fieldOfficerId, {
+    int page = 0,
+    int size = 20,
+    bool useCache = true,
+  }) async {
     try {
+      if (useCache) {
+        final cached = getCachedAssignmentsForFieldOfficer(
+          fieldOfficerId,
+          page: page,
+          size: size,
+        );
+        if (cached != null) {
+          return cached;
+        }
+      }
+
       final response = await HttpService.get(
-        '$_basePath/assignments?fieldOfficerId=$fieldOfficerId&page=0&size=1000',
+        '$_basePath/assignments?fieldOfficerId=$fieldOfficerId&page=$page&size=$size',
       );
 
       if (response is Map && response.containsKey('data')) {
-        final data = response['data'] as Map<String, dynamic>;
-        if (data.containsKey('assignments')) {
-          final assignments = data['assignments'] as List;
-          return assignments
-              .map((e) => AssignmentResponse.fromJson(e as Map<String, dynamic>))
-              .toList();
+        final data = response['data'];
+
+        if (data is Map<String, dynamic>) {
+          final parsed = PagedAssignmentsResponse.fromJson(data);
+          _assignmentPageCache[_cacheKey(fieldOfficerId, page, size)] =
+              _AssignmentPageCacheEntry(data: parsed, cachedAt: DateTime.now());
+          return parsed;
         }
-        // Fallback: if data is directly a list
+
+        // Legacy fallback: handle list response shape.
         if (data is List) {
-          return (data as List)
+          final assignments = data
               .map((e) => AssignmentResponse.fromJson(e as Map<String, dynamic>))
               .toList();
+          final parsed = PagedAssignmentsResponse(
+            assignments: assignments,
+            currentPage: 0,
+            totalPages: 1,
+            totalElements: assignments.length,
+            pageSize: assignments.length,
+            hasNext: false,
+            hasPrevious: false,
+          );
+          _assignmentPageCache[_cacheKey(fieldOfficerId, page, size)] =
+              _AssignmentPageCacheEntry(data: parsed, cachedAt: DateTime.now());
+          return parsed;
         }
       }
 

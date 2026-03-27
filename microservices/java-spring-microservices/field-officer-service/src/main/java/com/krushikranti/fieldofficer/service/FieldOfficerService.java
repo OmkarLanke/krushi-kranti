@@ -73,7 +73,7 @@ public class FieldOfficerService {
         // Count assigned farms (initially 0 for new field officer)
         Integer assignedFarmsCount = countAssignedFarms(saved.getId());
         
-        return buildSummaryDto(saved, userDetails, assignedFarmsCount);
+        return buildSummaryDto(saved, userDetails, assignedFarmsCount, 0);
     }
 
     /**
@@ -96,21 +96,24 @@ public class FieldOfficerService {
                 .map(FieldOfficer::getUserId)
                 .collect(Collectors.toList());
 
+        List<Long> fieldOfficerIds = fieldOfficerPage.getContent().stream()
+            .map(FieldOfficer::getId)
+            .collect(Collectors.toList());
+
         // Fetch user details (username, email, phone) from auth service
         Map<Long, Map<String, Object>> userMap = fetchUserDetailsBatch(userIds);
 
-        // Fetch assignment counts for all field officers
-        Map<Long, Integer> assignmentCountMap = fieldOfficerPage.getContent().stream()
-                .collect(Collectors.toMap(
-                        FieldOfficer::getId,
-                        fo -> countAssignedFarms(fo.getId())
-                ));
+        Map<Long, Integer> assignmentCountMap = toIntCountMap(
+            assignmentRepository.countAssignedByFieldOfficerIds(fieldOfficerIds));
+        Map<Long, Integer> verifiedCountMap = toIntCountMap(
+            assignmentRepository.countVerifiedByFieldOfficerIds(fieldOfficerIds));
 
         List<FieldOfficerSummaryDto> summaries = fieldOfficerPage.getContent().stream()
                 .map(fo -> {
                     Map<String, Object> userDetails = userMap.getOrDefault(fo.getUserId(), new HashMap<>());
                     Integer assignedFarmsCount = assignmentCountMap.getOrDefault(fo.getId(), 0);
-                    return buildSummaryDto(fo, userDetails, assignedFarmsCount);
+                Integer verifiedFarmsCount = verifiedCountMap.getOrDefault(fo.getId(), 0);
+                return buildSummaryDto(fo, userDetails, assignedFarmsCount, verifiedFarmsCount);
                 })
                 .collect(Collectors.toList());
         
@@ -128,6 +131,14 @@ public class FieldOfficerService {
         response.put("hasPrevious", fieldOfficerPage.hasPrevious());
 
         return response;
+    }
+
+    public Map<String, List<String>> getFilterOptions() {
+        Map<String, List<String>> options = new HashMap<>();
+        options.put("states", fieldOfficerRepository.findDistinctStates());
+        options.put("districts", fieldOfficerRepository.findDistinctDistricts());
+        options.put("pincodes", fieldOfficerRepository.findDistinctPincodes());
+        return options;
     }
 
     // ==================== Helper Methods ====================
@@ -218,16 +229,16 @@ public class FieldOfficerService {
         return userMap;
     }
 
-    private FieldOfficerSummaryDto buildSummaryDto(FieldOfficer fieldOfficer, Map<String, Object> userDetails, Integer assignedFarmsCount) {
+    private FieldOfficerSummaryDto buildSummaryDto(FieldOfficer fieldOfficer,
+                                                   Map<String, Object> userDetails,
+                                                   Integer assignedFarmsCount,
+                                                   Integer verifiedFarmsCount) {
         String fullName = buildFullName(fieldOfficer.getFirstName(), fieldOfficer.getLastName());
         
         // Log pincode retrieval to verify it's being fetched from database
         String pincode = fieldOfficer.getPincode();
         log.info("Building DTO for field officer ID: {}, pincode from DB: {}", 
                 fieldOfficer.getId(), pincode != null ? pincode : "NULL");
-        
-        // Count verified farms for this field officer
-        Integer verifiedFarmsCount = countVerifiedFarms(fieldOfficer.getId());
         
         FieldOfficerSummaryDto dto = FieldOfficerSummaryDto.builder()
                 .fieldOfficerId(fieldOfficer.getId())
@@ -252,6 +263,16 @@ public class FieldOfficerService {
                 assignedFarmsCount, verifiedFarmsCount);
         
         return dto;
+    }
+
+    private Map<Long, Integer> toIntCountMap(List<Object[]> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return Map.of();
+        }
+        return rows.stream().collect(Collectors.toMap(
+                row -> ((Number) row[0]).longValue(),
+                row -> ((Number) row[1]).intValue(),
+                (a, b) -> a));
     }
 
     /**

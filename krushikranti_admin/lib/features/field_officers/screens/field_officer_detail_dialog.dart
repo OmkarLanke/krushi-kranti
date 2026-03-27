@@ -23,28 +23,59 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
   List<AssignmentResponse> _assignments = [];
   bool _isLoadingAssignments = false;
   String? _assignmentsError;
+  static const int _previewPageSize = 20;
+  int _totalAssignmentsCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadAssignments();
+    _totalAssignmentsCount = widget.fieldOfficer.assignedFarmsCount ?? 0;
+
+    final cached = FieldOfficerAssignmentService.getCachedAssignmentsForFieldOfficer(
+      widget.fieldOfficer.fieldOfficerId,
+      page: 0,
+      size: _previewPageSize,
+    );
+    if (cached != null) {
+      _assignments = cached.assignments;
+      if (cached.totalElements > 0) {
+        _totalAssignmentsCount = cached.totalElements;
+      }
+      _isLoadingAssignments = false;
+      _loadAssignments(showLoader: false, useCache: false);
+    } else {
+      _loadAssignments();
+    }
   }
 
-  Future<void> _loadAssignments() async {
-    setState(() {
-      _isLoadingAssignments = true;
-      _assignmentsError = null;
-    });
+  Future<void> _loadAssignments({
+    bool showLoader = true,
+    bool useCache = true,
+  }) async {
+    if (showLoader) {
+      setState(() {
+        _isLoadingAssignments = true;
+        _assignmentsError = null;
+      });
+    }
 
     try {
-      final assignments =
+      final assignmentPage =
           await FieldOfficerAssignmentService.getAssignmentsForFieldOfficer(
-              widget.fieldOfficer.fieldOfficerId);
+        widget.fieldOfficer.fieldOfficerId,
+        page: 0,
+        size: _previewPageSize,
+        useCache: useCache,
+      );
+      if (!mounted) return;
       setState(() {
-        _assignments = assignments;
+        _assignments = assignmentPage.assignments;
+        _totalAssignmentsCount = assignmentPage.totalElements;
         _isLoadingAssignments = false;
+        _assignmentsError = null;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _assignmentsError = _parseErrorMessage(e.toString());
         _isLoadingAssignments = false;
@@ -177,7 +208,7 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
 
             // Assignments Section
             _buildSection(
-              'Farm Assignments (${_assignments.length})',
+              'Farm Assignments ($_totalAssignmentsCount)',
               Icons.agriculture_rounded,
               AppColors.info,
               _buildAssignmentsContent(),
@@ -497,7 +528,7 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
       children: [
         // Show first 3 assignments with option to view all
         ...(_assignments.take(3).map((assignment) => _buildAssignmentCard(assignment))),
-        if (_assignments.length > 3) ...[
+        if (_totalAssignmentsCount > 3) ...[
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
@@ -519,12 +550,14 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
                   builder: (context) => FieldOfficerAssignmentsDialog(
                     fieldOfficerId: widget.fieldOfficer.fieldOfficerId,
                     fieldOfficerName: widget.fieldOfficer.fullName,
+                    initialAssignments: _assignments,
+                    initialTotalCount: _totalAssignmentsCount,
                   ),
                 );
               },
               icon: const Icon(Icons.visibility, size: 18),
               label: Text(
-                'View All ${_assignments.length} Assignments',
+                'View All $_totalAssignmentsCount Assignments',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

@@ -47,11 +47,12 @@ public class CropService {
     @Transactional(readOnly = true)
     public List<CropResponse> getCropsByFarmId(Long userId, Long farmId, String language) {
         Farm farm = getFarmByUserIdAndFarmId(userId, farmId);
-        List<Crop> crops = cropRepository.findByFarmIdAndIsActiveTrue(farm.getId());
-        
+        // Use optimized query with JOIN FETCH to avoid N+1
+        List<Crop> crops = cropRepository.findByFarmIdAndIsActiveTrueWithDetails(farm.getId());
+
         // Normalize language code
         final String finalLanguage = normalizeLanguage(language);
-        
+
         log.debug("Found {} active crops for farmId: {} with language: {}", crops.size(), farmId, finalLanguage);
         return crops.stream()
                 .map(crop -> mapToResponse(crop, finalLanguage))
@@ -216,11 +217,12 @@ public class CropService {
     @Transactional(readOnly = true)
     public List<CropResponse> getCropsByType(Long userId, Long cropTypeId, String language) {
         getFarmerByUserId(userId);
-        
+
         // Normalize language code
         final String finalLanguage = normalizeLanguage(language);
-        
-        List<Crop> crops = cropRepository.findByFarmerUserIdAndCropTypeId(userId, cropTypeId);
+
+        // Use optimized query with JOIN FETCH to avoid N+1
+        List<Crop> crops = cropRepository.findByFarmerUserIdAndCropTypeIdWithDetails(userId, cropTypeId);
         return crops.stream()
                 .map(crop -> mapToResponse(crop, finalLanguage))
                 .collect(Collectors.toList());
@@ -244,10 +246,9 @@ public class CropService {
 
     private Crop getCropByUserIdAndCropId(Long userId, Long cropId) {
         getFarmerByUserId(userId);
-        
-        return cropRepository.findByFarmerUserId(userId).stream()
-                .filter(crop -> crop.getId().equals(cropId))
-                .findFirst()
+
+        // Use optimized query with JOIN FETCH to avoid N+1
+        return cropRepository.findByIdAndFarmerUserIdWithDetails(cropId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Crop not found with ID: " + cropId));
     }
 

@@ -1,6 +1,6 @@
 package com.krushikranti.notification.controller;
 
-import com.krushikranti.notification.model.Notification;
+import com.krushikranti.notification.dto.NotificationDto;
 import com.krushikranti.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,16 +13,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * REST API for farmers to fetch their notifications
+ * REST API for farmers to fetch their notifications.
+ * Uses NotificationDto to avoid exposing entity internals (e.g., phone numbers, raw data).
  */
 @RestController
 @RequestMapping("/notification")
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationController {
-    
+
     private final NotificationService notificationService;
-    
+
     /**
      * Get all notifications for a user with pagination
      * GET /notification?userId=123&page=0&size=20
@@ -32,16 +33,16 @@ public class NotificationController {
             @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        
+
         try {
             if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
                 return ResponseEntity.status(401)
                         .body(createErrorResponse("Unauthorized: Missing user identification"));
             }
-            
+
             Long userId = Long.parseLong(userIdHeader.trim());
-            Page<Notification> notifications = notificationService.getNotificationsByUserId(userId, page, size);
-            
+            Page<NotificationDto> notifications = notificationService.getNotificationDtosByUserId(userId, page, size);
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Notifications retrieved successfully");
@@ -54,7 +55,7 @@ public class NotificationController {
                     "hasNext", notifications.hasNext(),
                     "hasPrevious", notifications.hasPrevious()
             ));
-            
+
             return ResponseEntity.ok(response);
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest()
@@ -65,7 +66,7 @@ public class NotificationController {
                     .body(createErrorResponse("An unexpected error occurred: " + e.getMessage()));
         }
     }
-    
+
     /**
      * Get unread notifications for a user
      * GET /notification/unread
@@ -73,17 +74,17 @@ public class NotificationController {
     @GetMapping("/unread")
     public ResponseEntity<Map<String, Object>> getUnreadNotifications(
             @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
-        
+
         try {
             if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
                 return ResponseEntity.status(401)
                         .body(createErrorResponse("Unauthorized: Missing user identification"));
             }
-            
+
             Long userId = Long.parseLong(userIdHeader.trim());
-            List<Notification> notifications = notificationService.getUnreadNotificationsByUserId(userId);
+            List<NotificationDto> notifications = notificationService.getUnreadNotificationDtosByUserId(userId);
             Long unreadCount = notificationService.getUnreadCountByUserId(userId);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Unread notifications retrieved successfully");
@@ -91,7 +92,7 @@ public class NotificationController {
                     "notifications", notifications,
                     "unreadCount", unreadCount
             ));
-            
+
             return ResponseEntity.ok(response);
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest()
@@ -102,7 +103,7 @@ public class NotificationController {
                     .body(createErrorResponse("An unexpected error occurred: " + e.getMessage()));
         }
     }
-    
+
     /**
      * Get unread notifications by type (e.g., FARM_VERIFICATION_OTP)
      * GET /notification/unread/FARM_VERIFICATION_OTP
@@ -111,54 +112,36 @@ public class NotificationController {
     public ResponseEntity<Map<String, Object>> getUnreadNotificationsByType(
             @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
             @PathVariable String eventType) {
-        
+
         log.info("=== GET UNREAD NOTIFICATIONS BY TYPE ===");
         log.info("Event Type: {}", eventType);
         log.info("X-User-Id header: {}", userIdHeader);
-        
+
         try {
             if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
                 log.error("CRITICAL: Missing X-User-Id header - returning 401");
                 return ResponseEntity.status(401)
                         .body(createErrorResponse("Unauthorized: Missing user identification"));
             }
-            
+
             Long userId = Long.parseLong(userIdHeader.trim());
             log.info("Parsed User ID: {}", userId);
-            
-            // CRITICAL: Filter by recipientUserId to ensure only this user's notifications are returned
-            List<Notification> notifications = notificationService.getUnreadNotificationsByType(userId, eventType);
-            
-            // Additional safety check: Verify all notifications belong to the requested user
-            List<Notification> verifiedNotifications = notifications.stream()
-                    .filter(n -> n.getRecipientUserId().equals(userId))
-                    .toList();
-            
-            if (notifications.size() != verifiedNotifications.size()) {
-                log.error("CRITICAL SECURITY ISSUE: Found {} notifications but only {} belong to User ID: {}. Filtering out invalid ones.",
-                        notifications.size(), verifiedNotifications.size(), userId);
-            }
-            
-            log.info("Found {} unread notifications for User ID: {}, Event Type: {} (verified: {})", 
-                    notifications.size(), userId, eventType, verifiedNotifications.size());
-            
-            // Log each notification's recipientUserId for debugging
-            for (Notification n : verifiedNotifications) {
-                log.info("Notification ID: {}, Recipient User ID: {}, Event Type: {}, OTP: {}",
-                        n.getId(), n.getRecipientUserId(), n.getEventType(), 
-                        n.getData() != null ? "present" : "null");
-            }
-            
+
+            List<NotificationDto> notifications = notificationService.getUnreadNotificationDtosByType(userId, eventType);
+
+            log.info("Found {} unread notifications for User ID: {}, Event Type: {}",
+                    notifications.size(), userId, eventType);
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Unread notifications by type retrieved successfully");
             response.put("data", Map.of(
-                    "notifications", verifiedNotifications, // Use verified list
-                    "count", verifiedNotifications.size()
+                    "notifications", notifications,
+                    "count", notifications.size()
             ));
-            
-            log.info("Returning response with {} verified notifications for User ID: {}", 
-                    verifiedNotifications.size(), userId);
+
+            log.info("Returning response with {} notifications for User ID: {}",
+                    notifications.size(), userId);
             return ResponseEntity.ok(response);
         } catch (NumberFormatException e) {
             log.error("Invalid user ID format: {}", userIdHeader, e);

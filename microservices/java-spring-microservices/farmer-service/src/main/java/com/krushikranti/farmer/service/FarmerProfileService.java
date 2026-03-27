@@ -24,6 +24,7 @@ public class FarmerProfileService {
     private final FarmerRepository farmerRepository;
     private final AuthServiceClient authServiceClient;
     private final PincodeService pincodeService;
+    private final AdminFarmerService adminFarmerService;
 
     /**
      * Get farmer's "My Details" profile.
@@ -165,6 +166,7 @@ public class FarmerProfileService {
         }
 
         farmer = farmerRepository.save(farmer);
+        adminFarmerService.invalidateAdminFarmerListCache();
 
         // Build response with auth service data (email/phone may be empty if gRPC call failed)
         return MyDetailsResponse.builder()

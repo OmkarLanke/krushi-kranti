@@ -7,15 +7,22 @@ import com.krushikranti.farmer.repository.CropNameRepository;
 import com.krushikranti.farmer.repository.CropTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Service for managing crop types (master data).
  * Admin operations for CRUD on crop types.
+ *
+ * Caching: Uses Redis cache "cropTypes" for getActiveCropTypes.
+ * Cache is evicted on create, update, delete, and restore operations.
  */
 @Service
 @RequiredArgsConstructor
@@ -35,12 +42,16 @@ public class CropTypeService {
 
     /**
      * Get all active crop types with language support (for farmer app dropdown).
-     * 
+     * Cached in Redis for 1 hour.
+     *
      * @param language Language code: "en", "hi", or "mr" (defaults to "en" if invalid)
      * @return List of crop types in the requested language
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "cropTypes", key = "#language")
     public List<CropTypeResponse> getActiveCropTypes(String language) {
+        log.debug("Cache miss for cropTypes with language: {} - fetching from database", language);
+
         // Normalize language code
         String normalizedLanguage = "en"; // Default
         if (language != null && !language.trim().isEmpty()) {
@@ -52,8 +63,12 @@ public class CropTypeService {
 
         final String finalLanguage = normalizedLanguage;
         List<CropType> cropTypes = cropTypeRepository.findByIsActiveTrueOrderByDisplayOrderAsc();
+
+        // Batch load all crop name counts to avoid N+1 queries
+        Map<Long, Long> cropNameCounts = getCropNameCountsMap();
+
         return cropTypes.stream()
-                .map(cropType -> mapToResponse(cropType, finalLanguage))
+                .map(cropType -> mapToResponse(cropType, finalLanguage, cropNameCounts.getOrDefault(cropType.getId(), 0L)))
                 .collect(Collectors.toList());
     }
 
@@ -63,8 +78,12 @@ public class CropTypeService {
     @Transactional(readOnly = true)
     public List<CropTypeResponse> getAllCropTypes() {
         List<CropType> cropTypes = cropTypeRepository.findAllByOrderByDisplayOrderAsc();
+
+        // Batch load all crop name counts to avoid N+1 queries
+        Map<Long, Long> cropNameCounts = getCropNameCountsMap();
+
         return cropTypes.stream()
-                .map(this::mapToResponse)
+                .map(cropType -> mapToResponse(cropType, "en", cropNameCounts.getOrDefault(cropType.getId(), 0L)))
                 .collect(Collectors.toList());
     }
 
@@ -82,6 +101,7 @@ public class CropTypeService {
      * Create a new crop type (admin only).
      */
     @Transactional
+    @CacheEvict(value = "cropTypes", allEntries = true)
     public CropTypeResponse createCropType(CropTypeRequest request) {
         // Validate unique type name
         if (cropTypeRepository.existsByTypeNameIgnoreCase(request.getTypeName())) {
@@ -107,6 +127,7 @@ public class CropTypeService {
      * Update an existing crop type (admin only).
      */
     @Transactional
+    @CacheEvict(value = "cropTypes", allEntries = true)
     public CropTypeResponse updateCropType(Long id, CropTypeRequest request) {
         CropType cropType = cropTypeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Crop type not found with ID: " + id));
@@ -137,6 +158,7 @@ public class CropTypeService {
      * Soft delete a crop type (admin only).
      */
     @Transactional
+    @CacheEvict(value = "cropTypes", allEntries = true)
     public void deleteCropType(Long id) {
         CropType cropType = cropTypeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Crop type not found with ID: " + id));
@@ -150,6 +172,7 @@ public class CropTypeService {
      * Restore a deleted crop type (admin only).
      */
     @Transactional
+    @CacheEvict(value = "cropTypes", allEntries = true)
     public CropTypeResponse restoreCropType(Long id) {
         CropType cropType = cropTypeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Crop type not found with ID: " + id));
@@ -162,12 +185,14 @@ public class CropTypeService {
     }
 
     private CropTypeResponse mapToResponse(CropType cropType) {
-        return mapToResponse(cropType, "en");
+        return mapToResponse(cropType, "en", cropNameRepository.countByCropTypeIdAndIsActiveTrue(cropType.getId()));
     }
 
     private CropTypeResponse mapToResponse(CropType cropType, String language) {
-        long cropNameCount = cropNameRepository.countByCropTypeIdAndIsActiveTrue(cropType.getId());
-        
+        return mapToResponse(cropType, language, cropNameRepository.countByCropTypeIdAndIsActiveTrue(cropType.getId()));
+    }
+
+    private CropTypeResponse mapToResponse(CropType cropType, String language, long cropNameCount) {
         // Select display name based on language
         String displayNameToUse = cropType.getDisplayName(); // Default to English
         if ("hi".equals(language) && cropType.getDisplayNameHi() != null && !cropType.getDisplayNameHi().trim().isEmpty()) {
@@ -175,7 +200,7 @@ public class CropTypeService {
         } else if ("mr".equals(language) && cropType.getDisplayNameMr() != null && !cropType.getDisplayNameMr().trim().isEmpty()) {
             displayNameToUse = cropType.getDisplayNameMr();
         }
-        
+
         return CropTypeResponse.builder()
                 .id(cropType.getId())
                 .typeName(cropType.getTypeName())
@@ -188,6 +213,18 @@ public class CropTypeService {
                 .createdAt(cropType.getCreatedAt())
                 .updatedAt(cropType.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Get crop name counts for all crop types as a map (cropTypeId -> count).
+     */
+    private Map<Long, Long> getCropNameCountsMap() {
+        List<Object[]> counts = cropNameRepository.countByCropTypeGrouped();
+        Map<Long, Long> countsMap = new HashMap<>();
+        for (Object[] row : counts) {
+            countsMap.put((Long) row[0], (Long) row[1]);
+        }
+        return countsMap;
     }
 }
 

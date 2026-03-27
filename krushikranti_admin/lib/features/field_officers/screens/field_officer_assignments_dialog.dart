@@ -8,11 +8,15 @@ import '../services/assignment_service.dart';
 class FieldOfficerAssignmentsDialog extends StatefulWidget {
   final int fieldOfficerId;
   final String fieldOfficerName;
+  final List<AssignmentResponse> initialAssignments;
+  final int? initialTotalCount;
 
   const FieldOfficerAssignmentsDialog({
     super.key,
     required this.fieldOfficerId,
     required this.fieldOfficerName,
+    this.initialAssignments = const [],
+    this.initialTotalCount,
   });
 
   @override
@@ -23,33 +27,93 @@ class FieldOfficerAssignmentsDialog extends StatefulWidget {
 class _FieldOfficerAssignmentsDialogState
     extends State<FieldOfficerAssignmentsDialog> {
   List<AssignmentResponse> _assignments = [];
+  static const int _pageSize = 20;
+  int _currentPage = 0;
+  int _totalPages = 0;
+  int _totalElements = 0;
+  bool _hasNext = false;
+  bool _isLoadingMore = false;
   bool _isLoading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _loadAssignments();
+    if (widget.initialAssignments.isNotEmpty) {
+      _assignments = List<AssignmentResponse>.from(widget.initialAssignments);
+      _totalElements = widget.initialTotalCount ?? _assignments.length;
+      _currentPage = 0;
+      _totalPages = (_totalElements / _pageSize).ceil();
+      _hasNext = _totalElements > _assignments.length;
+      _isLoading = false;
+      _loadAssignments(reset: true, showLoader: false, useCache: false);
+      return;
+    }
+
+    final cached = FieldOfficerAssignmentService.getCachedAssignmentsForFieldOfficer(
+      widget.fieldOfficerId,
+      page: 0,
+      size: _pageSize,
+    );
+    if (cached != null) {
+      _assignments = List<AssignmentResponse>.from(cached.assignments);
+      _currentPage = cached.currentPage;
+      _totalPages = cached.totalPages;
+      _totalElements = cached.totalElements;
+      _hasNext = cached.hasNext;
+      _isLoading = false;
+      _loadAssignments(reset: true, showLoader: false, useCache: false);
+    } else {
+      _loadAssignments(reset: true);
+    }
   }
 
-  Future<void> _loadAssignments() async {
+  Future<void> _loadAssignments({
+    required bool reset,
+    bool showLoader = true,
+    bool useCache = true,
+  }) async {
+    final nextPage = reset ? 0 : _currentPage + 1;
+
     setState(() {
-      _isLoading = true;
-      _error = null;
+      if (reset && showLoader) {
+        _isLoading = true;
+        _error = null;
+      } else {
+        _isLoadingMore = true;
+      }
     });
 
     try {
-      final assignments =
+      final assignmentPage =
           await FieldOfficerAssignmentService.getAssignmentsForFieldOfficer(
-              widget.fieldOfficerId);
+        widget.fieldOfficerId,
+        page: nextPage,
+        size: _pageSize,
+        useCache: useCache,
+      );
+      if (!mounted) return;
+
       setState(() {
-        _assignments = assignments;
+        if (reset) {
+          _assignments = assignmentPage.assignments;
+        } else {
+          _assignments = [..._assignments, ...assignmentPage.assignments];
+        }
+        _currentPage = assignmentPage.currentPage;
+        _totalPages = assignmentPage.totalPages;
+        _totalElements = assignmentPage.totalElements;
+        _hasNext = assignmentPage.hasNext;
         _isLoading = false;
+        _isLoadingMore = false;
+        _error = null;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = _parseErrorMessage(e.toString());
         _isLoading = false;
+        _isLoadingMore = false;
       });
     }
   }
@@ -95,7 +159,7 @@ class _FieldOfficerAssignmentsDialogState
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Field Officer: ${widget.fieldOfficerName}',
+                        'Field Officer: ${widget.fieldOfficerName} (${_totalElements > 0 ? _totalElements : _assignments.length})',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           color: AppColors.textSecondary,
@@ -148,7 +212,7 @@ class _FieldOfficerAssignmentsDialogState
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _loadAssignments,
+            onPressed: () => _loadAssignments(reset: true),
             child: const Text('Retry'),
           ),
         ],
@@ -188,11 +252,43 @@ class _FieldOfficerAssignmentsDialogState
 
   Widget _buildAssignmentsList() {
     return ListView.builder(
-      itemCount: _assignments.length,
+      itemCount: _assignments.length + (_hasNext ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index == _assignments.length) {
+          return _buildLoadMoreCard();
+        }
         final assignment = _assignments[index];
         return _buildAssignmentCard(assignment);
       },
+    );
+  }
+
+  Widget _buildLoadMoreCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Center(
+        child: _isLoadingMore
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : OutlinedButton.icon(
+                onPressed: () => _loadAssignments(reset: false),
+                icon: const Icon(Icons.expand_more),
+                label: Text(
+                  _totalPages > 0
+                      ? 'Load More (${_currentPage + 1}/$_totalPages)'
+                      : 'Load More',
+                ),
+              ),
+      ),
     );
   }
 

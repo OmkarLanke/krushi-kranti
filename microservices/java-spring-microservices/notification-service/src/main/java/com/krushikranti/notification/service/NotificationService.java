@@ -2,6 +2,7 @@ package com.krushikranti.notification.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.krushikranti.notification.dto.NotificationDto;
 import com.krushikranti.notification.events.NotificationEvent;
 import com.krushikranti.notification.model.Notification;
 import com.krushikranti.notification.repository.NotificationRepository;
@@ -16,12 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationService {
-    
+
     private final NotificationRepository notificationRepository;
     private final ObjectMapper objectMapper;
     
@@ -139,5 +141,59 @@ public class NotificationService {
         return notificationRepository.findByIdAndRecipientUserId(notificationId, userId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Notification not found with ID: " + notificationId + " for User ID: " + userId));
+    }
+
+    // ========================================
+    // DTO METHODS (for API responses)
+    // ========================================
+
+    /**
+     * Get notifications for a user with pagination (returns DTOs).
+     */
+    public Page<NotificationDto> getNotificationDtosByUserId(Long userId, int page, int size) {
+        Page<Notification> notifications = getNotificationsByUserId(userId, page, size);
+        return notifications.map(this::toDto);
+    }
+
+    /**
+     * Get unread notifications for a user (returns DTOs).
+     */
+    public List<NotificationDto> getUnreadNotificationDtosByUserId(Long userId) {
+        List<Notification> notifications = getUnreadNotificationsByUserId(userId);
+        return notifications.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    /**
+     * Get unread notifications by type for a user (returns DTOs).
+     */
+    public List<NotificationDto> getUnreadNotificationDtosByType(Long userId, String eventType) {
+        List<Notification> notifications = getUnreadNotificationsByType(userId, eventType);
+        return notifications.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    /**
+     * Convert Notification entity to DTO.
+     * Excludes sensitive fields like recipientPhoneNumber and sanitizes data field.
+     */
+    private NotificationDto toDto(Notification notification) {
+        // Create a sanitized summary of data (exclude OTPs and sensitive info)
+        String dataSummary = null;
+        if (notification.getData() != null) {
+            // Only indicate that data exists, don't expose raw data
+            dataSummary = "Additional data available";
+        }
+
+        return NotificationDto.builder()
+                .id(notification.getId())
+                .eventType(notification.getEventType())
+                .recipientUserId(notification.getRecipientUserId())
+                .title(notification.getTitle())
+                .message(notification.getMessage())
+                .priority(notification.getPriority())
+                .isRead(notification.getIsRead())
+                .createdAt(notification.getCreatedAt())
+                .readAt(notification.getReadAt())
+                .dataSummary(dataSummary)
+                .build();
     }
 }

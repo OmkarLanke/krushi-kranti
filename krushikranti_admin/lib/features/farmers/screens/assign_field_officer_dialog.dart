@@ -25,6 +25,7 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
   List<SuggestedFieldOfficer> _suggestedFieldOfficers = [];
   List<FarmInfo> _farms = [];
   Map<int, AssignmentResponse> _farmAssignments = {}; // Map of farmId -> assignment
+  final Map<int, List<SuggestedFieldOfficer>> _suggestionsCache = {};
   bool _isLoading = true;
   bool _isLoadingFieldOfficers = false;
   bool _isAssigning = false;
@@ -46,24 +47,26 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      // Load farmer detail to get farms
-      final farmerDetail = await AdminFarmerService.getFarmerDetail(widget.farmerId);
-      
-      // Load assignments to check which farms are already assigned
-      List<AssignmentResponse> assignments = [];
-      try {
-        assignments = await FieldOfficerAssignmentService.getAssignmentsForFarmer(
-            widget.farmerUserId);
-      } catch (e) {
-        // If assignments fail to load, continue without them
+      final farmerFuture = AdminFarmerService.getFarmerDetail(widget.farmerId);
+      final assignmentsFuture = FieldOfficerAssignmentService
+          .getAssignmentsForFarmer(widget.farmerUserId)
+          .catchError((e) {
         debugPrint('Warning: Failed to load assignments: $e');
-      }
+        return <AssignmentResponse>[];
+      });
+
+      final results = await Future.wait<dynamic>([farmerFuture, assignmentsFuture]);
+      if (!mounted) return;
+
+      final farmerDetail = results[0] as FarmerDetail;
+      final assignments = results[1] as List<AssignmentResponse>;
       
       // Create a map of farmId -> assignment
       Map<int, AssignmentResponse> farmAssignments = {};
@@ -73,18 +76,32 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
         }
       }
       
+      final unassignedFarms = farmerDetail.farms
+          .where((farm) => !farmAssignments.containsKey(farm.farmId))
+          .toList();
+      final defaultFarm = unassignedFarms.isNotEmpty ? unassignedFarms.first : null;
+
       setState(() {
         _farms = farmerDetail.farms;
         _farmAssignments = farmAssignments;
+        _selectedFarm = defaultFarm;
       });
 
-      // Load suggested field officers (without farmId initially)
-      await _loadFieldOfficers(null);
+      if (defaultFarm != null) {
+        await _loadFieldOfficers(defaultFarm.farmId);
+      } else if (mounted) {
+        setState(() {
+          _suggestedFieldOfficers = [];
+          _isLoadingFieldOfficers = false;
+        });
+      }
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
@@ -93,6 +110,23 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
   }
 
   Future<void> _loadFieldOfficers(int? farmId) async {
+    final cacheKey = farmId ?? -1;
+    if (_suggestionsCache.containsKey(cacheKey)) {
+      if (!mounted) return;
+      setState(() {
+        _suggestedFieldOfficers = _suggestionsCache[cacheKey]!;
+        if (_selectedFieldOfficer != null) {
+          final stillAvailable = _suggestedFieldOfficers
+              .any((fo) => fo.fieldOfficerId == _selectedFieldOfficer!.fieldOfficerId);
+          if (!stillAvailable) {
+            _selectedFieldOfficer = null;
+          }
+        }
+      });
+      return;
+    }
+
+    if (!mounted) return;
     setState(() {
       _isLoadingFieldOfficers = true;
     });
@@ -103,11 +137,21 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
               widget.farmerUserId,
               farmId: farmId);
 
+      if (!mounted) return;
       setState(() {
         _suggestedFieldOfficers = suggestions;
+        _suggestionsCache[cacheKey] = suggestions;
+        if (_selectedFieldOfficer != null) {
+          final stillAvailable = suggestions
+              .any((fo) => fo.fieldOfficerId == _selectedFieldOfficer!.fieldOfficerId);
+          if (!stillAvailable) {
+            _selectedFieldOfficer = null;
+          }
+        }
         _isLoadingFieldOfficers = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoadingFieldOfficers = false;
         // Don't set error here, just log it
@@ -463,6 +507,7 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
             : () {
                 setState(() {
                   _selectedFarm = farm;
+                  _selectedFieldOfficer = null;
                 });
                 // Reload field officers for the selected farm
                 _loadFieldOfficers(farm.farmId);
@@ -481,6 +526,7 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                     : (value) {
                         setState(() {
                           _selectedFarm = value;
+                          _selectedFieldOfficer = null;
                         });
                         // Reload field officers for the selected farm
                         if (value != null) {
