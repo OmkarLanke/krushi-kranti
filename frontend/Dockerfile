@@ -29,7 +29,22 @@ RUN flutter pub get && \
     flutter build web --dart-define=BASE_URL=${BASE_URL} --release
 
 # ============================================================
-# Stage 3: Nginx - serve landing, admin, hiring, and proxy API
+# Stage 3: Build Farmer App (Android APK)
+# ============================================================
+FROM ghcr.io/cirruslabs/flutter:stable AS farmer-builder
+
+WORKDIR /app
+COPY krushikranti_farmer /app/krushikranti_farmer
+WORKDIR /app/krushikranti_farmer
+
+ARG BASE_URL=https://api.krushikranti.ltd
+ENV BASE_URL=${BASE_URL}
+
+RUN flutter pub get && \
+    flutter build apk --dart-define=BASE_URL=${BASE_URL} --release
+
+# ============================================================
+# Stage 4: Nginx - serve landing, admin, hiring, and proxy API
 # ============================================================
 FROM nginx:alpine
 
@@ -43,7 +58,8 @@ COPY --from=hiring-builder /app/krushikranti-hiring/build/web /usr/share/nginx/h
 
 COPY krushikranti-landing-page /usr/share/nginx/html/landing
 
-COPY krushikranti-landing-page/downloads/${APK_FILENAME} /usr/share/nginx/html/landing/downloads/krushi-kranti-farmer.apk
+# Copy the dynamically built APK from Stage 3 into the downloads folder
+COPY --from=farmer-builder /app/krushikranti_farmer/build/app/outputs/flutter-apk/app-release.apk /usr/share/nginx/html/landing/downloads/krushi-kranti-farmer.apk
 
 COPY ${NGINX_CONF} /etc/nginx/conf.d/default.conf
 
