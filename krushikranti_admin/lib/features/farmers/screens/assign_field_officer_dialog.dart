@@ -24,7 +24,8 @@ class AssignFieldOfficerDialog extends StatefulWidget {
 class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
   List<SuggestedFieldOfficer> _suggestedFieldOfficers = [];
   List<FarmInfo> _farms = [];
-  Map<int, AssignmentResponse> _farmAssignments = {}; // Map of farmId -> assignment
+  Map<int, AssignmentResponse> _farmAssignments =
+      {}; // Map of farmId -> assignment
   final Map<int, List<SuggestedFieldOfficer>> _suggestionsCache = {};
   bool _isLoading = true;
   bool _isLoadingFieldOfficers = false;
@@ -55,19 +56,23 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
 
     try {
       final farmerFuture = AdminFarmerService.getFarmerDetail(widget.farmerId);
-      final assignmentsFuture = FieldOfficerAssignmentService
-          .getAssignmentsForFarmer(widget.farmerUserId)
-          .catchError((e) {
-        debugPrint('Warning: Failed to load assignments: $e');
-        return <AssignmentResponse>[];
-      });
+      final assignmentsFuture =
+          FieldOfficerAssignmentService.getAssignmentsForFarmer(
+            widget.farmerUserId,
+          ).catchError((e) {
+            debugPrint('Warning: Failed to load assignments: $e');
+            return <AssignmentResponse>[];
+          });
 
-      final results = await Future.wait<dynamic>([farmerFuture, assignmentsFuture]);
+      final results = await Future.wait<dynamic>([
+        farmerFuture,
+        assignmentsFuture,
+      ]);
       if (!mounted) return;
 
       final farmerDetail = results[0] as FarmerDetail;
       final assignments = results[1] as List<AssignmentResponse>;
-      
+
       // Create a map of farmId -> assignment
       Map<int, AssignmentResponse> farmAssignments = {};
       for (var assignment in assignments) {
@@ -75,11 +80,13 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
           farmAssignments[assignment.farmId!] = assignment;
         }
       }
-      
+
       final unassignedFarms = farmerDetail.farms
           .where((farm) => !farmAssignments.containsKey(farm.farmId))
           .toList();
-      final defaultFarm = unassignedFarms.isNotEmpty ? unassignedFarms.first : null;
+      final defaultFarm = unassignedFarms.isNotEmpty
+          ? unassignedFarms.first
+          : null;
 
       setState(() {
         _farms = farmerDetail.farms;
@@ -116,8 +123,9 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
       setState(() {
         _suggestedFieldOfficers = _suggestionsCache[cacheKey]!;
         if (_selectedFieldOfficer != null) {
-          final stillAvailable = _suggestedFieldOfficers
-              .any((fo) => fo.fieldOfficerId == _selectedFieldOfficer!.fieldOfficerId);
+          final stillAvailable = _suggestedFieldOfficers.any(
+            (fo) => fo.fieldOfficerId == _selectedFieldOfficer!.fieldOfficerId,
+          );
           if (!stillAvailable) {
             _selectedFieldOfficer = null;
           }
@@ -134,16 +142,18 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
     try {
       final suggestions =
           await FieldOfficerAssignmentService.getSuggestedFieldOfficers(
-              widget.farmerUserId,
-              farmId: farmId);
+            widget.farmerUserId,
+            farmId: farmId,
+          );
 
       if (!mounted) return;
       setState(() {
         _suggestedFieldOfficers = suggestions;
         _suggestionsCache[cacheKey] = suggestions;
         if (_selectedFieldOfficer != null) {
-          final stillAvailable = suggestions
-              .any((fo) => fo.fieldOfficerId == _selectedFieldOfficer!.fieldOfficerId);
+          final stillAvailable = suggestions.any(
+            (fo) => fo.fieldOfficerId == _selectedFieldOfficer!.fieldOfficerId,
+          );
           if (!stillAvailable) {
             _selectedFieldOfficer = null;
           }
@@ -210,9 +220,9 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
       if (mounted) {
         // Extract error message - backend returns detailed messages
         String errorMessage = e.toString().replaceFirst('Exception: ', '');
-        
+
         // Show error in a dialog if it contains assignment conflict details
-        if (errorMessage.contains('already assigned') || 
+        if (errorMessage.contains('already assigned') ||
             errorMessage.contains('already assigned to field officer')) {
           _showAssignmentConflictDialog(errorMessage);
         } else {
@@ -251,10 +261,7 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
             ),
           ],
         ),
-        content: Text(
-          errorMessage,
-          style: GoogleFonts.poppins(fontSize: 14),
-        ),
+        content: Text(errorMessage, style: GoogleFonts.poppins(fontSize: 14)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -288,7 +295,7 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
@@ -372,7 +379,9 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                       backgroundColor: AppColors.brandGreen,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                     ),
                     child: _isAssigning
                         ? const SizedBox(
@@ -380,8 +389,9 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text('Assign'),
@@ -402,8 +412,11 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline,
-                size: 64, color: AppColors.error.withOpacity(0.5)),
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.error.withOpacity(0.5),
+            ),
             const SizedBox(height: 16),
             Text(
               _error!,
@@ -411,10 +424,7 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadData,
-              child: const Text('Retry'),
-            ),
+            ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
           ],
         ),
       ),
@@ -489,15 +499,15 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
         color: isSelected
             ? AppColors.brandGreen.withOpacity(0.1)
             : isAssigned
-                ? Colors.orange.shade50
-                : Colors.white,
+            ? Colors.orange.shade50
+            : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected
               ? AppColors.brandGreen
               : isAssigned
-                  ? Colors.orange.shade300
-                  : Colors.grey.shade300,
+              ? Colors.orange.shade300
+              : Colors.grey.shade300,
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -571,7 +581,9 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         if (farm.farmType != null) ...[
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.blue.shade50,
                               borderRadius: BorderRadius.circular(6),
@@ -588,8 +600,11 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                           const SizedBox(width: 8),
                         ],
                         if (farm.totalAreaAcres != null) ...[
-                          Icon(Icons.square_foot,
-                              size: 14, color: AppColors.textSecondary),
+                          Icon(
+                            Icons.square_foot,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${farm.totalAreaAcres!.toStringAsFixed(2)} acres',
@@ -605,8 +620,11 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.location_on,
-                            size: 14, color: AppColors.textSecondary),
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -623,7 +641,9 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.brandGreen.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
@@ -648,15 +668,21 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         decoration: BoxDecoration(
                           color: Colors.orange.shade50,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.orange.shade200, width: 1),
+                          border: Border.all(
+                            color: Colors.orange.shade200,
+                            width: 1,
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.assignment_ind,
-                                    size: 16, color: Colors.orange.shade700),
+                                Icon(
+                                  Icons.assignment_ind,
+                                  size: 16,
+                                  color: Colors.orange.shade700,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'Already Assigned',
@@ -672,7 +698,11 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                             // Field Officer Name
                             Row(
                               children: [
-                                Icon(Icons.person, size: 14, color: Colors.orange.shade700),
+                                Icon(
+                                  Icons.person,
+                                  size: 14,
+                                  color: Colors.orange.shade700,
+                                ),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
@@ -693,7 +723,11 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                             if (assignment.fieldOfficerPhone.isNotEmpty) ...[
                               Row(
                                 children: [
-                                  Icon(Icons.phone, size: 14, color: Colors.orange.shade700),
+                                  Icon(
+                                    Icons.phone,
+                                    size: 14,
+                                    color: Colors.orange.shade700,
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
                                     assignment.fieldOfficerPhone,
@@ -707,10 +741,15 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                               const SizedBox(height: 6),
                             ],
                             // Location/Pincode
-                            if (assignment.fieldOfficerPincode != null && assignment.fieldOfficerPincode!.isNotEmpty) ...[
+                            if (assignment.fieldOfficerPincode != null &&
+                                assignment.fieldOfficerPincode!.isNotEmpty) ...[
                               Row(
                                 children: [
-                                  Icon(Icons.location_on, size: 14, color: Colors.orange.shade700),
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 14,
+                                    color: Colors.orange.shade700,
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Pincode: ${assignment.fieldOfficerPincode}',
@@ -727,7 +766,11 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                             if (assignment.assignedAt != null) ...[
                               Row(
                                 children: [
-                                  Icon(Icons.calendar_today, size: 14, color: Colors.orange.shade700),
+                                  Icon(
+                                    Icons.calendar_today,
+                                    size: 14,
+                                    color: Colors.orange.shade700,
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Assigned: ${_formatDate(assignment.assignedAt!)}',
@@ -743,15 +786,26 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                             // Status
                             Row(
                               children: [
-                                Icon(Icons.info_outline, size: 14, color: Colors.orange.shade700),
+                                Icon(
+                                  Icons.info_outline,
+                                  size: 14,
+                                  color: Colors.orange.shade700,
+                                ),
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: _getStatusColor(assignment.status).withOpacity(0.2),
+                                    color: _getStatusColor(
+                                      assignment.status,
+                                    ).withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(4),
                                     border: Border.all(
-                                      color: _getStatusColor(assignment.status).withOpacity(0.5),
+                                      color: _getStatusColor(
+                                        assignment.status,
+                                      ).withOpacity(0.5),
                                       width: 1,
                                     ),
                                   ),
@@ -767,12 +821,17 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                               ],
                             ),
                             // Notes
-                            if (assignment.notes != null && assignment.notes!.isNotEmpty) ...[
+                            if (assignment.notes != null &&
+                                assignment.notes!.isNotEmpty) ...[
                               const SizedBox(height: 6),
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.note, size: 14, color: Colors.orange.shade700),
+                                  Icon(
+                                    Icons.note,
+                                    size: 14,
+                                    color: Colors.orange.shade700,
+                                  ),
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
@@ -858,7 +917,8 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
   }
 
   Widget _buildFieldOfficerCard(SuggestedFieldOfficer fo) {
-    final isSelected = _selectedFieldOfficer?.fieldOfficerId == fo.fieldOfficerId;
+    final isSelected =
+        _selectedFieldOfficer?.fieldOfficerId == fo.fieldOfficerId;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -868,9 +928,7 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
             : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isSelected
-              ? AppColors.brandGreen
-              : Colors.grey.shade300,
+          color: isSelected ? AppColors.brandGreen : Colors.grey.shade300,
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -939,8 +997,11 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.location_on,
-                            size: 14, color: AppColors.textSecondary),
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -957,7 +1018,9 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.brandGreen.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
@@ -978,7 +1041,9 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.success.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -986,8 +1051,11 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.check_circle,
-                                size: 14, color: AppColors.success),
+                            Icon(
+                              Icons.check_circle,
+                              size: 14,
+                              color: AppColors.success,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               'Matches ${fo.matchingFarmCount} farm(s)',
@@ -1005,7 +1073,9 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: (fo.assignedFarmsCount ?? 0) > 0
                             ? AppColors.brandGreen.withOpacity(0.1)
@@ -1085,4 +1155,3 @@ class _AssignFieldOfficerDialogState extends State<AssignFieldOfficerDialog> {
     );
   }
 }
-

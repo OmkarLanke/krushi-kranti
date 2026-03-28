@@ -50,11 +50,12 @@ class _FieldOfficerAssignmentsDialogState
       return;
     }
 
-    final cached = FieldOfficerAssignmentService.getCachedAssignmentsForFieldOfficer(
-      widget.fieldOfficerId,
-      page: 0,
-      size: _pageSize,
-    );
+    final cached =
+        FieldOfficerAssignmentService.getCachedAssignmentsForFieldOfficer(
+          widget.fieldOfficerId,
+          page: 0,
+          size: _pageSize,
+        );
     if (cached != null) {
       _assignments = List<AssignmentResponse>.from(cached.assignments);
       _currentPage = cached.currentPage;
@@ -87,11 +88,11 @@ class _FieldOfficerAssignmentsDialogState
     try {
       final assignmentPage =
           await FieldOfficerAssignmentService.getAssignmentsForFieldOfficer(
-        widget.fieldOfficerId,
-        page: nextPage,
-        size: _pageSize,
-        useCache: useCache,
-      );
+            widget.fieldOfficerId,
+            page: nextPage,
+            size: _pageSize,
+            useCache: useCache,
+          );
       if (!mounted) return;
 
       setState(() {
@@ -133,8 +134,12 @@ class _FieldOfficerAssignmentsDialogState
             ? 700
             : MediaQuery.of(context).size.height * 0.9,
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width > 1200 ? 900 : double.infinity,
-          maxHeight: MediaQuery.of(context).size.height > 700 ? 700 : double.infinity,
+          maxWidth: MediaQuery.of(context).size.width > 1200
+              ? 900
+              : double.infinity,
+          maxHeight: MediaQuery.of(context).size.height > 700
+              ? 700
+              : double.infinity,
         ),
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -182,14 +187,16 @@ class _FieldOfficerAssignmentsDialogState
               child: _isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandGreen),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.brandGreen,
+                        ),
                       ),
                     )
                   : _error != null
-                      ? _buildErrorView()
-                      : _assignments.isEmpty
-                          ? _buildEmptyState()
-                          : _buildAssignmentsList(),
+                  ? _buildErrorView()
+                  : _assignments.isEmpty
+                  ? _buildEmptyState()
+                  : _buildAssignmentsList(),
             ),
           ],
         ),
@@ -202,8 +209,11 @@ class _FieldOfficerAssignmentsDialogState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline,
-              size: 64, color: AppColors.error.withOpacity(0.5)),
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: AppColors.error.withOpacity(0.5),
+          ),
           const SizedBox(height: 16),
           Text(
             _error!,
@@ -225,8 +235,11 @@ class _FieldOfficerAssignmentsDialogState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.agriculture_outlined,
-              size: 64, color: Colors.grey.shade300),
+          Icon(
+            Icons.agriculture_outlined,
+            size: 64,
+            color: Colors.grey.shade300,
+          ),
           const SizedBox(height: 16),
           Text(
             'No Farm Assignments',
@@ -324,8 +337,11 @@ class _FieldOfficerAssignmentsDialogState
                         color: AppColors.brandGreen.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.agriculture,
-                          color: AppColors.brandGreen, size: 20),
+                      child: Icon(
+                        Icons.agriculture,
+                        color: AppColors.brandGreen,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -333,7 +349,8 @@ class _FieldOfficerAssignmentsDialogState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            assignment.farmName ?? 'Farm ID: ${assignment.farmId ?? 'N/A'}',
+                            assignment.farmName ??
+                                'Farm ID: ${assignment.farmId ?? 'N/A'}',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -373,13 +390,10 @@ class _FieldOfficerAssignmentsDialogState
             'Farmer',
             assignment.farmerName ?? 'Unknown Farmer',
           ),
-          if (assignment.farmerPhone != null && assignment.farmerPhone!.isNotEmpty) ...[
+          if (assignment.farmerPhone != null &&
+              assignment.farmerPhone!.isNotEmpty) ...[
             const SizedBox(height: 8),
-            _buildInfoRow(
-              Icons.phone,
-              'Phone',
-              assignment.farmerPhone!,
-            ),
+            _buildInfoRow(Icons.phone, 'Phone', assignment.farmerPhone!),
           ],
           const SizedBox(height: 8),
           _buildInfoRow(
@@ -453,41 +467,40 @@ class _FieldOfficerAssignmentsDialogState
     // Remove "Exception: " prefix if present
     String message = error.replaceFirst('Exception: ', '').trim();
     String lowerMessage = message.toLowerCase();
-    
+
     // Handle network errors
-    if (lowerMessage.contains('network error') || 
+    if (lowerMessage.contains('network error') ||
         lowerMessage.contains('socketexception') ||
         lowerMessage.contains('failed host lookup') ||
         lowerMessage.contains('connection refused') ||
         lowerMessage.contains('connection reset')) {
       return 'Network connection failed. Please check your internet connection and try again.';
     }
-    
+
     // Handle server errors
     if (lowerMessage.contains('server error') ||
         lowerMessage.contains('500') ||
         lowerMessage.contains('internal server error')) {
       return 'Server error. Please try again later.';
     }
-    
+
     // Handle service not found
-    if (lowerMessage.contains('not found') ||
-        lowerMessage.contains('404')) {
+    if (lowerMessage.contains('not found') || lowerMessage.contains('404')) {
       return 'The requested service is temporarily unavailable. Please try again later.';
     }
-    
+
     // Handle timeout errors
     if (lowerMessage.contains('timeout') ||
         lowerMessage.contains('timed out')) {
       return 'Request timed out. Please check your connection and try again.';
     }
-    
+
     // Return the original message if it's already user-friendly
     // Otherwise, return a generic error message
     if (message.isNotEmpty && message.length < 100) {
       return message;
     }
-    
+
     return 'Failed to load assignments. Please try again.';
   }
 

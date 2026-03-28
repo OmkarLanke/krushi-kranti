@@ -9,6 +9,9 @@ import com.krushikranti.farmer.repository.FarmRepository;
 import com.krushikranti.farmer.repository.FarmerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +38,7 @@ public class FarmService {
      * Get all active farms for a farmer.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "farmerFarms", key = "#userId")
     public List<FarmResponse> getFarmsByUserId(Long userId) {
         Farmer farmer = getFarmerByUserId(userId);
         // Use optimized query with JOIN FETCH to avoid N+1
@@ -63,6 +67,13 @@ public class FarmService {
      * Create a new farm for a farmer.
      */
     @Transactional
+        @Caching(evict = {
+            @CacheEvict(cacheNames = "farmerFarms", key = "#userId"),
+                @CacheEvict(cacheNames = "farmerFarmCount", key = "#userId"),
+                @CacheEvict(cacheNames = "farmerHomeSummary", key = "#userId"),
+                @CacheEvict(cacheNames = "farmerCrops", allEntries = true),
+                @CacheEvict(cacheNames = "farmerCropsByFarm", allEntries = true)
+        })
     public FarmResponse createFarm(Long userId, FarmRequest request) {
         Farmer farmer = getFarmerByUserId(userId);
         
@@ -127,6 +138,13 @@ public class FarmService {
      * Update an existing farm.
      */
     @Transactional
+        @Caching(evict = {
+            @CacheEvict(cacheNames = "farmerFarms", key = "#userId"),
+                @CacheEvict(cacheNames = "farmerFarmCount", key = "#userId"),
+                @CacheEvict(cacheNames = "farmerHomeSummary", key = "#userId"),
+                @CacheEvict(cacheNames = "farmerCrops", allEntries = true),
+                @CacheEvict(cacheNames = "farmerCropsByFarm", allEntries = true)
+        })
     public FarmResponse updateFarm(Long userId, Long farmId, FarmRequest request) {
         Farmer farmer = getFarmerByUserId(userId);
         Farm farm = farmRepository.findByIdAndFarmerIdAndIsActiveTrue(farmId, farmer.getId())
@@ -207,6 +225,13 @@ public class FarmService {
      * Soft delete a farm.
      */
     @Transactional
+        @Caching(evict = {
+            @CacheEvict(cacheNames = "farmerFarms", key = "#userId"),
+                @CacheEvict(cacheNames = "farmerFarmCount", key = "#userId"),
+                @CacheEvict(cacheNames = "farmerHomeSummary", key = "#userId"),
+                @CacheEvict(cacheNames = "farmerCrops", allEntries = true),
+                @CacheEvict(cacheNames = "farmerCropsByFarm", allEntries = true)
+        })
     public void deleteFarm(Long userId, Long farmId) {
         Farmer farmer = getFarmerByUserId(userId);
         Farm farm = farmRepository.findByIdAndFarmerIdAndIsActiveTrue(farmId, farmer.getId())
@@ -223,6 +248,7 @@ public class FarmService {
      * Get count of active farms for a farmer.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "farmerFarmCount", key = "#userId")
     public long getFarmCount(Long userId) {
         Farmer farmer = getFarmerByUserId(userId);
         return farmRepository.countByFarmerIdAndIsActiveTrue(farmer.getId());
@@ -247,6 +273,13 @@ public class FarmService {
      * This is an internal service method that updates the is_verified field in the farms table.
      */
     @Transactional
+        @Caching(evict = {
+            @CacheEvict(cacheNames = "farmerFarms", allEntries = true),
+            @CacheEvict(cacheNames = "farmerFarmCount", allEntries = true),
+                @CacheEvict(cacheNames = "farmerHomeSummary", allEntries = true),
+            @CacheEvict(cacheNames = "farmerCrops", allEntries = true),
+            @CacheEvict(cacheNames = "farmerCropsByFarm", allEntries = true)
+        })
     public void updateFarmVerificationStatus(Long farmId, boolean isVerified, Long verifiedByOfficerId, String verificationRemarks) {
         Farm farm = farmRepository.findById(farmId)
                 .orElseThrow(() -> new IllegalArgumentException("Farm not found with ID: " + farmId));

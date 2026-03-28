@@ -10,13 +10,11 @@ import 'field_officer_assignments_dialog.dart';
 class FieldOfficerDetailDialog extends StatefulWidget {
   final FieldOfficerSummary fieldOfficer;
 
-  const FieldOfficerDetailDialog({
-    super.key,
-    required this.fieldOfficer,
-  });
+  const FieldOfficerDetailDialog({super.key, required this.fieldOfficer});
 
   @override
-  State<FieldOfficerDetailDialog> createState() => _FieldOfficerDetailDialogState();
+  State<FieldOfficerDetailDialog> createState() =>
+      _FieldOfficerDetailDialogState();
 }
 
 class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
@@ -31,11 +29,12 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
     super.initState();
     _totalAssignmentsCount = widget.fieldOfficer.assignedFarmsCount ?? 0;
 
-    final cached = FieldOfficerAssignmentService.getCachedAssignmentsForFieldOfficer(
-      widget.fieldOfficer.fieldOfficerId,
-      page: 0,
-      size: _previewPageSize,
-    );
+    final cached =
+        FieldOfficerAssignmentService.getCachedAssignmentsForFieldOfficer(
+          widget.fieldOfficer.fieldOfficerId,
+          page: 0,
+          size: _previewPageSize,
+        );
     if (cached != null) {
       _assignments = cached.assignments;
       if (cached.totalElements > 0) {
@@ -62,11 +61,11 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
     try {
       final assignmentPage =
           await FieldOfficerAssignmentService.getAssignmentsForFieldOfficer(
-        widget.fieldOfficer.fieldOfficerId,
-        page: 0,
-        size: _previewPageSize,
-        useCache: useCache,
-      );
+            widget.fieldOfficer.fieldOfficerId,
+            page: 0,
+            size: _previewPageSize,
+            useCache: useCache,
+          );
       if (!mounted) return;
       setState(() {
         _assignments = assignmentPage.assignments;
@@ -116,9 +115,7 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
             _buildHeader(),
 
             // Content
-            Expanded(
-              child: _buildContent(),
-            ),
+            Expanded(child: _buildContent()),
           ],
         ),
       ),
@@ -201,7 +198,9 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
             _buildSection(
               'Status',
               Icons.toggle_on_outlined,
-              widget.fieldOfficer.isActive ? AppColors.success : AppColors.textSecondary,
+              widget.fieldOfficer.isActive
+                  ? AppColors.success
+                  : AppColors.textSecondary,
               _buildStatusContent(),
             ),
             const SizedBox(height: 20),
@@ -219,7 +218,12 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
     );
   }
 
-  Widget _buildSection(String title, IconData icon, Color iconColor, Widget content) {
+  Widget _buildSection(
+    String title,
+    IconData icon,
+    Color iconColor,
+    Widget content,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -449,7 +453,11 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
                 color: AppColors.error.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.error_outline, color: AppColors.error, size: 32),
+              child: Icon(
+                Icons.error_outline,
+                color: AppColors.error,
+                size: 32,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -478,7 +486,10 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -499,8 +510,11 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
         ),
         child: Column(
           children: [
-            Icon(Icons.agriculture_outlined,
-                size: 48, color: Colors.grey.shade300),
+            Icon(
+              Icons.agriculture_outlined,
+              size: 48,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 12),
             Text(
               'No Farm Assignments',
@@ -527,7 +541,9 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
     return Column(
       children: [
         // Show first 3 assignments with option to view all
-        ...(_assignments.take(3).map((assignment) => _buildAssignmentCard(assignment))),
+        ...(_assignments
+            .take(3)
+            .map((assignment) => _buildAssignmentCard(assignment))),
         if (_totalAssignmentsCount > 3) ...[
           const SizedBox(height: 16),
           Container(
@@ -566,7 +582,10 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.brandGreen,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 20,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -586,15 +605,16 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
     // - Red    : CANCELLED (cancelled assignment)
     final String statusUpper = assignment.status.toUpperCase();
     final bool isCompleted = statusUpper == 'COMPLETED';
-    final bool isAssignedOrInProgress = statusUpper == 'ASSIGNED' || statusUpper == 'IN_PROGRESS';
+    final bool isAssignedOrInProgress =
+        statusUpper == 'ASSIGNED' || statusUpper == 'IN_PROGRESS';
     final bool isCancelled = statusUpper == 'CANCELLED';
-    
+
     late final String farmStatusLabel;
     late final Color farmStatusColor;
     late final List<Color> cardGradientColors;
     late final Color cardBorderColor;
     late final Color iconColor;
-    
+
     if (isCompleted) {
       // Completed/Verified => GREEN
       farmStatusLabel = 'Verified farm';
@@ -626,7 +646,7 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
       cardBorderColor = AppColors.error.withOpacity(0.3);
       iconColor = AppColors.error;
     }
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -637,10 +657,7 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
           colors: cardGradientColors,
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: cardBorderColor,
-          width: 1,
-        ),
+        border: Border.all(color: cardBorderColor, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -678,7 +695,8 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            assignment.farmName ?? 'Farm ID: ${assignment.farmId ?? 'N/A'}',
+                            assignment.farmName ??
+                                'Farm ID: ${assignment.farmId ?? 'N/A'}',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -711,14 +729,15 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 12),
-          
+
           // Assignment Details
           _buildInfoRow(
             'Farmer',
             assignment.farmerName ?? 'Unknown Farmer',
             icon: Icons.person_outline_rounded,
           ),
-          if (assignment.farmerPhone != null && assignment.farmerPhone!.isNotEmpty) ...[
+          if (assignment.farmerPhone != null &&
+              assignment.farmerPhone!.isNotEmpty) ...[
             const SizedBox(height: 8),
             _buildInfoRow(
               'Phone',
@@ -743,9 +762,13 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
             ),
           ],
           // View Geo Tagged Photo button for completed assignments
-          if (assignment.status.toUpperCase() == 'COMPLETED' && assignment.farmId != null) ...[
+          if (assignment.status.toUpperCase() == 'COMPLETED' &&
+              assignment.farmId != null) ...[
             const SizedBox(height: 16),
-            _buildViewPhotoButton(assignment.farmId!, assignment.farmName ?? 'Farm'),
+            _buildViewPhotoButton(
+              assignment.farmId!,
+              assignment.farmName ?? 'Farm',
+            ),
           ],
           if (assignment.notes != null && assignment.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -925,7 +948,8 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
       return 'The requested service is temporarily unavailable. Please try again later.';
     }
 
-    if (lowerMessage.contains('timeout') || lowerMessage.contains('timed out')) {
+    if (lowerMessage.contains('timeout') ||
+        lowerMessage.contains('timed out')) {
       return 'Request timed out. Please check your connection and try again.';
     }
 
@@ -947,9 +971,7 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
           backgroundColor: AppColors.brandGreen,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );
@@ -979,8 +1001,10 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
       );
 
       // Fetch photos
-      final photos = await FieldOfficerAssignmentService.getVerificationPhotos(farmId);
-      
+      final photos = await FieldOfficerAssignmentService.getVerificationPhotos(
+        farmId,
+      );
+
       // Close loading dialog
       if (mounted) Navigator.of(context).pop();
 
@@ -1011,7 +1035,7 @@ class _FieldOfficerDetailDialogState extends State<FieldOfficerDetailDialog> {
     } catch (e) {
       // Close loading dialog if still open
       if (mounted) Navigator.of(context).pop();
-      
+
       // Show error
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

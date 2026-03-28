@@ -29,17 +29,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _markAllNotificationsAsRead();
     });
-    // Start countdown timer that updates every second
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    // Update countdown periodically without forcing per-second rebuilds.
+    _countdownTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (mounted) {
-        setState(() {}); // Update UI every second for countdown
+        setState(() {});
       }
     });
     // Start periodic cleanup of expired OTP notifications
-    _expiredNotificationCleanupTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    _expiredNotificationCleanupTimer =
+        Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
         _notificationService.removeExpiredOtpNotifications();
-        setState(() {}); // Refresh UI to remove expired notifications
       }
     });
   }
@@ -64,7 +64,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         }
       },
     );
-    
+
     // Also listen to notification service changes
     _notificationServiceListener = () {
       if (mounted) {
@@ -127,7 +127,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -207,10 +208,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildOtpNotificationCard(NotificationModel notification, AppLocalizations l10n) {
+  Widget _buildOtpNotificationCard(
+      NotificationModel notification, AppLocalizations l10n) {
     final otp = notification.data?['otp']?.toString() ?? '000000';
-    final fieldOfficerName = notification.data?['fieldOfficerName']?.toString() ??
-        l10n.fieldOfficerDefaultName;
+    final fieldOfficerName =
+        notification.data?['fieldOfficerName']?.toString() ??
+            l10n.fieldOfficerDefaultName;
     final farmName =
         notification.data?['farmName']?.toString() ?? l10n.farmWordSingular;
     final expiresAt = notification.timestamp.add(const Duration(minutes: 10));
@@ -256,7 +259,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     children: [
                       Text(
                         l10n.farmVerificationOtpTitle,
-                        style: GoogleFonts.poppins(    
+                        style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: Colors.black87,
@@ -264,7 +267,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        l10n.fieldOfficerVerifyingFarm(fieldOfficerName, farmName),
+                        l10n.fieldOfficerVerifyingFarm(
+                            fieldOfficerName, farmName),
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -276,9 +280,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                      Text(
-                        _formatTimeAgo(notification.timestamp, l10n),
-                        style: GoogleFonts.poppins(
+                    Text(
+                      _formatTimeAgo(notification.timestamp, l10n),
+                      style: GoogleFonts.poppins(
                         fontSize: 11,
                         color: Colors.grey.shade600,
                         fontWeight: FontWeight.w500,
@@ -299,7 +303,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // OTP Code Box
             Container(
               padding: const EdgeInsets.all(16),
@@ -338,7 +342,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.copy_rounded, color: Color(0xFFFF9800), size: 24),
+                    icon: const Icon(Icons.copy_rounded,
+                        color: Color(0xFFFF9800), size: 24),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: otp));
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -355,13 +360,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Expiry Timer
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isExpired 
-                    ? Colors.red.shade50 
+                color: isExpired
+                    ? Colors.red.shade50
                     : const Color(0xFFFF9800).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -391,7 +396,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Instruction
             Text(
               l10n.shareOtpWithFieldOfficer,

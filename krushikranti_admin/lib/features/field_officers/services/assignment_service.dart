@@ -5,10 +5,7 @@ class _AssignmentPageCacheEntry {
   final PagedAssignmentsResponse data;
   final DateTime cachedAt;
 
-  const _AssignmentPageCacheEntry({
-    required this.data,
-    required this.cachedAt,
-  });
+  const _AssignmentPageCacheEntry({required this.data, required this.cachedAt});
 }
 
 class FieldOfficerAssignmentService {
@@ -30,7 +27,8 @@ class FieldOfficerAssignmentService {
       return null;
     }
 
-    final isExpired = DateTime.now().difference(entry.cachedAt) > _assignmentsCacheTtl;
+    final isExpired =
+        DateTime.now().difference(entry.cachedAt) > _assignmentsCacheTtl;
     if (isExpired) {
       _assignmentPageCache.remove(key);
       return null;
@@ -52,7 +50,9 @@ class FieldOfficerAssignmentService {
   /// Get suggested field officers for a farmer based on pincode matching.
   /// If farmId is provided, only field officers matching that specific farm's pincode are returned.
   static Future<List<SuggestedFieldOfficer>> getSuggestedFieldOfficers(
-      int farmerUserId, {int? farmId}) async {
+    int farmerUserId, {
+    int? farmId,
+  }) async {
     try {
       String url = '$_basePath/suggestions/$farmerUserId';
       if (farmId != null) {
@@ -63,19 +63,24 @@ class FieldOfficerAssignmentService {
       if (response is Map && response.containsKey('data')) {
         final data = response['data'] as List;
         return data
-            .map((e) => SuggestedFieldOfficer.fromJson(e as Map<String, dynamic>))
+            .map(
+              (e) => SuggestedFieldOfficer.fromJson(e as Map<String, dynamic>),
+            )
             .toList();
       }
 
       throw Exception('Invalid response format');
     } catch (e) {
-      throw Exception('Failed to get suggested field officers: ${e.toString()}');
+      throw Exception(
+        'Failed to get suggested field officers: ${e.toString()}',
+      );
     }
   }
 
   /// Assign a field officer to a farmer
   static Future<AssignmentResponse> assignFieldOfficer(
-      AssignFieldOfficerRequest request) async {
+    AssignFieldOfficerRequest request,
+  ) async {
     try {
       final response = await HttpService.post(
         '$_basePath/assign',
@@ -84,7 +89,9 @@ class FieldOfficerAssignmentService {
 
       if (response is Map && response.containsKey('data')) {
         invalidateAssignmentsCache(fieldOfficerId: request.fieldOfficerId);
-        return AssignmentResponse.fromJson(response['data'] as Map<String, dynamic>);
+        return AssignmentResponse.fromJson(
+          response['data'] as Map<String, dynamic>,
+        );
       }
 
       // Check if there's an error message in the response
@@ -101,7 +108,8 @@ class FieldOfficerAssignmentService {
 
   /// Get all assignments for a farmer
   static Future<List<AssignmentResponse>> getAssignmentsForFarmer(
-      int farmerUserId) async {
+    int farmerUserId,
+  ) async {
     try {
       final response = await HttpService.get(
         '$_basePath/assignments?farmerUserId=$farmerUserId',
@@ -156,7 +164,9 @@ class FieldOfficerAssignmentService {
         // Legacy fallback: handle list response shape.
         if (data is List) {
           final assignments = data
-              .map((e) => AssignmentResponse.fromJson(e as Map<String, dynamic>))
+              .map(
+                (e) => AssignmentResponse.fromJson(e as Map<String, dynamic>),
+              )
               .toList();
           final parsed = PagedAssignmentsResponse(
             assignments: assignments,
@@ -175,24 +185,29 @@ class FieldOfficerAssignmentService {
 
       throw Exception('Invalid response format');
     } catch (e) {
-      throw Exception('Failed to get assignments for field officer: ${e.toString()}');
+      throw Exception(
+        'Failed to get assignments for field officer: ${e.toString()}',
+      );
     }
   }
 
   /// Get verification photos for a farm
-  static Future<List<Map<String, dynamic>>> getVerificationPhotos(int farmId) async {
+  static Future<List<Map<String, dynamic>>> getVerificationPhotos(
+    int farmId,
+  ) async {
     try {
-      final response = await HttpService.get('admin/field-officers/verifications/farms/$farmId/photos');
-      
+      final response = await HttpService.get(
+        'admin/field-officers/verifications/farms/$farmId/photos',
+      );
+
       if (response is Map && response.containsKey('data')) {
         final List<dynamic> photos = response['data'] as List<dynamic>;
         return photos.map((photo) => photo as Map<String, dynamic>).toList();
       }
-      
+
       throw Exception('Invalid response format');
     } catch (e) {
       throw Exception('Failed to get verification photos: ${e.toString()}');
     }
   }
 }
-

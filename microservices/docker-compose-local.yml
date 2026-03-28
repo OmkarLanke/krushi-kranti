@@ -88,6 +88,7 @@ services:
       - "host.docker.internal:host-gateway"  # For Linux compatibility
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED=true
       - GATEWAY_SERVICES_AUTH_SERVICE=http://auth-service:4005
       - GATEWAY_SERVICES_FARMER_SERVICE=http://farmer-service:4000
       - GATEWAY_SERVICES_FIELD_OFFICER_SERVICE=http://field-officer-service:4015
@@ -99,11 +100,11 @@ services:
       - GATEWAY_SERVICES_JOB_APPLICATION_SERVICE=http://job-application-service:4017
       - GATEWAY_JWT_JWKS_URI=http://auth-service:4005/.well-known/jwks.json
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4004/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:4004/actuator/health/liveness"]
+      interval: 120s
+      timeout: 5s
+      retries: 2
+      start_period: 60s
 
   # Auth Service
   auth-service:
@@ -129,12 +130,18 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED=true
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT=60000
+      - SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=1800000
+      - SPRING_DATASOURCE_HIKARI_KEEPALIVE_TIME=0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4005/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:4005/actuator/health/liveness"]
+      interval: 120s
+      timeout: 5s
+      retries: 2
+      start_period: 60s
 
   # Farmer Service
   farmer-service:
@@ -161,12 +168,18 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true
+      - MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED=true
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT=60000
+      - SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=1800000
+      - SPRING_DATASOURCE_HIKARI_KEEPALIVE_TIME=0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:4000/actuator/health/liveness"]
+      interval: 120s
+      timeout: 5s
+      retries: 2
+      start_period: 60s
 
   # Field Officer Service
   field-officer-service:
@@ -191,12 +204,18 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED=true
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT=60000
+      - SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=1800000
+      - SPRING_DATASOURCE_HIKARI_KEEPALIVE_TIME=0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4015/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:4015/actuator/health/liveness"]
+      interval: 120s
+      timeout: 5s
+      retries: 2
+      start_period: 60s
 
   # Subscription Service
   subscription-service:
@@ -220,12 +239,18 @@ services:
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED=true
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT=60000
+      - SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=1800000
+      - SPRING_DATASOURCE_HIKARI_KEEPALIVE_TIME=0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4013/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:4013/actuator/health/liveness"]
+      interval: 120s
+      timeout: 5s
+      retries: 2
+      start_period: 60s
 
   # KYC Service
   kyc-service:
@@ -250,12 +275,18 @@ services:
       - SPRING_DATASOURCE_USERNAME=${NEON_DEV_DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED=true
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT=60000
+      - SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=1800000
+      - SPRING_DATASOURCE_HIKARI_KEEPALIVE_TIME=0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4014/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:4014/actuator/health/liveness"]
+      interval: 120s
+      timeout: 5s
+      retries: 2
+      start_period: 60s
 
   # Notification Service
   notification-service:
@@ -286,12 +317,18 @@ services:
       - SMS_COUNTRY=${SMS_COUNTRY}
       - SMS_DLT_TE_ID=${SMS_DLT_TE_ID}
       - SMS_ENABLED=${SMS_ENABLED}
+      - MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED=true
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT=60000
+      - SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=1800000
+      - SPRING_DATASOURCE_HIKARI_KEEPALIVE_TIME=0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4016/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:4016/actuator/health/liveness"]
+      interval: 120s
+      timeout: 5s
+      retries: 2
+      start_period: 60s
 
   # File Service
   file-service:
@@ -310,12 +347,13 @@ services:
       - krushi-kranti-network
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED=true
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4008/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:4008/actuator/health/liveness"]
+      interval: 120s
+      timeout: 5s
+      retries: 2
+      start_period: 60s
 
   # Job Application Service
   job-application-service:
@@ -337,12 +375,18 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${NEON_DEV_DB_PASSWORD}
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
+      - MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED=true
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=0
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT=60000
+      - SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=1800000
+      - SPRING_DATASOURCE_HIKARI_KEEPALIVE_TIME=0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4017/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:4017/actuator/health/liveness"]
+      interval: 120s
+      timeout: 5s
+      retries: 2
+      start_period: 60s
 
 networks:
   krushi-kranti-network:

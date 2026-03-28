@@ -28,7 +28,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
   int _currentIndex = 0;
   final NotificationService _notificationService = NotificationService();
   StreamSubscription? _notificationSubscription;
-  final Set<String> _shownNotificationIds = {}; // Track which notifications we've shown
+  final Set<String> _shownNotificationIds =
+      {}; // Track which notifications we've shown
+  late Future<bool> _subscriptionFuture;
 
   // --- LIST OF SCREENS ---
   // The order must match the BottomNavigationBar items below
@@ -61,6 +63,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
   @override
   void initState() {
     super.initState();
+    _subscriptionFuture = _checkSubscriptionStatus();
     _setupGlobalNotificationListener();
     // Start polling for notifications
     _notificationService.startPolling(interval: const Duration(seconds: 10));
@@ -81,9 +84,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         if (notification.type == 'FARM_VERIFICATION_OTP') {
           final now = DateTime.now();
           final age = now.difference(notification.timestamp);
-          
+
           // Only show if notification is recent (within 10 minutes) and not already shown
-          if (age < const Duration(minutes: 10) && 
+          if (age < const Duration(minutes: 10) &&
               !_shownNotificationIds.contains(notification.id)) {
             _showGlobalOtpNotification(notification);
             _shownNotificationIds.add(notification.id);
@@ -94,7 +97,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
 
     // Also check for new notifications when service notifies listeners
     _notificationService.addListener(_onNotificationServiceChanged);
-    
+
     // Check for any existing notifications that haven't been shown
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final newNotifications = _notificationService.newOtpNotificationsForPopup;
@@ -162,18 +165,18 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     try {
       // Try to get fresh subscription status from API
       final subStatus = await SubscriptionService.getSubscriptionStatus();
-      final isSubscribed = subStatus['isSubscribed'] == true || 
-                          subStatus['subscriptionStatus'] == 'ACTIVE';
-      
+      final isSubscribed = subStatus['isSubscribed'] == true ||
+          subStatus['subscriptionStatus'] == 'ACTIVE';
+
       // Update local storage with fresh status
       if (isSubscribed) {
-        final endDate = subStatus['subscriptionEndDate']?.toString() ?? 
-                       subStatus['expiresAt']?.toString();
+        final endDate = subStatus['subscriptionEndDate']?.toString() ??
+            subStatus['expiresAt']?.toString();
         await StorageService.saveSubscriptionStatus(true, endDate: endDate);
       } else {
         await StorageService.saveSubscriptionStatus(false);
       }
-      
+
       return isSubscribed;
     } catch (_) {
       // If API fails, fallback to local storage
@@ -186,7 +189,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return FutureBuilder<bool>(
-      future: _checkSubscriptionStatus(),
+      future: _subscriptionFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -228,7 +231,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               _buildNavItem(
                 icon: Icons.home_outlined,
                 activeIcon: Icons.home_rounded,
-                label: l10n.home, 
+                label: l10n.home,
                 index: 0,
                 isSubscribed: isSubscribed,
                 isPremium: false,
@@ -236,7 +239,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               _buildNavItem(
                 icon: Icons.assignment_outlined,
                 activeIcon: Icons.assignment_rounded,
-                label: l10n.task, 
+                label: l10n.task,
                 index: 1,
                 isSubscribed: isSubscribed,
                 isPremium: true,
@@ -274,7 +277,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     required bool isPremium,
   }) {
     final isSelected = _currentIndex == index;
-    
+
     return Expanded(
       child: Material(
         color: Colors.transparent,
@@ -335,9 +338,8 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                     label,
                     style: GoogleFonts.poppins(
                       fontSize: 10,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected
                           ? AppColors.brandGreen
                           : Colors.grey.shade600,
@@ -358,7 +360,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
 
   Widget _buildCenterSellButton(AppLocalizations l10n) {
     final isSelected = _currentIndex == 2;
-    
+
     return Expanded(
       child: Material(
         color: Colors.transparent,
@@ -395,7 +397,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                               color: AppColors.brandGreen.withOpacity(0.4),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
-              ),
+                            ),
                           ]
                         : [],
                   ),
@@ -421,9 +423,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                   ),
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

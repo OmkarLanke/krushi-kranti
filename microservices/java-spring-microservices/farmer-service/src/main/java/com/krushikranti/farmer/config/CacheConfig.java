@@ -70,10 +70,19 @@ public class CacheConfig {
     @Bean
     public CaffeineCacheManager caffeineCacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
-        cacheManager.setCacheNames(Arrays.asList("currentWeather", "weatherForecast"));
+        cacheManager.setCacheNames(Arrays.asList(
+            "currentWeather",
+            "weatherForecast",
+            "farmerMyDetails",
+            "farmerHomeSummary",
+            "farmerFarms",
+            "farmerFarmCount",
+            "farmerCrops",
+            "farmerCropsByFarm"
+        ));
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(500)
-                .expireAfterWrite(30, TimeUnit.MINUTES)
+            .expireAfterWrite(2, TimeUnit.MINUTES)
                 .recordStats());
         return cacheManager;
     }
@@ -105,6 +114,12 @@ public class CacheConfig {
         cacheConfigurations.put("cropTypes", defaultConfig.entryTtl(Duration.ofHours(1)));
         cacheConfigurations.put("cropNames", defaultConfig.entryTtl(Duration.ofHours(1)));
         cacheConfigurations.put("adminFarmerList", defaultConfig.entryTtl(Duration.ofMinutes(3)));
+        cacheConfigurations.put("farmerMyDetails", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("farmerHomeSummary", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("farmerFarms", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("farmerFarmCount", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("farmerCrops", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        cacheConfigurations.put("farmerCropsByFarm", defaultConfig.entryTtl(Duration.ofMinutes(2)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

@@ -2,6 +2,7 @@ package com.krushikranti.farmer.controller;
 
 import com.krushikranti.farmer.dto.AddressLookupResponse;
 import com.krushikranti.farmer.dto.ApiResponse;
+import com.krushikranti.farmer.dto.HomeSummaryResponse;
 import com.krushikranti.farmer.dto.MyDetailsRequest;
 import com.krushikranti.farmer.dto.MyDetailsResponse;
 import com.krushikranti.farmer.service.FarmerProfileService;
@@ -40,6 +41,23 @@ public class FarmerController {
         
         return ResponseEntity.ok(new ApiResponse<>(
                 "Farmer profile retrieved successfully",
+                response));
+    }
+
+    /**
+     * Get consolidated home summary for faster dashboard boot.
+     */
+    @GetMapping("/profile/home-summary")
+    public ResponseEntity<ApiResponse<HomeSummaryResponse>> getHomeSummary(
+            @RequestHeader("X-User-Id") String userIdHeader) {
+
+        Long userId = Long.parseLong(userIdHeader);
+        log.debug("Getting home summary for userId: {}", userId);
+
+        HomeSummaryResponse response = farmerProfileService.getHomeSummary(userId);
+
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Home summary retrieved successfully",
                 response));
     }
 

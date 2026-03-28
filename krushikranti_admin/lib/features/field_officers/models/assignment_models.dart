@@ -12,7 +12,8 @@ class SuggestedFieldOfficer {
   final bool isActive;
   final List<String> matchingPincodes;
   final int matchingFarmCount;
-  final int? assignedFarmsCount; // Number of farms currently assigned to this field officer
+  final int?
+  assignedFarmsCount; // Number of farms currently assigned to this field officer
 
   SuggestedFieldOfficer({
     required this.fieldOfficerId,
@@ -44,7 +45,8 @@ class SuggestedFieldOfficer {
       district: json['district'],
       state: json['state'],
       isActive: json['isActive'] ?? true,
-      matchingPincodes: (json['matchingPincodes'] as List?)
+      matchingPincodes:
+          (json['matchingPincodes'] as List?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
@@ -140,8 +142,10 @@ class PagedAssignmentsResponse {
     final assignmentsJson = json['assignments'];
     final assignments = assignmentsJson is List
         ? assignmentsJson
-            .map((e) => AssignmentResponse.fromJson(e as Map<String, dynamic>))
-            .toList()
+              .map(
+                (e) => AssignmentResponse.fromJson(e as Map<String, dynamic>),
+              )
+              .toList()
         : <AssignmentResponse>[];
 
     return PagedAssignmentsResponse(
@@ -178,4 +182,3 @@ class AssignFieldOfficerRequest {
     };
   }
 }
-

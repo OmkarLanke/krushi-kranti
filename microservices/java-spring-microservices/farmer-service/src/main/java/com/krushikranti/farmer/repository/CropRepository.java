@@ -103,5 +103,8 @@ public interface CropRepository extends JpaRepository<Crop, Long> {
            "JOIN FETCH cn.cropType ct " +
            "WHERE f.farmer.userId = :userId AND c.isActive = true AND f.isActive = true")
     List<Crop> findByFarmerUserIdWithDetails(@Param("userId") Long userId);
+
+       @Query("SELECT COUNT(c) FROM Crop c WHERE c.farm.farmer.userId = :userId AND c.isActive = true AND c.farm.isActive = true")
+       long countActiveByFarmerUserId(@Param("userId") Long userId);
 }
 
