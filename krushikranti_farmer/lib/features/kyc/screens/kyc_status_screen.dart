@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
-import '../../../core/services/http_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/onboarding/onboarding_models.dart';
 import '../models/kyc_models.dart';
@@ -172,7 +171,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
     if (_kycStatus == null) return;
 
     Widget nextScreen;
-
+    
     if (!_kycStatus!.aadhaarVerified) {
       nextScreen = const AadhaarVerificationScreen();
     } else if (!_kycStatus!.panVerified) {
@@ -205,8 +204,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -235,8 +233,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.brandGreen))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.brandGreen))
           : RefreshIndicator(
               onRefresh: _loadKycStatus,
               color: AppColors.brandGreen,
@@ -819,17 +816,14 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                               ],
                             )
                           : null),
-                  color:
-                      !isVerified && !isEnabled ? Colors.grey.shade100 : null,
+                  color: !isVerified && !isEnabled ? Colors.grey.shade100 : null,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
-                  color: isVerified
+                  color: isVerified 
                       ? Colors.green.shade600
-                      : (isEnabled
-                          ? AppColors.brandGreen
-                          : Colors.grey.shade400),
+                      : (isEnabled ? AppColors.brandGreen : Colors.grey.shade400),
                   size: 24,
                 ),
               ),
@@ -844,8 +838,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color:
-                            isEnabled ? Colors.black87 : Colors.grey.shade600,
+                        color: isEnabled ? Colors.black87 : Colors.grey.shade600,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -854,9 +847,7 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                       subtitle,
                       style: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: isVerified
-                            ? Colors.green.shade700
-                            : Colors.grey.shade600,
+                        color: isVerified ? Colors.green.shade700 : Colors.grey.shade600,
                         height: 1.3,
                       ),
                       maxLines: 2,
@@ -873,12 +864,10 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                     color: Colors.green.shade50,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_circle_rounded,
-                      color: Colors.green, size: 22),
+                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 22),
                 )
               else if (isEnabled)
-                Icon(Icons.arrow_forward_ios_rounded,
-                    color: Colors.grey.shade400, size: 16)
+                Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey.shade400, size: 16)
               else
                 Icon(Icons.lock_rounded, color: Colors.grey.shade400, size: 20),
             ],
@@ -888,3 +877,4 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
     );
   }
 }
+

@@ -34,5 +34,14 @@ public interface FieldOfficerRepository extends JpaRepository<FieldOfficer, Long
      * Find field officers by pincode list and active status
      */
     List<FieldOfficer> findByPincodeInAndIsActiveTrue(List<String> pincodes);
+
+    @Query("SELECT DISTINCT f.state FROM FieldOfficer f WHERE f.state IS NOT NULL AND f.state <> '' ORDER BY f.state")
+    List<String> findDistinctStates();
+
+    @Query("SELECT DISTINCT f.district FROM FieldOfficer f WHERE f.district IS NOT NULL AND f.district <> '' ORDER BY f.district")
+    List<String> findDistinctDistricts();
+
+    @Query("SELECT DISTINCT f.pincode FROM FieldOfficer f WHERE f.pincode IS NOT NULL AND f.pincode <> '' ORDER BY f.pincode")
+    List<String> findDistinctPincodes();
 }
 
