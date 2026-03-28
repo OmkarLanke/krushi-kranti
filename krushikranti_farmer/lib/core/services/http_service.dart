@@ -24,7 +24,7 @@ class HttpService {
     if (kIsWeb) {
       return "http://localhost:4004";
     } else if (Platform.isAndroid || Platform.isIOS) {
-      return "http://192.168.1.40:4004"; // Your Wi-Fi IP for device testing
+      return "http://192.168.1.41:4004"; // Your Wi-Fi IP for device testing
     } else {
       return "http://localhost:4004";
     }
