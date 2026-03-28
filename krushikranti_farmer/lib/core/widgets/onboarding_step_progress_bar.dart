@@ -46,7 +46,8 @@ class OnboardingStepProgressBar extends StatelessWidget {
               padding: const EdgeInsets.only(top: 13, left: 2, right: 2),
               child: Container(
                 height: 2,
-                color: isCompleted ? AppColors.brandGreen : Colors.grey.shade300,
+                color:
+                    isCompleted ? AppColors.brandGreen : Colors.grey.shade300,
               ),
             ),
           );
@@ -94,9 +95,8 @@ class _OnboardingStepItem extends StatelessWidget {
     final bool isCompleted = status == StepStatus.completed;
     final bool isActive = status == StepStatus.active;
 
-    final Color circleBg = isCompleted || isActive
-        ? AppColors.brandGreen
-        : Colors.grey.shade300;
+    final Color circleBg =
+        isCompleted || isActive ? AppColors.brandGreen : Colors.grey.shade300;
 
     final Color labelColor = isActive
         ? AppColors.brandGreen

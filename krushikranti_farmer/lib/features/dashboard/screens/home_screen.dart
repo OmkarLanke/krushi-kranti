@@ -49,6 +49,8 @@ class _HomeScreenState extends State<HomeScreen> {
   SetupState _setupState = const SetupState();
   bool _isInitialLoadComplete = false; // Track if initial data load is complete
   bool _isSubscribed = false; // Track subscription status
+  bool _hasPersonalDetails = false; // Track if personal details are completed
+  bool _hasCrops = false; // Track if user has crops
   Map<String, dynamic>? _cachedHomeSummary;
   DateTime? _homeSummaryCacheTime;
   static const Duration _homeSummaryCacheTtl = Duration(seconds: 45);
@@ -105,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await _fetchFarmsData(forceRefresh: true);
 
     // Then check all statuses in parallel
-    await Future.wait([
+    await Future.wait<void>([
       _checkFieldOfficerAssignments(),
       _checkAllFarmsVerified(),
       _loadSetupState(),
@@ -129,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await _fetchFarmsData(forceRefresh: true);
 
     // Then check all statuses in parallel
-    await Future.wait([
+    await Future.wait<void>([
       _checkFieldOfficerAssignments(),
       _checkAllFarmsVerified(),
       _loadSetupState(),
@@ -181,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (_) {
-      await Future.wait([
+      await Future.wait<void>([
         _checkAllFarmsVerified(),
         _checkPersonalDetailsCompletion(),
         _checkHasCrops(),
@@ -467,6 +469,47 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _setupState = state;
     });
+  }
+
+  /// Check subscription status
+  Future<void> _checkSubscriptionStatus() async {
+    if (!mounted) return;
+    // This method is called but subscription checking is handled elsewhere
+    // Placeholder for future subscription validation logic
+  }
+
+  /// Check personal details completion
+  Future<void> _checkPersonalDetailsCompletion() async {
+    if (!mounted) return;
+    try {
+      final response = await HttpService.get("farmer/profile/home-summary");
+      final summary =
+          response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      if (mounted) {
+        setState(() {
+          _hasPersonalDetails = summary['hasPersonalDetails'] == true;
+        });
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
+  /// Check if user has crops
+  Future<void> _checkHasCrops() async {
+    if (!mounted) return;
+    try {
+      final response = await HttpService.get("farmer/profile/home-summary");
+      final summary =
+          response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      if (mounted) {
+        setState(() {
+          _hasCrops = summary['hasCrops'] == true;
+        });
+      }
+    } catch (e) {
+      // Handle error silently
+    }
   }
 
   @override
