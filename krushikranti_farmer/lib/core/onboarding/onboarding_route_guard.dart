@@ -39,16 +39,16 @@ class _OnboardingRouteGuardState extends State<OnboardingRouteGuard> {
     final bool fromOnboarding =
         // For onboarding transitions we explicitly pass `fromOnboarding: true`.
         (args is Map && args['fromOnboarding'] == true) ||
-        // The personal wrapper routes are onboarding entrypoints and may not
-        // pass any arguments.
-        widget.step == OnboardingStep.personal;
+            // The personal wrapper routes are onboarding entrypoints and may not
+            // pass any arguments.
+            widget.step == OnboardingStep.personal;
     return Consumer<OnboardingController>(
       builder: (context, onboarding, _) {
         return FutureBuilder(
           future: _readyFuture,
           builder: (context, snapshot) {
-            final ready =
-                onboarding.isReady || snapshot.connectionState == ConnectionState.done;
+            final ready = onboarding.isReady ||
+                snapshot.connectionState == ConnectionState.done;
             if (!ready) {
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
@@ -87,22 +87,22 @@ class _OnboardingRouteGuardState extends State<OnboardingRouteGuard> {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!context.mounted) return;
 
-                    final bool clearStackOnKycCompletion =
-                        widget.step == OnboardingStep.kyc &&
-                            redirectRoute == AppRoutes.dashboard;
+                final bool clearStackOnKycCompletion =
+                    widget.step == OnboardingStep.kyc &&
+                        redirectRoute == AppRoutes.dashboard;
 
-                    if (clearStackOnKycCompletion) {
-                      Navigator.of(context).pushNamedAndRemoveUntil(
-                        redirectRoute,
-                        (route) => false,
-                        arguments: args,
-                      );
-                    } else {
-                      Navigator.of(context).pushReplacementNamed(
-                        redirectRoute,
-                        arguments: args,
-                      );
-                    }
+                if (clearStackOnKycCompletion) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    redirectRoute,
+                    (route) => false,
+                    arguments: args,
+                  );
+                } else {
+                  Navigator.of(context).pushReplacementNamed(
+                    redirectRoute,
+                    arguments: args,
+                  );
+                }
               });
               return const SizedBox.shrink();
             }
@@ -114,4 +114,3 @@ class _OnboardingRouteGuardState extends State<OnboardingRouteGuard> {
     );
   }
 }
-
