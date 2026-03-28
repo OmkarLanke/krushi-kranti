@@ -68,6 +68,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         // Validate token using JWKS
         return jwksService.validateToken(token)
+                .onErrorResume(e -> {
+                    log.error("Error during JWT validation for path {}: {}", path, e.getMessage());
+                    return Mono.just(new JwksService.TokenValidationResult(false, null, null, null, "Token validation error"));
+                })
                 .flatMap(result -> {
                     if (!result.valid()) {
                         log.warn("Token validation failed for path {}: {}", path, result.errorMessage());
@@ -87,10 +91,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                             .build();
 
                     return chain.filter(exchange.mutate().request(modifiedRequest).build());
-                })
-                .onErrorResume(e -> {
-                    log.error("Error during token validation: {}", e.getMessage());
-                    return handleUnauthorized(exchange, "Token validation error");
                 });
     }
 

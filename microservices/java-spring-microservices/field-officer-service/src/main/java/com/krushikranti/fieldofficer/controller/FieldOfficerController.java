@@ -221,22 +221,24 @@ public class FieldOfficerController {
      * This endpoint allows farmers to see which field officers are assigned to their farms.
      */
     @GetMapping("/farmer/assignments")
-    public ResponseEntity<ApiResponse<List<AssignmentResponseDto>>> getFarmerAssignments(
-            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getFarmerAssignments(
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
         try {
             if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
                 log.error("Missing X-User-Id header for farmer assignments request");
                 return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
             }
-            
+
             Long farmerUserId = Long.parseLong(userIdHeader.trim());
             log.info("Fetching field officer assignments for farmer userId: {}", farmerUserId);
-            
-            List<AssignmentResponseDto> assignments = assignmentService.getAssignmentsForFarmer(farmerUserId);
-            
-            log.info("Successfully retrieved {} assignments for farmer userId: {}", assignments.size(), farmerUserId);
-            return ResponseEntity.ok(new ApiResponse<>("Assignments retrieved successfully", assignments));
+
+            Map<String, Object> response = assignmentService.getAssignmentsForFarmerPaged(farmerUserId, page, size);
+
+            log.info("Successfully retrieved assignments for farmer userId: {}", farmerUserId);
+            return ResponseEntity.ok(new ApiResponse<>("Assignments retrieved successfully", response));
         } catch (NumberFormatException e) {
             log.error("Invalid user ID format: {}", userIdHeader, e);
             return ResponseEntity.badRequest()

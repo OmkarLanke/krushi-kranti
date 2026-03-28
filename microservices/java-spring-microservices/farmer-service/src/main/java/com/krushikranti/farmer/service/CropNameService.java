@@ -8,6 +8,9 @@ import com.krushikranti.farmer.repository.CropNameRepository;
 import com.krushikranti.farmer.repository.CropTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +20,9 @@ import java.util.stream.Collectors;
 /**
  * Service for managing crop names (master data).
  * Admin operations for CRUD on crop names.
+ *
+ * Caching: Uses Redis cache "cropNames" for getActiveCropNamesByTypeId.
+ * Cache is evicted on create, update, delete, and restore operations.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,17 +42,21 @@ public class CropNameService {
 
     /**
      * Get active crop names by crop type ID with language support (for farmer app dropdown).
-     * 
+     * Cached in Redis for 1 hour.
+     *
      * @param cropTypeId The crop type ID
      * @param language Language code: "en", "hi", or "mr" (defaults to "en" if invalid)
      * @return List of crop names in the requested language
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "cropNames", key = "#cropTypeId + '_' + #language")
     public List<CropNameResponse> getActiveCropNamesByTypeId(Long cropTypeId, String language) {
+        log.debug("Cache miss for cropNames with typeId: {} and language: {} - fetching from database", cropTypeId, language);
+
         // Validate crop type exists and is active
         CropType cropType = cropTypeRepository.findById(cropTypeId)
                 .orElseThrow(() -> new IllegalArgumentException("Crop type not found with ID: " + cropTypeId));
-        
+
         if (!cropType.getIsActive()) {
             throw new IllegalArgumentException("Crop type is not active");
         }
@@ -136,6 +146,10 @@ public class CropNameService {
      * Create a new crop name (admin only).
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "cropNames", allEntries = true),
+            @CacheEvict(value = "cropTypes", allEntries = true)
+    })
     public CropNameResponse createCropName(CropNameRequest request) {
         // Validate crop type exists
         CropType cropType = cropTypeRepository.findById(request.getCropTypeId())
@@ -167,6 +181,10 @@ public class CropNameService {
      * Update an existing crop name (admin only).
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "cropNames", allEntries = true),
+            @CacheEvict(value = "cropTypes", allEntries = true)
+    })
     public CropNameResponse updateCropName(Long id, CropNameRequest request) {
         CropName cropName = cropNameRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Crop name not found with ID: " + id));
@@ -204,6 +222,10 @@ public class CropNameService {
      * Soft delete a crop name (admin only).
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "cropNames", allEntries = true),
+            @CacheEvict(value = "cropTypes", allEntries = true)
+    })
     public void deleteCropName(Long id) {
         CropName cropName = cropNameRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Crop name not found with ID: " + id));
@@ -217,6 +239,10 @@ public class CropNameService {
      * Restore a deleted crop name (admin only).
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "cropNames", allEntries = true),
+            @CacheEvict(value = "cropTypes", allEntries = true)
+    })
     public CropNameResponse restoreCropName(Long id) {
         CropName cropName = cropNameRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Crop name not found with ID: " + id));

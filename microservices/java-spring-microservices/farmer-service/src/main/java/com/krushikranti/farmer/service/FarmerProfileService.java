@@ -1,13 +1,18 @@
 package com.krushikranti.farmer.service;
 
 import com.krushikranti.farmer.dto.AddressLookupResponse;
+import com.krushikranti.farmer.dto.HomeSummaryResponse;
 import com.krushikranti.farmer.dto.MyDetailsRequest;
 import com.krushikranti.farmer.dto.MyDetailsResponse;
 import com.krushikranti.farmer.model.Farmer;
+import com.krushikranti.farmer.repository.CropRepository;
+import com.krushikranti.farmer.repository.FarmRepository;
 import com.krushikranti.farmer.repository.FarmerRepository;
 import com.krushikranti.auth.grpc.UserInfoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +27,11 @@ import java.util.Optional;
 public class FarmerProfileService {
 
     private final FarmerRepository farmerRepository;
+    private final FarmRepository farmRepository;
+    private final CropRepository cropRepository;
     private final AuthServiceClient authServiceClient;
     private final PincodeService pincodeService;
+    private final AdminFarmerService adminFarmerService;
 
     /**
      * Get farmer's "My Details" profile.
@@ -35,6 +43,7 @@ public class FarmerProfileService {
      * @throws IllegalArgumentException if user is ADMIN
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "farmerMyDetails", key = "#userId")
     public MyDetailsResponse getMyDetails(Long userId) {
         // Get user info (email, phone, role) from Auth Service via gRPC
         String email = "";
@@ -88,6 +97,41 @@ public class FarmerProfileService {
                 .build();
     }
 
+        @Transactional(readOnly = true)
+        @Cacheable(cacheNames = "farmerHomeSummary", key = "#userId")
+        public HomeSummaryResponse getHomeSummary(Long userId) {
+        Optional<Farmer> farmerOpt = farmerRepository.findByUserId(userId);
+        if (farmerOpt.isEmpty()) {
+            return HomeSummaryResponse.builder()
+                .hasPersonalDetails(false)
+                .hasCrops(false)
+                .allFarmsVerified(false)
+                .totalFarms(0)
+                .verifiedFarms(0)
+                .build();
+        }
+
+        Farmer farmer = farmerOpt.get();
+
+        boolean hasPersonalDetails = farmer.getFirstName() != null && !farmer.getFirstName().trim().isEmpty()
+            && farmer.getLastName() != null && !farmer.getLastName().trim().isEmpty()
+            && farmer.getDateOfBirth() != null
+            && farmer.getGender() != null;
+
+        long totalFarms = farmRepository.countByFarmerIdAndIsActiveTrue(farmer.getId());
+        long verifiedFarms = farmRepository.countByFarmerIdAndIsVerifiedTrue(farmer.getId());
+        boolean hasCrops = cropRepository.countActiveByFarmerUserId(userId) > 0;
+        boolean allFarmsVerified = totalFarms > 0 && totalFarms == verifiedFarms;
+
+        return HomeSummaryResponse.builder()
+            .hasPersonalDetails(hasPersonalDetails)
+            .hasCrops(hasCrops)
+            .allFarmsVerified(allFarmsVerified)
+            .totalFarms(totalFarms)
+            .verifiedFarms(verifiedFarms)
+            .build();
+        }
+
     /**
      * Create or update farmer's "My Details" profile.
      * Validates pincode and fetches address details.
@@ -99,6 +143,7 @@ public class FarmerProfileService {
      * @throws IllegalArgumentException if user is ADMIN
      */
     @Transactional
+    @CacheEvict(cacheNames = {"farmerMyDetails", "farmerHomeSummary"}, key = "#userId")
     public MyDetailsResponse saveMyDetails(Long userId, MyDetailsRequest request) {
         // Get user info from Auth Service to check role
         String email = "";
@@ -165,6 +210,7 @@ public class FarmerProfileService {
         }
 
         farmer = farmerRepository.save(farmer);
+        adminFarmerService.invalidateAdminFarmerListCache();
 
         // Build response with auth service data (email/phone may be empty if gRPC call failed)
         return MyDetailsResponse.builder()

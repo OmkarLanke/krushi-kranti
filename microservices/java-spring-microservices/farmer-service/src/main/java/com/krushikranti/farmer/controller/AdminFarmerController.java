@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -116,6 +117,31 @@ public class AdminFarmerController {
             return ResponseEntity.internalServerError()
                     .body(new ApiResponse<>("Failed to fetch stats: " + e.getMessage(), null));
         }
+    }
+
+    @GetMapping("/filter-options")
+    public ResponseEntity<ApiResponse<Map<String, List<String>>>> getFilterOptions(
+            @RequestHeader(value = "X-User-Roles", required = false) String roles) {
+        if (roles == null || !roles.contains("ADMIN")) {
+            return ResponseEntity.status(403)
+                    .body(new ApiResponse<>("Access denied. Admin role required.", null));
+        }
+
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Farmer filter options fetched successfully",
+                adminFarmerService.getFilterOptions()));
+    }
+
+    @PostMapping("/cache/invalidate")
+    public ResponseEntity<ApiResponse<Void>> invalidateAdminFarmerCache(
+            @RequestHeader(value = "X-User-Roles", required = false) String roles) {
+        if (roles == null || (!roles.contains("ADMIN") && !roles.contains("SYSTEM"))) {
+            return ResponseEntity.status(403)
+                    .body(new ApiResponse<>("Access denied.", null));
+        }
+
+        adminFarmerService.invalidateAdminFarmerListCache();
+        return ResponseEntity.ok(new ApiResponse<>("Admin farmer cache invalidated", null));
     }
 }
 

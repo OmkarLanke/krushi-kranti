@@ -43,6 +43,7 @@ public class JwksService {
 
     private Cache<String, JWKSet> jwksCache;
     private WebClient webClient;
+    private volatile JWKSet lastKnownGoodJwks;
 
     private static final String JWKS_CACHE_KEY = "jwks";
     private static final Duration CACHE_DURATION = Duration.ofMinutes(5);
@@ -67,6 +68,25 @@ public class JwksService {
             return Mono.just(cachedJwks);
         }
 
+        if (lastKnownGoodJwks != null) {
+            log.warn("JWKS cache miss. Using last known good JWKS while refreshing from source");
+            // Try refresh in background-like chain, but do not block current request path.
+            webClient.get()
+                    .uri(jwtProperties.getJwksUri())
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .map(this::parseJwks)
+                    .doOnNext(jwkSet -> {
+                        jwksCache.put(JWKS_CACHE_KEY, jwkSet);
+                        lastKnownGoodJwks = jwkSet;
+                        log.info("JWKS refreshed successfully from source. Keys count: {}", jwkSet.getKeys().size());
+                    })
+                    .doOnError(e -> log.warn("Background JWKS refresh failed, continuing with last known good keys: {}", e.getMessage()))
+                    .subscribe();
+
+            return Mono.just(lastKnownGoodJwks);
+        }
+
         log.info("Fetching JWKS from: {}", jwtProperties.getJwksUri());
         return webClient.get()
                 .uri(jwtProperties.getJwksUri())
@@ -75,9 +95,17 @@ public class JwksService {
                 .map(this::parseJwks)
                 .doOnNext(jwkSet -> {
                     jwksCache.put(JWKS_CACHE_KEY, jwkSet);
+                    lastKnownGoodJwks = jwkSet;
                     log.info("JWKS cached. Keys count: {}", jwkSet.getKeys().size());
                 })
-                .doOnError(e -> log.error("Failed to fetch JWKS: {}", e.getMessage()));
+                .onErrorResume(e -> {
+                    log.error("Failed to fetch JWKS: {}", e.getMessage());
+                    if (lastKnownGoodJwks != null) {
+                        log.warn("Falling back to last known good JWKS after fetch failure");
+                        return Mono.just(lastKnownGoodJwks);
+                    }
+                    return Mono.error(e);
+                });
     }
 
     /**

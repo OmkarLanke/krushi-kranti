@@ -81,12 +81,15 @@ weather:
     # Replace with your actual key or use environment variable ${WEATHER_API_KEY}
     key: ${WEATHER_API_KEY:your_api_key_here}
 
-# Cache Configuration for Weather Data
-spring.cache:
-  type: caffeine
-  cache-names: currentWeather,weatherForecast
-  caffeine:
-    spec: maximumSize=500,expireAfterWrite=30m
+# Redis Configuration for distributed caching (master data)
+spring.data.redis:
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
+  timeout: 2000ms
+
+# NOTE: Cache configuration is now defined in CacheConfig.java
+# - Caffeine (in-memory): currentWeather, weatherForecast (30 min TTL)
+# - Redis (distributed): cropTypes, cropNames (1 hour TTL)
 
 logging:
   level:

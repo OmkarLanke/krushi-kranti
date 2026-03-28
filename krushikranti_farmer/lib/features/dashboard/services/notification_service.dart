@@ -50,25 +50,34 @@ class NotificationModel {
       if (createdAtValue is String) {
         // ISO string - parse and ensure it's treated as UTC if no timezone info
         timestamp = DateTime.parse(createdAtValue);
-        if (!timestamp.isUtc && !createdAtValue.contains('Z') && !createdAtValue.contains('+')) {
+        if (!timestamp.isUtc &&
+            !createdAtValue.contains('Z') &&
+            !createdAtValue.contains('+')) {
           // No timezone info means it's UTC from server - convert to local
           timestamp = DateTime.utc(
-            timestamp.year, timestamp.month, timestamp.day,
-            timestamp.hour, timestamp.minute, timestamp.second, timestamp.millisecond
-          ).toLocal();
+                  timestamp.year,
+                  timestamp.month,
+                  timestamp.day,
+                  timestamp.hour,
+                  timestamp.minute,
+                  timestamp.second,
+                  timestamp.millisecond)
+              .toLocal();
         }
       } else if (createdAtValue is List && createdAtValue.length >= 6) {
         // Handle array format: [year, month, day, hour, minute, second, nanosecond?]
         // Array format from server is always UTC
         try {
           timestamp = DateTime.utc(
-            createdAtValue[0] as int,  // year
-            createdAtValue[1] as int,  // month
-            createdAtValue[2] as int,  // day
-            createdAtValue[3] as int,  // hour
-            createdAtValue[4] as int,  // minute
-            createdAtValue[5] as int,  // second
-            createdAtValue.length > 6 ? (createdAtValue[6] as int) ~/ 1000000 : 0, // nanoseconds to milliseconds
+            createdAtValue[0] as int, // year
+            createdAtValue[1] as int, // month
+            createdAtValue[2] as int, // day
+            createdAtValue[3] as int, // hour
+            createdAtValue[4] as int, // minute
+            createdAtValue[5] as int, // second
+            createdAtValue.length > 6
+                ? (createdAtValue[6] as int) ~/ 1000000
+                : 0, // nanoseconds to milliseconds
           ).toLocal();
         } catch (e) {
           debugPrint('Error parsing createdAt array: $e');
@@ -81,11 +90,18 @@ class NotificationModel {
       final timestampValue = json['timestamp'];
       if (timestampValue is String) {
         timestamp = DateTime.parse(timestampValue);
-        if (!timestamp.isUtc && !timestampValue.contains('Z') && !timestampValue.contains('+')) {
+        if (!timestamp.isUtc &&
+            !timestampValue.contains('Z') &&
+            !timestampValue.contains('+')) {
           timestamp = DateTime.utc(
-            timestamp.year, timestamp.month, timestamp.day,
-            timestamp.hour, timestamp.minute, timestamp.second, timestamp.millisecond
-          ).toLocal();
+                  timestamp.year,
+                  timestamp.month,
+                  timestamp.day,
+                  timestamp.hour,
+                  timestamp.minute,
+                  timestamp.second,
+                  timestamp.millisecond)
+              .toLocal();
         }
       } else if (timestampValue is List && timestampValue.length >= 6) {
         // Array format from server is always UTC
@@ -97,7 +113,9 @@ class NotificationModel {
             timestampValue[3] as int,
             timestampValue[4] as int,
             timestampValue[5] as int,
-            timestampValue.length > 6 ? (timestampValue[6] as int) ~/ 1000000 : 0,
+            timestampValue.length > 6
+                ? (timestampValue[6] as int) ~/ 1000000
+                : 0,
           ).toLocal();
         } catch (e) {
           debugPrint('Error parsing timestamp array: $e');
@@ -111,15 +129,16 @@ class NotificationModel {
     }
 
     return NotificationModel(
-      id: json['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: json['id']?.toString() ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
       type: json['eventType'] ?? json['type'] ?? '',
       title: json['title'] ?? '',
       message: json['message'] ?? '',
       data: dataMap,
       timestamp: timestamp,
-      recipientUserId: json['recipientUserId'] != null 
-          ? (json['recipientUserId'] is int 
-              ? json['recipientUserId'] as int 
+      recipientUserId: json['recipientUserId'] != null
+          ? (json['recipientUserId'] is int
+              ? json['recipientUserId'] as int
               : int.tryParse(json['recipientUserId'].toString()))
           : null,
       isRead: json['isRead'] ?? false,
@@ -150,11 +169,13 @@ class NotificationService extends ChangeNotifier {
   final StreamController<NotificationModel> _notificationStreamController =
       StreamController<NotificationModel>.broadcast();
   final Set<String> _popupShownNotificationIds = {};
-  
+
   Timer? _pollingTimer;
   bool _isPolling = false;
+  int _pollingOwners = 0;
 
-  List<NotificationModel> get notifications => List.unmodifiable(_notifications);
+  List<NotificationModel> get notifications =>
+      List.unmodifiable(_notifications);
   Stream<NotificationModel> get notificationStream =>
       _notificationStreamController.stream;
 
@@ -162,54 +183,49 @@ class NotificationService extends ChangeNotifier {
   List<NotificationModel> get otpNotifications {
     final now = DateTime.now();
     const otpExpirationDuration = Duration(minutes: 10);
-    
-    return _notifications
-        .where((n) {
-          if (n.type != 'FARM_VERIFICATION_OTP' || n.isRead) {
-            return false;
-          }
-          // Check if notification is expired (older than 10 minutes)
-          final age = now.difference(n.timestamp);
-          return age < otpExpirationDuration;
-        })
-        .toList();
+
+    return _notifications.where((n) {
+      if (n.type != 'FARM_VERIFICATION_OTP' || n.isRead) {
+        return false;
+      }
+      // Check if notification is expired (older than 10 minutes)
+      final age = now.difference(n.timestamp);
+      return age < otpExpirationDuration;
+    }).toList();
   }
 
   /// Get all OTP notifications (read and unread) that are not expired
   List<NotificationModel> get allOtpNotifications {
     final now = DateTime.now();
     const otpExpirationDuration = Duration(minutes: 10);
-    
-    return _notifications
-        .where((n) {
-          if (n.type != 'FARM_VERIFICATION_OTP') {
-            return false;
-          }
-          // Check if notification is expired (older than 10 minutes)
-          final age = now.difference(n.timestamp);
-          return age < otpExpirationDuration;
-        })
-        .toList()
-        ..sort((a, b) => b.timestamp.compareTo(a.timestamp)); // Sort by newest first
+
+    return _notifications.where((n) {
+      if (n.type != 'FARM_VERIFICATION_OTP') {
+        return false;
+      }
+      // Check if notification is expired (older than 10 minutes)
+      final age = now.difference(n.timestamp);
+      return age < otpExpirationDuration;
+    }).toList()
+      ..sort(
+          (a, b) => b.timestamp.compareTo(a.timestamp)); // Sort by newest first
   }
 
   /// Get OTP notifications for which popup has not been shown yet
   List<NotificationModel> get newOtpNotificationsForPopup {
     final now = DateTime.now();
     const otpExpirationDuration = Duration(minutes: 10);
-    
-    return _notifications
-        .where((n) {
-          if (n.type != 'FARM_VERIFICATION_OTP') {
-            return false;
-          }
-          if (_popupShownNotificationIds.contains(n.id)) {
-            return false;
-          }
-          final age = now.difference(n.timestamp);
-          return age < otpExpirationDuration;
-        })
-        .toList();
+
+    return _notifications.where((n) {
+      if (n.type != 'FARM_VERIFICATION_OTP') {
+        return false;
+      }
+      if (_popupShownNotificationIds.contains(n.id)) {
+        return false;
+      }
+      final age = now.difference(n.timestamp);
+      return age < otpExpirationDuration;
+    }).toList();
   }
 
   void markPopupShownForNotifications(List<NotificationModel> notifications) {
@@ -222,13 +238,13 @@ class NotificationService extends ChangeNotifier {
   int get unreadOtpNotificationsCount {
     return otpNotifications.length;
   }
-  
+
   /// Remove expired OTP notifications (older than 10 minutes)
   /// Optimized: Only notify listeners if notifications were actually removed
   void removeExpiredOtpNotifications() {
     final now = DateTime.now();
     const otpExpirationDuration = Duration(minutes: 10);
-    
+
     final initialCount = _notifications.length;
     _notifications.removeWhere((n) {
       if (n.type == 'FARM_VERIFICATION_OTP') {
@@ -237,7 +253,7 @@ class NotificationService extends ChangeNotifier {
       }
       return false;
     });
-    
+
     // Only notify listeners if notifications were removed
     final removedCount = initialCount - _notifications.length;
     if (removedCount > 0) {
@@ -246,14 +262,17 @@ class NotificationService extends ChangeNotifier {
   }
 
   /// Start polling for notifications from backend
-  /// Optimized: Only start polling if not already active
+  /// Uses reference counting to avoid duplicate start/stop across screens.
   void startPolling({Duration interval = const Duration(seconds: 10)}) {
-    if (_isPolling) return;
-    
+    _pollingOwners++;
+    if (_isPolling) {
+      return;
+    }
+
     _isPolling = true;
     // Fetch immediately on first start
     fetchNotifications();
-    
+
     // Then poll periodically
     _pollingTimer = Timer.periodic(interval, (timer) {
       if (!_isPolling) {
@@ -266,6 +285,14 @@ class NotificationService extends ChangeNotifier {
 
   /// Stop polling for notifications
   void stopPolling() {
+    if (_pollingOwners > 0) {
+      _pollingOwners--;
+    }
+
+    if (_pollingOwners > 0) {
+      return;
+    }
+
     _isPolling = false;
     _pollingTimer?.cancel();
     _pollingTimer = null;
@@ -277,7 +304,7 @@ class NotificationService extends ChangeNotifier {
     try {
       final userId = await StorageService.getUserId();
       final token = await StorageService.getToken();
-      
+
       // Skip if no user ID or token (user not logged in)
       if (userId == null || userId.isEmpty || token == null || token.isEmpty) {
         return;
@@ -290,19 +317,23 @@ class NotificationService extends ChangeNotifier {
 
       if (response is Map && response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>?;
-        final notificationsList = data?['notifications'] as List<dynamic>? ?? [];
+        final notificationsList =
+            data?['notifications'] as List<dynamic>? ?? [];
 
         if (kDebugMode) {
-          debugPrint('NotificationService: Received ${notificationsList.length} notifications from API');
+          debugPrint(
+              'NotificationService: Received ${notificationsList.length} notifications from API');
         }
 
         // Convert backend notifications to NotificationModel
         final fetchedNotifications = notificationsList
             .map((json) {
               try {
-                final notification = NotificationModel.fromJson(json as Map<String, dynamic>);
+                final notification =
+                    NotificationModel.fromJson(json as Map<String, dynamic>);
                 if (kDebugMode) {
-                  debugPrint('NotificationService: Parsed notification ID=${notification.id}, type=${notification.type}, timestamp=${notification.timestamp}, OTP=${notification.data?['otp']}');
+                  debugPrint(
+                      'NotificationService: Parsed notification ID=${notification.id}, type=${notification.type}, timestamp=${notification.timestamp}, OTP=${notification.data?['otp']}');
                 }
                 return notification;
               } catch (e) {
@@ -318,16 +349,14 @@ class NotificationService extends ChangeNotifier {
 
         // Client-side safeguard: Filter notifications to ensure they belong to current user
         final userIdInt = int.tryParse(userId);
-        final userSpecificNotifications = fetchedNotifications
-            .where((n) {
-              // If recipientUserId is null, allow it (backward compatibility)
-              if (n.recipientUserId == null) return true;
-              // If userIdInt is null, don't filter (show all)
-              if (userIdInt == null) return true;
-              // Compare int to int
-              return n.recipientUserId == userIdInt;
-            })
-            .toList();
+        final userSpecificNotifications = fetchedNotifications.where((n) {
+          // If recipientUserId is null, allow it (backward compatibility)
+          if (n.recipientUserId == null) return true;
+          // If userIdInt is null, don't filter (show all)
+          if (userIdInt == null) return true;
+          // Compare int to int
+          return n.recipientUserId == userIdInt;
+        }).toList();
 
         // Filter out expired OTP notifications immediately when fetched
         final now = DateTime.now();
@@ -338,15 +367,17 @@ class NotificationService extends ChangeNotifier {
             final age = now.difference(n.timestamp);
             final isValid = age < otpExpirationDuration && !age.isNegative;
             if (kDebugMode) {
-              debugPrint('NotificationService: OTP ID=${n.id}, timestamp=${n.timestamp}, now=$now, age=${age.inMinutes}m ${age.inSeconds % 60}s, valid=$isValid');
+              debugPrint(
+                  'NotificationService: OTP ID=${n.id}, timestamp=${n.timestamp}, now=$now, age=${age.inMinutes}m ${age.inSeconds % 60}s, valid=$isValid');
             }
             return isValid;
           }
           return true;
         }).toList();
-        
+
         if (kDebugMode) {
-          debugPrint('NotificationService: ${validNotifications.length} valid (non-expired) notifications after filtering');
+          debugPrint(
+              'NotificationService: ${validNotifications.length} valid (non-expired) notifications after filtering');
         }
 
         // Update local notifications - merge with existing, avoiding duplicates
@@ -355,10 +386,11 @@ class NotificationService extends ChangeNotifier {
         final newNotifications = validNotifications
             .where((n) => !existingIds.contains(n.id))
             .toList();
-        
+
         // Update existing notifications that were fetched (to sync any changes from backend)
         for (var fetchedNotification in validNotifications) {
-          final existingIndex = _notifications.indexWhere((n) => n.id == fetchedNotification.id);
+          final existingIndex =
+              _notifications.indexWhere((n) => n.id == fetchedNotification.id);
           if (existingIndex != -1) {
             // Update existing notification to sync with backend (especially isRead status)
             _notifications[existingIndex] = fetchedNotification;
@@ -367,7 +399,7 @@ class NotificationService extends ChangeNotifier {
 
         // Remove expired OTPs before adding new ones to ensure clean state
         removeExpiredOtpNotifications();
-        
+
         if (newNotifications.isNotEmpty) {
           _notifications.insertAll(0, newNotifications);
           for (var notification in newNotifications) {
@@ -402,10 +434,12 @@ class NotificationService extends ChangeNotifier {
 
       if (response is Map && response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>?;
-        final notificationsList = data?['notifications'] as List<dynamic>? ?? [];
+        final notificationsList =
+            data?['notifications'] as List<dynamic>? ?? [];
 
         final fetchedNotifications = notificationsList
-            .map((json) => NotificationModel.fromJson(json as Map<String, dynamic>))
+            .map((json) =>
+                NotificationModel.fromJson(json as Map<String, dynamic>))
             .toList();
 
         if (page == 0) {
@@ -491,6 +525,7 @@ class NotificationService extends ChangeNotifier {
   /// This ensures that notifications from one user are not visible to another user
   void clearOnLogout() {
     _notifications.clear();
+    _pollingOwners = 0;
     stopPolling();
     notifyListeners();
   }
@@ -509,10 +544,9 @@ class NotificationService extends ChangeNotifier {
       }
 
       final initialCount = _notifications.length;
-      _notifications.removeWhere((n) => 
-        n.recipientUserId != null && n.recipientUserId != userId
-      );
-      
+      _notifications.removeWhere(
+          (n) => n.recipientUserId != null && n.recipientUserId != userId);
+
       final removedCount = initialCount - _notifications.length;
       if (removedCount > 0) {
         notifyListeners();
@@ -520,7 +554,7 @@ class NotificationService extends ChangeNotifier {
     } catch (e) {
       // Silently fail - this is a safeguard operation
       if (kDebugMode) {
-      debugPrint('Error filtering notifications by current user: $e');
+        debugPrint('Error filtering notifications by current user: $e');
       }
     }
   }

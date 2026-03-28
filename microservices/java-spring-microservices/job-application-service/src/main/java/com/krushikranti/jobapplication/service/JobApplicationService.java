@@ -22,6 +22,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -109,16 +114,39 @@ public class JobApplicationService {
 
     public List<ApplicationResponse> getAllApplications(String status, String roleType) {
         List<JobApplication> applications;
-        
+
         if (status != null || roleType != null) {
             applications = repository.findWithFilters(status, roleType);
         } else {
             applications = repository.findAll();
         }
-        
+
         return applications.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all applications with pagination.
+     */
+    public Map<String, Object> getAllApplicationsPaged(String status, String roleType, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "submittedAt"));
+        Page<JobApplication> applicationPage = repository.findWithFiltersPaged(status, roleType, pageable);
+
+        List<ApplicationResponse> applications = applicationPage.getContent().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("applications", applications);
+        response.put("currentPage", applicationPage.getNumber());
+        response.put("totalPages", applicationPage.getTotalPages());
+        response.put("totalElements", applicationPage.getTotalElements());
+        response.put("pageSize", applicationPage.getSize());
+        response.put("hasNext", applicationPage.hasNext());
+        response.put("hasPrevious", applicationPage.hasPrevious());
+
+        return response;
     }
 
     public ApplicationResponse getApplicationById(UUID applicantId) {
