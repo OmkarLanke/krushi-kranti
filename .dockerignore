@@ -12,3 +12,8 @@ microservices
 *.docx
 *.xlsx
 .dockerignore
+
+# Exclude Flutter/Dart build and cache directories to ensure clean Docker builds
+**/build/
+**/.dart_tool/
+**/.pub-cache/
