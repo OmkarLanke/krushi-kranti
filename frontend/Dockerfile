@@ -58,6 +58,9 @@ COPY --from=hiring-builder /app/krushikranti-hiring/build/web /usr/share/nginx/h
 
 COPY krushikranti-landing-page /usr/share/nginx/html/landing
 
+# Dynamically update index.html so the download button points to the correct test or prod APK
+RUN sed -i "s|krushi-kranti-farmer\.apk|${APK_FILENAME}|g" /usr/share/nginx/html/landing/index.html
+
 # Copy the dynamically built APK from Stage 3 into the downloads folder
 # and dynamically name it based on the APK_FILENAME argument passed by docker-compose!
 COPY --from=farmer-builder /app/krushikranti_farmer/build/app/outputs/flutter-apk/app-release.apk /usr/share/nginx/html/landing/downloads/${APK_FILENAME}
