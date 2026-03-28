@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:isolate';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/storage_service.dart';
-import '../services/field_officer_service.dart';
 import '../services/field_officer_cache.dart';
+import '../services/field_officer_repository.dart';
 import 'farm_verification_screen.dart';
 
 class FieldOfficerHomeScreen extends StatefulWidget {
@@ -13,9 +14,11 @@ class FieldOfficerHomeScreen extends StatefulWidget {
   State<FieldOfficerHomeScreen> createState() => _FieldOfficerHomeScreenState();
 }
 
-class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with TickerProviderStateMixin {
+class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen>
+    with TickerProviderStateMixin {
   bool _isLoading = true;
-  List<dynamic> _assignments = [];
+  int _activeLoadToken = 0;
+  bool _hasAssignmentDrivenStats = false;
   String _userName = 'Field Officer';
   String _userId = '';
   String _region = '';
@@ -25,9 +28,11 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
   int _totalAssignedFarmers = 0;
   int _approvedFarms = 0;
   int _pendingFarms = 0;
-  List<Map<String, dynamic>> _assignedVillages = []; // Changed to store village info with pincode
+  List<Map<String, dynamic>> _assignedVillages =
+      []; // Changed to store village info with pincode
   List<dynamic> _pendingVerifications = [];
   List<dynamic> _priorityFarms = [];
+  static const int _assignmentPageSize = 1000;
 
   // Animation controllers
   late AnimationController _fadeController;
@@ -46,7 +51,7 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
       vsync: this,
       duration: const Duration(milliseconds: 250), // Faster animation
     );
-    
+
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeInOut,
@@ -58,11 +63,11 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     // Start animations immediately for better perceived performance
     _fadeController.forward();
     _slideController.forward();
-    
+
     _loadData();
   }
 
@@ -74,13 +79,19 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
   }
 
   Future<void> _loadData() async {
+    final int loadToken = ++_activeLoadToken;
+    _hasAssignmentDrivenStats = false;
+
     try {
       // Load user data from storage (fast, synchronous)
       final userData = await StorageService.getUserDetails();
-      
+
       // Set initial user data immediately for faster UI update
+      if (!mounted || loadToken != _activeLoadToken) return;
       setState(() {
-        _userName = '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'.trim();
+        _userName =
+            '${userData['firstName'] ?? ''} ${userData['lastName'] ?? ''}'
+                .trim();
         if (_userName.isEmpty) {
           _userName = 'Field Officer';
         }
@@ -88,77 +99,153 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
         _region = userData['district']?.toString() ?? 'Region';
       });
 
-      // Check cache first for instant loading
-      final cachedAssignments = FieldOfficerCache.getCachedAssignments();
-      final cachedProfile = FieldOfficerCache.getCachedProfile();
-      
-      List<dynamic> assignments;
-      Map<String, dynamic> profile;
-      
-      if (cachedAssignments != null && cachedProfile != null) {
-        // Use cached data for instant loading
-        assignments = cachedAssignments;
-        profile = cachedProfile;
-      } else if (cachedAssignments != null) {
-        // Only profile needs to be fetched
-        assignments = cachedAssignments;
-        profile = await FieldOfficerService.getProfile().catchError((e) => <String, dynamic>{});
-        if (profile.isNotEmpty) {
-          FieldOfficerCache.cacheProfile(profile);
+      // Show stale cache instantly while fetching a fresh copy.
+      final cached = FieldOfficerRepository.getCachedDashboardData(
+        includeStale: true,
+      );
+      if (cached != null && mounted) {
+        if (cached.assignments.isNotEmpty) {
+          await _applyDashboardData(
+            profile: cached.profile,
+            assignments: cached.assignments,
+            isLoading: false,
+            loadToken: loadToken,
+          );
+        } else if (cached.profile.isNotEmpty) {
+          setState(() {
+            _profileData = cached.profile;
+            _region = cached.profile['district']?.toString() ??
+                cached.profile['state']?.toString() ??
+                _region;
+            _userId = cached.profile['fieldOfficerId']?.toString() ?? _userId;
+          });
         }
-      } else if (cachedProfile != null) {
-        // Only assignments need to be fetched
-        profile = cachedProfile;
-        assignments = await FieldOfficerService.getAssignedFarms().catchError((e) => <dynamic>[]);
-        FieldOfficerCache.cacheAssignments(assignments);
-      } else {
-        // Run profile and assignments API calls in parallel for much faster loading
-        final results = await Future.wait([
-          FieldOfficerService.getProfile().catchError((e) => <String, dynamic>{}),
-          FieldOfficerService.getAssignedFarms().catchError((e) => <dynamic>[]),
-        ]);
-        
-        profile = results[0] as Map<String, dynamic>;
-        assignments = results[1] as List<dynamic>;
-        
-        // Cache the results
-        if (profile.isNotEmpty) {
-          FieldOfficerCache.cacheProfile(profile);
-        }
-        FieldOfficerCache.cacheAssignments(assignments);
       }
-      
-      // Calculate statistics efficiently
-      final statistics = _calculateStatisticsSync(assignments);
-      
-      // Batch all state updates in a single setState call
-      setState(() {
-        // Update profile data if available
-        if (profile.isNotEmpty) {
-          _profileData = profile;
-          _region = profile['district']?.toString() ?? profile['state']?.toString() ?? _region;
-          _userId = profile['fieldOfficerId']?.toString() ?? _userId;
-        }
-        
-        // Set assignments and statistics
-        _assignments = assignments;
-        _totalAssignedFarmers = statistics['totalAssignedFarmers'] as int;
-        _approvedFarms = statistics['approvedFarms'] as int;
-        _pendingFarms = statistics['pendingFarms'] as int;
-        _assignedVillages = statistics['assignedVillages'] as List<Map<String, dynamic>>;
-        _pendingVerifications = statistics['pendingVerifications'] as List<dynamic>;
-        _priorityFarms = statistics['priorityFarms'] as List<dynamic>;
-        
-        _isLoading = false;
-      });
+
+      // Load lightweight summary first for fast home-card paint.
+      final summary = await FieldOfficerRepository.getAssignmentSummary(
+        forceRefresh: cached != null,
+      );
+      if (mounted && loadToken == _activeLoadToken && summary.isNotEmpty) {
+        _applySummaryData(summary, loadToken: loadToken);
+      }
+
+      // Load first page of assignments for details, then lazy-load next pages.
+      final firstPage = await FieldOfficerRepository.getAssignmentsPage(
+        page: 0,
+        size: _assignmentPageSize,
+        forceRefresh: cached != null,
+      );
+      if (!mounted || loadToken != _activeLoadToken) return;
+
+      await _applyDashboardData(
+        profile: await FieldOfficerRepository.getProfile(
+          forceRefresh: cached != null,
+        ),
+        assignments: firstPage.assignments,
+        isLoading: false,
+        loadToken: loadToken,
+      );
+
+      // Home cards and pending-verification list must be based on complete data.
+      // Use a large page size to avoid partial page-derived empty states.
     } catch (e) {
       // Error logged by services
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted && loadToken == _activeLoadToken) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
-  
+
+  void _applySummaryData(
+    Map<String, dynamic> summary, {
+    required int loadToken,
+  }) {
+    if (!mounted ||
+        loadToken != _activeLoadToken ||
+        _hasAssignmentDrivenStats) {
+      return;
+    }
+
+    int parseCount(String key) => (summary[key] as num?)?.toInt() ?? 0;
+
+    final int summaryApproved = parseCount('verifiedFarms');
+    final int summaryPending = parseCount('pendingFarms');
+    final int summaryTotal =
+        (summary['activeFarmAssignments'] as num?)?.toInt() ??
+            parseCount('totalAssignments');
+
+    // Avoid a temporary 0/0/0 flash if summary returns empty/zero while
+    // we already have meaningful counters on screen and assignment hydration is pending.
+    final bool isTransientZeroSummary =
+        summaryApproved == 0 && summaryPending == 0 && summaryTotal == 0;
+    final bool hasExistingNonZeroCounters =
+        _approvedFarms > 0 || _pendingFarms > 0 || _totalAssignedFarmers > 0;
+    if (!_isLoading && isTransientZeroSummary && hasExistingNonZeroCounters) {
+      return;
+    }
+
+    setState(() {
+      _approvedFarms = summaryApproved;
+      _pendingFarms = summaryPending;
+      _totalAssignedFarmers = summaryTotal;
+      if (_isLoading) {
+        _isLoading = false;
+      }
+    });
+  }
+
+  Future<void> _applyDashboardData({
+    required Map<String, dynamic> profile,
+    required List<dynamic> assignments,
+    required bool isLoading,
+    required int loadToken,
+  }) async {
+    if (!mounted || loadToken != _activeLoadToken) return;
+
+    final statistics = await _calculateStatistics(assignments);
+
+    if (!mounted || loadToken != _activeLoadToken) return;
+
+    setState(() {
+      if (profile.isNotEmpty) {
+        _profileData = profile;
+        _region = profile['district']?.toString() ??
+            profile['state']?.toString() ??
+            _region;
+        _userId = profile['fieldOfficerId']?.toString() ?? _userId;
+      }
+
+      _totalAssignedFarmers = statistics['totalAssignedFarmers'] as int;
+      _approvedFarms = statistics['approvedFarms'] as int;
+      _pendingFarms = statistics['pendingFarms'] as int;
+      _assignedVillages =
+          statistics['assignedVillages'] as List<Map<String, dynamic>>;
+      _pendingVerifications =
+          statistics['pendingVerifications'] as List<dynamic>;
+      _priorityFarms = statistics['priorityFarms'] as List<dynamic>;
+      _isLoading = isLoading;
+      _hasAssignmentDrivenStats = true;
+    });
+  }
+
+  Future<Map<String, dynamic>> _calculateStatistics(
+    List<dynamic> assignments,
+  ) async {
+    if (assignments.length < 50) {
+      return _calculateStatisticsSync(assignments);
+    }
+
+    try {
+      return await Isolate.run(() => _calculateStatisticsPayload(assignments));
+    } catch (_) {
+      // Fallback to sync processing if isolate cannot process payload.
+      return _calculateStatisticsSync(assignments);
+    }
+  }
+
   /// Calculate statistics synchronously without setState for better performance
   Map<String, dynamic> _calculateStatisticsSync(List<dynamic> assignments) {
     Set<String> uniqueFarmers = {};
@@ -170,7 +257,7 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
 
     for (var assignment in assignments) {
       if (assignment is! Map<String, dynamic>) continue;
-      
+
       final farmerUserId = assignment['farmerUserId']?.toString() ?? '';
       if (farmerUserId.isNotEmpty) {
         uniqueFarmers.add(farmerUserId);
@@ -182,12 +269,12 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
 
       for (var farm in farms) {
         if (farm is! Map<String, dynamic>) continue;
-        
+
         final village = farm['village']?.toString() ?? '';
         final pincode = farm['pincode']?.toString() ?? '';
         final district = farm['district']?.toString() ?? '';
         final state = farm['state']?.toString() ?? '';
-        
+
         if (village.isNotEmpty) {
           if (!villagesMap.containsKey(village)) {
             villagesMap[village] = {
@@ -223,7 +310,8 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
           if (assignedAt != null) {
             try {
               final assignedDate = DateTime.parse(assignedAt);
-              final daysPending = DateTime.now().difference(assignedDate).inDays;
+              final daysPending =
+                  DateTime.now().difference(assignedDate).inDays;
               if (daysPending > 4) {
                 priorityFarms.add({
                   'farmerName': farmerName,
@@ -243,8 +331,9 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
 
     // Convert villages map to list and sort
     final villagesList = villagesMap.values.toList();
-    villagesList.sort((a, b) => (a['village'] as String).compareTo(b['village'] as String));
-    
+    villagesList.sort(
+        (a, b) => (a['village'] as String).compareTo(b['village'] as String));
+
     // Convert Set to List for farmers
     for (var village in villagesList) {
       village['farmers'] = (village['farmers'] as Set<String>).toList();
@@ -259,7 +348,6 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
       'priorityFarms': priorityFarms,
     };
   }
-
 
   String _getInitials(String name) {
     if (name.isEmpty) return '?';
@@ -345,7 +433,8 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
                 child: SlideTransition(
                   position: _slideAnimation,
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -427,9 +516,11 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
             right: 0,
             bottom: 0,
             child: Container(
-              padding: const EdgeInsets.only(left: 16, right: 120, top: 7, bottom: 7),
+              padding: const EdgeInsets.only(
+                  left: 16, right: 120, top: 7, bottom: 7),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFBF0), // Very pale cream/off-white background
+                color: const Color(
+                    0xFFFFFBF0), // Very pale cream/off-white background
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(16),
@@ -567,8 +658,10 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
                   Navigator.push(
                     context,
                     PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) => VillagesListScreen(villages: _assignedVillages),
-                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          VillagesListScreen(villages: _assignedVillages),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
                         return SlideTransition(
                           position: Tween<Offset>(
                             begin: const Offset(1.0, 0.0),
@@ -816,7 +909,8 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.brandGreen,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -826,7 +920,28 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
           ],
         ),
         const SizedBox(height: 16),
-        if (_pendingVerifications.isEmpty)
+        if (!_hasAssignmentDrivenStats)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.brandGreen,
+                strokeWidth: 2.5,
+              ),
+            ),
+          )
+        else if (_pendingVerifications.isEmpty)
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
@@ -869,7 +984,9 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
             ),
           )
         else
-          ...(_pendingVerifications.take(2).map((item) => _buildPendingVerificationItem(item))),
+          ...(_pendingVerifications
+              .take(2)
+              .map((item) => _buildPendingVerificationItem(item))),
       ],
     );
   }
@@ -885,7 +1002,9 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
       try {
         final date = DateTime.parse(assignedAt);
         final now = DateTime.now();
-        if (date.year == now.year && date.month == now.month && date.day == now.day) {
+        if (date.year == now.year &&
+            date.month == now.month &&
+            date.day == now.day) {
           timeStr = 'Today ${_formatTime(date)}';
         } else {
           timeStr = _formatDate(date);
@@ -1292,11 +1411,120 @@ class _FieldOfficerHomeScreenState extends State<FieldOfficerHomeScreen> with Ti
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')} ${date.year}';
   }
+}
+
+Map<String, dynamic> _calculateStatisticsPayload(List<dynamic> assignments) {
+  Set<String> uniqueFarmers = {};
+  Map<String, Map<String, dynamic>> villagesMap = {};
+  int approved = 0;
+  int pending = 0;
+  List<dynamic> pendingVerifs = [];
+  List<dynamic> priorityFarms = [];
+
+  for (var assignment in assignments) {
+    if (assignment is! Map<String, dynamic>) continue;
+
+    final farmerUserId = assignment['farmerUserId']?.toString() ?? '';
+    if (farmerUserId.isNotEmpty) {
+      uniqueFarmers.add(farmerUserId);
+    }
+
+    final farms = assignment['farms'] as List? ?? [];
+    final farmerName = assignment['farmerName'] ?? 'Unknown Farmer';
+    final assignedAt = assignment['assignedAt'];
+
+    for (var farm in farms) {
+      if (farm is! Map<String, dynamic>) continue;
+
+      final village = farm['village']?.toString() ?? '';
+      final pincode = farm['pincode']?.toString() ?? '';
+      final district = farm['district']?.toString() ?? '';
+      final state = farm['state']?.toString() ?? '';
+
+      if (village.isNotEmpty) {
+        if (!villagesMap.containsKey(village)) {
+          villagesMap[village] = {
+            'village': village,
+            'pincode': pincode,
+            'district': district,
+            'state': state,
+            'farms': <Map<String, dynamic>>[],
+            'farmers': <String>{},
+          };
+        }
+        villagesMap[village]!['farms'].add(farm);
+        if (farmerName.isNotEmpty) {
+          (villagesMap[village]!['farmers'] as Set<String>).add(farmerName);
+        }
+      }
+
+      final status = farm['status']?.toString().toUpperCase() ?? 'PENDING';
+      final isVerified = farm['isVerified'] ?? false;
+
+      if (status == 'VERIFIED' || isVerified == true) {
+        approved++;
+      } else {
+        pending++;
+        pendingVerifs.add({
+          'farmerName': farmerName,
+          'village': village,
+          'farm': farm,
+          'assignment': assignment,
+          'assignedAt': assignedAt,
+        });
+
+        if (assignedAt != null) {
+          try {
+            final assignedDate = DateTime.parse(assignedAt);
+            final daysPending = DateTime.now().difference(assignedDate).inDays;
+            if (daysPending > 4) {
+              priorityFarms.add({
+                'farmerName': farmerName,
+                'village': village,
+                'farm': farm,
+                'assignment': assignment,
+                'daysPending': daysPending,
+              });
+            }
+          } catch (_) {
+            // Skip invalid dates
+          }
+        }
+      }
+    }
+  }
+
+  final villagesList = villagesMap.values.toList();
+  villagesList.sort(
+      (a, b) => (a['village'] as String).compareTo(b['village'] as String));
+
+  for (var village in villagesList) {
+    village['farmers'] = (village['farmers'] as Set<String>).toList();
+  }
+
+  return {
+    'totalAssignedFarmers': uniqueFarmers.length,
+    'approvedFarms': approved,
+    'pendingFarms': pending,
+    'assignedVillages': villagesList,
+    'pendingVerifications': pendingVerifs,
+    'priorityFarms': priorityFarms,
+  };
 }
 
 // Villages List Screen
@@ -1309,7 +1537,8 @@ class VillagesListScreen extends StatefulWidget {
   State<VillagesListScreen> createState() => _VillagesListScreenState();
 }
 
-class _VillagesListScreenState extends State<VillagesListScreen> with TickerProviderStateMixin {
+class _VillagesListScreenState extends State<VillagesListScreen>
+    with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
@@ -1326,7 +1555,7 @@ class _VillagesListScreenState extends State<VillagesListScreen> with TickerProv
       vsync: this,
       duration: const Duration(milliseconds: 250), // Faster animation
     );
-    
+
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeInOut,
@@ -1338,7 +1567,7 @@ class _VillagesListScreenState extends State<VillagesListScreen> with TickerProv
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _fadeController.forward();
     _slideController.forward();
   }
@@ -1358,7 +1587,8 @@ class _VillagesListScreenState extends State<VillagesListScreen> with TickerProv
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -1444,8 +1674,10 @@ class _VillagesListScreenState extends State<VillagesListScreen> with TickerProv
                     Navigator.push(
                       context,
                       PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) => VillageDetailScreen(village: village),
-                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            VillageDetailScreen(village: village),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
                           return SlideTransition(
                             position: Tween<Offset>(
                               begin: const Offset(1.0, 0.0),
@@ -1550,7 +1782,8 @@ class VillageDetailScreen extends StatefulWidget {
   State<VillageDetailScreen> createState() => _VillageDetailScreenState();
 }
 
-class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerProviderStateMixin {
+class _VillageDetailScreenState extends State<VillageDetailScreen>
+    with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
@@ -1567,7 +1800,7 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
       vsync: this,
       duration: const Duration(milliseconds: 250), // Faster animation
     );
-    
+
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeInOut,
@@ -1579,7 +1812,7 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _fadeController.forward();
     _slideController.forward();
   }
@@ -1598,7 +1831,9 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
     final district = widget.village['district']?.toString() ?? 'N/A';
     final state = widget.village['state']?.toString() ?? 'N/A';
     final farms = widget.village['farms'] as List<dynamic>? ?? [];
-    final farmers = (widget.village['farmers'] as List<dynamic>? ?? []).map((f) => f.toString()).toList();
+    final farmers = (widget.village['farmers'] as List<dynamic>? ?? [])
+        .map((f) => f.toString())
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -1606,7 +1841,8 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -1679,8 +1915,10 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                                         child: Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: AppColors.brandGreen.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(12),
+                                            color: AppColors.brandGreen
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                           child: Icon(
                                             Icons.location_city,
@@ -1694,7 +1932,8 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           villageName,
@@ -1720,7 +1959,8 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                               const SizedBox(height: 20),
                               _buildInfoRow(Icons.pin, 'Pincode', pincode),
                               const SizedBox(height: 12),
-                              _buildInfoRow(Icons.location_on, 'District', district),
+                              _buildInfoRow(
+                                  Icons.location_on, 'District', district),
                               const SizedBox(height: 12),
                               _buildInfoRow(Icons.map, 'State', state),
                             ],
@@ -1781,7 +2021,9 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                     final farmer = entry.value;
                     return TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
-                      duration: Duration(milliseconds: 150 + (index * 30)), // Faster staggered animation
+                      duration: Duration(
+                          milliseconds:
+                              150 + (index * 30)), // Faster staggered animation
                       curve: Curves.easeOutCubic,
                       builder: (context, value, child) {
                         return Transform.translate(
@@ -1806,7 +2048,8 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                                 children: [
                                   CircleAvatar(
                                     radius: 20,
-                                    backgroundColor: AppColors.brandGreen.withOpacity(0.1),
+                                    backgroundColor:
+                                        AppColors.brandGreen.withOpacity(0.1),
                                     child: Text(
                                       farmer.toString().isNotEmpty
                                           ? farmer.toString()[0].toUpperCase()
@@ -1855,7 +2098,9 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                     final farm = entry.value as Map<String, dynamic>;
                     return TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
-                      duration: Duration(milliseconds: 200 + (index * 50)), // Faster staggered animation
+                      duration: Duration(
+                          milliseconds:
+                              200 + (index * 50)), // Faster staggered animation
                       curve: Curves.easeOutCubic,
                       builder: (context, value, child) {
                         return Transform.translate(
@@ -1886,8 +2131,10 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: AppColors.brandGreen.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
+                                            color: AppColors.brandGreen
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: Icon(
                                             Icons.agriculture,
@@ -1898,7 +2145,8 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
-                                            farm['farmName']?.toString() ?? 'Farm ${index + 1}',
+                                            farm['farmName']?.toString() ??
+                                                'Farm ${index + 1}',
                                             style: GoogleFonts.poppins(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
@@ -1906,12 +2154,19 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                                             ),
                                           ),
                                         ),
-                                        if (farm['isVerified'] == true || farm['status']?.toString().toUpperCase() == 'VERIFIED')
+                                        if (farm['isVerified'] == true ||
+                                            farm['status']
+                                                    ?.toString()
+                                                    .toUpperCase() ==
+                                                'VERIFIED')
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: AppColors.success.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(6),
+                                              color: AppColors.success
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                             ),
                                             child: Text(
                                               'Verified',
@@ -1924,10 +2179,13 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                                           )
                                         else
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: Colors.orange.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(6),
+                                              color: Colors.orange
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                             ),
                                             child: Text(
                                               'Pending',
@@ -1940,7 +2198,10 @@ class _VillageDetailScreenState extends State<VillageDetailScreen> with TickerPr
                                           ),
                                       ],
                                     ),
-                                    if (farm['cropName']?.toString().isNotEmpty == true) ...[
+                                    if (farm['cropName']
+                                            ?.toString()
+                                            .isNotEmpty ==
+                                        true) ...[
                                       const SizedBox(height: 8),
                                       Text(
                                         'Crop: ${farm['cropName']}',

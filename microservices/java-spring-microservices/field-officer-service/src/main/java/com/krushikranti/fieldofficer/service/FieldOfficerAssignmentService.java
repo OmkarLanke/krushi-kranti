@@ -3,7 +3,6 @@ package com.krushikranti.fieldofficer.service;
 import com.krushikranti.fieldofficer.dto.AssignFieldOfficerRequest;
 import com.krushikranti.fieldofficer.dto.AssignmentResponseDto;
 import com.krushikranti.fieldofficer.dto.FieldOfficerAssignmentDto;
-import com.krushikranti.fieldofficer.dto.FieldOfficerSummaryDto;
 import com.krushikranti.fieldofficer.dto.SuggestedFieldOfficerDto;
 import com.krushikranti.fieldofficer.model.FieldOfficer;
 import com.krushikranti.fieldofficer.model.FieldOfficerAssignment;
@@ -961,16 +960,29 @@ public class FieldOfficerAssignmentService {
      * Optimized with batch fetching to eliminate N+1 query problems.
      */
     public List<com.krushikranti.fieldofficer.dto.FieldOfficerAssignmentDto> getAssignmentsWithFarmsForFieldOfficer(Long fieldOfficerUserId) {
+        return getAssignmentsWithFarmsForFieldOfficer(fieldOfficerUserId, 0, 1000);
+        }
+
+        /**
+         * Paginated variant used to reduce payload and repeated remote calls.
+         */
+        public List<com.krushikranti.fieldofficer.dto.FieldOfficerAssignmentDto> getAssignmentsWithFarmsForFieldOfficer(
+            Long fieldOfficerUserId,
+            int page,
+            int size) {
         log.info("Getting assignments with farms for field officer userId: {}", fieldOfficerUserId);
         
         // Find field officer by userId
         FieldOfficer fieldOfficer = fieldOfficerRepository.findByUserId(fieldOfficerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Field officer not found with userId: " + fieldOfficerUserId));
+
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(1, size), 1000);
         
-        // Get all assignments for this field officer
+        // Get assignments for this field officer (bounded for performance)
         Page<FieldOfficerAssignment> assignmentPage = assignmentRepository.findByFieldOfficerId(
                 fieldOfficer.getId(), 
-                PageRequest.of(0, 1000));
+            PageRequest.of(safePage, safeSize));
         List<FieldOfficerAssignment> assignments = assignmentPage.getContent();
         
         if (assignments.isEmpty()) {
@@ -986,26 +998,53 @@ public class FieldOfficerAssignmentService {
                 .collect(Collectors.toList());
         
         Map<Long, Map<String, Object>> farmerUserDetailsMap = fetchUserDetailsBatch(farmerUserIds);
-        
-        // Batch fetch all farms for all farmers (still need to fetch individually, but we can optimize later)
-        // For now, we'll fetch farms in parallel where possible, but this is still a limitation
-        // TODO: Create a batch endpoint in farmer-service to fetch farms for multiple farmers
-        
-        // Batch fetch all verifications for this field officer
-        // We'll fetch all verifications for this field officer and then filter by farm IDs in memory
-        // This is more efficient than querying for each farm individually
-        Map<Long, FarmVerification> verificationMap = new HashMap<>();
-        Page<FarmVerification> verificationPage = verificationRepository.findByFieldOfficerId(
-                fieldOfficer.getId(), 
-                PageRequest.of(0, 10000)); // Get up to 10000 verifications
-        List<FarmVerification> allVerifications = verificationPage.getContent();
-        
-        // Create a map of farmId -> verification for quick lookup
-        verificationMap = allVerifications.stream()
+
+        // Fetch farms once per farmer instead of once per assignment.
+        Map<Long, List<Map<String, Object>>> farmerFarmsMap = new HashMap<>();
+        for (Long farmerUserId : farmerUserIds) {
+            try {
+                farmerFarmsMap.put(farmerUserId, fetchFarmerFarms(farmerUserId));
+            } catch (Exception e) {
+                log.warn("Failed to fetch farms for farmer userId {}: {}", farmerUserId, e.getMessage());
+                farmerFarmsMap.put(farmerUserId, Collections.emptyList());
+            }
+        }
+
+        // Fetch verifications only for farms that are relevant to this page.
+        Set<Long> relevantFarmIds = farmerFarmsMap.values().stream()
+                .flatMap(List::stream)
+                .map(farm -> {
+                    Object farmIdObj = farm.get("farmId");
+                    if (farmIdObj == null) {
+                        farmIdObj = farm.get("id");
+                    }
+                    if (farmIdObj instanceof Number) {
+                        return ((Number) farmIdObj).longValue();
+                    }
+                    if (farmIdObj != null) {
+                        try {
+                            return Long.parseLong(farmIdObj.toString());
+                        } catch (NumberFormatException ignored) {
+                            return null;
+                        }
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, FarmVerification> verificationMap;
+        if (relevantFarmIds.isEmpty()) {
+            verificationMap = Collections.emptyMap();
+        } else {
+            verificationMap = verificationRepository
+                    .findByFieldOfficerIdAndFarmIdIn(fieldOfficer.getId(), new ArrayList<>(relevantFarmIds))
+                    .stream()
                 .collect(Collectors.toMap(
                         FarmVerification::getFarmId, 
                         v -> v,
                         (v1, v2) -> v1)); // If duplicate farmIds, keep first
+        }
         
         final Long fieldOfficerId = fieldOfficer.getId();
         final Map<Long, FarmVerification> finalVerificationMap = verificationMap;
@@ -1027,10 +1066,12 @@ public class FieldOfficerAssignmentService {
                         final String farmerName = farmerNameTemp;
                         String farmerPhone = (String) farmerUserDetails.getOrDefault("phoneNumber", "");
                         
-                        // Fetch farms for this farmer (still individual, but optimized fetchFarmerFarms method)
+                        // Reuse already-fetched farms for this farmer.
                         List<Map<String, Object>> farms;
                         try {
-                            farms = fetchFarmerFarms(assignment.getFarmerUserId());
+                            farms = farmerFarmsMap.getOrDefault(
+                                    assignment.getFarmerUserId(),
+                                    Collections.emptyList());
                             
                             // Filter farms by assignment.farmId if specified
                             if (assignment.getFarmId() != null) {
@@ -1156,6 +1197,84 @@ public class FieldOfficerAssignmentService {
                 result.stream().mapToInt(dto -> dto.getFarms() != null ? dto.getFarms().size() : 0).sum());
         return result;
     }
+
+        /**
+         * Paginated assignments payload with metadata for field-officer app.
+         */
+        public Map<String, Object> getAssignmentsWithFarmsForFieldOfficerPaged(
+            Long fieldOfficerUserId,
+            int page,
+            int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(1, size), 1000);
+
+        FieldOfficer fieldOfficer = fieldOfficerRepository.findByUserId(fieldOfficerUserId)
+            .orElseThrow(() -> new IllegalArgumentException("Field officer not found with userId: " + fieldOfficerUserId));
+
+        Page<FieldOfficerAssignment> assignmentPage = assignmentRepository.findByFieldOfficerId(
+            fieldOfficer.getId(),
+            PageRequest.of(safePage, safeSize));
+
+        List<FieldOfficerAssignmentDto> assignments = getAssignmentsWithFarmsForFieldOfficer(
+            fieldOfficerUserId,
+            safePage,
+            safeSize);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("assignments", assignments);
+        response.put("currentPage", assignmentPage.getNumber());
+        response.put("totalPages", assignmentPage.getTotalPages());
+        response.put("totalElements", assignmentPage.getTotalElements());
+        response.put("pageSize", assignmentPage.getSize());
+        response.put("hasNext", assignmentPage.hasNext());
+        response.put("hasPrevious", assignmentPage.hasPrevious());
+
+        return response;
+        }
+
+            /**
+             * Lightweight dashboard summary for the logged-in field officer.
+             * Uses count queries to avoid loading assignments payload for home cards.
+             */
+            public Map<String, Object> getFieldOfficerAssignmentSummary(Long fieldOfficerUserId) {
+            log.info("Getting assignment summary for field officer userId: {}", fieldOfficerUserId);
+
+            FieldOfficer fieldOfficer = fieldOfficerRepository.findByUserId(fieldOfficerUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Field officer not found with userId: " + fieldOfficerUserId));
+
+            Long fieldOfficerId = fieldOfficer.getId();
+
+            long totalAssignments = assignmentRepository.countByFieldOfficerIdAndStatusNot(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.CANCELLED);
+            long activeFarmAssignments = assignmentRepository.countByFieldOfficerIdAndFarmIdIsNotNullAndStatusNot(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.CANCELLED);
+            long assignedFarms = assignmentRepository.countByFieldOfficerIdAndFarmIdIsNotNullAndStatus(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.ASSIGNED);
+            long inProgressFarms = assignmentRepository.countByFieldOfficerIdAndFarmIdIsNotNullAndStatus(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.IN_PROGRESS);
+            long completedFarms = assignmentRepository.countByFieldOfficerIdAndFarmIdIsNotNullAndStatus(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.COMPLETED);
+            long verifiedFarms = verificationRepository.countByFieldOfficerIdAndVerificationStatus(
+                fieldOfficerId,
+                FarmVerification.VerificationStatus.VERIFIED);
+
+            Map<String, Object> summary = new HashMap<>();
+            summary.put("fieldOfficerId", fieldOfficerId);
+            summary.put("totalAssignments", totalAssignments);
+            summary.put("activeFarmAssignments", activeFarmAssignments);
+            summary.put("assignedFarms", assignedFarms);
+            summary.put("inProgressFarms", inProgressFarms);
+            summary.put("completedFarms", completedFarms);
+            summary.put("verifiedFarms", verifiedFarms);
+            summary.put("pendingFarms", assignedFarms + inProgressFarms);
+
+            return summary;
+            }
 
     // ==================== Helper Methods ====================
 
@@ -1388,20 +1507,9 @@ public class FieldOfficerAssignmentService {
      */
     private Integer countAssignedFarms(Long fieldOfficerId) {
         try {
-            List<FieldOfficerAssignment> assignments = assignmentRepository.findByFieldOfficerId(
-                    fieldOfficerId, 
-                    PageRequest.of(0, 10000)
-            ).getContent();
-            
-            // Count only assignments with farmId (specific farm assignments) and status != CANCELLED
-            long count = assignments.stream()
-                    .filter(assignment -> 
-                            assignment.getFarmId() != null && 
-                            assignment.getStatus() != FieldOfficerAssignment.AssignmentStatus.CANCELLED
-                    )
-                    .count();
-            
-            return (int) count;
+            return Math.toIntExact(assignmentRepository.countByFieldOfficerIdAndFarmIdIsNotNullAndStatusNot(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.CANCELLED));
         } catch (Exception e) {
             log.warn("Failed to count assigned farms for field officer ID {}: {}", fieldOfficerId, e.getMessage());
             return 0;

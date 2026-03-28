@@ -29,6 +29,11 @@ public interface FarmVerificationRepository extends JpaRepository<FarmVerificati
      * Find all verifications by a field officer
      */
     Page<FarmVerification> findByFieldOfficerId(Long fieldOfficerId, Pageable pageable);
+
+    /**
+     * Find verifications for a field officer limited to specific farms.
+     */
+    List<FarmVerification> findByFieldOfficerIdAndFarmIdIn(Long fieldOfficerId, List<Long> farmIds);
     
     /**
      * Find verifications by status

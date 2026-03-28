@@ -460,6 +460,10 @@ class AppLocalizationsMr extends AppLocalizations {
   String get completeProfileDetails => 'कृपया तुमचा प्रोफाइल तपशील पूर्ण करा.';
 
   @override
+  String get completePersonalDetailsToUnlock =>
+      'संपूर्ण वैशिष्ट्ये अनलॉक करण्यासाठी तुमचे वैयक्तिक तपशील पूर्ण करा.';
+
+  @override
   String get emailLoginLink => 'ईमेल आणि पासवर्डने लॉग इन करा';
 
   @override
@@ -1438,7 +1442,7 @@ class AppLocalizationsMr extends AppLocalizations {
       'तुमची मूलभूत वैयक्तिक माहिती जोडा';
 
   @override
-  String get setupStepAddFarmTitle => 'तुमचे पहिले शेत जोडा';
+  String get setupStepAddFarmTitle => 'तुमचे शेत जोडा';
 
   @override
   String get setupStepAddFarmSubtitle => 'अंतर्दृष्टीसाठी तुमचे शेत सेट करा';
@@ -1756,7 +1760,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get homeOnboardingAddFarmCta => 'शेत जोडा';
 
   @override
-  String get homeOnboardingAddCropTitle => 'तुमचे पहिले पीक जोडा';
+  String get homeOnboardingAddCropTitle => 'तुमचे पीक जोडा';
 
   @override
   String get homeOnboardingAddCropMessage =>

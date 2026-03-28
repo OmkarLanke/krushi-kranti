@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_routes.dart';
 import 'field_officer_home_screen.dart';
 import 'field_officer_farmer_screen.dart';
 import 'field_officer_assessment_screen.dart';
@@ -12,13 +11,15 @@ class FieldOfficerDashboardScreen extends StatefulWidget {
   const FieldOfficerDashboardScreen({super.key});
 
   @override
-  State<FieldOfficerDashboardScreen> createState() => _FieldOfficerDashboardScreenState();
+  State<FieldOfficerDashboardScreen> createState() =>
+      _FieldOfficerDashboardScreenState();
 }
 
-class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScreen> {
+class _FieldOfficerDashboardScreenState
+    extends State<FieldOfficerDashboardScreen> {
   int _currentIndex = 0;
   bool _isNavigating = false;
-  
+
   // Cache screen instances to avoid rebuilding
   final Map<int, Widget> _screenCache = {};
 
@@ -27,7 +28,7 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
     if (_screenCache.containsKey(index)) {
       return _screenCache[index]!;
     }
-    
+
     Widget screen;
     switch (index) {
       case 0:
@@ -45,19 +46,19 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
       default:
         screen = const FieldOfficerHomeScreen();
     }
-    
+
     _screenCache[index] = screen;
     return screen;
   }
 
   void _onItemTapped(int index) async {
     if (index == _currentIndex) return; // Already on this screen
-    
+
     // Preload the screen first if not cached (happens in background)
     if (!_screenCache.containsKey(index)) {
       _getScreen(index);
     }
-    
+
     // Show loading animation only if screen is not ready yet
     if (!_screenCache.containsKey(index)) {
       setState(() {
@@ -66,7 +67,7 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
       // Minimal delay for smooth transition
       await Future.delayed(const Duration(milliseconds: 10));
     }
-    
+
     if (mounted) {
       setState(() {
         _currentIndex = index;
@@ -74,7 +75,7 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
       });
     }
   }
-  
+
   @override
   void initState() {
     super.initState();
@@ -91,7 +92,8 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
         children: [
           // Main content
           AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200), // Faster navigation transition
+            duration: const Duration(
+                milliseconds: 200), // Faster navigation transition
             transitionBuilder: (Widget child, Animation<double> animation) {
               return FadeTransition(
                 opacity: animation,
@@ -228,7 +230,8 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
               mainAxisSize: MainAxisSize.min,
               children: [
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 150), // Faster nav button animation
+                  duration: const Duration(
+                      milliseconds: 150), // Faster nav button animation
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: isSelected
@@ -251,9 +254,8 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       fontSize: 10,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected
                           ? AppColors.brandGreen
                           : Colors.grey.shade600,
@@ -271,4 +273,3 @@ class _FieldOfficerDashboardScreenState extends State<FieldOfficerDashboardScree
     );
   }
 }
-

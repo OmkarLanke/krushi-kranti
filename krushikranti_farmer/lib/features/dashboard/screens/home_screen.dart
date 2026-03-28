@@ -3,15 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/onboarding/onboarding_controller.dart';
-import '../../dashboard/services/crop_service.dart';
+import '../../../core/models/setup_state.dart';
+import '../../../core/services/setup_state_service.dart';
 import '../../dashboard/services/field_officer_assignment_service.dart';
 import '../../dashboard/services/notification_service.dart';
 import '../../../core/services/http_service.dart';
-import '../../../core/services/storage_service.dart';
 import '../../subscription/widgets/subscription_guard.dart'
     show showSubscriptionRequiredDialog;
 import 'field_officer_details_dialog.dart';
@@ -45,11 +46,11 @@ class _HomeScreenState extends State<HomeScreen> {
   VoidCallback? _notificationServiceListener;
   int _lastUnreadOtpCount = 0;
 
-  // Onboarding/completion flags - initialize as false to show cards until verified
-  bool _hasPersonalDetails = false;
-  bool _hasCrops = false;
+  SetupState _setupState = const SetupState();
   bool _isInitialLoadComplete = false; // Track if initial data load is complete
   bool _isSubscribed = false; // Track subscription status
+  bool _hasPersonalDetails = false; // Track if personal details are completed
+  bool _hasCrops = false; // Track if user has crops
   Map<String, dynamic>? _cachedHomeSummary;
   DateTime? _homeSummaryCacheTime;
   static const Duration _homeSummaryCacheTtl = Duration(seconds: 45);
@@ -106,8 +107,10 @@ class _HomeScreenState extends State<HomeScreen> {
     await _fetchFarmsData(forceRefresh: true);
 
     // Then check all statuses in parallel
-    await Future.wait([
+    await Future.wait<void>([
       _checkFieldOfficerAssignments(),
+      _checkAllFarmsVerified(),
+      _loadSetupState(),
       _loadHomeSummary(forceRefresh: true),
       _checkSubscriptionStatus(),
     ]);
@@ -128,8 +131,10 @@ class _HomeScreenState extends State<HomeScreen> {
     await _fetchFarmsData(forceRefresh: true);
 
     // Then check all statuses in parallel
-    await Future.wait([
+    await Future.wait<void>([
       _checkFieldOfficerAssignments(),
+      _checkAllFarmsVerified(),
+      _loadSetupState(),
       _loadHomeSummary(forceRefresh: true),
       _checkSubscriptionStatus(),
     ]);
@@ -178,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (_) {
-      await Future.wait([
+      await Future.wait<void>([
         _checkAllFarmsVerified(),
         _checkPersonalDetailsCompletion(),
         _checkHasCrops(),
@@ -303,7 +308,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ]);
 
       final assignments = results[0] as List<dynamic>;
-      final farmsData = results[1] as List<dynamic>? ?? [];
+      final farmsData = results[1] ?? [];
 
       // Only show ASSIGNED field officers - filter out COMPLETED and CANCELLED
       final activeAssignments = assignments
@@ -458,104 +463,52 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadSetupState() async {
+    final state = await SetupStateService.load();
+    if (!mounted) return;
+    setState(() {
+      _setupState = state;
+    });
+  }
+
+  /// Check subscription status
   Future<void> _checkSubscriptionStatus() async {
-    try {
-      final isSubscribed = await StorageService.isSubscribed();
-      if (mounted) {
-        setState(() {
-          _isSubscribed = isSubscribed;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isSubscribed = false;
-        });
-      }
-    }
+    if (!mounted) return;
+    // This method is called but subscription checking is handled elsewhere
+    // Placeholder for future subscription validation logic
   }
 
-  /// Check if personal details look complete - fetch from API first, fallback to local storage.
+  /// Check personal details completion
   Future<void> _checkPersonalDetailsCompletion() async {
+    if (!mounted) return;
     try {
-      // Try to fetch from API first to get the latest data
-      try {
-        final response = await HttpService.get("farmer/profile/my-details");
-        final data = response['data'] ?? {};
-
-        final firstName = (data['firstName'] ?? '').toString().trim();
-        final lastName = (data['lastName'] ?? '').toString().trim();
-        final dob = data['dateOfBirth']?.toString() ?? '';
-        final gender = (data['gender'] ?? '').toString().trim();
-
-        final hasPersonal = firstName.isNotEmpty &&
-            lastName.isNotEmpty &&
-            dob.isNotEmpty &&
-            gender.isNotEmpty;
-
-        if (mounted) {
-          setState(() {
-            _hasPersonalDetails = hasPersonal;
-          });
-        }
-
-        // Also update local storage with fresh data
-        if (hasPersonal) {
-          await StorageService.savePersonalDetails(
-            firstName: firstName,
-            lastName: lastName,
-            dob: dob,
-            gender: gender,
-            profilePicPath: null,
-          );
-        }
-        return;
-      } catch (apiError) {
-        // If API fails, fallback to local storage
-        print("API Error checking personal details: $apiError");
-      }
-
-      // Fallback to local storage
-      final userData = await StorageService.getUserDetails();
-      final firstName = (userData['firstName'] ?? '').toString().trim();
-      final lastName = (userData['lastName'] ?? '').toString().trim();
-      final dob = (userData['dob'] ?? '').toString().trim();
-      final gender = (userData['gender'] ?? '').toString().trim();
-
-      final hasPersonal = firstName.isNotEmpty &&
-          lastName.isNotEmpty &&
-          dob.isNotEmpty &&
-          gender.isNotEmpty;
-
+      final response = await HttpService.get("farmer/profile/home-summary");
+      final summary =
+          response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
       if (mounted) {
         setState(() {
-          _hasPersonalDetails = hasPersonal;
+          _hasPersonalDetails = summary['hasPersonalDetails'] == true;
         });
       }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _hasPersonalDetails = false;
-        });
-      }
+    } catch (e) {
+      // Handle error silently
     }
   }
 
-  /// Check if user has added at least one crop.
+  /// Check if user has crops
   Future<void> _checkHasCrops() async {
+    if (!mounted) return;
     try {
-      final crops = await CropService.getCrops();
+      final response = await HttpService.get("farmer/profile/home-summary");
+      final summary =
+          response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
       if (mounted) {
         setState(() {
-          _hasCrops = crops.isNotEmpty;
+          _hasCrops = summary['hasCrops'] == true;
         });
       }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _hasCrops = false;
-        });
-      }
+    } catch (e) {
+      // Handle error silently
     }
   }
 
@@ -615,15 +568,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Setup Progress Card replacing individual nudges
                   if (_isInitialLoadComplete &&
-                      (!_hasPersonalDetails ||
-                          _totalFarms == 0 ||
-                          !_isSubscribed)) ...[
+                      (!_setupState.hasProfile ||
+                          !_setupState.hasFarm ||
+                          !_setupState.hasCrop ||
+                          !_setupState.hasSubscription)) ...[
                     SetupProgressCard(
-                      hasPersonalDetails: _hasPersonalDetails,
-                      hasFarm: _totalFarms > 0,
-                      isSubscribed: _isSubscribed,
+                      hasPersonalDetails: _setupState.hasProfile,
+                      hasFarm: _setupState.hasFarm,
+                      hasCrop: _setupState.hasCrop,
+                      isSubscribed: _setupState.hasSubscription,
                       onContinueSetup: () async {
-                        if (!_hasPersonalDetails) {
+                        if (!_setupState.hasProfile) {
                           await context
                               .read<OnboardingController>()
                               .allowPersonalOnboardingFromHome(context);
@@ -631,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             AppRoutes.onboardingPersonal,
                           );
-                        } else if (_totalFarms == 0) {
+                        } else if (!_setupState.hasFarm) {
                           await context
                               .read<OnboardingController>()
                               .allowPersonalOnboardingFromHome(context);
@@ -640,7 +595,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             AppRoutes.addFarm,
                             arguments: {'fromOnboarding': true},
                           );
-                        } else if (!_isSubscribed) {
+                        } else if (!_setupState.hasCrop) {
+                          await Navigator.pushNamed(
+                            context,
+                            AppRoutes.addCrop,
+                            arguments: {'fromOnboarding': true},
+                          );
+                        } else if (!_setupState.hasSubscription) {
                           await Navigator.pushNamed(
                             context,
                             AppRoutes.subscription,
@@ -654,6 +615,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
+
+                  ..._buildOtpNotificationBanners(l10n),
+                  if (_buildOtpNotificationBanners(l10n).isNotEmpty)
+                    const SizedBox(height: 16),
 
                   // B. All Farms Verified Banner (if all farms are verified)
                   if (_allFarmsVerified) ...[
@@ -815,22 +780,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWeatherHeader(AppLocalizations l10n) {
-    if (_isInitialLoadComplete && _totalFarms == 0) {
+    if (_isInitialLoadComplete && !_setupState.hasFarm) {
       return HeroCard(
-        onAddFarm: () async {
-          await context
-              .read<OnboardingController>()
-              .allowPersonalOnboardingFromHome(context);
-          await Navigator.pushNamed(
-            context,
-            AppRoutes.addFarm,
-            arguments: {'fromOnboarding': true},
-          );
-          await Future.delayed(const Duration(milliseconds: 300));
-          if (mounted) {
-            await _refreshAllData();
-          }
-        },
+        showAddFarmCta: _setupState.hasProfile,
+        onAddFarm: _setupState.hasProfile
+            ? () async {
+                await context
+                    .read<OnboardingController>()
+                    .allowPersonalOnboardingFromHome(context);
+                await Navigator.pushNamed(
+                  context,
+                  AppRoutes.addFarm,
+                  arguments: {'fromOnboarding': true},
+                );
+                await Future.delayed(const Duration(milliseconds: 300));
+                if (mounted) {
+                  await _refreshAllData();
+                }
+              }
+            : null,
       );
     }
 
@@ -1330,15 +1298,26 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     ];
 
+    final double width = MediaQuery.of(context).size.width;
+    final String languageCode = Localizations.localeOf(context).languageCode;
+    final bool isSmallScreen = width < 380;
+    final bool isLongTextLocale = languageCode == 'en' || languageCode == 'hi';
+
+    final double horizontalSpacing = isSmallScreen ? 12 : 16;
+    final double verticalSpacing = isSmallScreen ? 12 : 16;
+    final double childAspectRatio = isSmallScreen
+        ? (isLongTextLocale ? 0.74 : 0.79)
+        : (isLongTextLocale ? 0.81 : 0.86);
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.95,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        childAspectRatio: childAspectRatio,
+        crossAxisSpacing: horizontalSpacing,
+        mainAxisSpacing: verticalSpacing,
       ),
       itemBuilder: (context, index) {
         return _buildActionCard(
@@ -1370,10 +1349,10 @@ class _HomeScreenState extends State<HomeScreen> {
     bool requiresCrop,
   ) {
     // Dynamic status calculation
-    bool isLocked = (requiresPersonal && !_hasPersonalDetails) ||
+    bool isLocked = (requiresPersonal && !_setupState.hasProfile) ||
         (requiresFarm && _totalFarms == 0) ||
-        (requiresCrop && !_hasCrops) ||
-        (isPremium && !_isSubscribed);
+        (requiresCrop && !_setupState.hasCrop) ||
+        (isPremium && !_setupState.hasSubscription);
 
     final l10n = AppLocalizations.of(context)!;
     String displayStatus = isLocked ? l10n.statusLocked : status;
@@ -1384,7 +1363,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: InkWell(
         onTap: () async {
           // Onboarding locks: explain missing details before navigating
-          if (requiresPersonal && !_hasPersonalDetails) {
+          if (requiresPersonal && !_setupState.hasProfile) {
             await _showOnboardingDialog(
               context: context,
               icon: Icons.person_outline_rounded,
@@ -1408,7 +1387,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return;
           }
 
-          if (requiresCrop && !_hasCrops) {
+          if (requiresCrop && !_setupState.hasCrop) {
             await _showOnboardingDialog(
               context: context,
               icon: Icons.grass_rounded,
@@ -1421,15 +1400,12 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           // Premium quick actions: soft paywall for free users (after onboarding checks)
-          if (isPremium) {
-            final isSubscribed = await StorageService.isSubscribed();
-            if (!isSubscribed) {
-              await showSubscriptionRequiredDialog(
-                context,
-                featureName: title,
-              );
-              return;
-            }
+          if (isPremium && !_setupState.hasSubscription) {
+            await showSubscriptionRequiredDialog(
+              context,
+              featureName: title,
+            );
+            return;
           }
 
           if (route != null && !isNavigating) {
@@ -1461,7 +1437,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -1482,7 +1458,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   clipBehavior: Clip.none,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -1502,7 +1478,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                         ],
                       ),
-                      child: Icon(icon, color: Colors.white, size: 28),
+                      child: Icon(icon, color: Colors.white, size: 24),
                     ),
                     if (isLocked)
                       Positioned(
@@ -1530,39 +1506,52 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                   ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      height: 1.3,
-                      color: Colors.black87,
-                      letterSpacing: 0.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: displayStatusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    displayStatus,
-                    style: GoogleFonts.poppins(
-                      color: displayStatusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Flexible(
+                        child: AutoSizeText(
+                          title,
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            height: 1.3,
+                            color: Colors.black87,
+                            letterSpacing: 0.2,
+                          ),
+                          maxLines: 2,
+                          minFontSize: 12,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: displayStatusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: AutoSizeText(
+                          displayStatus,
+                          style: GoogleFonts.poppins(
+                            color: displayStatusColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                          maxLines: 1,
+                          minFontSize: 10,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
