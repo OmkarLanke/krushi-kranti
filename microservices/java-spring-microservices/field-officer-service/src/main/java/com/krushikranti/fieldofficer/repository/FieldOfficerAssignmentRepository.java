@@ -53,6 +53,21 @@ public interface FieldOfficerAssignmentRepository extends JpaRepository<FieldOff
     long countByFieldOfficerIdAndStatusNot(Long fieldOfficerId, FieldOfficerAssignment.AssignmentStatus status);
 
     /**
+     * Count assignments for a field officer by exact status.
+     */
+    long countByFieldOfficerIdAndStatus(Long fieldOfficerId, FieldOfficerAssignment.AssignmentStatus status);
+
+    /**
+     * Count farm-level assignments (farmId present) for a field officer by exact status.
+     */
+    long countByFieldOfficerIdAndFarmIdIsNotNullAndStatus(Long fieldOfficerId, FieldOfficerAssignment.AssignmentStatus status);
+
+    /**
+     * Count active farm-level assignments (farmId present and non-cancelled).
+     */
+    long countByFieldOfficerIdAndFarmIdIsNotNullAndStatusNot(Long fieldOfficerId, FieldOfficerAssignment.AssignmentStatus status);
+
+    /**
      * Find all assignments for multiple farmers (batch query for admin dashboard)
      */
     @Query("SELECT a FROM FieldOfficerAssignment a WHERE a.farmerUserId IN :farmerUserIds")

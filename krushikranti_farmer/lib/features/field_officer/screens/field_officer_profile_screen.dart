@@ -4,13 +4,14 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/services/storage_service.dart';
-import '../../../core/services/http_service.dart';
+import '../services/field_officer_repository.dart';
 
 class FieldOfficerProfileScreen extends StatefulWidget {
   const FieldOfficerProfileScreen({super.key});
 
   @override
-  State<FieldOfficerProfileScreen> createState() => _FieldOfficerProfileScreenState();
+  State<FieldOfficerProfileScreen> createState() =>
+      _FieldOfficerProfileScreenState();
 }
 
 class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
@@ -24,55 +25,51 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
   }
 
   Future<void> _loadProfileData() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
-      try {
-        final response = await HttpService.get("field-officer/profile");
-        
-        Map<String, dynamic> data = {};
-        if (response is Map<String, dynamic>) {
-          if (response.containsKey('data')) {
-            final dataValue = response['data'];
-            if (dataValue is Map<String, dynamic>) {
-              data = dataValue;
-            }
-          } else {
-            data = response;
-          }
-        }
+      final cached = FieldOfficerRepository.getCachedDashboardData(
+        includeStale: true,
+      );
+      if (cached != null && cached.profile.isNotEmpty && mounted) {
+        setState(() {
+          _profileData = cached.profile;
+          _isLoading = false;
+        });
+      }
 
-        if (mounted && data.isNotEmpty) {
-          setState(() {
-            _profileData = data;
-            _isLoading = false;
-          });
+      final fresh = await FieldOfficerRepository.getProfile(
+        forceRefresh: cached != null,
+      );
 
-          await StorageService.saveAuthDetails(
-            email: data['email'] ?? "",
-            phone: data['phoneNumber'] ?? "",
-          );
-          await StorageService.savePersonalDetails(
-            firstName: data['firstName'] ?? "",
-            lastName: data['lastName'] ?? "",
-            dob: data['dateOfBirth']?.toString() ?? "",
-            gender: data['gender']?.toString() ?? "",
-            profilePicPath: null,
-          );
-          return;
-        }
-      } catch (apiError) {
-        if (mounted) {
-           // Handle silent error
-        }
+      if (mounted && fresh.isNotEmpty) {
+        setState(() {
+          _profileData = fresh;
+          _isLoading = false;
+        });
+
+        await StorageService.saveAuthDetails(
+          email: fresh['email'] ?? "",
+          phone: fresh['phoneNumber'] ?? "",
+        );
+        await StorageService.savePersonalDetails(
+          firstName: fresh['firstName'] ?? "",
+          lastName: fresh['lastName'] ?? "",
+          dob: fresh['dateOfBirth']?.toString() ?? "",
+          gender: fresh['gender']?.toString() ?? "",
+          profilePicPath: null,
+        );
+        return;
       }
 
       final userData = await StorageService.getUserDetails();
       if (mounted) {
         setState(() {
-          if (userData['firstName']?.toString().isNotEmpty == true || 
+          if (userData['firstName']?.toString().isNotEmpty == true ||
               userData['email']?.toString().isNotEmpty == true) {
             _profileData = {
               'firstName': userData['firstName'] ?? '',
@@ -88,8 +85,19 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
         });
       }
     } catch (e) {
+      final userData = await StorageService.getUserDetails();
       if (mounted) {
         setState(() {
+          if (userData['firstName']?.toString().isNotEmpty == true ||
+              userData['email']?.toString().isNotEmpty == true) {
+            _profileData = {
+              'firstName': userData['firstName'] ?? '',
+              'lastName': userData['lastName'] ?? '',
+              'email': userData['email'] ?? '',
+              'phoneNumber': userData['phone'] ?? '',
+              'alternatePhone': userData['altPhone'] ?? '',
+            };
+          }
           _isLoading = false;
         });
       }
@@ -137,10 +145,24 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
         final year = parts[0];
         final month = int.tryParse(parts[1]) ?? 0;
         final day = parts[2];
-        
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        final monthStr = (month > 0 && month <= 12) ? months[month - 1] : parts[1];
-        
+
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec'
+        ];
+        final monthStr =
+            (month > 0 && month <= 12) ? months[month - 1] : parts[1];
+
         return "$day $monthStr $year";
       }
       return dateStr;
@@ -159,8 +181,7 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(AppLocalizations.of(dialogContext)!.logoutConfirmTitle),
-        content:
-            Text(AppLocalizations.of(dialogContext)!.logoutConfirmMessage),
+        content: Text(AppLocalizations.of(dialogContext)!.logoutConfirmMessage),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
@@ -197,7 +218,7 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.background, 
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -233,7 +254,6 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
                 children: [
                   _buildProfileHeader(),
                   const SizedBox(height: 30),
-                  
                   _buildSectionHeader(l10n.contactInformationHeader),
                   _buildModernField(
                     label: l10n.fieldOfficerEmailLabel,
@@ -253,30 +273,27 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
                     icon: Icons.phone_iphone_rounded,
                     placeholder: l10n.notProvided,
                   ),
-
                   const SizedBox(height: 24),
-                  
                   _buildSectionHeader(l10n.personalDetails),
                   _buildModernField(
                     label: l10n.fieldOfficerDobLabel,
-                    value: _formatDate(_profileData['dateOfBirth']?.toString()) ?? '',
+                    value:
+                        _formatDate(_profileData['dateOfBirth']?.toString()) ??
+                            '',
                     icon: Icons.calendar_month_rounded,
                     placeholder: '--',
                   ),
                   _buildModernField(
                     label: l10n.fieldOfficerGenderLabel,
-                    value: _formatGender(_profileData['gender']?.toString()) ?? '',
+                    value:
+                        _formatGender(_profileData['gender']?.toString()) ?? '',
                     icon: Icons.person_outline_rounded,
                     placeholder: '--',
                   ),
-
                   const SizedBox(height: 24),
-                  
                   _buildSectionHeader(l10n.locationSectionTitle),
                   _buildAddressCard(),
-
                   const SizedBox(height: 40),
-
                   Container(
                     width: double.infinity,
                     height: 50,
@@ -352,10 +369,12 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
                   child: CircleAvatar(
                     radius: 56,
                     backgroundColor: Colors.grey.shade100,
-                    backgroundImage: (_profileData['profilePic'] != null && _profileData['profilePic'].toString().isNotEmpty)
+                    backgroundImage: (_profileData['profilePic'] != null &&
+                            _profileData['profilePic'].toString().isNotEmpty)
                         ? NetworkImage(_profileData['profilePic'].toString())
                         : null,
-                    child: (_profileData['profilePic'] == null || _profileData['profilePic'].toString().isEmpty)
+                    child: (_profileData['profilePic'] == null ||
+                            _profileData['profilePic'].toString().isEmpty)
                         ? Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
@@ -370,7 +389,9 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
                             ),
                             child: Center(
                               child: Text(
-                                _getFullName().isNotEmpty ? _getFullName()[0].toUpperCase() : 'F',
+                                _getFullName().isNotEmpty
+                                    ? _getFullName()[0].toUpperCase()
+                                    : 'F',
                                 style: GoogleFonts.poppins(
                                   fontSize: 36,
                                   fontWeight: FontWeight.w600,
@@ -395,7 +416,8 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
                     )
                   ],
                 ),
-                child: const Icon(Icons.verified, color: Colors.orange, size: 24),
+                child:
+                    const Icon(Icons.verified, color: Colors.orange, size: 24),
               ),
             ],
           ),
@@ -484,7 +506,7 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
     String placeholder = '',
   }) {
     final hasValue = value.isNotEmpty;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -534,7 +556,8 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
                   hasValue ? value : placeholder,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: hasValue ? AppColors.textPrimary : Colors.grey.shade300,
+                    color:
+                        hasValue ? AppColors.textPrimary : Colors.grey.shade300,
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -580,7 +603,8 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.location_on_rounded, color: Colors.orange, size: 20),
+                child: const Icon(Icons.location_on_rounded,
+                    color: Colors.orange, size: 20),
               ),
               const SizedBox(width: 14),
               Text(
@@ -594,10 +618,11 @@ class _FieldOfficerProfileScreenState extends State<FieldOfficerProfileScreen> {
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
-          Container(height: 1, color: Colors.grey.shade200, margin: const EdgeInsets.only(bottom: 16)),
-          
+          Container(
+              height: 1,
+              color: Colors.grey.shade200,
+              margin: const EdgeInsets.only(bottom: 16)),
           _buildAddressRow('Pincode', _profileData['pincode']),
           _buildAddressRow('District', _profileData['district']),
           _buildAddressRow('Taluka', _profileData['taluka']),
