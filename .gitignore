@@ -71,3 +71,5 @@ coverage/
 *.bak
 *.cache
 
+# App binaries
+krushikranti-landing-page/downloads/*.apk
