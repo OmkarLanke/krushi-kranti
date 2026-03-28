@@ -5,12 +5,14 @@ import '../../../l10n/app_localizations.dart';
 import 'primary_cta_button.dart';
 
 class HeroCard extends StatelessWidget {
-  final VoidCallback onAddFarm;
+  final VoidCallback? onAddFarm;
+  final bool showAddFarmCta;
 
   const HeroCard({
-    Key? key,
-    required this.onAddFarm,
-  }) : super(key: key);
+    super.key,
+    this.onAddFarm,
+    this.showAddFarmCta = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +66,7 @@ class HeroCard extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Content
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -103,12 +105,14 @@ class HeroCard extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 32),
-                  PrimaryCTAButton(
-                    text: l10n.addFarmNow,
-                    icon: Icons.add_location_alt_rounded,
-                    onPressed: onAddFarm,
-                  ),
+                  if (showAddFarmCta) ...[
+                    const SizedBox(height: 32),
+                    PrimaryCTAButton(
+                      text: l10n.addFarmNow,
+                      icon: Icons.add_location_alt_rounded,
+                      onPressed: onAddFarm ?? () {},
+                    ),
+                  ],
                 ],
               ),
             ),

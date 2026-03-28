@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/services/http_service.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/services/http_service.dart';
+import '../../../core/models/setup_state.dart';
+import '../../../core/services/setup_state_service.dart';
+import '../../../core/onboarding/onboarding_controller.dart';
+import '../widgets/setup_progress_card.dart';
 
 class MyDetailsScreen extends StatefulWidget {
   const MyDetailsScreen({super.key});
@@ -15,8 +20,7 @@ class MyDetailsScreen extends StatefulWidget {
 class _MyDetailsScreenState extends State<MyDetailsScreen> {
   bool _isLoading = true;
   Map<String, dynamic> _profileData = {};
-  bool _hasFarm = false;
-  bool _hasCrop = false;
+  SetupState _setupState = const SetupState();
 
   @override
   void initState() {
@@ -27,8 +31,16 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
   Future<void> _loadAllData() async {
     await Future.wait([
       _loadProfileData(),
-      _loadFarmAndCropStatus(),
+      _loadSetupState(),
     ]);
+  }
+
+  Future<void> _loadSetupState() async {
+    final state = await SetupStateService.load();
+    if (!mounted) return;
+    setState(() {
+      _setupState = state;
+    });
   }
 
   Future<void> _loadProfileData() async {
@@ -38,12 +50,12 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
 
     try {
       final response = await HttpService.get("farmer/profile/my-details");
-      
+
       // Debug: Print full response to see structure
       print("=== My Details API Response ===");
       print("Full response: $response");
       print("Response type: ${response.runtimeType}");
-      
+
       // Handle different response structures
       Map<String, dynamic> data = {};
       if (response is Map<String, dynamic>) {
@@ -57,7 +69,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
           print("Using response as data directly");
         }
       }
-      
+
       print("=== Extracted Data ===");
       print("Data keys: ${data.keys.toList()}");
       print("firstName: ${data['firstName']}");
@@ -72,7 +84,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
       print("email: ${data['email']}");
       print("phoneNumber: ${data['phoneNumber']}");
       print("alternatePhone: ${data['alternatePhone']}");
-      
+
       if (mounted) {
         setState(() {
           _profileData = data;
@@ -84,7 +96,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
         setState(() {
           _isLoading = false;
         });
-        
+
         print("Error loading profile: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -96,30 +108,6 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
             backgroundColor: Colors.red,
           ),
         );
-      }
-    }
-  }
-
-  Future<void> _loadFarmAndCropStatus() async {
-    try {
-      final farmsResp = await HttpService.get("farmer/profile/farms");
-      final farmsData = farmsResp['data'] as List<dynamic>? ?? const [];
-
-      final cropsResp = await HttpService.get("farmer/profile/crops");
-      final cropsData = cropsResp['data'] as List<dynamic>? ?? const [];
-
-      if (mounted) {
-        setState(() {
-          _hasFarm = farmsData.isNotEmpty;
-          _hasCrop = cropsData.isNotEmpty;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _hasFarm = false;
-          _hasCrop = false;
-        });
       }
     }
   }
@@ -155,14 +143,15 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -196,81 +185,245 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top "Complete Profile" banner if any critical field is missing
-                  if (_isProfileIncomplete()) ...[
-                    _buildIncompleteProfileBanner(l10n),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Personal Details Section
-                  _buildSectionTitle(l10n.personalDetails),
-                  const SizedBox(height: 12),
-                  _buildSectionCard(
-                    children: [
-                      _buildDetailField(l10n.firstName, _profileData['firstName'] ?? l10n.notProvided),
-                      _buildFieldDivider(),
-                      _buildDetailField(l10n.lastName, _profileData['lastName'] ?? l10n.notProvided),
-                      _buildFieldDivider(),
-                      _buildDetailField(l10n.dob, _formatDate(_profileData['dateOfBirth']?.toString(), l10n)),
-                      _buildFieldDivider(),
-                      _buildDetailField(l10n.gender, _formatGender(_profileData['gender']?.toString(), l10n)),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Contact Details Section
-                  _buildSectionTitle(l10n.contactDetails),
-                  const SizedBox(height: 12),
-                  _buildSectionCard(
-                    children: [
-                      _buildDetailField(l10n.email, _profileData['email'] ?? l10n.notProvided, icon: Icons.email_outlined),
-                      _buildFieldDivider(),
-                      _buildDetailField(l10n.phoneNumber, _profileData['phoneNumber'] ?? l10n.notProvided, icon: Icons.phone_outlined),
-                      _buildFieldDivider(),
-                      _buildDetailField(l10n.alternatePhone, _profileData['alternatePhone'] ?? l10n.notProvided, icon: Icons.phone_android_outlined),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Address Details Section
-                  _buildSectionTitle(l10n.addressDetails),
-                  const SizedBox(height: 12),
-                  _buildSectionCard(
-                    children: [
-                      _buildDetailField(l10n.pincode, _profileData['pincode'] ?? l10n.notProvided, icon: Icons.pin_outlined),
-                      _buildFieldDivider(),
-                      _buildDetailField(l10n.village, _profileData['village'] ?? l10n.notProvided, icon: Icons.location_on_outlined),
-                      _buildFieldDivider(),
-                      _buildDetailField(l10n.taluka, _profileData['taluka'] ?? l10n.notProvided, icon: Icons.location_city_outlined),
-                      _buildFieldDivider(),
-                      _buildDetailField(l10n.district, _profileData['district'] ?? l10n.notProvided, icon: Icons.map_outlined),
-                      _buildFieldDivider(),
-                      _buildDetailField(l10n.state, _profileData['state'] ?? l10n.notProvided, icon: Icons.public_outlined),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 32),
-
-                  // Step 2 & 3 quick actions if missing
-                  if (!_hasFarm || !_hasCrop) ...[
-                    _buildStepActionCards(l10n),
-                    const SizedBox(height: 24),
-                  ],
-                ],
-              ),
+              child: _buildBodyContent(l10n),
             ),
+    );
+  }
+
+  Widget _buildBodyContent(AppLocalizations l10n) {
+    if (!_hasPersonalDetails()) {
+      return _buildProfileIncompleteView(l10n);
+    } else if (_isProfileIncomplete()) {
+      return _buildPartialProfileView(l10n);
+    } else {
+      return _buildProfileCompleteView(l10n);
+    }
+  }
+
+  // --- Views ---
+
+  Widget _buildProfileIncompleteView(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHighlightCard(
+          title: l10n.profileIncomplete,
+          description: l10n.completePersonalDetailsToUnlock,
+        ),
+        if (_hasAnyContactInfo()) ...[
+          const SizedBox(height: 24),
+          _buildSectionTitle(l10n.contactDetails),
+          const SizedBox(height: 12),
+          _buildContactDetailsCard(l10n, forceShowAll: false),
+        ],
+        const SizedBox(height: 32),
+        SetupProgressCard(
+          hasPersonalDetails: false,
+          hasFarm: _setupState.hasFarm,
+          hasCrop: _setupState.hasCrop,
+          isSubscribed: _setupState.hasSubscription,
+          onContinueSetup: () async {
+            if (!_hasPersonalDetails()) {
+              await context
+                  .read<OnboardingController>()
+                  .allowPersonalOnboardingFromHome(context);
+              await Navigator.pushNamed(context, AppRoutes.onboardingPersonal);
+            } else if (!_setupState.hasFarm) {
+              await context
+                  .read<OnboardingController>()
+                  .allowPersonalOnboardingFromHome(context);
+              await Navigator.pushNamed(context, AppRoutes.addFarm,
+                  arguments: {'fromOnboarding': true});
+            } else if (!_setupState.hasCrop) {
+              await Navigator.pushNamed(context, AppRoutes.addCrop,
+                  arguments: {'fromOnboarding': true});
+            } else if (!_setupState.hasSubscription) {
+              await Navigator.pushNamed(context, AppRoutes.subscription);
+            }
+            if (mounted) {
+              await _loadAllData();
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPartialProfileView(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildIncompleteProfileBanner(l10n),
+        const SizedBox(height: 24),
+        ..._buildAllDetailsSections(l10n),
+      ],
+    );
+  }
+
+  Widget _buildProfileCompleteView(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ..._buildAllDetailsSections(l10n),
+      ],
+    );
+  }
+
+  List<Widget> _buildAllDetailsSections(AppLocalizations l10n) {
+    return [
+      if (_hasAnyPersonalInfo()) ...[
+        _buildSectionTitle(l10n.personalDetails),
+        const SizedBox(height: 12),
+        _buildPersonalDetailsCard(l10n),
+        const SizedBox(height: 24),
+      ],
+      if (_hasAnyContactInfo()) ...[
+        _buildSectionTitle(l10n.contactDetails),
+        const SizedBox(height: 12),
+        _buildContactDetailsCard(l10n, forceShowAll: false),
+        const SizedBox(height: 24),
+      ],
+      if (_hasAnyAddressInfo()) ...[
+        _buildSectionTitle(l10n.addressDetails),
+        const SizedBox(height: 12),
+        _buildAddressDetailsCard(l10n),
+      ],
+    ];
+  }
+
+  // --- Cards ---
+
+  Widget _buildPersonalDetailsCard(AppLocalizations l10n) {
+    final fields = <Widget>[];
+
+    void addField(String label, String? value) {
+      if (value != null && value.isNotEmpty && value != l10n.notProvided) {
+        if (fields.isNotEmpty) fields.add(_buildFieldDivider());
+        fields.add(_buildDetailField(label, value));
+      }
+    }
+
+    addField(l10n.firstName, _profileData['firstName']?.toString());
+    addField(l10n.lastName, _profileData['lastName']?.toString());
+    addField(
+        l10n.dob, _formatDate(_profileData['dateOfBirth']?.toString(), l10n));
+    addField(
+        l10n.gender, _formatGender(_profileData['gender']?.toString(), l10n));
+
+    return _buildSectionCard(children: fields);
+  }
+
+  Widget _buildContactDetailsCard(AppLocalizations l10n,
+      {required bool forceShowAll}) {
+    final fields = <Widget>[];
+
+    void addField(String label, String? value, IconData icon) {
+      if (value != null && value.isNotEmpty && value != l10n.notProvided) {
+        if (fields.isNotEmpty) fields.add(_buildFieldDivider());
+        fields.add(_buildDetailField(label, value, icon: icon));
+      }
+    }
+
+    addField(
+        l10n.email, _profileData['email']?.toString(), Icons.email_outlined);
+    addField(l10n.phoneNumber, _profileData['phoneNumber']?.toString(),
+        Icons.phone_outlined);
+    addField(l10n.alternatePhone, _profileData['alternatePhone']?.toString(),
+        Icons.phone_android_outlined);
+
+    return _buildSectionCard(children: fields);
+  }
+
+  Widget _buildAddressDetailsCard(AppLocalizations l10n) {
+    final fields = <Widget>[];
+
+    void addField(String label, String? value, IconData icon) {
+      if (value != null && value.isNotEmpty && value != l10n.notProvided) {
+        if (fields.isNotEmpty) fields.add(_buildFieldDivider());
+        fields.add(_buildDetailField(label, value, icon: icon));
+      }
+    }
+
+    addField(
+        l10n.pincode, _profileData['pincode']?.toString(), Icons.pin_outlined);
+    addField(l10n.village, _profileData['village']?.toString(),
+        Icons.location_on_outlined);
+    addField(l10n.taluka, _profileData['taluka']?.toString(),
+        Icons.location_city_outlined);
+    addField(l10n.district, _profileData['district']?.toString(),
+        Icons.map_outlined);
+    addField(
+        l10n.state, _profileData['state']?.toString(), Icons.public_outlined);
+
+    return _buildSectionCard(children: fields);
+  }
+
+  Widget _buildHighlightCard({
+    required String title,
+    required String description,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.person_outline,
+              color: Colors.orange.shade700,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.grey.shade600,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildIncompleteProfileBanner(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -287,172 +440,71 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
             offset: const Offset(0, 4),
           ),
         ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-              Icons.person_add_alt_1,
-              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.profileIncomplete,
-                                  style: GoogleFonts.poppins(
-                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  l10n.completeProfileDetails,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 13,
-                    color: Colors.white.withOpacity(0.9),
-                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-          const SizedBox(width: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, "/onboarding_personal");
-                            },
-                            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.orange.shade700,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-              elevation: 0,
-                            ),
-                            child: Text(
-                              l10n.completeProfile,
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-            ),
-    );
-  }
-
-  Widget _buildStepActionCards(AppLocalizations l10n) {
-    return Column(
-      children: [
-        if (!_hasFarm)
-          _buildStepActionCard(
-            icon: Icons.agriculture_rounded,
-            title: l10n.myDetailsStepAddFarmTitle,
-            message: l10n.myDetailsStepAddFarmBody,
-            ctaLabel: l10n.myDetailsStepAddFarmCta,
-            onTap: () {
-              Navigator.pushNamed(context, AppRoutes.farmList);
-            },
-          ),
-        if (_hasFarm && !_hasCrop) ...[
-          const SizedBox(height: 12),
-          _buildStepActionCard(
-            icon: Icons.grass_rounded,
-            title: l10n.myDetailsStepAddCropsTitle,
-            message: l10n.myDetailsStepAddCropsBody,
-            ctaLabel: l10n.myDetailsStepAddCropsCta,
-            onTap: () {
-              Navigator.pushNamed(context, AppRoutes.cropList);
-            },
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildStepActionCard({
-    required IconData icon,
-    required String title,
-    required String message,
-    required String ctaLabel,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.brandGreen.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.brandGreen, size: 22),
+            child: const Icon(
+              Icons.person_add_alt_1,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  l10n.profileIncomplete,
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
+                    fontSize: 17,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  message,
+                  l10n.completeProfileDetails,
                   style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey.shade700,
-                    height: 1.3,
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          TextButton(
-            onPressed: onTap,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.brandGreen,
-              textStyle: GoogleFonts.poppins(
-                fontSize: 12,
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, "/onboarding_personal");
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.orange.shade700,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              l10n.completeProfile,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            child: Text(ctaLabel),
           ),
         ],
       ),
@@ -463,8 +515,8 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
     return Padding(
       padding: const EdgeInsets.only(left: 4),
       child: Text(
-      title,
-      style: GoogleFonts.poppins(
+        title,
+        style: GoogleFonts.poppins(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: Colors.grey.shade700,
@@ -475,6 +527,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
   }
 
   Widget _buildSectionCard({required List<Widget> children}) {
+    if (children.isEmpty) return const SizedBox.shrink();
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -494,8 +547,6 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
   }
 
   Widget _buildDetailField(String label, String value, {IconData? icon}) {
-    final isEmpty = value == "Not Provided" || value.isEmpty;
-    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
@@ -512,35 +563,35 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                 icon,
                 size: 20,
                 color: AppColors.brandGreen,
-      ),
+              ),
             ),
             const SizedBox(width: 16),
           ],
           Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade600,
                     letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: 6),
+                  ),
+                ),
+                const SizedBox(height: 6),
                 Text(
                   value,
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: isEmpty ? Colors.grey.shade400 : Colors.black87,
+                    color: Colors.black87,
                     letterSpacing: 0.2,
                   ),
                 ),
               ],
-              ),
+            ),
           ),
         ],
       ),
@@ -557,8 +608,35 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
     );
   }
 
+  // --- Logic Helpers ---
+
+  bool _hasPersonalDetails() {
+    final firstName = (_profileData['firstName'] ?? '').toString().trim();
+    final lastName = (_profileData['lastName'] ?? '').toString().trim();
+    return firstName.isNotEmpty || lastName.isNotEmpty;
+  }
+
+  bool _hasAnyPersonalInfo() {
+    return _hasPersonalDetails() ||
+        (_profileData['dateOfBirth'] ?? '').toString().trim().isNotEmpty ||
+        (_profileData['gender'] ?? '').toString().trim().isNotEmpty;
+  }
+
+  bool _hasAnyContactInfo() {
+    return (_profileData['email'] ?? '').toString().trim().isNotEmpty ||
+        (_profileData['phoneNumber'] ?? '').toString().trim().isNotEmpty ||
+        (_profileData['alternatePhone'] ?? '').toString().trim().isNotEmpty;
+  }
+
+  bool _hasAnyAddressInfo() {
+    return (_profileData['pincode'] ?? '').toString().trim().isNotEmpty ||
+        (_profileData['village'] ?? '').toString().trim().isNotEmpty ||
+        (_profileData['taluka'] ?? '').toString().trim().isNotEmpty ||
+        (_profileData['district'] ?? '').toString().trim().isNotEmpty ||
+        (_profileData['state'] ?? '').toString().trim().isNotEmpty;
+  }
+
   /// Determine if profile is incomplete based on key fields.
-  /// If all these are filled, we hide the top banner.
   bool _isProfileIncomplete() {
     final firstName = (_profileData['firstName'] ?? '').toString().trim();
     final lastName = (_profileData['lastName'] ?? '').toString().trim();
@@ -573,4 +651,3 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
         village.isEmpty;
   }
 }
-

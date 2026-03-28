@@ -7,43 +7,56 @@ import 'primary_cta_button.dart';
 class SetupProgressCard extends StatelessWidget {
   final bool hasPersonalDetails;
   final bool hasFarm;
+  final bool? hasCrop;
   final bool isSubscribed;
+  final bool? hasKyc;
   final VoidCallback onContinueSetup;
 
   const SetupProgressCard({
-    Key? key,
+    super.key,
     required this.hasPersonalDetails,
     required this.hasFarm,
+    this.hasCrop,
     required this.isSubscribed,
+    this.hasKyc,
     required this.onContinueSetup,
-  }) : super(key: key);
+  });
 
   int get _completedSteps {
     int count = 0;
     if (hasPersonalDetails) count++;
     if (hasFarm) count++;
+    if (hasCrop == true) count++;
     if (isSubscribed) count++;
+    if (hasKyc == true) count++;
     return count;
   }
 
-  double get _progress => _completedSteps / 3.0;
+  int get _totalSteps {
+    int count = 3;
+    if (hasCrop != null) count++;
+    if (hasKyc != null) count++;
+    return count;
+  }
+
+  double get _progress => _completedSteps / _totalSteps.toDouble();
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    if (_completedSteps >= 3) return const SizedBox.shrink();
+    if (_completedSteps >= _totalSteps) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -56,14 +69,15 @@ class SetupProgressCard extends StatelessWidget {
               Text(
                 l10n.completeSetupTitle,
                 style: GoogleFonts.poppins(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Colors.black87,
-                  letterSpacing: -0.3,
+                  letterSpacing: -0.2,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppColors.brandGreen.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -79,8 +93,8 @@ class SetupProgressCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          
+          const SizedBox(height: 14),
+
           // Premium Custom Animated Progress Bar
           Container(
             height: 8,
@@ -119,8 +133,8 @@ class SetupProgressCard extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: 28),
-          
+          const SizedBox(height: 18),
+
           // Steps
           _buildStepRow(
             title: l10n.setupStepCompleteProfileTitle,
@@ -138,15 +152,47 @@ class SetupProgressCard extends StatelessWidget {
             isLocked: !hasPersonalDetails,
           ),
           _buildDivider(),
+          if (hasCrop != null) ...[
+            _buildStepRow(
+              title: l10n.homeOnboardingAddCropTitle,
+              subtitle: l10n.myDetailsStepAddCropsBody,
+              isCompleted: hasCrop!,
+              isActive: hasPersonalDetails && hasFarm && !hasCrop!,
+              isLocked: !(hasPersonalDetails && hasFarm),
+            ),
+            _buildDivider(),
+          ],
           _buildStepRow(
             title: l10n.setupStepSubscribeTitle,
             subtitle: l10n.setupStepSubscribeSubtitle,
             isCompleted: isSubscribed,
-            isActive: hasPersonalDetails && hasFarm && !isSubscribed,
-            isLocked: !(hasPersonalDetails && hasFarm),
+            isActive: hasPersonalDetails &&
+                hasFarm &&
+                (hasCrop == null || hasCrop!) &&
+                !isSubscribed,
+            isLocked: !(hasPersonalDetails &&
+                hasFarm &&
+                (hasCrop == null || hasCrop!)),
           ),
-          const SizedBox(height: 32),
-          
+          if (hasKyc != null) ...[
+            _buildDivider(),
+            _buildStepRow(
+              title: l10n.kyc,
+              subtitle: l10n.kycPending,
+              isCompleted: hasKyc!,
+              isActive: hasPersonalDetails &&
+                  hasFarm &&
+                  (hasCrop == null || hasCrop!) &&
+                  isSubscribed &&
+                  !hasKyc!,
+              isLocked: !(hasPersonalDetails &&
+                  hasFarm &&
+                  (hasCrop == null || hasCrop!) &&
+                  isSubscribed),
+            ),
+          ],
+          const SizedBox(height: 20),
+
           // Full-width CTA using the new Premium Button
           PrimaryCTAButton(
             text: l10n.continueSetup,
@@ -159,7 +205,7 @@ class SetupProgressCard extends StatelessWidget {
 
   Widget _buildDivider() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Divider(
         height: 1,
         color: Colors.grey.shade100,
@@ -199,14 +245,14 @@ class SetupProgressCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: iconBgColor,
               shape: BoxShape.circle,
             ),
-            child: Icon(iconData, color: iconColor, size: 20),
+            child: Icon(iconData, color: iconColor, size: 18),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,9 +260,13 @@ class SetupProgressCard extends StatelessWidget {
                 Text(
                   title,
                   style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: isCompleted || isActive ? FontWeight.w600 : FontWeight.w500,
-                    color: isCompleted ? Colors.black87 : (isActive ? Colors.black87 : Colors.grey.shade600),
+                    fontSize: 14,
+                    fontWeight: isCompleted || isActive
+                        ? FontWeight.w600
+                        : FontWeight.w500,
+                    color: isCompleted
+                        ? Colors.black87
+                        : (isActive ? Colors.black87 : Colors.grey.shade600),
                   ),
                 ),
                 if (isActive || isCompleted) ...[
@@ -224,7 +274,7 @@ class SetupProgressCard extends StatelessWidget {
                   Text(
                     subtitle,
                     style: GoogleFonts.poppins(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: Colors.grey.shade500,
                     ),
                   ),

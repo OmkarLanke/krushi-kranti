@@ -33,6 +33,8 @@ class _OnboardingRouteGuardState extends State<OnboardingRouteGuard> {
 
   @override
   Widget build(BuildContext context) {
+    final route = ModalRoute.of(context);
+    final isCurrentRoute = route?.isCurrent ?? false;
     final args = ModalRoute.of(context)?.settings.arguments;
     final bool fromOnboarding =
         // For onboarding transitions we explicitly pass `fromOnboarding: true`.
@@ -53,17 +55,27 @@ class _OnboardingRouteGuardState extends State<OnboardingRouteGuard> {
               );
             }
 
-                // IMPORTANT: Never call `notifyListeners()` during build.
-                // `setActiveStep()` triggers `notifyListeners()`, so we defer it
-                // to the next frame once the widget is built.
-                if (onboarding.activeStep != widget.step && !_activeStepQueued) {
-                  _activeStepQueued = true;
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-                    onboarding.setActiveStep(widget.step);
-                    _activeStepQueued = false;
-                  });
-                }
+            // IMPORTANT: Inactive routes remain in stack and can still rebuild.
+            // Only the top/current route may sync active step or trigger redirects.
+            if (!isCurrentRoute) {
+              return widget.child;
+            }
+
+            // IMPORTANT: Never call `notifyListeners()` during build.
+            // `setActiveStep()` triggers `notifyListeners()`, so we defer it
+            // to the next frame. While syncing active step, keep content hidden
+            // to avoid one-frame stale stepper state (visual flicker).
+            if (onboarding.activeStep != widget.step) {
+              if (!_activeStepQueued) {
+                _activeStepQueued = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  onboarding.setActiveStep(widget.step);
+                  _activeStepQueued = false;
+                });
+              }
+              return const SizedBox.shrink();
+            }
 
             final redirectRoute = onboarding.redirectRouteForStep(
               widget.step,

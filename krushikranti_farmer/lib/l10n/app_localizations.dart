@@ -977,6 +977,12 @@ abstract class AppLocalizations {
   /// **'Please complete your profile details.'**
   String get completeProfileDetails;
 
+  /// No description provided for @completePersonalDetailsToUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your personal details to unlock full features'**
+  String get completePersonalDetailsToUnlock;
+
   /// No description provided for @emailLoginLink.
   ///
   /// In en, this message translates to:
@@ -2870,7 +2876,7 @@ abstract class AppLocalizations {
   /// No description provided for @setupStepAddFarmTitle.
   ///
   /// In en, this message translates to:
-  /// **'Add Your First Farm'**
+  /// **'Add Your Farm'**
   String get setupStepAddFarmTitle;
 
   /// No description provided for @setupStepAddFarmSubtitle.
@@ -3446,7 +3452,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeOnboardingAddCropTitle.
   ///
   /// In en, this message translates to:
-  /// **'Add your first crop'**
+  /// **'Add Your Crop'**
   String get homeOnboardingAddCropTitle;
 
   /// No description provided for @homeOnboardingAddCropMessage.
