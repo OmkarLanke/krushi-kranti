@@ -89,6 +89,13 @@ public class AdminFieldOfficerController {
         }
     }
 
+    @GetMapping("/filter-options")
+    public ResponseEntity<ApiResponse<Map<String, List<String>>>> getFieldOfficerFilterOptions() {
+        return ResponseEntity.ok(new ApiResponse<>(
+                "Field officer filter options retrieved successfully",
+                fieldOfficerService.getFilterOptions()));
+    }
+
     /**
      * Get suggested field officers for a farmer based on pincode matching.
      * If farmId is provided, only field officers matching that specific farm's pincode are returned.
@@ -178,6 +185,14 @@ public class AdminFieldOfficerController {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(e.getMessage(), null));
         }
+    }
+
+    @PostMapping("/assignments/summary")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAssignmentSummaryForFarmers(
+            @RequestBody Map<String, List<Long>> request) {
+        List<Long> farmerUserIds = request.getOrDefault("farmerUserIds", List.of());
+        Map<String, Object> summary = assignmentService.getAssignmentSummariesForFarmers(farmerUserIds);
+        return ResponseEntity.ok(new ApiResponse<>("Assignment summary retrieved successfully", summary));
     }
 
     /**

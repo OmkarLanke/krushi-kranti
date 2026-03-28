@@ -8,15 +8,7 @@ import '../models/job_application_models.dart';
 import '../services/job_application_service.dart';
 import 'job_application_detail_screen.dart';
 
-enum SortColumn {
-  id,
-  fullName,
-  email,
-  mobile,
-  roleType,
-  status,
-  appliedAt,
-}
+enum SortColumn { id, fullName, email, mobile, roleType, status, appliedAt }
 
 enum SortDirection { ascending, descending }
 
@@ -116,9 +108,7 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
 
     try {
       final applications = await _service.getAllApplications();
-      // Calculate stats locally or fetch if API available.
-      // The service has getStats(), let's use it.
-      final stats = await _service.getStats();
+      final stats = await _service.getStats(applications: applications);
 
       if (mounted) {
         setState(() {
@@ -139,15 +129,19 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
   }
 
   List<String> _getUniqueRoles() {
-    final roles =
-        _allApplications.map((a) => a.roleTypeDisplay).toSet().toList();
+    final roles = _allApplications
+        .map((a) => a.roleTypeDisplay)
+        .toSet()
+        .toList();
     roles.sort();
     return roles;
   }
 
   List<String> _getUniqueStatuses() {
-    final statuses =
-        _allApplications.map((a) => a.statusDisplay).toSet().toList();
+    final statuses = _allApplications
+        .map((a) => a.statusDisplay)
+        .toSet()
+        .toList();
     statuses.sort();
     return statuses;
   }
@@ -157,62 +151,53 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
 
     // 1. Column Searches
     if (_idSearch != null && _idSearch!.isNotEmpty) {
-      filtered =
-          filtered
-              .where(
-                (app) => app.id.toLowerCase().contains(_idSearch!.toLowerCase()),
-              )
-              .toList();
+      filtered = filtered
+          .where(
+            (app) => app.id.toLowerCase().contains(_idSearch!.toLowerCase()),
+          )
+          .toList();
     }
 
     if (_nameSearch != null && _nameSearch!.isNotEmpty) {
-      filtered =
-          filtered
-              .where(
-                (app) => app.fullName.toLowerCase().contains(
-                  _nameSearch!.toLowerCase(),
-                ),
-              )
-              .toList();
+      filtered = filtered
+          .where(
+            (app) =>
+                app.fullName.toLowerCase().contains(_nameSearch!.toLowerCase()),
+          )
+          .toList();
     }
 
     if (_emailSearch != null && _emailSearch!.isNotEmpty) {
-      filtered =
-          filtered
-              .where(
-                (app) =>
-                    app.email != null &&
-                    app.email!.toLowerCase().contains(
-                      _emailSearch!.toLowerCase(),
-                    ),
-              )
-              .toList();
+      filtered = filtered
+          .where(
+            (app) =>
+                app.email != null &&
+                app.email!.toLowerCase().contains(_emailSearch!.toLowerCase()),
+          )
+          .toList();
     }
 
     if (_mobileSearch != null && _mobileSearch!.isNotEmpty) {
-      filtered =
-          filtered
-              .where(
-                (app) =>
-                    app.mobileNumber != null &&
-                    app.mobileNumber!.contains(_mobileSearch!),
-              )
-              .toList();
+      filtered = filtered
+          .where(
+            (app) =>
+                app.mobileNumber != null &&
+                app.mobileNumber!.contains(_mobileSearch!),
+          )
+          .toList();
     }
 
     // 2. Advanced Filters
     if (_selectedRoles.isNotEmpty) {
-      filtered =
-          filtered
-              .where((app) => _selectedRoles.contains(app.roleTypeDisplay))
-              .toList();
+      filtered = filtered
+          .where((app) => _selectedRoles.contains(app.roleTypeDisplay))
+          .toList();
     }
 
     if (_selectedStatuses.isNotEmpty) {
-      filtered =
-          filtered
-              .where((app) => _selectedStatuses.contains(app.statusDisplay))
-              .toList();
+      filtered = filtered
+          .where((app) => _selectedStatuses.contains(app.statusDisplay))
+          .toList();
     }
 
     if (_startDate != null || _endDate != null) {
@@ -749,9 +734,7 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                date == null
-                    ? label
-                    : '${date.day}/${date.month}/${date.year}',
+                date == null ? label : '${date.day}/${date.month}/${date.year}',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   color: date == null
@@ -841,8 +824,8 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
                     selectedValues.isEmpty
                         ? 'All $label'
                         : selectedValues.length == 1
-                            ? selectedValues.first
-                            : '${selectedValues.length} selected',
+                        ? selectedValues.first
+                        : '${selectedValues.length} selected',
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: selectedValues.isEmpty
@@ -1128,7 +1111,7 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
             ),
             child: Row(
               children: [
-                 _buildHeaderCell(
+                _buildHeaderCell(
                   'Application ID',
                   idWidth,
                   SortColumn.id,
@@ -1142,12 +1125,7 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
                   false,
                 ),
                 _buildHeaderDivider(),
-                _buildHeaderCell(
-                  'Email',
-                  emailWidth,
-                  SortColumn.email,
-                  false,
-                ),
+                _buildHeaderCell('Email', emailWidth, SortColumn.email, false),
                 _buildHeaderDivider(),
                 _buildHeaderCell(
                   'Mobile',
@@ -1359,19 +1337,13 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
         color: Colors.white,
         border: isLast
             ? null
-            : Border(
-                bottom: BorderSide(color: Colors.grey.shade100, width: 1),
-              ),
+            : Border(bottom: BorderSide(color: Colors.grey.shade100, width: 1)),
       ),
       child: Row(
         children: [
           _buildCell(app.id, idWidth, textColor: Colors.grey.shade600),
           _buildDivider(),
-          _buildCell(
-            app.fullName,
-            fullNameWidth,
-            isBold: true,
-          ),
+          _buildCell(app.fullName, fullNameWidth, isBold: true),
           _buildDivider(),
           _buildCell(
             app.email ?? '-',
@@ -1420,9 +1392,8 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => JobApplicationDetailScreen(
-                      applicationId: app.id,
-                    ),
+                    builder: (context) =>
+                        JobApplicationDetailScreen(applicationId: app.id),
                   ),
                 );
               },
@@ -1525,8 +1496,8 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
               Icon(
                 _sortColumn == sortCol
                     ? (_sortDirection == SortDirection.ascending
-                        ? Icons.arrow_upward
-                        : Icons.arrow_downward)
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward)
                     : Icons.unfold_more,
                 size: 16,
                 color: Colors.white.withOpacity(0.8),
@@ -1604,10 +1575,7 @@ class _JobApplicationsListScreenState extends State<JobApplicationsListScreen> {
       children: [
         Text(
           'Page ${_currentPage + 1} of $_totalPages',
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: Colors.grey.shade600,
-          ),
+          style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600),
         ),
         const SizedBox(width: 16),
         IconButton(

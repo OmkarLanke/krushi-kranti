@@ -12,6 +12,9 @@ import com.krushikranti.farmer.repository.FarmRepository;
 import com.krushikranti.farmer.repository.FarmerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,13 +48,15 @@ public class CropService {
      * Get all crops for a specific farm with language support.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "farmerCropsByFarm", key = "#userId + '_' + #farmId + '_' + #language")
     public List<CropResponse> getCropsByFarmId(Long userId, Long farmId, String language) {
         Farm farm = getFarmByUserIdAndFarmId(userId, farmId);
-        List<Crop> crops = cropRepository.findByFarmIdAndIsActiveTrue(farm.getId());
-        
+        // Use optimized query with JOIN FETCH to avoid N+1
+        List<Crop> crops = cropRepository.findByFarmIdAndIsActiveTrueWithDetails(farm.getId());
+
         // Normalize language code
         final String finalLanguage = normalizeLanguage(language);
-        
+
         log.debug("Found {} active crops for farmId: {} with language: {}", crops.size(), farmId, finalLanguage);
         return crops.stream()
                 .map(crop -> mapToResponse(crop, finalLanguage))
@@ -70,6 +75,7 @@ public class CropService {
      * Get all crops for a farmer (across all farms) with language support.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "farmerCrops", key = "#userId + '_' + #language")
     public List<CropResponse> getAllCropsByUserId(Long userId, String language) {
         // Verify farmer exists
         getFarmerByUserId(userId);
@@ -106,6 +112,11 @@ public class CropService {
      * Create a new crop on a farm.
      */
     @Transactional
+        @Caching(evict = {
+            @CacheEvict(cacheNames = "farmerCrops", allEntries = true),
+            @CacheEvict(cacheNames = "farmerCropsByFarm", allEntries = true),
+            @CacheEvict(cacheNames = "farmerHomeSummary", allEntries = true)
+        })
     public CropResponse createCrop(Long userId, CropRequest request) {
         Farm farm = getFarmByUserIdAndFarmId(userId, request.getFarmId());
         
@@ -143,6 +154,11 @@ public class CropService {
      * Update an existing crop.
      */
     @Transactional
+        @Caching(evict = {
+            @CacheEvict(cacheNames = "farmerCrops", allEntries = true),
+            @CacheEvict(cacheNames = "farmerCropsByFarm", allEntries = true),
+            @CacheEvict(cacheNames = "farmerHomeSummary", allEntries = true)
+        })
     public CropResponse updateCrop(Long userId, Long cropId, CropRequest request) {
         Crop crop = getCropByUserIdAndCropId(userId, cropId);
         Farm farm = crop.getFarm();
@@ -185,6 +201,11 @@ public class CropService {
      * Delete a crop (soft delete).
      */
     @Transactional
+        @Caching(evict = {
+            @CacheEvict(cacheNames = "farmerCrops", allEntries = true),
+            @CacheEvict(cacheNames = "farmerCropsByFarm", allEntries = true),
+            @CacheEvict(cacheNames = "farmerHomeSummary", allEntries = true)
+        })
     public void deleteCrop(Long userId, Long cropId) {
         Crop crop = getCropByUserIdAndCropId(userId, cropId);
         crop.setIsActive(false);
@@ -216,11 +237,12 @@ public class CropService {
     @Transactional(readOnly = true)
     public List<CropResponse> getCropsByType(Long userId, Long cropTypeId, String language) {
         getFarmerByUserId(userId);
-        
+
         // Normalize language code
         final String finalLanguage = normalizeLanguage(language);
-        
-        List<Crop> crops = cropRepository.findByFarmerUserIdAndCropTypeId(userId, cropTypeId);
+
+        // Use optimized query with JOIN FETCH to avoid N+1
+        List<Crop> crops = cropRepository.findByFarmerUserIdAndCropTypeIdWithDetails(userId, cropTypeId);
         return crops.stream()
                 .map(crop -> mapToResponse(crop, finalLanguage))
                 .collect(Collectors.toList());
@@ -244,10 +266,9 @@ public class CropService {
 
     private Crop getCropByUserIdAndCropId(Long userId, Long cropId) {
         getFarmerByUserId(userId);
-        
-        return cropRepository.findByFarmerUserId(userId).stream()
-                .filter(crop -> crop.getId().equals(cropId))
-                .findFirst()
+
+        // Use optimized query with JOIN FETCH to avoid N+1
+        return cropRepository.findByIdAndFarmerUserIdWithDetails(cropId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Crop not found with ID: " + cropId));
     }
 

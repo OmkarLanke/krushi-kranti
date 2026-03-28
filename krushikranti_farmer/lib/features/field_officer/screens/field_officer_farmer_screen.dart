@@ -2,31 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../services/field_officer_service.dart';
-import '../services/field_officer_cache.dart';
+import '../services/field_officer_repository.dart';
 import 'farm_verification_screen.dart';
 
 class FieldOfficerFarmerScreen extends StatefulWidget {
   const FieldOfficerFarmerScreen({super.key});
 
   @override
-  State<FieldOfficerFarmerScreen> createState() => _FieldOfficerFarmerScreenState();
+  State<FieldOfficerFarmerScreen> createState() =>
+      _FieldOfficerFarmerScreenState();
 }
 
-class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> with TickerProviderStateMixin {
+class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen>
+    with TickerProviderStateMixin {
   bool _isLoading = true;
+  bool _isLoadingMore = false;
   List<dynamic> _assignments = [];
   List<dynamic> _filteredAssignments = [];
-  
+  static const int _pageSize = 20;
+  int _currentPage = 0;
+  bool _hasNextPage = false;
+  final ScrollController _scrollController = ScrollController();
+
   // Filter states
   String? _selectedVerificationStatus; // null = All, 'PENDING', 'VERIFIED'
   String? _selectedDistrict;
   String _searchQuery = '';
   List<String> _availableDistricts = [];
-  String? _selectedDateFilter; // null = All, 'TODAY', 'THIS_WEEK', 'THIS_MONTH', 'LAST_MONTH', 'CUSTOM'
+  String?
+      _selectedDateFilter; // null = All, 'TODAY', 'THIS_WEEK', 'THIS_MONTH', 'LAST_MONTH', 'CUSTOM'
   DateTime? _customStartDate;
   DateTime? _customEndDate;
-  
+
   // Animation controllers
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -49,7 +56,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
+
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeInOut,
@@ -61,44 +68,74 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     // Start animations immediately for better perceived performance
     _fadeController.forward();
     _slideController.forward();
-    
+
     // Load data asynchronously
     _loadData();
+    _scrollController.addListener(_onScroll);
   }
-  
+
   @override
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
     _filterChipController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients ||
+        _isLoading ||
+        _isLoadingMore ||
+        !_hasNextPage) {
+      return;
+    }
+
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      _loadMoreAssignments();
+    }
   }
 
   Future<void> _loadData() async {
     try {
-      // Check cache first for instant loading
-      List<dynamic> assignments = FieldOfficerCache.getCachedAssignments() ?? [];
-      
-      if (assignments.isEmpty) {
-        // Only fetch if not in cache
-        assignments = await FieldOfficerService.getAssignedFarms();
-        // Cache for next time
-        FieldOfficerCache.cacheAssignments(assignments);
+      final cached = FieldOfficerRepository.getCachedDashboardData(
+        includeStale: true,
+      );
+
+      if (cached != null && cached.assignments.isNotEmpty && mounted) {
+        final districts = _extractDistrictsSync(cached.assignments);
+        final filtered = _applyFiltersSync(cached.assignments, districts);
+        setState(() {
+          _assignments = cached.assignments;
+          _availableDistricts = districts;
+          _filteredAssignments = filtered;
+          _isLoading = false;
+        });
       }
-      
+
+      final firstPage = await FieldOfficerRepository.getAssignmentsPage(
+        page: 0,
+        size: _pageSize,
+        forceRefresh: cached != null,
+      );
+      final assignments = firstPage.assignments;
+
       // Process data efficiently in a single setState
       final districts = _extractDistrictsSync(assignments);
       final filtered = _applyFiltersSync(assignments, districts);
-      
+
       if (mounted) {
         setState(() {
           _assignments = assignments;
           _availableDistricts = districts;
           _filteredAssignments = filtered;
+          _currentPage = firstPage.currentPage;
+          _hasNextPage = firstPage.hasNext;
           _isLoading = false;
         });
       }
@@ -113,14 +150,87 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       }
     }
   }
-  
+
   /// Refresh data from server (used when returning from verification screen)
   Future<void> refreshData() async {
-    // Clear cache to force fresh data
-    FieldOfficerCache.clearAssignmentsCache();
-    await _loadData();
+    try {
+      final firstPage = await FieldOfficerRepository.getAssignmentsPage(
+        page: 0,
+        size: _pageSize,
+        forceRefresh: true,
+      );
+      final assignments = firstPage.assignments;
+      final districts = _extractDistrictsSync(assignments);
+      final filtered = _applyFiltersSync(assignments, districts);
+
+      if (mounted) {
+        setState(() {
+          _assignments = assignments;
+          _availableDistricts = districts;
+          _filteredAssignments = filtered;
+          _currentPage = firstPage.currentPage;
+          _hasNextPage = firstPage.hasNext;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
-  
+
+  Future<void> _loadMoreAssignments() async {
+    if (_isLoadingMore || !_hasNextPage) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final nextPage = await FieldOfficerRepository.getAssignmentsPage(
+        page: _currentPage + 1,
+        size: _pageSize,
+        forceRefresh: true,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (nextPage.assignments.isNotEmpty) {
+        final merged = List<dynamic>.from(_assignments)
+          ..addAll(nextPage.assignments);
+        final districts = _extractDistrictsSync(merged);
+        final filtered = _applyFiltersSync(merged, districts);
+
+        setState(() {
+          _assignments = merged;
+          _availableDistricts = districts;
+          _filteredAssignments = filtered;
+          _currentPage = nextPage.currentPage;
+          _hasNextPage = nextPage.hasNext;
+          _isLoadingMore = false;
+        });
+      } else {
+        setState(() {
+          _hasNextPage = false;
+          _isLoadingMore = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
+    }
+  }
+
   /// Extract districts synchronously (no setState)
   List<String> _extractDistrictsSync(List<dynamic> assignments) {
     final districts = <String>{};
@@ -139,12 +249,13 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
     }
     return districts.toList()..sort();
   }
-  
+
   /// Apply filters synchronously without setState (for use in _loadData)
-  List<dynamic> _applyFiltersSync(List<dynamic> assignments, List<String> districts) {
+  List<dynamic> _applyFiltersSync(
+      List<dynamic> assignments, List<String> districts) {
     return _applyFiltersInternal(assignments);
   }
-  
+
   /// Internal filter logic without setState
   List<dynamic> _applyFiltersInternal(List<dynamic> assignments) {
     List<dynamic> filtered = List.from(assignments);
@@ -153,7 +264,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((assignment) {
         if (assignment is! Map<String, dynamic>) return false;
-        final farmerName = (assignment['farmerName'] ?? '').toString().toLowerCase();
+        final farmerName =
+            (assignment['farmerName'] ?? '').toString().toLowerCase();
         return farmerName.contains(_searchQuery.toLowerCase());
       }).toList();
     }
@@ -173,11 +285,12 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
     }
 
     // Filter by verification status
-    if (_selectedVerificationStatus != null && _selectedVerificationStatus!.isNotEmpty) {
+    if (_selectedVerificationStatus != null &&
+        _selectedVerificationStatus!.isNotEmpty) {
       filtered = filtered.where((assignment) {
         if (assignment is! Map<String, dynamic>) return false;
         final farms = assignment['farms'] as List? ?? [];
-        
+
         if (_selectedVerificationStatus == 'PENDING') {
           // Show if at least one farm is pending (not verified and not rejected)
           return farms.any((farm) {
@@ -209,7 +322,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       DateTime? startDate;
       DateTime? endDate;
       final now = DateTime.now();
-      
+
       if (_selectedDateFilter == 'TODAY') {
         startDate = DateTime(now.year, now.month, now.day);
         endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -224,25 +337,32 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
         final lastMonth = DateTime(now.year, now.month - 1, 1);
         startDate = DateTime(lastMonth.year, lastMonth.month, 1);
         endDate = DateTime(now.year, now.month, 0, 23, 59, 59);
-      } else if (_selectedDateFilter == 'CUSTOM' && _customStartDate != null && _customEndDate != null) {
+      } else if (_selectedDateFilter == 'CUSTOM' &&
+          _customStartDate != null &&
+          _customEndDate != null) {
         startDate = _customStartDate;
         endDate = _customEndDate;
       }
-      
+
       if (startDate != null && endDate != null) {
         filtered = filtered.where((assignment) {
           if (assignment is! Map<String, dynamic>) return false;
           final assignedAt = assignment['assignedAt'];
           if (assignedAt == null) return false;
-          
+
           try {
             final assignedDate = DateTime.parse(assignedAt);
-            final assignedDateOnly = DateTime(assignedDate.year, assignedDate.month, assignedDate.day);
-            final startDateOnly = DateTime(startDate!.year, startDate!.month, startDate!.day);
-            final endDateOnly = DateTime(endDate!.year, endDate!.month, endDate!.day);
-            
-            return (assignedDateOnly.isAtSameMomentAs(startDateOnly) || assignedDateOnly.isAfter(startDateOnly)) &&
-                   (assignedDateOnly.isAtSameMomentAs(endDateOnly) || assignedDateOnly.isBefore(endDateOnly));
+            final assignedDateOnly = DateTime(
+                assignedDate.year, assignedDate.month, assignedDate.day);
+            final startDateOnly =
+                DateTime(startDate!.year, startDate!.month, startDate!.day);
+            final endDateOnly =
+                DateTime(endDate!.year, endDate!.month, endDate!.day);
+
+            return (assignedDateOnly.isAtSameMomentAs(startDateOnly) ||
+                    assignedDateOnly.isAfter(startDateOnly)) &&
+                (assignedDateOnly.isAtSameMomentAs(endDateOnly) ||
+                    assignedDateOnly.isBefore(endDateOnly));
           } catch (e) {
             return false;
           }
@@ -252,7 +372,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
 
     return filtered;
   }
-  
+
   void _applyFilters() {
     if (_assignments.isEmpty) {
       setState(() {
@@ -260,13 +380,13 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       });
       return;
     }
-    
+
     final filtered = _applyFiltersInternal(_assignments);
-    
+
     setState(() {
       _filteredAssignments = filtered;
     });
-    
+
     // Animate filter chips when filters change
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_hasActiveFilters()) {
@@ -288,8 +408,18 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')} ${date.year}';
   }
@@ -344,7 +474,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                               child: SlideTransition(
                                 position: _slideAnimation,
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 12),
                                   child: Row(
                                     children: [
                                       // Search Bar
@@ -354,8 +485,14 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                       const SizedBox(width: 12),
                                       // Filter Button
                                       TweenAnimationBuilder<double>(
-                                        tween: Tween(begin: 0.0, end: _hasActiveFilters() ? 1.0 : 0.0),
-                                        duration: const Duration(milliseconds: 200), // Faster animation
+                                        tween: Tween(
+                                            begin: 0.0,
+                                            end: _hasActiveFilters()
+                                                ? 1.0
+                                                : 0.0),
+                                        duration: const Duration(
+                                            milliseconds:
+                                                200), // Faster animation
                                         curve: Curves.easeInOut,
                                         builder: (context, value, child) {
                                           return Transform.scale(
@@ -365,19 +502,25 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                                 color: _hasActiveFilters()
                                                     ? AppColors.brandGreen
                                                     : Colors.white,
-                                                borderRadius: BorderRadius.circular(12),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                                 border: Border.all(
                                                   color: _hasActiveFilters()
                                                       ? AppColors.brandGreen
                                                       : Colors.grey.shade300,
-                                                  width: _hasActiveFilters() ? 2 : 1.5,
+                                                  width: _hasActiveFilters()
+                                                      ? 2
+                                                      : 1.5,
                                                 ),
                                                 boxShadow: _hasActiveFilters()
                                                     ? [
                                                         BoxShadow(
-                                                          color: AppColors.brandGreen.withOpacity(0.3),
+                                                          color: AppColors
+                                                              .brandGreen
+                                                              .withOpacity(0.3),
                                                           blurRadius: 8,
-                                                          offset: const Offset(0, 2),
+                                                          offset: const Offset(
+                                                              0, 2),
                                                         ),
                                                       ]
                                                     : null,
@@ -386,14 +529,18 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                                 color: Colors.transparent,
                                                 child: InkWell(
                                                   onTap: _showFilterBottomSheet,
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
                                                   child: Container(
-                                                    padding: const EdgeInsets.all(12),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            12),
                                                     child: Icon(
                                                       Icons.filter_list,
                                                       color: _hasActiveFilters()
                                                           ? Colors.white
-                                                          : AppColors.textSecondary,
+                                                          : AppColors
+                                                              .textSecondary,
                                                       size: 24,
                                                     ),
                                                   ),
@@ -408,110 +555,138 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                 ),
                               ),
                             ),
-                        // Active Filters Chips
-                        AnimatedBuilder(
-                          animation: _filterChipController,
-                          builder: (context, child) {
-                            return SizeTransition(
-                              sizeFactor: _filterChipController,
-                              axisAlignment: -1.0,
-                              child: _hasActiveFilters()
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                                      child: SizedBox(
-                                        height: 50,
-                                        child: SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          physics: const BouncingScrollPhysics(),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              if (_selectedVerificationStatus != null)
-                                                _buildAnimatedFilterChip(
-                                                  'Status: ${_getStatusLabel(_selectedVerificationStatus!)}',
-                                                  () {
-                                                    setState(() {
-                                                      _selectedVerificationStatus = null;
-                                                    });
-                                                    _applyFilters();
-                                                  },
-                                                ),
-                                              if (_selectedDistrict != null)
-                                                _buildAnimatedFilterChip(
-                                                  'District: $_selectedDistrict',
-                                                  () {
-                                                    setState(() {
-                                                      _selectedDistrict = null;
-                                                    });
-                                                    _applyFilters();
-                                                  },
-                                                ),
-                                              if (_selectedDateFilter != null)
-                                                _buildAnimatedFilterChip(
-                                                  'Date: ${_getDateFilterLabel(_selectedDateFilter!)}',
-                                                  () {
-                                                    setState(() {
-                                                      _selectedDateFilter = null;
-                                                      _customStartDate = null;
-                                                      _customEndDate = null;
-                                                    });
-                                                    _applyFilters();
-                                                  },
-                                                ),
-                                              if (_searchQuery.isNotEmpty)
-                                                _buildAnimatedFilterChip(
-                                                  'Search: ${_searchQuery.length > 15 ? "${_searchQuery.substring(0, 15)}..." : _searchQuery}',
-                                                  () {
-                                                    setState(() {
-                                                      _searchQuery = '';
-                                                    });
-                                                    _applyFilters();
-                                                  },
-                                                ),
-                                            ],
+                            // Active Filters Chips
+                            AnimatedBuilder(
+                              animation: _filterChipController,
+                              builder: (context, child) {
+                                return SizeTransition(
+                                  sizeFactor: _filterChipController,
+                                  axisAlignment: -1.0,
+                                  child: _hasActiveFilters()
+                                      ? Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 24, vertical: 8),
+                                          child: SizedBox(
+                                            height: 50,
+                                            child: SingleChildScrollView(
+                                              scrollDirection: Axis.horizontal,
+                                              physics:
+                                                  const BouncingScrollPhysics(),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  if (_selectedVerificationStatus !=
+                                                      null)
+                                                    _buildAnimatedFilterChip(
+                                                      'Status: ${_getStatusLabel(_selectedVerificationStatus!)}',
+                                                      () {
+                                                        setState(() {
+                                                          _selectedVerificationStatus =
+                                                              null;
+                                                        });
+                                                        _applyFilters();
+                                                      },
+                                                    ),
+                                                  if (_selectedDistrict != null)
+                                                    _buildAnimatedFilterChip(
+                                                      'District: $_selectedDistrict',
+                                                      () {
+                                                        setState(() {
+                                                          _selectedDistrict =
+                                                              null;
+                                                        });
+                                                        _applyFilters();
+                                                      },
+                                                    ),
+                                                  if (_selectedDateFilter !=
+                                                      null)
+                                                    _buildAnimatedFilterChip(
+                                                      'Date: ${_getDateFilterLabel(_selectedDateFilter!)}',
+                                                      () {
+                                                        setState(() {
+                                                          _selectedDateFilter =
+                                                              null;
+                                                          _customStartDate =
+                                                              null;
+                                                          _customEndDate = null;
+                                                        });
+                                                        _applyFilters();
+                                                      },
+                                                    ),
+                                                  if (_searchQuery.isNotEmpty)
+                                                    _buildAnimatedFilterChip(
+                                                      'Search: ${_searchQuery.length > 15 ? "${_searchQuery.substring(0, 15)}..." : _searchQuery}',
+                                                      () {
+                                                        setState(() {
+                                                          _searchQuery = '';
+                                                        });
+                                                        _applyFilters();
+                                                      },
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
                                           ),
+                                        )
+                                      : const SizedBox.shrink(),
+                                );
+                              },
+                            ),
+                            // Farmers List
+                            Expanded(
+                              child: _filteredAssignments.isEmpty
+                                  ? _buildEmptyFilterState()
+                                  : FadeTransition(
+                                      opacity: _fadeAnimation,
+                                      child: SingleChildScrollView(
+                                        controller: _scrollController,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 24, vertical: 12),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(height: 8),
+                                            FadeTransition(
+                                              opacity: _fadeAnimation,
+                                              child: Text(
+                                                'Assigned Farmers (${_filteredAssignments.length})',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 16,
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            ..._filteredAssignments
+                                                .asMap()
+                                                .entries
+                                                .map((entry) {
+                                              final index = entry.key;
+                                              final assignment = entry.value;
+                                              return _buildAnimatedFarmerCard(
+                                                  assignment, index);
+                                            }).toList(),
+                                            if (_isLoadingMore)
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 16),
+                                                child: Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    color: AppColors.brandGreen,
+                                                    strokeWidth: 2.5,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                       ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            );
-                          },
-                        ),
-                        // Farmers List
-                        Expanded(
-                          child: _filteredAssignments.isEmpty
-                              ? _buildEmptyFilterState()
-                              : FadeTransition(
-                                  opacity: _fadeAnimation,
-                                  child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 8),
-                                        FadeTransition(
-                                          opacity: _fadeAnimation,
-                                          child: Text(
-                                            'Assigned Farmers (${_filteredAssignments.length})',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              color: AppColors.textSecondary,
-                                            ),
+                                    ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                                        ..._filteredAssignments.asMap().entries.map((entry) {
-                                          final index = entry.key;
-                                          final assignment = entry.value;
-                                          return _buildAnimatedFarmerCard(assignment, index);
-                                        }).toList(),
-                        ],
-                      ),
-                    ),
-            ),
-                        ),
-                      ],
-                    );
+                          ],
+                        );
                       },
                     ),
             ),
@@ -539,43 +714,47 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
           child: Opacity(
             opacity: value,
             child: TextField(
-                              onChanged: (value) {
-                                setState(() {
-                                  _searchQuery = value;
-                                });
-                                _applyFilters();
-                              },
-                              decoration: InputDecoration(
-                                hintText: l10n.searchByFarmerName,
-                                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
-                                suffixIcon: _searchQuery.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear, color: AppColors.textSecondary),
-                                        onPressed: () {
-                                          setState(() {
-                                            _searchQuery = '';
-                                          });
-                                          _applyFilters();
-                                        },
-                                      )
-                                    : null,
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: AppColors.brandGreen, width: 2),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              ),
-                            ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+                _applyFilters();
+              },
+              decoration: InputDecoration(
+                hintText: l10n.searchByFarmerName,
+                prefixIcon:
+                    const Icon(Icons.search, color: AppColors.textSecondary),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear,
+                            color: AppColors.textSecondary),
+                        onPressed: () {
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                          _applyFilters();
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: AppColors.brandGreen, width: 2),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
           ),
         );
       },
@@ -627,7 +806,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
   Widget _buildAnimatedFarmerCard(dynamic assignment, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 200 + (index * 30)), // Faster staggered animation
+      duration: Duration(
+          milliseconds: 200 + (index * 30)), // Faster staggered animation
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.translate(
@@ -650,12 +830,12 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
       duration: const Duration(milliseconds: 800),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(40.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Transform.scale(
                   scale: value,
                   child: Container(
@@ -665,8 +845,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-              Icons.people_outline,
-              size: 64,
+                      Icons.people_outline,
+                      size: 64,
                       color: AppColors.brandGreen,
                     ),
                   ),
@@ -675,31 +855,31 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                 FadeTransition(
                   opacity: AlwaysStoppedAnimation(value),
                   child: Text(
-              'No Farmers Assigned',
-              style: GoogleFonts.poppins(
+                    'No Farmers Assigned',
+                    style: GoogleFonts.poppins(
                       fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-                letterSpacing: 0.2,
-              ),
-            ),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 FadeTransition(
                   opacity: AlwaysStoppedAnimation(value * 0.8),
                   child: Text(
-              'You will see assigned farmers here once the admin assigns them to you.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w400,
+                    'You will see assigned farmers here once the admin assigns them to you.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w400,
                     ),
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
         );
       },
     );
@@ -712,12 +892,11 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
 
     // Create a copy of the assignment to ensure we're using fresh data
     final assignmentCopy = Map<String, dynamic>.from(assignment);
-    
+
     final farmerName = assignmentCopy['farmerName'] ?? 'Unknown Farmer';
-    final farmerPhone = assignmentCopy['farmerPhoneNumber'] ?? '';
     final assignedAt = assignmentCopy['assignedAt'];
     final farms = assignmentCopy['farms'] as List? ?? [];
-    
+
     // Format assigned date
     String assignedDateStr = 'Date not available';
     if (assignedAt != null) {
@@ -725,7 +904,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
         final date = DateTime.parse(assignedAt);
         assignedDateStr = 'Assigned On ${_formatDate(date)}';
       } catch (e) {
-        print('Error parsing date: $e');
+        debugPrint('Error parsing date: $e');
       }
     }
 
@@ -753,38 +932,42 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
         return Transform.scale(
           scale: 0.98 + (0.02 * value),
           child: Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
+              boxShadow: [
+                BoxShadow(
                   color: Colors.black.withOpacity(0.08),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                   spreadRadius: 0,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // Navigate to farm verification screen with all farms from assignment
-            // Find the latest assignment data from the list to ensure fresh data
-            final latestAssignment = _assignments.firstWhere(
-              (a) => a is Map<String, dynamic> && 
-                     (a['assignmentId'] ?? a['id']) == (assignment['assignmentId'] ?? assignment['id']),
-              orElse: () => assignment,
-            );
-            
-            Navigator.push(
-              context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) => FarmVerificationScreen(
-                  assignment: latestAssignment,
                 ),
-                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  // Navigate to farm verification screen with all farms from assignment
+                  // Find the latest assignment data from the list to ensure fresh data
+                  final latestAssignment = _assignments.firstWhere(
+                    (a) =>
+                        a is Map<String, dynamic> &&
+                        (a['assignmentId'] ?? a['id']) ==
+                            (assignment['assignmentId'] ?? assignment['id']),
+                    orElse: () => assignment,
+                  );
+
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          FarmVerificationScreen(
+                        assignment: latestAssignment,
+                      ),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
                         return SlideTransition(
                           position: Tween<Offset>(
                             begin: const Offset(1.0, 0.0),
@@ -797,19 +980,18 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                         );
                       },
                       transitionDuration: const Duration(milliseconds: 300),
-              ),
-            ).then((result) {
-              // Clear cache and reload data when returning from verification screen
-              // to get updated verification status from database
-              FieldOfficerCache.clearAssignmentsCache();
-              _loadData();
-            });
-          },
+                    ),
+                  ).then((result) {
+                    // Clear cache and reload data when returning from verification screen
+                    // to get updated verification status from database
+                    refreshData();
+                  });
+                },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
+                  child: Row(
+                    children: [
                       // Profile Picture (Circular Avatar) with animation
                       TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0.0, end: 1.0),
@@ -847,25 +1029,25 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                         },
                       ),
                       const SizedBox(width: 18),
-                // Farmer Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Farmer Name
-                      Text(
-                        farmerName,
-                        style: GoogleFonts.poppins(
+                      // Farmer Details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Farmer Name
+                            Text(
+                              farmerName,
+                              style: GoogleFonts.poppins(
                                 fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
                                 letterSpacing: 0.2,
-                        ),
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                      ),
+                            ),
                             const SizedBox(height: 6),
-                      // Location
+                            // Location
                             Row(
                               children: [
                                 Icon(
@@ -876,20 +1058,20 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                        locationStr,
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w400,
-                        ),
+                                    locationStr,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w400,
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
-                      ),
-                      const SizedBox(height: 4),
-                      // Assigned Date
+                            ),
+                            const SizedBox(height: 4),
+                            // Assigned Date
                             Row(
                               children: [
                                 Icon(
@@ -898,58 +1080,63 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                                   color: AppColors.textSecondary,
                                 ),
                                 const SizedBox(width: 4),
-                      Text(
-                        assignedDateStr,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w400,
-                        ),
+                                Text(
+                                  assignedDateStr,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w400,
+                                  ),
                                 ),
                               ],
-                      ),
-                      // Farm Details (if multiple farms, show count)
-                      if (farms.length > 1) ...[
+                            ),
+                            // Farm Details (if multiple farms, show count)
+                            if (farms.length > 1) ...[
                               const SizedBox(height: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: AppColors.brandGreen.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: AppColors.brandGreen.withOpacity(0.3),
+                                    color:
+                                        AppColors.brandGreen.withOpacity(0.3),
                                     width: 1,
                                   ),
                                 ),
                                 child: Text(
-                          '${farms.length} farms assigned',
-                          style: GoogleFonts.poppins(
+                                  '${farms.length} farms assigned',
+                                  style: GoogleFonts.poppins(
                                     fontSize: 11,
-                            color: AppColors.brandGreen,
+                                    color: AppColors.brandGreen,
                                     fontWeight: FontWeight.w600,
                                   ),
-                          ),
+                                ),
+                              ),
+                            ] else if (farms.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                (farms[0] is Map<String, dynamic>)
+                                    ? ((farms[0] as Map<String, dynamic>)[
+                                            'farmName'] ??
+                                        'Farm')
+                                    : 'Farm',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ] else if (farms.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          (farms[0] is Map<String, dynamic>)
-                              ? ((farms[0] as Map<String, dynamic>)['farmName'] ?? 'Farm')
-                              : 'Farm',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+                      ),
                       // Arrow Icon with animation
                       TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0.0, end: 1.0),
-                        duration: const Duration(milliseconds: 250), // Faster animation
+                        duration: const Duration(
+                            milliseconds: 250), // Faster animation
                         curve: Curves.easeOut,
                         builder: (context, value, child) {
                           return Transform.translate(
@@ -957,7 +1144,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                             child: Opacity(
                               opacity: value,
                               child: Icon(
-                  Icons.arrow_forward_ios_rounded,
+                                Icons.arrow_forward_ios_rounded,
                                 size: 18,
                                 color: AppColors.brandGreen,
                               ),
@@ -983,7 +1170,6 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
         _searchQuery.isNotEmpty;
   }
 
-
   void _showFilterBottomSheet() {
     // Store temporary filter values
     String? tempVerificationStatus = _selectedVerificationStatus;
@@ -1008,584 +1194,651 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                 child: Opacity(
                   opacity: value,
                   child: Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Handle bar with animation
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 250), // Faster animation
-                    curve: Curves.easeOut,
-                    builder: (context, value, child) {
-                      return Transform.scale(
-                        scale: value,
-                        child: Container(
-                          margin: const EdgeInsets.only(top: 12, bottom: 8),
-                          width: 50,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(3),
-                          ),
+                    height: MediaQuery.of(context).size.height * 0.85,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(24)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, -5),
                         ),
-                      );
-                    },
-                  ),
-                  // Header with icon and animation
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, child) {
-                      return Transform.translate(
-                        offset: Offset(0, -20 * (1 - value)),
-                        child: Opacity(
-                          opacity: value,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            AppColors.brandGreen.withOpacity(0.12),
-                                            AppColors.brandGreen.withOpacity(0.06),
-                                          ],
-                                        ),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Icon(
-                                        Icons.tune,
-                                        color: AppColors.brandGreen.withOpacity(0.9),
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      'Filter Farmers',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF424242),
-                                        letterSpacing: 0.2,
-                                      ),
-                                    ),
-                                  ],
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Handle bar with animation
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: const Duration(
+                              milliseconds: 250), // Faster animation
+                          curve: Curves.easeOut,
+                          builder: (context, value, child) {
+                            return Transform.scale(
+                              scale: value,
+                              child: Container(
+                                margin:
+                                    const EdgeInsets.only(top: 12, bottom: 8),
+                                width: 50,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(3),
                                 ),
-                                Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: () {
-                                      setModalState(() {
-                                        tempVerificationStatus = null;
-                                        tempDistrict = null;
-                                        tempDateFilter = null;
-                                        tempStartDate = null;
-                                        tempEndDate = null;
-                                      });
-                                    },
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.error.withOpacity(0.06),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
+                              ),
+                            );
+                          },
+                        ),
+                        // Header with icon and animation
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Transform.translate(
+                              offset: Offset(0, -20 * (1 - value)),
+                              child: Opacity(
+                                opacity: value,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 12),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
                                         children: [
-                                          Icon(
-                                            Icons.refresh,
-                                            size: 14,
-                                            color: AppColors.error,
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  AppColors.brandGreen
+                                                      .withOpacity(0.12),
+                                                  AppColors.brandGreen
+                                                      .withOpacity(0.06),
+                                                ],
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Icon(
+                                              Icons.tune,
+                                              color: AppColors.brandGreen
+                                                  .withOpacity(0.9),
+                                              size: 20,
+                                            ),
                                           ),
-                                          const SizedBox(width: 4),
+                                          const SizedBox(width: 10),
                                           Text(
-                                            'Clear All',
+                                            'Filter Farmers',
                                             style: GoogleFonts.poppins(
-                                              color: AppColors.error,
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 12,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF424242),
+                                              letterSpacing: 0.2,
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  Container(
-                    height: 1,
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.transparent,
-                          Colors.grey.shade100,
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Verification Status Filter with animation
-                          _buildAnimatedFilterSection(
-                            delay: 0,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.verified_user,
-                                      size: 18,
-                                      color: AppColors.brandGreen.withOpacity(0.85),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Verification Status',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF424242),
-                                        letterSpacing: 0.1,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Wrap(
-                                  spacing: 10,
-                                  runSpacing: 10,
-                                  children: [
-                                    _buildEnhancedFilterOption(
-                                      'All',
-                                      Icons.apps,
-                                      tempVerificationStatus == null,
-                                      () {
-                                        setModalState(() {
-                                          tempVerificationStatus = null;
-                                        });
-                                      },
-                                    ),
-                                    _buildEnhancedFilterOption(
-                                      'Pending',
-                                      Icons.pending,
-                                      tempVerificationStatus == 'PENDING',
-                                      () {
-                                        setModalState(() {
-                                          tempVerificationStatus = 'PENDING';
-                                        });
-                                      },
-                                    ),
-                                    _buildEnhancedFilterOption(
-                                      'Verified',
-                                      Icons.check_circle,
-                                      tempVerificationStatus == 'VERIFIED',
-                                      () {
-                                        setModalState(() {
-                                          tempVerificationStatus = 'VERIFIED';
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          // District Filter with animation
-                          _buildAnimatedFilterSection(
-                            delay: 100,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.location_on,
-                                      size: 18,
-                                      color: AppColors.brandGreen.withOpacity(0.85),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'District',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF424242),
-                                        letterSpacing: 0.1,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: const Color(0xFFE8E8E8),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: DropdownButtonFormField<String>(
-                                    value: tempDistrict,
-                                    decoration: InputDecoration(
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                      border: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: AppColors.brandGreen, width: 2),
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.map,
-                                        color: AppColors.brandGreen.withOpacity(0.85),
-                                        size: 20,
-                                      ),
-                                    ),
-                                    hint: Text(
-                                      'Select District',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                  color: AppColors.textSecondary,
-                ),
-                                    ),
-                                    items: [
-                                      DropdownMenuItem<String>(
-                                        value: null,
-                                        child: Text(
-                                          'All Districts',
-                                          style: GoogleFonts.poppins(fontSize: 15),
-                                        ),
-                                      ),
-                                      ..._availableDistricts.map((district) => DropdownMenuItem<String>(
-                                            value: district,
-                                            child: Text(
-                                              district,
-                                              style: GoogleFonts.poppins(fontSize: 15),
+                                      Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () {
+                                            setModalState(() {
+                                              tempVerificationStatus = null;
+                                              tempDistrict = null;
+                                              tempDateFilter = null;
+                                              tempStartDate = null;
+                                              tempEndDate = null;
+                                            });
+                                          },
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.error
+                                                  .withOpacity(0.06),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
-                                          )),
-                                    ],
-                                    onChanged: (value) {
-                                      setModalState(() {
-                                        tempDistrict = value;
-                                      });
-                                    },
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 15,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    dropdownColor: Colors.white,
-                                    icon: Icon(
-                                      Icons.arrow_drop_down,
-                                      color: AppColors.brandGreen.withOpacity(0.85),
-                                      size: 28,
-                                    ),
-        ),
-      ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          // Date Filter with animation
-                          _buildAnimatedFilterSection(
-                            delay: 200,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today,
-                                      size: 18,
-                                      color: AppColors.brandGreen.withOpacity(0.85),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Date Assigned',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF424242),
-                                        letterSpacing: 0.1,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Wrap(
-                                  spacing: 10,
-                                  runSpacing: 10,
-                                  children: [
-                                    _buildEnhancedFilterOption(
-                                      'All',
-                                      Icons.all_inclusive,
-                                      tempDateFilter == null,
-                                      () {
-                                        setModalState(() {
-                                          tempDateFilter = null;
-                                          tempStartDate = null;
-                                          tempEndDate = null;
-                                        });
-                                      },
-                                    ),
-                                    _buildEnhancedFilterOption(
-                                      'Today',
-                                      Icons.today,
-                                      tempDateFilter == 'TODAY',
-                                      () {
-                                        setModalState(() {
-                                          tempDateFilter = 'TODAY';
-                                          tempStartDate = null;
-                                          tempEndDate = null;
-                                        });
-                                      },
-                                    ),
-                                    _buildEnhancedFilterOption(
-                                      'This Week',
-                                      Icons.view_week,
-                                      tempDateFilter == 'THIS_WEEK',
-                                      () {
-                                        setModalState(() {
-                                          tempDateFilter = 'THIS_WEEK';
-                                          tempStartDate = null;
-                                          tempEndDate = null;
-                                        });
-                                      },
-                                    ),
-                                    _buildEnhancedFilterOption(
-                                      'This Month',
-                                      Icons.calendar_month,
-                                      tempDateFilter == 'THIS_MONTH',
-                                      () {
-                                        setModalState(() {
-                                          tempDateFilter = 'THIS_MONTH';
-                                          tempStartDate = null;
-                                          tempEndDate = null;
-                                        });
-                                      },
-                                    ),
-                                    _buildEnhancedFilterOption(
-                                      'Last Month',
-                                      Icons.history,
-                                      tempDateFilter == 'LAST_MONTH',
-                                      () {
-                                        setModalState(() {
-                                          tempDateFilter = 'LAST_MONTH';
-                                          tempStartDate = null;
-                                          tempEndDate = null;
-                                        });
-                                      },
-                                    ),
-                                    _buildEnhancedFilterOption(
-                                      'Custom',
-                                      Icons.date_range,
-                                      tempDateFilter == 'CUSTOM',
-                                      () {
-                                        setModalState(() {
-                                          tempDateFilter = 'CUSTOM';
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                // Custom Date Range Picker with animation
-                                if (tempDateFilter == 'CUSTOM')
-                                  TweenAnimationBuilder<double>(
-                                    tween: Tween(begin: 0.0, end: 1.0),
-                                    duration: const Duration(milliseconds: 250), // Faster animation
-                                    curve: Curves.easeOutCubic,
-                                    builder: (context, value, child) {
-                                      return Transform.scale(
-                                        scale: 0.95 + (0.05 * value),
-                                        child: Opacity(
-                                          opacity: value,
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(top: 12),
                                             child: Row(
+                                              mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Expanded(
-                                                  child: _buildAnimatedDatePicker(
-                                                    'Start Date',
-                                                    tempStartDate,
-                                                    Icons.calendar_today,
-                                                    () async {
-                                                      final date = await showDatePicker(
-                                                        context: context,
-                                                        initialDate: tempStartDate ?? DateTime.now(),
-                                                        firstDate: DateTime(2020),
-                                                        lastDate: DateTime.now(),
-                                                      );
-                                                      if (date != null) {
-                                                        setModalState(() {
-                                                          tempStartDate = date;
-                                                        });
-                                                      }
-                                                    },
-                                                  ),
+                                                Icon(
+                                                  Icons.refresh,
+                                                  size: 14,
+                                                  color: AppColors.error,
                                                 ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: _buildAnimatedDatePicker(
-                                                    'End Date',
-                                                    tempEndDate,
-                                                    Icons.event,
-                                                    () async {
-                                                      final date = await showDatePicker(
-                                                        context: context,
-                                                        initialDate: tempEndDate ?? DateTime.now(),
-                                                        firstDate: tempStartDate ?? DateTime(2020),
-                                                        lastDate: DateTime.now(),
-                                                      );
-                                                      if (date != null) {
-                                                        setModalState(() {
-                                                          tempEndDate = date;
-                                                        });
-                                                      }
-                                                    },
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Clear All',
+                                                  style: GoogleFonts.poppins(
+                                                    color: AppColors.error,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 12,
                                                   ),
                                                 ),
                                               ],
                                             ),
                                           ),
                                         ),
-                                      );
-                                    },
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Apply Button with animation
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 200), // Faster animation
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, child) {
-                      return Transform.translate(
-                        offset: Offset(0, 20 * (1 - value)),
-                        child: Opacity(
-                          opacity: value,
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, -5),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedVerificationStatus = tempVerificationStatus;
-                                    _selectedDistrict = tempDistrict;
-                                    _selectedDateFilter = tempDateFilter;
-                                    _customStartDate = tempStartDate;
-                                    _customEndDate = tempEndDate;
-                                  });
-                                  _applyFilters();
-                                  Navigator.pop(context);
-                                },
-                                borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppColors.brandGreen,
-                                        AppColors.brandGreen.withOpacity(0.8),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.brandGreen.withOpacity(0.4),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.check_circle,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        'Apply Filters',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                          letterSpacing: 0.3,
-                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
                               ),
+                            );
+                          },
+                        ),
+                        Container(
+                          height: 1,
+                          margin: const EdgeInsets.symmetric(horizontal: 24),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.transparent,
+                                Colors.grey.shade100,
+                                Colors.transparent,
+                              ],
                             ),
                           ),
                         ),
-                      );
-                    },
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Verification Status Filter with animation
+                                _buildAnimatedFilterSection(
+                                  delay: 0,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.verified_user,
+                                            size: 18,
+                                            color: AppColors.brandGreen
+                                                .withOpacity(0.85),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Verification Status',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF424242),
+                                              letterSpacing: 0.1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Wrap(
+                                        spacing: 10,
+                                        runSpacing: 10,
+                                        children: [
+                                          _buildEnhancedFilterOption(
+                                            'All',
+                                            Icons.apps,
+                                            tempVerificationStatus == null,
+                                            () {
+                                              setModalState(() {
+                                                tempVerificationStatus = null;
+                                              });
+                                            },
+                                          ),
+                                          _buildEnhancedFilterOption(
+                                            'Pending',
+                                            Icons.pending,
+                                            tempVerificationStatus == 'PENDING',
+                                            () {
+                                              setModalState(() {
+                                                tempVerificationStatus =
+                                                    'PENDING';
+                                              });
+                                            },
+                                          ),
+                                          _buildEnhancedFilterOption(
+                                            'Verified',
+                                            Icons.check_circle,
+                                            tempVerificationStatus ==
+                                                'VERIFIED',
+                                            () {
+                                              setModalState(() {
+                                                tempVerificationStatus =
+                                                    'VERIFIED';
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                // District Filter with animation
+                                _buildAnimatedFilterSection(
+                                  delay: 100,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.location_on,
+                                            size: 18,
+                                            color: AppColors.brandGreen
+                                                .withOpacity(0.85),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'District',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF424242),
+                                              letterSpacing: 0.1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(14),
+                                          border: Border.all(
+                                            color: const Color(0xFFE8E8E8),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: DropdownButtonFormField<String>(
+                                          value: tempDistrict,
+                                          decoration: InputDecoration(
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 14),
+                                            border: InputBorder.none,
+                                            enabledBorder: InputBorder.none,
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                              borderSide: const BorderSide(
+                                                  color: AppColors.brandGreen,
+                                                  width: 2),
+                                            ),
+                                            prefixIcon: Icon(
+                                              Icons.map,
+                                              color: AppColors.brandGreen
+                                                  .withOpacity(0.85),
+                                              size: 20,
+                                            ),
+                                          ),
+                                          hint: Text(
+                                            'Select District',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 15,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                          items: [
+                                            DropdownMenuItem<String>(
+                                              value: null,
+                                              child: Text(
+                                                'All Districts',
+                                                style: GoogleFonts.poppins(
+                                                    fontSize: 15),
+                                              ),
+                                            ),
+                                            ..._availableDistricts.map(
+                                                (district) =>
+                                                    DropdownMenuItem<String>(
+                                                      value: district,
+                                                      child: Text(
+                                                        district,
+                                                        style:
+                                                            GoogleFonts.poppins(
+                                                                fontSize: 15),
+                                                      ),
+                                                    )),
+                                          ],
+                                          onChanged: (value) {
+                                            setModalState(() {
+                                              tempDistrict = value;
+                                            });
+                                          },
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 15,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          dropdownColor: Colors.white,
+                                          icon: Icon(
+                                            Icons.arrow_drop_down,
+                                            color: AppColors.brandGreen
+                                                .withOpacity(0.85),
+                                            size: 28,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                // Date Filter with animation
+                                _buildAnimatedFilterSection(
+                                  delay: 200,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.calendar_today,
+                                            size: 18,
+                                            color: AppColors.brandGreen
+                                                .withOpacity(0.85),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Date Assigned',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF424242),
+                                              letterSpacing: 0.1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Wrap(
+                                        spacing: 10,
+                                        runSpacing: 10,
+                                        children: [
+                                          _buildEnhancedFilterOption(
+                                            'All',
+                                            Icons.all_inclusive,
+                                            tempDateFilter == null,
+                                            () {
+                                              setModalState(() {
+                                                tempDateFilter = null;
+                                                tempStartDate = null;
+                                                tempEndDate = null;
+                                              });
+                                            },
+                                          ),
+                                          _buildEnhancedFilterOption(
+                                            'Today',
+                                            Icons.today,
+                                            tempDateFilter == 'TODAY',
+                                            () {
+                                              setModalState(() {
+                                                tempDateFilter = 'TODAY';
+                                                tempStartDate = null;
+                                                tempEndDate = null;
+                                              });
+                                            },
+                                          ),
+                                          _buildEnhancedFilterOption(
+                                            'This Week',
+                                            Icons.view_week,
+                                            tempDateFilter == 'THIS_WEEK',
+                                            () {
+                                              setModalState(() {
+                                                tempDateFilter = 'THIS_WEEK';
+                                                tempStartDate = null;
+                                                tempEndDate = null;
+                                              });
+                                            },
+                                          ),
+                                          _buildEnhancedFilterOption(
+                                            'This Month',
+                                            Icons.calendar_month,
+                                            tempDateFilter == 'THIS_MONTH',
+                                            () {
+                                              setModalState(() {
+                                                tempDateFilter = 'THIS_MONTH';
+                                                tempStartDate = null;
+                                                tempEndDate = null;
+                                              });
+                                            },
+                                          ),
+                                          _buildEnhancedFilterOption(
+                                            'Last Month',
+                                            Icons.history,
+                                            tempDateFilter == 'LAST_MONTH',
+                                            () {
+                                              setModalState(() {
+                                                tempDateFilter = 'LAST_MONTH';
+                                                tempStartDate = null;
+                                                tempEndDate = null;
+                                              });
+                                            },
+                                          ),
+                                          _buildEnhancedFilterOption(
+                                            'Custom',
+                                            Icons.date_range,
+                                            tempDateFilter == 'CUSTOM',
+                                            () {
+                                              setModalState(() {
+                                                tempDateFilter = 'CUSTOM';
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      // Custom Date Range Picker with animation
+                                      if (tempDateFilter == 'CUSTOM')
+                                        TweenAnimationBuilder<double>(
+                                          tween: Tween(begin: 0.0, end: 1.0),
+                                          duration: const Duration(
+                                              milliseconds:
+                                                  250), // Faster animation
+                                          curve: Curves.easeOutCubic,
+                                          builder: (context, value, child) {
+                                            return Transform.scale(
+                                              scale: 0.95 + (0.05 * value),
+                                              child: Opacity(
+                                                opacity: value,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 12),
+                                                  child: Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child:
+                                                            _buildAnimatedDatePicker(
+                                                          'Start Date',
+                                                          tempStartDate,
+                                                          Icons.calendar_today,
+                                                          () async {
+                                                            final date =
+                                                                await showDatePicker(
+                                                              context: context,
+                                                              initialDate:
+                                                                  tempStartDate ??
+                                                                      DateTime
+                                                                          .now(),
+                                                              firstDate:
+                                                                  DateTime(
+                                                                      2020),
+                                                              lastDate: DateTime
+                                                                  .now(),
+                                                            );
+                                                            if (date != null) {
+                                                              setModalState(() {
+                                                                tempStartDate =
+                                                                    date;
+                                                              });
+                                                            }
+                                                          },
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      Expanded(
+                                                        child:
+                                                            _buildAnimatedDatePicker(
+                                                          'End Date',
+                                                          tempEndDate,
+                                                          Icons.event,
+                                                          () async {
+                                                            final date =
+                                                                await showDatePicker(
+                                                              context: context,
+                                                              initialDate:
+                                                                  tempEndDate ??
+                                                                      DateTime
+                                                                          .now(),
+                                                              firstDate:
+                                                                  tempStartDate ??
+                                                                      DateTime(
+                                                                          2020),
+                                                              lastDate: DateTime
+                                                                  .now(),
+                                                            );
+                                                            if (date != null) {
+                                                              setModalState(() {
+                                                                tempEndDate =
+                                                                    date;
+                                                              });
+                                                            }
+                                                          },
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Apply Button with animation
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: const Duration(
+                              milliseconds: 200), // Faster animation
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Transform.translate(
+                              offset: Offset(0, 20 * (1 - value)),
+                              child: Opacity(
+                                opacity: value,
+                                child: Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, -5),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedVerificationStatus =
+                                              tempVerificationStatus;
+                                          _selectedDistrict = tempDistrict;
+                                          _selectedDateFilter = tempDateFilter;
+                                          _customStartDate = tempStartDate;
+                                          _customEndDate = tempEndDate;
+                                        });
+                                        _applyFilters();
+                                        Navigator.pop(context);
+                                      },
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 14),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              AppColors.brandGreen,
+                                              AppColors.brandGreen
+                                                  .withOpacity(0.8),
+                                            ],
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(14),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppColors.brandGreen
+                                                  .withOpacity(0.4),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 3),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.check_circle,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              'Apply Filters',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.white,
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+                ),
+              );
+            },
+          );
         },
       ),
     );
   }
 
-  Widget _buildAnimatedFilterSection({required int delay, required Widget child}) {
+  Widget _buildAnimatedFilterSection(
+      {required int delay, required Widget child}) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 500 + delay),
@@ -1624,15 +1877,14 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeInOut,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected 
-                      ? AppColors.brandGreen 
-                      : Colors.white,
+                  color: isSelected ? AppColors.brandGreen : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected 
-                        ? AppColors.brandGreen 
+                    color: isSelected
+                        ? AppColors.brandGreen
                         : const Color(0xFFE8E8E8),
                     width: isSelected ? 2 : 1,
                   ),
@@ -1660,8 +1912,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                     Icon(
                       icon,
                       size: 16,
-                      color: isSelected 
-                          ? Colors.white 
+                      color: isSelected
+                          ? Colors.white
                           : AppColors.brandGreen.withOpacity(0.7),
                     ),
                     const SizedBox(width: 6),
@@ -1670,9 +1922,10 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                         label,
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                          color: isSelected 
-                              ? Colors.white 
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w600,
+                          color: isSelected
+                              ? Colors.white
                               : const Color(0xFF616161),
                           letterSpacing: 0.1,
                         ),
@@ -1709,9 +1962,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                 : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: date != null
-                  ? AppColors.brandGreen
-                  : const Color(0xFFE8E8E8),
+              color:
+                  date != null ? AppColors.brandGreen : const Color(0xFFE8E8E8),
               width: date != null ? 2 : 1,
             ),
           ),
@@ -1728,9 +1980,7 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                 child: Icon(
                   icon,
                   size: 16,
-                  color: date != null 
-                      ? Colors.white 
-                      : const Color(0xFFBDBDBD),
+                  color: date != null ? Colors.white : const Color(0xFFBDBDBD),
                 ),
               ),
               const SizedBox(width: 10),
@@ -1751,8 +2001,11 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                       date != null ? _formatDate(date!) : 'Select',
                       style: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: date != null ? Colors.black : AppColors.textSecondary,
-                        fontWeight: date != null ? FontWeight.w600 : FontWeight.w500,
+                        color: date != null
+                            ? Colors.black
+                            : AppColors.textSecondary,
+                        fontWeight:
+                            date != null ? FontWeight.w600 : FontWeight.w500,
                       ),
                     ),
                   ],
@@ -1784,7 +2037,8 @@ class _FieldOfficerFarmerScreenState extends State<FieldOfficerFarmerScreen> wit
                 color: isSelected ? AppColors.brandGreen : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? AppColors.brandGreen : Colors.grey.shade300,
+                  color:
+                      isSelected ? AppColors.brandGreen : Colors.grey.shade300,
                   width: isSelected ? 2 : 1.5,
                 ),
                 boxShadow: isSelected

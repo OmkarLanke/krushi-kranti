@@ -2,7 +2,6 @@ package com.krushikranti.fieldofficer.controller;
 
 import com.krushikranti.fieldofficer.dto.ApiResponse;
 import com.krushikranti.fieldofficer.dto.AssignmentResponseDto;
-import com.krushikranti.fieldofficer.dto.FieldOfficerAssignmentDto;
 import com.krushikranti.fieldofficer.dto.RequestOtpRequest;
 import com.krushikranti.fieldofficer.dto.RequestOtpResponse;
 import com.krushikranti.fieldofficer.dto.ValidateOtpRequest;
@@ -86,8 +85,10 @@ public class FieldOfficerController {
      * Get assignments for the logged-in field officer with farm details.
      */
     @GetMapping("/assignments")
-    public ResponseEntity<ApiResponse<List<FieldOfficerAssignmentDto>>> getAssignments(
-            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAssignments(
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1000") int size) {
         try {
             if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
                 log.error("Missing X-User-Id header for assignments request");
@@ -96,12 +97,17 @@ public class FieldOfficerController {
             }
             
             Long userId = Long.parseLong(userIdHeader.trim());
-            log.info("Fetching assignments for field officer userId: {}", userId);
+            log.info("Fetching assignments for field officer userId: {} (page={}, size={})", userId, page, size);
             
-            List<FieldOfficerAssignmentDto> assignments = assignmentService.getAssignmentsWithFarmsForFieldOfficer(userId);
+                Map<String, Object> assignmentsPayload = assignmentService.getAssignmentsWithFarmsForFieldOfficerPaged(
+                    userId,
+                    page,
+                    size);
             
-            log.info("Successfully retrieved {} assignments for field officer userId: {}", assignments.size(), userId);
-            return ResponseEntity.ok(new ApiResponse<>("Assignments retrieved successfully", assignments));
+                Object assignmentsObj = assignmentsPayload.get("assignments");
+                int count = assignmentsObj instanceof List ? ((List<?>) assignmentsObj).size() : 0;
+                log.info("Successfully retrieved {} assignments for field officer userId: {}", count, userId);
+                return ResponseEntity.ok(new ApiResponse<>("Assignments retrieved successfully", assignmentsPayload));
         } catch (NumberFormatException e) {
             log.error("Invalid user ID format: {}", userIdHeader, e);
             return ResponseEntity.badRequest()
@@ -112,6 +118,38 @@ public class FieldOfficerController {
                     .body(new ApiResponse<>(e.getMessage(), null));
         } catch (Exception e) {
             log.error("Unexpected error retrieving assignments for userId {}: {}", userIdHeader, e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * Lightweight assignment summary for field officer home/dashboard cards.
+     */
+    @GetMapping("/assignments/summary")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAssignmentSummary(
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+        try {
+            if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
+                log.error("Missing X-User-Id header for assignment summary request");
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
+            }
+
+            Long userId = Long.parseLong(userIdHeader.trim());
+            Map<String, Object> summary = assignmentService.getFieldOfficerAssignmentSummary(userId);
+
+            return ResponseEntity.ok(new ApiResponse<>("Assignment summary retrieved successfully", summary));
+        } catch (NumberFormatException e) {
+            log.error("Invalid user ID format: {}", userIdHeader, e);
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>("Invalid user ID format: " + userIdHeader, null));
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid request: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(e.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Unexpected error retrieving assignment summary for userId {}: {}", userIdHeader, e.getMessage(), e);
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), null));
         }
@@ -221,22 +259,24 @@ public class FieldOfficerController {
      * This endpoint allows farmers to see which field officers are assigned to their farms.
      */
     @GetMapping("/farmer/assignments")
-    public ResponseEntity<ApiResponse<List<AssignmentResponseDto>>> getFarmerAssignments(
-            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getFarmerAssignments(
+            @RequestHeader(value = "X-User-Id", required = false) String userIdHeader,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
         try {
             if (userIdHeader == null || userIdHeader.trim().isEmpty()) {
                 log.error("Missing X-User-Id header for farmer assignments request");
                 return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>("Unauthorized: Missing user identification", null));
             }
-            
+
             Long farmerUserId = Long.parseLong(userIdHeader.trim());
             log.info("Fetching field officer assignments for farmer userId: {}", farmerUserId);
-            
-            List<AssignmentResponseDto> assignments = assignmentService.getAssignmentsForFarmer(farmerUserId);
-            
-            log.info("Successfully retrieved {} assignments for farmer userId: {}", assignments.size(), farmerUserId);
-            return ResponseEntity.ok(new ApiResponse<>("Assignments retrieved successfully", assignments));
+
+            Map<String, Object> response = assignmentService.getAssignmentsForFarmerPaged(farmerUserId, page, size);
+
+            log.info("Successfully retrieved assignments for farmer userId: {}", farmerUserId);
+            return ResponseEntity.ok(new ApiResponse<>("Assignments retrieved successfully", response));
         } catch (NumberFormatException e) {
             log.error("Invalid user ID format: {}", userIdHeader, e);
             return ResponseEntity.badRequest()

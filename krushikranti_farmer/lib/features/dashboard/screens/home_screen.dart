@@ -42,10 +42,16 @@ class _HomeScreenState extends State<HomeScreen> {
   final NotificationService _notificationService = NotificationService();
   StreamSubscription<NotificationModel>? _notificationSubscription;
   Timer? _expiredNotificationCleanupTimer;
+  Timer? _farmVerificationRefreshTimer;
   VoidCallback? _notificationServiceListener;
+  int _lastUnreadOtpCount = 0;
 
   SetupState _setupState = const SetupState();
   bool _isInitialLoadComplete = false; // Track if initial data load is complete
+  bool _isSubscribed = false; // Track subscription status
+  Map<String, dynamic>? _cachedHomeSummary;
+  DateTime? _homeSummaryCacheTime;
+  static const Duration _homeSummaryCacheTtl = Duration(seconds: 45);
 
   @override
   void initState() {
@@ -57,17 +63,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadInitialData();
 
     _setupNotificationListener();
-    // Start polling for notifications from backend
-    _notificationService.startPolling(interval: const Duration(seconds: 10));
 
-    // Optimized: Combine cleanup and farm check into a single timer
-    // Reduces number of timers and improves battery efficiency
-    Timer.periodic(const Duration(seconds: 30), (timer) {
+    // Cleanup expired notifications on a light cadence.
+    _expiredNotificationCleanupTimer =
+        Timer.periodic(const Duration(seconds: 30), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
-      // Cleanup expired notifications
       _notificationService.removeExpiredOtpNotifications();
     });
     // After first frame, check if there are any OTPs that haven't shown popup yet
@@ -79,10 +82,11 @@ class _HomeScreenState extends State<HomeScreen> {
         _showOtpReceivedPopup();
       }
     });
-    // Check farm verification status periodically (every 60 seconds)
-    Timer.periodic(const Duration(seconds: 60), (timer) {
+    // Refresh farm verification status periodically without frequent wakeups.
+    _farmVerificationRefreshTimer =
+        Timer.periodic(const Duration(minutes: 2), (timer) {
       if (mounted) {
-        _checkAllFarmsVerified();
+        _loadHomeSummary();
       } else {
         timer.cancel();
       }
@@ -105,6 +109,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _checkFieldOfficerAssignments(),
       _checkAllFarmsVerified(),
       _loadSetupState(),
+      _loadHomeSummary(forceRefresh: true),
+      _checkSubscriptionStatus(),
     ]);
 
     // Mark initial load as complete and update UI
@@ -127,11 +133,59 @@ class _HomeScreenState extends State<HomeScreen> {
       _checkFieldOfficerAssignments(),
       _checkAllFarmsVerified(),
       _loadSetupState(),
+      _loadHomeSummary(forceRefresh: true),
+      _checkSubscriptionStatus(),
     ]);
 
     // Ensure UI is updated after all checks complete
     if (mounted) {
       setState(() {});
+    }
+  }
+
+  Future<void> _loadHomeSummary({bool forceRefresh = false}) async {
+    if (!mounted) return;
+
+    final now = DateTime.now();
+    if (!forceRefresh &&
+        _cachedHomeSummary != null &&
+        _homeSummaryCacheTime != null &&
+        now.difference(_homeSummaryCacheTime!) < _homeSummaryCacheTtl) {
+      final summary = _cachedHomeSummary!;
+      if (mounted) {
+        setState(() {
+          _hasPersonalDetails = summary['hasPersonalDetails'] == true;
+          _hasCrops = summary['hasCrops'] == true;
+          _allFarmsVerified = summary['allFarmsVerified'] == true;
+          _totalFarms = (summary['totalFarms'] as num?)?.toInt() ?? 0;
+          _verifiedFarms = (summary['verifiedFarms'] as num?)?.toInt() ?? 0;
+        });
+      }
+      return;
+    }
+
+    try {
+      final response = await HttpService.get("farmer/profile/home-summary");
+      final summary =
+          response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      _cachedHomeSummary = summary;
+      _homeSummaryCacheTime = DateTime.now();
+
+      if (mounted) {
+        setState(() {
+          _hasPersonalDetails = summary['hasPersonalDetails'] == true;
+          _hasCrops = summary['hasCrops'] == true;
+          _allFarmsVerified = summary['allFarmsVerified'] == true;
+          _totalFarms = (summary['totalFarms'] as num?)?.toInt() ?? 0;
+          _verifiedFarms = (summary['verifiedFarms'] as num?)?.toInt() ?? 0;
+        });
+      }
+    } catch (_) {
+      await Future.wait([
+        _checkAllFarmsVerified(),
+        _checkPersonalDetailsCompletion(),
+        _checkHasCrops(),
+      ]);
     }
   }
 
@@ -188,7 +242,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Listen to notification service changes (when notifyListeners is called)
     _notificationServiceListener = () {
-      if (mounted) setState(() {});
+      final unreadCount = _notificationService.unreadOtpNotificationsCount;
+      if (mounted && unreadCount != _lastUnreadOtpCount) {
+        _lastUnreadOtpCount = unreadCount;
+        setState(() {});
+      }
     };
     _notificationService.addListener(_notificationServiceListener!);
   }
@@ -197,10 +255,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _notificationSubscription?.cancel();
     _expiredNotificationCleanupTimer?.cancel();
+    _farmVerificationRefreshTimer?.cancel();
     if (_notificationServiceListener != null) {
       _notificationService.removeListener(_notificationServiceListener!);
     }
-    _notificationService.stopPolling();
     super.dispose();
   }
 

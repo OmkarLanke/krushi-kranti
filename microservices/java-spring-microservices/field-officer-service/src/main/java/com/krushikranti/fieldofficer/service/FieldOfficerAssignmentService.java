@@ -3,7 +3,6 @@ package com.krushikranti.fieldofficer.service;
 import com.krushikranti.fieldofficer.dto.AssignFieldOfficerRequest;
 import com.krushikranti.fieldofficer.dto.AssignmentResponseDto;
 import com.krushikranti.fieldofficer.dto.FieldOfficerAssignmentDto;
-import com.krushikranti.fieldofficer.dto.FieldOfficerSummaryDto;
 import com.krushikranti.fieldofficer.dto.SuggestedFieldOfficerDto;
 import com.krushikranti.fieldofficer.model.FieldOfficer;
 import com.krushikranti.fieldofficer.model.FieldOfficerAssignment;
@@ -209,6 +208,10 @@ public class FieldOfficerAssignmentService {
                 .collect(Collectors.toList());
         
         Map<Long, Map<String, Object>> userMap = fetchUserDetailsBatch(userIds);
+        Map<Long, Integer> assignedFarmCounts = getAssignedFarmCounts(fieldOfficersToReturn.stream()
+            .map(FieldOfficer::getId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList()));
         
         // Create final copies for use in lambda
         final boolean finalIsManualSelection = isManualSelection;
@@ -282,8 +285,7 @@ public class FieldOfficerAssignmentService {
                         }
                     }
                     
-                    // Count assigned farms for this field officer
-                    Integer assignedFarmsCount = countAssignedFarms(fo.getId());
+                    Integer assignedFarmsCount = assignedFarmCounts.getOrDefault(fo.getId(), 0);
                     
                     return SuggestedFieldOfficerDto.builder()
                             .fieldOfficerId(fo.getId())
@@ -421,6 +423,8 @@ public class FieldOfficerAssignmentService {
         FieldOfficerAssignment saved = assignmentRepository.save(assignment);
         log.info("Assignment created successfully - ID: {}, Field Officer: {}, Farm: {}", 
                 saved.getId(), request.getFieldOfficerId(), request.getFarmId());
+
+        invalidateAdminFarmerCache();
         
         // Fetch field officer details for response
         Map<String, Object> userDetails = fetchUserDetails(fieldOfficer.getUserId());
@@ -431,6 +435,39 @@ public class FieldOfficerAssignmentService {
                 (String) userDetails.getOrDefault("phoneNumber", ""),
                 fieldOfficer.getPincode()
         );
+    }
+
+    public Map<String, Object> getAssignmentSummariesForFarmers(List<Long> farmerUserIds) {
+        if (farmerUserIds == null || farmerUserIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<FieldOfficerAssignment> assignments = assignmentRepository.findByFarmerUserIdIn(farmerUserIds);
+        Map<String, Object> result = new HashMap<>();
+
+        for (Long farmerUserId : farmerUserIds) {
+            List<FieldOfficerAssignment> perFarmer = assignments.stream()
+                    .filter(a -> farmerUserId.equals(a.getFarmerUserId()))
+                    .collect(Collectors.toList());
+
+            boolean hasGlobalAssignment = perFarmer.stream().anyMatch(a ->
+                    a.getFarmId() == null && a.getStatus() != FieldOfficerAssignment.AssignmentStatus.CANCELLED);
+
+            int assignedFarmsCount = hasGlobalAssignment
+                    ? 0
+                    : (int) perFarmer.stream()
+                            .filter(a -> a.getFarmId() != null && a.getStatus() != FieldOfficerAssignment.AssignmentStatus.CANCELLED)
+                            .map(FieldOfficerAssignment::getFarmId)
+                            .distinct()
+                            .count();
+
+            Map<String, Object> summary = new HashMap<>();
+            summary.put("assignedFarmsCount", assignedFarmsCount);
+            summary.put("hasGlobalAssignment", hasGlobalAssignment);
+            result.put(String.valueOf(farmerUserId), summary);
+        }
+
+        return result;
     }
     
     /**
@@ -660,43 +697,43 @@ public class FieldOfficerAssignmentService {
      */
     public List<AssignmentResponseDto> getAssignmentsForFarmer(Long farmerUserId) {
         log.info("Getting assignments for farmer userId: {}", farmerUserId);
-        
+
         List<FieldOfficerAssignment> assignments = assignmentRepository.findByFarmerUserId(farmerUserId);
-        
+
         if (assignments.isEmpty()) {
             return Collections.emptyList();
         }
-        
+
         // Batch fetch all field officers
         List<Long> fieldOfficerIds = assignments.stream()
                 .map(FieldOfficerAssignment::getFieldOfficerId)
                 .distinct()
                 .collect(Collectors.toList());
-        
+
         Map<Long, FieldOfficer> fieldOfficerMap = fieldOfficerRepository.findAllById(fieldOfficerIds)
                 .stream()
                 .collect(Collectors.toMap(FieldOfficer::getId, fo -> fo));
-        
+
         // Batch fetch all user details
         List<Long> userIds = fieldOfficerMap.values().stream()
                 .map(FieldOfficer::getUserId)
                 .distinct()
                 .collect(Collectors.toList());
-        
+
         Map<Long, Map<String, Object>> userDetailsMap = fetchUserDetailsBatch(userIds);
-        
+
         // Build response DTOs
         return assignments.stream()
                 .map(assignment -> {
                     FieldOfficer fieldOfficer = fieldOfficerMap.get(assignment.getFieldOfficerId());
-                    
+
                     if (fieldOfficer == null) {
                         log.warn("Field officer not found for assignment ID: {}", assignment.getId());
                         return AssignmentResponseDto.fromEntity(assignment, "Unknown", "", "", null, null, null, null);
                     }
-                    
+
                     Map<String, Object> userDetails = userDetailsMap.getOrDefault(fieldOfficer.getUserId(), new HashMap<>());
-                    
+
                     return AssignmentResponseDto.fromEntity(
                             assignment,
                             buildFullName(fieldOfficer.getFirstName(), fieldOfficer.getLastName()),
@@ -709,6 +746,81 @@ public class FieldOfficerAssignmentService {
                     );
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get assignments for a farmer (paginated version).
+     */
+    public Map<String, Object> getAssignmentsForFarmerPaged(Long farmerUserId, int page, int size) {
+        log.info("Getting paginated assignments for farmer userId: {}", farmerUserId);
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<FieldOfficerAssignment> assignmentPage = assignmentRepository.findByFarmerUserId(farmerUserId, pageable);
+
+        if (assignmentPage.isEmpty()) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("assignments", Collections.emptyList());
+            response.put("currentPage", page);
+            response.put("totalPages", 0);
+            response.put("totalElements", 0L);
+            response.put("pageSize", size);
+            response.put("hasNext", false);
+            response.put("hasPrevious", false);
+            return response;
+        }
+
+        List<FieldOfficerAssignment> assignments = assignmentPage.getContent();
+
+        // Batch fetch all field officers
+        List<Long> fieldOfficerIds = assignments.stream()
+                .map(FieldOfficerAssignment::getFieldOfficerId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, FieldOfficer> fieldOfficerMap = fieldOfficerRepository.findAllById(fieldOfficerIds)
+                .stream()
+                .collect(Collectors.toMap(FieldOfficer::getId, fo -> fo));
+
+        // Batch fetch all user details
+        List<Long> userIds = fieldOfficerMap.values().stream()
+                .map(FieldOfficer::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Map<String, Object>> userDetailsMap = fetchUserDetailsBatch(userIds);
+
+        // Build response DTOs
+        List<AssignmentResponseDto> dtos = assignments.stream()
+                .map(assignment -> {
+                    FieldOfficer fieldOfficer = fieldOfficerMap.get(assignment.getFieldOfficerId());
+
+                    if (fieldOfficer == null) {
+                        log.warn("Field officer not found for assignment ID: {}", assignment.getId());
+                        return AssignmentResponseDto.fromEntity(assignment, "Unknown", "", "", null, null, null, null);
+                    }
+
+                    Map<String, Object> userDetails = userDetailsMap.getOrDefault(fieldOfficer.getUserId(), new HashMap<>());
+
+                    return AssignmentResponseDto.fromEntity(
+                            assignment,
+                            buildFullName(fieldOfficer.getFirstName(), fieldOfficer.getLastName()),
+                            (String) userDetails.getOrDefault("phoneNumber", ""),
+                            fieldOfficer.getPincode(),
+                            null, null, null, null
+                    );
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("assignments", dtos);
+        response.put("currentPage", assignmentPage.getNumber());
+        response.put("totalPages", assignmentPage.getTotalPages());
+        response.put("totalElements", assignmentPage.getTotalElements());
+        response.put("pageSize", assignmentPage.getSize());
+        response.put("hasNext", assignmentPage.hasNext());
+        response.put("hasPrevious", assignmentPage.hasPrevious());
+
+        return response;
     }
 
     /**
@@ -738,6 +850,16 @@ public class FieldOfficerAssignmentService {
                 .collect(Collectors.toList());
         
         Map<Long, Map<String, Object>> farmerUserDetailsMap = fetchUserDetailsBatch(farmerUserIds);
+        Map<Long, List<Map<String, Object>>> farmerFarmsMap = new HashMap<>();
+
+        for (Long farmerUserId : farmerUserIds) {
+            try {
+                farmerFarmsMap.put(farmerUserId, fetchFarmerFarms(farmerUserId));
+            } catch (Exception e) {
+                log.warn("Failed to fetch farms for farmer userId {}: {}", farmerUserId, e.getMessage());
+                farmerFarmsMap.put(farmerUserId, Collections.emptyList());
+            }
+        }
         
         final FieldOfficer finalFieldOfficer = fieldOfficer;
         final Map<String, Object> finalFieldOfficerUserDetails = fieldOfficerUserDetails;
@@ -764,7 +886,9 @@ public class FieldOfficerAssignmentService {
             String farmLocation = null;
             if (assignment.getFarmId() != null) {
                 try {
-                    List<Map<String, Object>> farms = fetchFarmerFarms(assignment.getFarmerUserId());
+                    List<Map<String, Object>> farms = farmerFarmsMap.getOrDefault(
+                            assignment.getFarmerUserId(),
+                            Collections.emptyList());
                     Optional<Map<String, Object>> farmOpt = farms.stream()
                             .filter(farm -> {
                                 Object farmIdObj = farm.get("farmId");
@@ -808,22 +932,57 @@ public class FieldOfficerAssignmentService {
         });
     }
 
+    private Map<Long, Integer> getAssignedFarmCounts(List<Long> fieldOfficerIds) {
+        if (fieldOfficerIds == null || fieldOfficerIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        try {
+            List<Object[]> rows = assignmentRepository.countActiveFarmAssignmentsByFieldOfficerIds(fieldOfficerIds);
+            Map<Long, Integer> counts = new HashMap<>();
+            for (Object[] row : rows) {
+                if (row.length >= 2 && row[0] != null && row[1] != null) {
+                    Long fieldOfficerId = ((Number) row[0]).longValue();
+                    Integer count = ((Number) row[1]).intValue();
+                    counts.put(fieldOfficerId, count);
+                }
+            }
+            return counts;
+        } catch (Exception e) {
+            log.warn("Failed to batch count assigned farms. Falling back to defaults: {}", e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
     /**
      * Get assignments with farm details for a field officer (by userId).
      * Used by field officer app to see their assigned farms.
      * Optimized with batch fetching to eliminate N+1 query problems.
      */
     public List<com.krushikranti.fieldofficer.dto.FieldOfficerAssignmentDto> getAssignmentsWithFarmsForFieldOfficer(Long fieldOfficerUserId) {
+        return getAssignmentsWithFarmsForFieldOfficer(fieldOfficerUserId, 0, 1000);
+        }
+
+        /**
+         * Paginated variant used to reduce payload and repeated remote calls.
+         */
+        public List<com.krushikranti.fieldofficer.dto.FieldOfficerAssignmentDto> getAssignmentsWithFarmsForFieldOfficer(
+            Long fieldOfficerUserId,
+            int page,
+            int size) {
         log.info("Getting assignments with farms for field officer userId: {}", fieldOfficerUserId);
         
         // Find field officer by userId
         FieldOfficer fieldOfficer = fieldOfficerRepository.findByUserId(fieldOfficerUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Field officer not found with userId: " + fieldOfficerUserId));
+
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(1, size), 1000);
         
-        // Get all assignments for this field officer
+        // Get assignments for this field officer (bounded for performance)
         Page<FieldOfficerAssignment> assignmentPage = assignmentRepository.findByFieldOfficerId(
                 fieldOfficer.getId(), 
-                PageRequest.of(0, 1000));
+            PageRequest.of(safePage, safeSize));
         List<FieldOfficerAssignment> assignments = assignmentPage.getContent();
         
         if (assignments.isEmpty()) {
@@ -839,26 +998,53 @@ public class FieldOfficerAssignmentService {
                 .collect(Collectors.toList());
         
         Map<Long, Map<String, Object>> farmerUserDetailsMap = fetchUserDetailsBatch(farmerUserIds);
-        
-        // Batch fetch all farms for all farmers (still need to fetch individually, but we can optimize later)
-        // For now, we'll fetch farms in parallel where possible, but this is still a limitation
-        // TODO: Create a batch endpoint in farmer-service to fetch farms for multiple farmers
-        
-        // Batch fetch all verifications for this field officer
-        // We'll fetch all verifications for this field officer and then filter by farm IDs in memory
-        // This is more efficient than querying for each farm individually
-        Map<Long, FarmVerification> verificationMap = new HashMap<>();
-        Page<FarmVerification> verificationPage = verificationRepository.findByFieldOfficerId(
-                fieldOfficer.getId(), 
-                PageRequest.of(0, 10000)); // Get up to 10000 verifications
-        List<FarmVerification> allVerifications = verificationPage.getContent();
-        
-        // Create a map of farmId -> verification for quick lookup
-        verificationMap = allVerifications.stream()
+
+        // Fetch farms once per farmer instead of once per assignment.
+        Map<Long, List<Map<String, Object>>> farmerFarmsMap = new HashMap<>();
+        for (Long farmerUserId : farmerUserIds) {
+            try {
+                farmerFarmsMap.put(farmerUserId, fetchFarmerFarms(farmerUserId));
+            } catch (Exception e) {
+                log.warn("Failed to fetch farms for farmer userId {}: {}", farmerUserId, e.getMessage());
+                farmerFarmsMap.put(farmerUserId, Collections.emptyList());
+            }
+        }
+
+        // Fetch verifications only for farms that are relevant to this page.
+        Set<Long> relevantFarmIds = farmerFarmsMap.values().stream()
+                .flatMap(List::stream)
+                .map(farm -> {
+                    Object farmIdObj = farm.get("farmId");
+                    if (farmIdObj == null) {
+                        farmIdObj = farm.get("id");
+                    }
+                    if (farmIdObj instanceof Number) {
+                        return ((Number) farmIdObj).longValue();
+                    }
+                    if (farmIdObj != null) {
+                        try {
+                            return Long.parseLong(farmIdObj.toString());
+                        } catch (NumberFormatException ignored) {
+                            return null;
+                        }
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, FarmVerification> verificationMap;
+        if (relevantFarmIds.isEmpty()) {
+            verificationMap = Collections.emptyMap();
+        } else {
+            verificationMap = verificationRepository
+                    .findByFieldOfficerIdAndFarmIdIn(fieldOfficer.getId(), new ArrayList<>(relevantFarmIds))
+                    .stream()
                 .collect(Collectors.toMap(
                         FarmVerification::getFarmId, 
                         v -> v,
                         (v1, v2) -> v1)); // If duplicate farmIds, keep first
+        }
         
         final Long fieldOfficerId = fieldOfficer.getId();
         final Map<Long, FarmVerification> finalVerificationMap = verificationMap;
@@ -880,10 +1066,12 @@ public class FieldOfficerAssignmentService {
                         final String farmerName = farmerNameTemp;
                         String farmerPhone = (String) farmerUserDetails.getOrDefault("phoneNumber", "");
                         
-                        // Fetch farms for this farmer (still individual, but optimized fetchFarmerFarms method)
+                        // Reuse already-fetched farms for this farmer.
                         List<Map<String, Object>> farms;
                         try {
-                            farms = fetchFarmerFarms(assignment.getFarmerUserId());
+                            farms = farmerFarmsMap.getOrDefault(
+                                    assignment.getFarmerUserId(),
+                                    Collections.emptyList());
                             
                             // Filter farms by assignment.farmId if specified
                             if (assignment.getFarmId() != null) {
@@ -1009,6 +1197,84 @@ public class FieldOfficerAssignmentService {
                 result.stream().mapToInt(dto -> dto.getFarms() != null ? dto.getFarms().size() : 0).sum());
         return result;
     }
+
+        /**
+         * Paginated assignments payload with metadata for field-officer app.
+         */
+        public Map<String, Object> getAssignmentsWithFarmsForFieldOfficerPaged(
+            Long fieldOfficerUserId,
+            int page,
+            int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(1, size), 1000);
+
+        FieldOfficer fieldOfficer = fieldOfficerRepository.findByUserId(fieldOfficerUserId)
+            .orElseThrow(() -> new IllegalArgumentException("Field officer not found with userId: " + fieldOfficerUserId));
+
+        Page<FieldOfficerAssignment> assignmentPage = assignmentRepository.findByFieldOfficerId(
+            fieldOfficer.getId(),
+            PageRequest.of(safePage, safeSize));
+
+        List<FieldOfficerAssignmentDto> assignments = getAssignmentsWithFarmsForFieldOfficer(
+            fieldOfficerUserId,
+            safePage,
+            safeSize);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("assignments", assignments);
+        response.put("currentPage", assignmentPage.getNumber());
+        response.put("totalPages", assignmentPage.getTotalPages());
+        response.put("totalElements", assignmentPage.getTotalElements());
+        response.put("pageSize", assignmentPage.getSize());
+        response.put("hasNext", assignmentPage.hasNext());
+        response.put("hasPrevious", assignmentPage.hasPrevious());
+
+        return response;
+        }
+
+            /**
+             * Lightweight dashboard summary for the logged-in field officer.
+             * Uses count queries to avoid loading assignments payload for home cards.
+             */
+            public Map<String, Object> getFieldOfficerAssignmentSummary(Long fieldOfficerUserId) {
+            log.info("Getting assignment summary for field officer userId: {}", fieldOfficerUserId);
+
+            FieldOfficer fieldOfficer = fieldOfficerRepository.findByUserId(fieldOfficerUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Field officer not found with userId: " + fieldOfficerUserId));
+
+            Long fieldOfficerId = fieldOfficer.getId();
+
+            long totalAssignments = assignmentRepository.countByFieldOfficerIdAndStatusNot(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.CANCELLED);
+            long activeFarmAssignments = assignmentRepository.countByFieldOfficerIdAndFarmIdIsNotNullAndStatusNot(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.CANCELLED);
+            long assignedFarms = assignmentRepository.countByFieldOfficerIdAndFarmIdIsNotNullAndStatus(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.ASSIGNED);
+            long inProgressFarms = assignmentRepository.countByFieldOfficerIdAndFarmIdIsNotNullAndStatus(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.IN_PROGRESS);
+            long completedFarms = assignmentRepository.countByFieldOfficerIdAndFarmIdIsNotNullAndStatus(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.COMPLETED);
+            long verifiedFarms = verificationRepository.countByFieldOfficerIdAndVerificationStatus(
+                fieldOfficerId,
+                FarmVerification.VerificationStatus.VERIFIED);
+
+            Map<String, Object> summary = new HashMap<>();
+            summary.put("fieldOfficerId", fieldOfficerId);
+            summary.put("totalAssignments", totalAssignments);
+            summary.put("activeFarmAssignments", activeFarmAssignments);
+            summary.put("assignedFarms", assignedFarms);
+            summary.put("inProgressFarms", inProgressFarms);
+            summary.put("completedFarms", completedFarms);
+            summary.put("verifiedFarms", verifiedFarms);
+            summary.put("pendingFarms", assignedFarms + inProgressFarms);
+
+            return summary;
+            }
 
     // ==================== Helper Methods ====================
 
@@ -1241,23 +1507,27 @@ public class FieldOfficerAssignmentService {
      */
     private Integer countAssignedFarms(Long fieldOfficerId) {
         try {
-            List<FieldOfficerAssignment> assignments = assignmentRepository.findByFieldOfficerId(
-                    fieldOfficerId, 
-                    PageRequest.of(0, 10000)
-            ).getContent();
-            
-            // Count only assignments with farmId (specific farm assignments) and status != CANCELLED
-            long count = assignments.stream()
-                    .filter(assignment -> 
-                            assignment.getFarmId() != null && 
-                            assignment.getStatus() != FieldOfficerAssignment.AssignmentStatus.CANCELLED
-                    )
-                    .count();
-            
-            return (int) count;
+            return Math.toIntExact(assignmentRepository.countByFieldOfficerIdAndFarmIdIsNotNullAndStatusNot(
+                fieldOfficerId,
+                FieldOfficerAssignment.AssignmentStatus.CANCELLED));
         } catch (Exception e) {
             log.warn("Failed to count assigned farms for field officer ID {}: {}", fieldOfficerId, e.getMessage());
             return 0;
+        }
+    }
+
+    private void invalidateAdminFarmerCache() {
+        try {
+            webClientBuilder.build()
+                    .post()
+                    .uri(farmerServiceUrl + "/admin/farmers/cache/invalidate")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Roles", "SYSTEM")
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+        } catch (Exception e) {
+            log.warn("Failed to invalidate farmer admin cache after assignment change: {}", e.getMessage());
         }
     }
 }

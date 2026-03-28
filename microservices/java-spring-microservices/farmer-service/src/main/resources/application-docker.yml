@@ -72,6 +72,12 @@ services:
   field-officer-service:
     url: http://field-officer-service:4015
 
+# Redis Configuration for distributed caching (Docker)
+spring.data.redis:
+  host: ${REDIS_HOST:redis}
+  port: ${REDIS_PORT:6379}
+  timeout: 2000ms
+
 # data.gov.in India Post Pincode API
 datagovin:
   api:

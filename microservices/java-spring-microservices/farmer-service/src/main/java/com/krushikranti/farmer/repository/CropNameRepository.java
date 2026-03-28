@@ -58,6 +58,13 @@ public interface CropNameRepository extends JpaRepository<CropName, Long> {
     long countByCropTypeIdAndIsActiveTrue(Long cropTypeId);
 
     /**
+     * Get crop name counts for all crop types in a single query (N+1 fix).
+     * Returns a list of Object[] where [0] = cropTypeId, [1] = count.
+     */
+    @Query("SELECT cn.cropType.id, COUNT(cn) FROM CropName cn WHERE cn.isActive = true GROUP BY cn.cropType.id")
+    List<Object[]> countByCropTypeGrouped();
+
+    /**
      * Search crop names by display name or local name containing search term.
      */
     @Query("SELECT cn FROM CropName cn WHERE cn.isActive = true " +

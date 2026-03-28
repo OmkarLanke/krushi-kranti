@@ -21,6 +21,16 @@ public interface CropRepository extends JpaRepository<Crop, Long> {
     List<Crop> findByFarmIdAndIsActiveTrue(Long farmId);
 
     /**
+     * Find all active crops for a farm with related entities (N+1 fix).
+     */
+    @Query("SELECT c FROM Crop c " +
+           "JOIN FETCH c.farm f " +
+           "JOIN FETCH c.cropName cn " +
+           "JOIN FETCH cn.cropType ct " +
+           "WHERE c.farm.id = :farmId AND c.isActive = true")
+    List<Crop> findByFarmIdAndIsActiveTrueWithDetails(@Param("farmId") Long farmId);
+
+    /**
      * Find all crops for a farm (including inactive).
      */
     List<Crop> findByFarmId(Long farmId);
@@ -57,8 +67,32 @@ public interface CropRepository extends JpaRepository<Crop, Long> {
     @Query("SELECT c FROM Crop c WHERE c.farm.farmer.userId = :userId " +
            "AND c.cropName.cropType.id = :cropTypeId AND c.isActive = true")
     List<Crop> findByFarmerUserIdAndCropTypeId(
-            @Param("userId") Long userId, 
+            @Param("userId") Long userId,
             @Param("cropTypeId") Long cropTypeId);
+
+    /**
+     * Find crops by crop type for a farmer with related entities (N+1 fix).
+     */
+    @Query("SELECT c FROM Crop c " +
+           "JOIN FETCH c.farm f " +
+           "JOIN FETCH c.cropName cn " +
+           "JOIN FETCH cn.cropType ct " +
+           "WHERE f.farmer.userId = :userId AND ct.id = :cropTypeId AND c.isActive = true")
+    List<Crop> findByFarmerUserIdAndCropTypeIdWithDetails(
+            @Param("userId") Long userId,
+            @Param("cropTypeId") Long cropTypeId);
+
+    /**
+     * Find a specific crop by ID and farmer userId with related entities (N+1 fix).
+     */
+    @Query("SELECT c FROM Crop c " +
+           "JOIN FETCH c.farm f " +
+           "JOIN FETCH c.cropName cn " +
+           "JOIN FETCH cn.cropType ct " +
+           "WHERE c.id = :cropId AND f.farmer.userId = :userId AND c.isActive = true")
+    Optional<Crop> findByIdAndFarmerUserIdWithDetails(
+            @Param("cropId") Long cropId,
+            @Param("userId") Long userId);
 
     /**
      * Find all active crops for a farmer with farm details.
@@ -69,5 +103,8 @@ public interface CropRepository extends JpaRepository<Crop, Long> {
            "JOIN FETCH cn.cropType ct " +
            "WHERE f.farmer.userId = :userId AND c.isActive = true AND f.isActive = true")
     List<Crop> findByFarmerUserIdWithDetails(@Param("userId") Long userId);
+
+       @Query("SELECT COUNT(c) FROM Crop c WHERE c.farm.farmer.userId = :userId AND c.isActive = true AND c.farm.isActive = true")
+       long countActiveByFarmerUserId(@Param("userId") Long userId);
 }
 

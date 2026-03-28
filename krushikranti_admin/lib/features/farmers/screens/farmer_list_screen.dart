@@ -35,6 +35,10 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   List<FarmerSummary> _filteredFarmers = [];
   List<FarmerSummary> _allFarmers =
       []; // All farmers for filtering and dropdowns
+  List<String> _availableStates = [];
+  List<String> _availableDistricts = [];
+  List<String> _availableVillages = [];
+  List<String> _availablePincodes = [];
   DashboardStats? _stats;
   bool _isLoading = true;
   bool _isLoadingAllFarmers = false;
@@ -105,8 +109,24 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   void initState() {
     super.initState();
     // Load farmers and stats in parallel for better performance
+    _loadFilterOptions();
     _loadFarmers();
     _loadStats();
+  }
+
+  Future<void> _loadFilterOptions() async {
+    try {
+      final options = await AdminFarmerService.getFilterOptions();
+      if (!mounted) return;
+      setState(() {
+        _availableStates = options['states'] ?? [];
+        _availableDistricts = options['districts'] ?? [];
+        _availableVillages = options['villages'] ?? [];
+        _availablePincodes = options['pincodes'] ?? [];
+      });
+    } catch (_) {
+      // Keep UI usable with empty filter options when metadata endpoint is unavailable.
+    }
   }
 
   @override
@@ -139,25 +159,36 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
     _openDropdownLabel = null;
   }
 
+  Future<List<FarmerSummary>> _fetchFarmersInBatches({String? pincode}) async {
+    final response = await AdminFarmerService.getFarmers(
+      page: _currentPage,
+      size: _pageSize,
+      search: null,
+      kycStatus: _kycFilter,
+      subscriptionStatus: _subscriptionFilter,
+      pincode: pincode,
+    );
+    _totalPages = response.totalPages;
+    _totalElements = response.totalElements;
+    return response.farmers;
+  }
+
   Future<void> _loadAllFarmers() async {
-    if (_allFarmers.isNotEmpty) return; // Already loaded
+    if (_availableStates.isNotEmpty ||
+        _availableDistricts.isNotEmpty ||
+        _availableVillages.isNotEmpty ||
+        _availablePincodes.isNotEmpty) {
+      return;
+    }
 
     setState(() {
       _isLoadingAllFarmers = true;
     });
 
     try {
-      // Load all farmers for dropdown population
-      final response = await AdminFarmerService.getFarmers(
-        page: 0,
-        size: 10000, // Large size to get all farmers
-        search: null,
-        kycStatus: null,
-        subscriptionStatus: null,
-      );
+      await _loadFilterOptions();
 
       setState(() {
-        _allFarmers = response.farmers;
         _isLoadingAllFarmers = false;
       });
     } catch (e) {
@@ -168,41 +199,25 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
   }
 
   List<String> _getUniqueStates() {
-    final states = _allFarmers
-        .where((f) => f.state != null && f.state!.isNotEmpty)
-        .map((f) => f.state!)
-        .toSet()
-        .toList();
+    final states = List<String>.from(_availableStates);
     states.sort();
     return states;
   }
 
   List<String> _getUniqueDistricts() {
-    final districts = _allFarmers
-        .where((f) => f.district != null && f.district!.isNotEmpty)
-        .map((f) => f.district!)
-        .toSet()
-        .toList();
+    final districts = List<String>.from(_availableDistricts);
     districts.sort();
     return districts;
   }
 
   List<String> _getUniquePincodes() {
-    final pincodes = _allFarmers
-        .where((f) => f.pincode != null && f.pincode!.isNotEmpty)
-        .map((f) => f.pincode!)
-        .toSet()
-        .toList();
+    final pincodes = List<String>.from(_availablePincodes);
     pincodes.sort();
     return pincodes;
   }
 
   List<String> _getUniqueVillages() {
-    final villages = _allFarmers
-        .where((f) => f.village != null && f.village!.isNotEmpty)
-        .map((f) => f.village!)
-        .toSet()
-        .toList();
+    final villages = List<String>.from(_availableVillages);
     villages.sort();
     return villages;
   }
@@ -277,18 +292,13 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
       // Always reload if pincode filter is set (to get backend-filtered results)
       // Or if forceReload is true, or if _allFarmers is empty
       if (_allFarmers.isEmpty || _pincodeFilter != null || forceReload) {
-        final allResponse = await AdminFarmerService.getFarmers(
-          page: 0,
-          size: 10000,
-          search: null,
-          kycStatus: null,
-          subscriptionStatus: null,
-          pincode: _pincodeFilter, // Use backend pincode filtering
+        final allFarmers = await _fetchFarmersInBatches(
+          pincode: _pincodeFilter,
         );
 
         // Apply filters and pagination immediately after loading
         // This reduces the number of setState calls
-        _applyFiltersAndReloadInternal(allResponse.farmers);
+        _applyFiltersAndReloadInternal(allFarmers);
       } else {
         // Apply filters and pagination without reloading
         _applyFiltersAndReload();
@@ -346,33 +356,11 @@ class _FarmerListScreenState extends State<FarmerListScreen> {
         });
       }
     } else {
-      // Only fetch if we don't have farmers loaded yet
-      try {
-        final allFarmersResponse = await AdminFarmerService.getFarmers(
-          page: 0,
-          size: 10000, // Large size to get all farmers
-          search: null,
-          kycStatus: null,
-          subscriptionStatus: null,
-        );
-
-        if (allFarmersResponse.farmers.isNotEmpty) {
-          final calculatedStats = _calculateStatsFromFarmers(
-            allFarmersResponse.farmers,
-          );
-          if (mounted) {
-            setState(() {
-              _stats = calculatedStats;
-            });
-          }
-        }
-      } catch (e) {
-        // If that fails too, calculate from current page as last resort
-        if (_farmers.isNotEmpty && mounted) {
-          setState(() {
-            _stats = _calculateStatsFromFarmers(_farmers);
-          });
-        }
+      // As a last resort, calculate from currently loaded page data.
+      if (_farmers.isNotEmpty && mounted) {
+        setState(() {
+          _stats = _calculateStatsFromFarmers(_farmers);
+        });
       }
     }
   }

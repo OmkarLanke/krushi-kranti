@@ -12,7 +12,8 @@ class SuggestedFieldOfficer {
   final bool isActive;
   final List<String> matchingPincodes;
   final int matchingFarmCount;
-  final int? assignedFarmsCount; // Number of farms currently assigned to this field officer
+  final int?
+  assignedFarmsCount; // Number of farms currently assigned to this field officer
 
   SuggestedFieldOfficer({
     required this.fieldOfficerId,
@@ -44,7 +45,8 @@ class SuggestedFieldOfficer {
       district: json['district'],
       state: json['state'],
       isActive: json['isActive'] ?? true,
-      matchingPincodes: (json['matchingPincodes'] as List?)
+      matchingPincodes:
+          (json['matchingPincodes'] as List?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
@@ -117,6 +119,47 @@ class AssignmentResponse {
   }
 }
 
+class PagedAssignmentsResponse {
+  final List<AssignmentResponse> assignments;
+  final int currentPage;
+  final int totalPages;
+  final int totalElements;
+  final int pageSize;
+  final bool hasNext;
+  final bool hasPrevious;
+
+  const PagedAssignmentsResponse({
+    required this.assignments,
+    required this.currentPage,
+    required this.totalPages,
+    required this.totalElements,
+    required this.pageSize,
+    required this.hasNext,
+    required this.hasPrevious,
+  });
+
+  factory PagedAssignmentsResponse.fromJson(Map<String, dynamic> json) {
+    final assignmentsJson = json['assignments'];
+    final assignments = assignmentsJson is List
+        ? assignmentsJson
+              .map(
+                (e) => AssignmentResponse.fromJson(e as Map<String, dynamic>),
+              )
+              .toList()
+        : <AssignmentResponse>[];
+
+    return PagedAssignmentsResponse(
+      assignments: assignments,
+      currentPage: json['currentPage'] ?? 0,
+      totalPages: json['totalPages'] ?? 0,
+      totalElements: json['totalElements'] ?? 0,
+      pageSize: json['pageSize'] ?? assignments.length,
+      hasNext: json['hasNext'] ?? false,
+      hasPrevious: json['hasPrevious'] ?? false,
+    );
+  }
+}
+
 class AssignFieldOfficerRequest {
   final int fieldOfficerId;
   final int farmerUserId;
@@ -139,4 +182,3 @@ class AssignFieldOfficerRequest {
     };
   }
 }
-
