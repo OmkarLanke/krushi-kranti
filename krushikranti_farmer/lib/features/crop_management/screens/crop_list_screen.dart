@@ -3,6 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../l10n/app_localizations.dart'; // ✅ Import Localization
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/models/setup_state.dart';
+import '../../../core/services/setup_state_service.dart';
+import 'package:provider/provider.dart';
+import '../../../core/onboarding/onboarding_controller.dart';
+import '../../dashboard/widgets/setup_progress_card.dart';
 import '../../dashboard/models/crop_model.dart';
 import '../../dashboard/services/crop_service.dart';
 
@@ -14,7 +19,10 @@ class CropListScreen extends StatefulWidget {
 }
 
 class _CropListScreenState extends State<CropListScreen> {
-  late Future<List<CropModel>> _cropsFuture;
+  bool _isLoading = true;
+  String? _errorMessage;
+  SetupState _setupState = const SetupState();
+  List<CropModel> _crops = [];
 
   @override
   void initState() {
@@ -22,10 +30,42 @@ class _CropListScreenState extends State<CropListScreen> {
     _loadCrops();
   }
 
-  void _loadCrops() {
+  Future<void> _loadCrops() async {
     setState(() {
-      _cropsFuture = CropService.getCrops();
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      final setupState = await SetupStateService.load();
+
+      if (!setupState.hasProfile || !setupState.hasFarm) {
+        if (mounted) {
+          setState(() {
+            _setupState = setupState;
+            _crops = [];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      final crops = await CropService.getCrops();
+      if (mounted) {
+        setState(() {
+          _setupState = setupState.copyWith(hasCrop: crops.isNotEmpty);
+          _crops = crops;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString().replaceFirst("Exception: ", "");
+        });
+      }
+    }
   }
 
   // Helper to get display name (use displayName from API, fallback to name)
@@ -45,7 +85,7 @@ class _CropListScreenState extends State<CropListScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      
+
       // --- APP BAR ---
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -61,7 +101,8 @@ class _CropListScreenState extends State<CropListScreen> {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -69,10 +110,10 @@ class _CropListScreenState extends State<CropListScreen> {
             color: Colors.transparent,
             child: InkWell(
               onTap: () {
-              Navigator.pushNamed(context, AppRoutes.addCrop).then((_) {
-                _loadCrops();
-              });
-            },
+                Navigator.pushNamed(context, AppRoutes.addCrop).then((_) {
+                  _loadCrops();
+                });
+              },
               borderRadius: BorderRadius.circular(20),
               child: Container(
                 margin: const EdgeInsets.only(right: 16),
@@ -81,7 +122,8 @@ class _CropListScreenState extends State<CropListScreen> {
                   color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.add_rounded, color: Colors.white, size: 22),
+                child: const Icon(Icons.add_rounded,
+                    color: Colors.white, size: 22),
               ),
             ),
           ),
@@ -104,97 +146,22 @@ class _CropListScreenState extends State<CropListScreen> {
       body: RefreshIndicator(
         onRefresh: () async => _loadCrops(),
         color: AppColors.brandGreen,
-        child: FutureBuilder<List<CropModel>>(
-          future: _cropsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.brandGreen,
-                ),
-              );
-            }
-            if (snapshot.hasError) {
-              final errorMsg = snapshot.error.toString();
-              // Check if it's a profile not found error
-              if (errorMsg.contains("Farmer profile not found") || errorMsg.contains("complete your profile")) {
-                return _buildProfileRequiredState(l10n);
-              }
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(40.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.error_outline_rounded,
-                          size: 64,
-                          color: Colors.red.shade400,
-                        ),
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.brandGreen))
+            : _errorMessage != null
+                ? _buildErrorState(l10n)
+                : _crops.isEmpty
+                    ? _buildIncompleteCropState(l10n)
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 20),
+                        itemCount: _crops.length,
+                        itemBuilder: (context, index) {
+                          final crop = _crops[index];
+                          return _buildCropCard(crop, l10n);
+                        },
                       ),
-                      const SizedBox(height: 24),
-                      Text(
-                        "Error Loading Crops",
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade800,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        snapshot.error.toString().replaceFirst("Exception: ", ""),
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      ElevatedButton.icon(
-                        onPressed: _loadCrops,
-                        icon: const Icon(Icons.refresh_rounded, size: 20),
-                        label: Text(l10n.retry),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.brandGreen,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            final crops = snapshot.data ?? [];
-            if (crops.isEmpty) {
-              return _buildEmptyState(l10n);
-            }
-
-            // --- LIST ---
-            return ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              itemCount: crops.length,
-              itemBuilder: (context, index) {
-                final crop = crops[index];
-                return _buildCropCard(crop, l10n);
-              },
-            );
-          },
-        ),
       ),
     );
   }
@@ -255,15 +222,15 @@ class _CropListScreenState extends State<CropListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                    _getCropDisplay(crop, l10n),
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
+                        _getCropDisplay(crop, l10n),
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
                           fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                          color: Colors.black87,
                           letterSpacing: 0.2,
                           height: 1.2,
                         ),
-                    ),
+                      ),
                       if (crop.cropStatus != null) ...[
                         const SizedBox(height: 6),
                         _buildCropStatusBadge(crop.cropStatus!, l10n),
@@ -276,7 +243,7 @@ class _CropListScreenState extends State<CropListScreen> {
             const SizedBox(height: 16),
             const Divider(height: 1, color: Color(0xFFE0E0E0)),
             const SizedBox(height: 16),
-            
+
             // Main Section
             Container(
               padding: const EdgeInsets.all(16),
@@ -313,37 +280,52 @@ class _CropListScreenState extends State<CropListScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                  Text(
-                    l10n.cropDetail,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      Text(
+                        l10n.cropDetail,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppColors.brandGreen,
                           letterSpacing: 0.2,
-                    ),
-                  ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 14),
-                  _buildInfoRow(Icons.category_rounded, "${l10n.cropTypeLabel}: ${_getCategoryDisplay(crop, l10n)}", AppColors.brandGreen),
+                  _buildInfoRow(
+                      Icons.category_rounded,
+                      "${l10n.cropTypeLabel}: ${_getCategoryDisplay(crop, l10n)}",
+                      AppColors.brandGreen),
                   const SizedBox(height: 12),
-                  _buildInfoRow(Icons.square_foot_rounded, "${l10n.landArea}: ${crop.acres.toStringAsFixed(2)} ${l10n.acresSuffix}", AppColors.brandGreen),
+                  _buildInfoRow(
+                      Icons.square_foot_rounded,
+                      "${l10n.landArea}: ${crop.acres.toStringAsFixed(2)} ${l10n.acresSuffix}",
+                      AppColors.brandGreen),
                   if (crop.farmName != null) ...[
                     const SizedBox(height: 12),
-                    _buildInfoRow(Icons.agriculture_rounded, "${l10n.farmLabel}: ${crop.farmName}", AppColors.brandGreen),
+                    _buildInfoRow(
+                        Icons.agriculture_rounded,
+                        "${l10n.farmLabel}: ${crop.farmName}",
+                        AppColors.brandGreen),
                   ],
                   if (crop.plantingDate != null) ...[
                     const SizedBox(height: 12),
-                    _buildInfoRow(Icons.calendar_today_rounded, "${l10n.sowingDate}: ${_formatDate(crop.plantingDate!)}", AppColors.brandGreen),
+                    _buildInfoRow(
+                        Icons.calendar_today_rounded,
+                        "${l10n.sowingDate}: ${_formatDate(crop.plantingDate!)}",
+                        AppColors.brandGreen),
                   ],
                   if (crop.harvestingDate != null) ...[
                     const SizedBox(height: 12),
-                    _buildInfoRow(Icons.event_rounded, "${l10n.harvestingDate}: ${_formatDate(crop.harvestingDate!)}", AppColors.brandGreen),
+                    _buildInfoRow(
+                        Icons.event_rounded,
+                        "${l10n.harvestingDate}: ${_formatDate(crop.harvestingDate!)}",
+                        AppColors.brandGreen),
                   ],
                 ],
               ),
             ),
-            
+
             // Additional Details Section (if available)
             if (crop.cropLocalName != null || crop.cropName != null) ...[
               const SizedBox(height: 20),
@@ -357,10 +339,10 @@ class _CropListScreenState extends State<CropListScreen> {
                       color: Colors.grey.shade600,
                     ),
                     const SizedBox(width: 8),
-              Text(
-                "Additional Details",
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
+                    Text(
+                      "Additional Details",
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade700,
                         letterSpacing: 0.5,
@@ -371,11 +353,13 @@ class _CropListScreenState extends State<CropListScreen> {
               ),
               const SizedBox(height: 12),
               if (crop.cropLocalName != null) ...[
-                _buildInfoRow(Icons.translate_rounded, "Local Name: ${crop.cropLocalName}", Colors.grey.shade600),
+                _buildInfoRow(Icons.translate_rounded,
+                    "Local Name: ${crop.cropLocalName}", Colors.grey.shade600),
                 const SizedBox(height: 12),
               ],
               if (crop.cropName != null) ...[
-                _buildInfoRow(Icons.label_rounded, "Crop Code: ${crop.cropName}", Colors.grey.shade600),
+                _buildInfoRow(Icons.label_rounded,
+                    "Crop Code: ${crop.cropName}", Colors.grey.shade600),
               ],
             ],
           ],
@@ -480,7 +464,111 @@ class _CropListScreenState extends State<CropListScreen> {
     );
   }
 
-  Widget _buildEmptyState(AppLocalizations l10n) {
+  Widget _buildIncompleteCropState(AppLocalizations l10n) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.grass_rounded,
+                    color: Colors.orange.shade700,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Crop Details Incomplete',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Add your crop details to start tracking growth and sales.',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w400,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Unified Complete Setup Tracker
+          SetupProgressCard(
+            hasPersonalDetails: _setupState.hasProfile,
+            hasFarm: _setupState.hasFarm,
+            hasCrop: false,
+            isSubscribed: _setupState.hasSubscription,
+            onContinueSetup: () async {
+              if (!_setupState.hasProfile) {
+                await context
+                    .read<OnboardingController>()
+                    .allowPersonalOnboardingFromHome(context);
+                final result = await Navigator.pushNamed(
+                    context, AppRoutes.onboardingPersonal);
+                if (result == true) {
+                  _loadCrops();
+                }
+              } else if (!_setupState.hasFarm) {
+                final result = await Navigator.pushNamed(
+                    context, AppRoutes.addFarm,
+                    arguments: {'fromOnboarding': true});
+                if (result == true) {
+                  _loadCrops();
+                }
+              } else if (_crops.isEmpty) {
+                final result =
+                    await Navigator.pushNamed(context, AppRoutes.addCrop);
+                if (result == true) {
+                  _loadCrops();
+                }
+              } else if (!_setupState.hasSubscription) {
+                await Navigator.pushNamed(context, AppRoutes.subscription);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40.0),
@@ -490,25 +578,18 @@ class _CropListScreenState extends State<CropListScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.brandGreen.withOpacity(0.1),
-                    AppColors.brandGreen.withOpacity(0.05),
-                  ],
-                ),
+                color: Colors.red.shade50,
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.grass_rounded,
+                Icons.error_outline_rounded,
                 size: 64,
-                color: AppColors.brandGreen,
+                color: Colors.red.shade400,
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              l10n.noCropsYet,
+              "Error Loading Crops",
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -518,91 +599,7 @@ class _CropListScreenState extends State<CropListScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              l10n.addFirstCrop,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-                letterSpacing: 0.2,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.addCrop).then((_) {
-                  _loadCrops();
-                });
-              },
-              icon: const Icon(Icons.add_rounded, size: 20),
-              label: Text(
-                l10n.addCropBtn,
-                style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandGreen,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-              ),
-                elevation: 0,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileRequiredState(AppLocalizations l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.orange.shade400,
-                    Colors.orange.shade600,
-                  ],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.orange.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.person_add_alt_1_rounded,
-                size: 64,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              l10n.profileRequired,
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-                letterSpacing: 0.3,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.completeProfileFirst,
+              _errorMessage ?? "Unknown error",
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: Colors.grey.shade600,
@@ -612,21 +609,14 @@ class _CropListScreenState extends State<CropListScreen> {
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.onboardingPersonal);
-              },
-              icon: const Icon(Icons.person_add_rounded, size: 20),
-              label: Text(
-                l10n.completeProfile,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              onPressed: _loadCrops,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: Text(l10n.retry),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.brandGreen,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

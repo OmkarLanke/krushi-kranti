@@ -460,6 +460,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completeProfileDetails => 'Please complete your profile details.';
 
   @override
+  String get completePersonalDetailsToUnlock =>
+      'Complete your personal details to unlock full features';
+
+  @override
   String get emailLoginLink => 'Log in with Email & Password';
 
   @override
@@ -1434,7 +1438,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Add your basic personal details';
 
   @override
-  String get setupStepAddFarmTitle => 'Add Your First Farm';
+  String get setupStepAddFarmTitle => 'Add Your Farm';
 
   @override
   String get setupStepAddFarmSubtitle => 'Setup your farm for insights';
@@ -1757,7 +1761,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeOnboardingAddFarmCta => 'Add farm';
 
   @override
-  String get homeOnboardingAddCropTitle => 'Add your first crop';
+  String get homeOnboardingAddCropTitle => 'Add Your Crop';
 
   @override
   String get homeOnboardingAddCropMessage =>

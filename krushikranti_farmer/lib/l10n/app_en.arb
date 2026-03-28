@@ -207,6 +207,7 @@
   
   "profileIncomplete": "Profile Incomplete",
   "completeProfileDetails": "Please complete your profile details.",
+  "completePersonalDetailsToUnlock": "Complete your personal details to unlock full features",
 
   "emailLoginLink": "Log in with Email & Password",
   "welcomeBack": "Welcome Back!",
@@ -570,7 +571,7 @@
   },
   "setupStepCompleteProfileTitle": "Complete Profile",
   "setupStepCompleteProfileSubtitle": "Add your basic personal details",
-  "setupStepAddFarmTitle": "Add Your First Farm",
+  "setupStepAddFarmTitle": "Add Your Farm",
   "setupStepAddFarmSubtitle": "Setup your farm for insights",
   "setupStepSubscribeTitle": "Subscribe to Premium",
   "setupStepSubscribeSubtitle": "Unlock all exclusive features",
@@ -729,7 +730,7 @@
   "homeOnboardingAddFarmTitle": "Add your first farm",
   "homeOnboardingAddFarmMessage": "Add at least one farm to start using this feature for your land.",
   "homeOnboardingAddFarmCta": "Add farm",
-  "homeOnboardingAddCropTitle": "Add your first crop",
+  "homeOnboardingAddCropTitle": "Add Your Crop",
   "homeOnboardingAddCropMessage": "Add at least one crop on your farm to start tracking it here.",
   "homeOnboardingAddCropCta": "Add crop",
   "otpCheckNotificationSnackbar": "You will get the OTP. Please check it at notification",

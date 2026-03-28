@@ -194,6 +194,7 @@
   
   "profileIncomplete": "प्रोफाइल अपूर्ण आहे",
   "completeProfileDetails": "कृपया तुमचा प्रोफाइल तपशील पूर्ण करा.",
+  "completePersonalDetailsToUnlock": "संपूर्ण वैशिष्ट्ये अनलॉक करण्यासाठी तुमचे वैयक्तिक तपशील पूर्ण करा.",
 
   "emailLoginLink": "ईमेल आणि पासवर्डने लॉग इन करा",
   "welcomeBack": "पुन्हा स्वागत आहे!",
@@ -542,7 +543,7 @@
   },
   "setupStepCompleteProfileTitle": "प्रोफाइल पूर्ण करा",
   "setupStepCompleteProfileSubtitle": "तुमची मूलभूत वैयक्तिक माहिती जोडा",
-  "setupStepAddFarmTitle": "तुमचे पहिले शेत जोडा",
+  "setupStepAddFarmTitle": "तुमचे शेत जोडा",
   "setupStepAddFarmSubtitle": "अंतर्दृष्टीसाठी तुमचे शेत सेट करा",
   "setupStepSubscribeTitle": "प्रीमियमला सबस्क्राइब करा",
   "setupStepSubscribeSubtitle": "सर्व वैशिष्ट्ये अनलॉक करा",
@@ -701,7 +702,7 @@
   "homeOnboardingAddFarmTitle": "तुमचे पहिले शेत जोडा",
   "homeOnboardingAddFarmMessage": "तुमच्या जमिनीसाठी हे वैशिष्ट्य वापरण्यासाठी किमान एक शेत जोडा.",
   "homeOnboardingAddFarmCta": "शेत जोडा",
-  "homeOnboardingAddCropTitle": "तुमचे पहिले पीक जोडा",
+  "homeOnboardingAddCropTitle": "तुमचे पीक जोडा",
   "homeOnboardingAddCropMessage": "येथे ट्रॅक करण्यासाठी तुमच्या शेतावर किमान एक पीक जोडा.",
   "homeOnboardingAddCropCta": "पीक जोडा",
   "otpCheckNotificationSnackbar": "तुम्हाला OTP मिळेल. कृपया सूचना तपासा",

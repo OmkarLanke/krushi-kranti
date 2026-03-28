@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../constants/app_colors.dart';
@@ -31,100 +32,111 @@ class OnboardingStepProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalSteps = stepStatuses.length;
-    return RepaintBoundary(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: List.generate(totalSteps * 2 - 1, (index) {
-              if (index % 2 != 0) {
-                final stepIndex = (index + 1) ~/ 2;
-                final prevStep = stepIndex - 1;
-                final isCompleted =
-                    stepStatuses[prevStep] == StepStatus.completed;
-                return Container(
-                  margin: const EdgeInsets.only(top: 14),
-                  height: 2,
-                  width: 32,
-                  color: isCompleted
-                      ? AppColors.brandGreen
-                      : Colors.grey.shade300,
-                );
-              }
 
-              final stepIndex = index ~/ 2;
-              final status = stepStatuses[stepIndex];
-              final isCompleted = status == StepStatus.completed;
-              final isActive = status == StepStatus.active;
+    List<Widget> buildStepRowChildren() {
+      return List.generate(totalSteps * 2 - 1, (index) {
+        if (index.isOdd) {
+          final stepIndex = (index + 1) ~/ 2;
+          final prevStep = stepIndex - 1;
+          final isCompleted = stepStatuses[prevStep] == StepStatus.completed;
 
-              final Color circleBg;
-              final Widget circleChild;
-              if (isCompleted) {
-                circleBg = AppColors.brandGreen;
-                circleChild =
-                    const Icon(Icons.check, color: Colors.white, size: 16);
-              } else if (isActive) {
-                circleBg = AppColors.brandGreen;
-                circleChild = Text(
-                  (stepIndex + 1).toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                );
-              } else {
-                circleBg = Colors.grey.shade300;
-                circleChild = Text(
-                  (stepIndex + 1).toString(),
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                );
-              }
+          return Expanded(
+            flex: 1,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 13, left: 2, right: 2),
+              child: Container(
+                height: 2,
+                color: isCompleted ? AppColors.brandGreen : Colors.grey.shade300,
+              ),
+            ),
+          );
+        }
 
-              return SizedBox(
-                key: ValueKey<String>('onboarding_step_$stepIndex'),
-                width: 65,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: circleBg,
-                      child: circleChild,
-                    ),
-                    const SizedBox(height: 6),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        labels[stepIndex],
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isActive
-                              ? AppColors.brandGreen
-                              : (isCompleted
-                                  ? Colors.grey.shade800
-                                  : Colors.grey.shade500),
-                          fontWeight:
-                              isActive ? FontWeight.w700 : FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
+        final stepIndex = index ~/ 2;
+        return Expanded(
+          flex: 3,
+          child: _OnboardingStepItem(
+            key: ValueKey<int>(stepIndex),
+            stepIndex: stepIndex,
+            status: stepStatuses[stepIndex],
+            label: labels[stepIndex],
           ),
+        );
+      });
+    }
+
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: buildStepRowChildren(),
         ),
       ),
+    );
+  }
+}
+
+class _OnboardingStepItem extends StatelessWidget {
+  final int stepIndex;
+  final StepStatus status;
+  final String label;
+
+  const _OnboardingStepItem({
+    super.key,
+    required this.stepIndex,
+    required this.status,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isCompleted = status == StepStatus.completed;
+    final bool isActive = status == StepStatus.active;
+
+    final Color circleBg = isCompleted || isActive
+        ? AppColors.brandGreen
+        : Colors.grey.shade300;
+
+    final Color labelColor = isActive
+        ? AppColors.brandGreen
+        : (isCompleted ? Colors.grey.shade800 : Colors.grey.shade500);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CircleAvatar(
+          radius: 13,
+          backgroundColor: circleBg,
+          child: isCompleted
+              ? const Icon(Icons.check, color: Colors.white, size: 16)
+              : Text(
+                  (stepIndex + 1).toString(),
+                  style: TextStyle(
+                    color: isActive ? Colors.white : Colors.grey.shade700,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: AutoSizeText(
+            label,
+            maxLines: 2,
+            minFontSize: 8,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 9,
+              height: 1.15,
+              color: labelColor,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -136,14 +148,11 @@ class OnboardingStepProgressBarConnected extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final labels = onboardingFormStepperLabels(l10n);
     return Selector<OnboardingController, int>(
-      selector: (context, c) => Object.hash(
-        c.stepProgressSignature,
-        Localizations.localeOf(context).languageCode,
-      ),
+      selector: (context, c) => c.stepProgressSignature,
       builder: (context, _, __) {
+        final l10n = AppLocalizations.of(context)!;
+        final labels = onboardingFormStepperLabels(l10n);
         final controller = context.read<OnboardingController>();
         return OnboardingStepProgressBar(
           stepStatuses: controller.stepStatuses,
